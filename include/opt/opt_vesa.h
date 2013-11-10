@@ -1,0 +1,1 @@
+#define VESA 1

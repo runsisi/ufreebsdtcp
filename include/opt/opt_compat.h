@@ -1,0 +1,5 @@
+//#define COMPAT_FREEBSD4 1
+//#define COMPAT_FREEBSD6 1
+//#define COMPAT_FREEBSD32 1
+//#define COMPAT_FREEBSD7 1
+//#define COMPAT_FREEBSD5 1

@@ -1,0 +1,11 @@
+#define	IA32_SIGF_HANDLER	0x10
+#define	IA32_SIGF_UC4	0x14
+#define	IA32_SIGF_UC	0x20
+#define	IA32_UC4_DS	0x20
+#define	IA32_UC4_ES	0x1c
+#define	IA32_UC4_FS	0x18
+#define	IA32_UC4_GS	0x14
+#define	IA32_UC_DS	0x20
+#define	IA32_UC_ES	0x1c
+#define	IA32_UC_FS	0x18
+#define	IA32_UC_GS	0x14
