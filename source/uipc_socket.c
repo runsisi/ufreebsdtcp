@@ -606,6 +606,9 @@ sonewconn(struct bsd_socket *head, int connstatus)
 	    sorwakeup(head);
         wakeup_one(&head->so_timeo);
         #endif 	// ---------------------- @2013/11/06
+        // runsisi AT hust.edu.cn @2013/11/13
+        soasyncnotify(head, NULL, SAN_ACCEPT);
+        // ---------------------- @2013/11/13
 	}
 	return (so);
 }
@@ -3129,7 +3132,10 @@ restart:
 	sowwakeup(so);
     #endif  // ---------------------- @2013/11/08
     // runsisi AT hust.edu.cn @2013/11/13
-    soasyncnotify(so, NULL, SAN_CONNECTED);
+	if (head == NULL)
+	{
+	    soasyncnotify(so, NULL, SAN_CONNECTED);
+	}
     // ---------------------- @2013/11/13
 }
 
