@@ -3129,7 +3129,7 @@ restart:
 	sowwakeup(so);
     #endif  // ---------------------- @2013/11/08
     // runsisi AT hust.edu.cn @2013/11/13
-    soasyncnotify(head, NULL, SAN_CONNECTED);
+    soasyncnotify(so, NULL, SAN_CONNECTED);
     // ---------------------- @2013/11/13
 }
 
