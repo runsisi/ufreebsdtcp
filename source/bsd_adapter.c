@@ -19,8 +19,10 @@ VNET_DEFINE(int, ip_defttl) = IPDEFTTL;
 
 extern int bsd_param_init();
 extern int bsd_uma_init();
+extern int bsd_tunable_mbinit();
 extern int bsd_mbuf_init();
 extern int bsd_callout_init();
+extern int bsd_socket_init();
 extern int bsd_domain_init();
 
 bsd_uint32_t arc4random(void)
@@ -80,8 +82,10 @@ bsd_init()
 {
     bsd_param_init();
     bsd_uma_init();
+    bsd_tunable_mbinit();
     bsd_mbuf_init();
     bsd_callout_init();
+    bsd_socket_init();
     bsd_domain_init();
     return 0;
 }

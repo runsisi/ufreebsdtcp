@@ -50,6 +50,18 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/kern/kern_sx.c 250581 2013-05-12 22:01:22Z
 #include <sys/bsd_lock.h>
 #include <sys/bsd_sx.h>
 
+void
+sx_init_flags(struct sx *sx, const char *description, int opts)
+{
+
+}
+
+void
+sx_destroy(struct sx *sx)
+{
+
+}
+
 int
 _sx_try_xlock(struct sx *sx, const char *file, int line)
 {

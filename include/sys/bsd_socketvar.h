@@ -316,7 +316,7 @@ struct uio;
 int	sockargs(struct mbuf **mp, caddr_t buf, int buflen, int type);
 int	getsockaddr(struct bsd_sockaddr **namp, caddr_t uaddr, bsd_size_t len);
 void	soabort(struct bsd_socket *so);
-int	soaccept(struct bsd_socket *so, struct bsd_sockaddr **nam);
+int	bsd_soaccept(struct bsd_socket *so, struct bsd_sockaddr **nam);
 int	socheckuid(struct bsd_socket *so, bsd_uid_t uid);
 int	bsd_sobind(struct bsd_socket *so, struct bsd_sockaddr *nam, struct thread *td);
 int	bsd_soclose(struct bsd_socket *so);
@@ -367,6 +367,9 @@ void	sotoxsocket(struct bsd_socket *so, struct xsocket *xso);
 void	soupcall_clear(struct bsd_socket *so, int which);
 void	soupcall_set(struct bsd_socket *so, int which,
 	    int (*func)(struct bsd_socket *, void *, int), void *arg);
+// runsisi AT hust.edu.cn @2013/11/13
+int     soasyncnotify(struct bsd_socket *so, int ev);
+// ---------------------- @2013/11/13
 void	sowakeup(struct bsd_socket *so, struct sockbuf *sb);
 int	selsocket(struct bsd_socket *so, int events, struct bsd_timeval *tv,
 	    struct thread *td);

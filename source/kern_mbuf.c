@@ -721,11 +721,18 @@ mb_reclaim(void *junk)
 }
 #endif  // ---------------------- @2013/11/05
 
+// runsisi AT hust.edu.cn @2013/11/10
+int
+bsd_tunable_mbinit()
+{
+    tunable_mbinit(NULL);
+    return 0;
+}
+
 int
 bsd_mbuf_init()
 {
     mbuf_init(NULL);
-
     return 0;
 }
-// ---------------------- @2013/11/04
+// ---------------------- @2013/11/10

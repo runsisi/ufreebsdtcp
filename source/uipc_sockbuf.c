@@ -51,6 +51,10 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/kern/uipc_sockbuf.c 252532 2013-07-03 03:3
 #include <sys/bsd_sx.h>
 #include <sys/bsd_sysctl.h>
 
+// runsisi AT hust.edu.cn @2013/11/13
+extern int brs_soasyncnotify(struct bsd_socket *so, int ev);
+// ---------------------- @2013/11/13
+
 /*
  * Function pointer set by the AIO routines so that the socket buffer code
  * can call back into the AIO module if it is loaded.
@@ -170,6 +174,14 @@ sbunlock(struct sockbuf *sb)
     #endif 	// ---------------------- @2013/11/08
 }
 
+// runsisi AT hust.edu.cn @2013/11/13
+int
+soasyncnotify(struct bsd_socket *so, int ev)
+{
+    return brs_soasyncnotify(so, ev);
+}
+// ---------------------- @2013/11/13
+
 /*
  * Wakeup processes waiting on a socket buffer.  Do asynchronous notification
  * via SIGIO if the socket has the SS_ASYNC flag set.
@@ -216,6 +228,22 @@ sowakeup(struct bsd_socket *so, struct sockbuf *sb)
         pgsigio(&so->so_sigio, SIGIO, 0);
     mtx_assert(SOCKBUF_MTX(sb), MA_NOTOWNED);
     #endif 	// ---------------------- @2013/11/06
+
+    // runsisi AT hust.edu.cn @2013/11/13
+    /*
+     * Only readable/writable events are emitted from here,
+     * data/accept/connected/disconnected/error events are specialized
+     */
+    if (&so->so_rcv == sb)
+    {
+        soasyncnotify(so, SAN_READ);
+    }
+    else /*if (&so->so_snd == sb)*/ /* other branch is not possible:) */
+    {
+        soasyncnotify(so, SAN_WRITE);
+    }
+
+    // ---------------------- @2013/11/13
 }
 
 /*

@@ -88,7 +88,10 @@ bsd_malloc(unsigned long size, struct malloc_type *mtp, int flags)
 void
 bsd_free(void *addr, struct malloc_type *mtp)
 {
-	DPS_RetUUB(addr);
+    if (addr)
+    {
+        DPS_RetUUB(addr);
+    }
 }
 
 /*

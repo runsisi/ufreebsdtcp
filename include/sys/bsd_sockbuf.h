@@ -57,6 +57,15 @@
 #define	SBS_CANTRCVMORE		0x0020	/* can't receive more data from peer */
 #define	SBS_RCVATMARK		0x0040	/* at mark on input */
 
+// runsisi AT hust.edu.cn @2013/11/13
+#define SAN_READ        0x01        /* asynchronous readable notification */
+#define SAN_WRITE       0x02        /* asynchronous writable notification */
+#define SAN_ACCEPT      0x04        /* listen sock can accept */
+#define SAN_CONNECTED   0x08        /* active connect succeeded */
+#define SAN_DISCONNECTED    0x10    /* tcp connection aborted/finished */
+#define SAN_ERROR       0x20        /* something bad happened */
+// ---------------------- @2013/11/13
+
 struct mbuf;
 struct bsd_sockaddr;
 struct bsd_socket;

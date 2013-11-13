@@ -343,7 +343,6 @@ soalloc(struct vnet *vnet)
 {
 	struct bsd_socket *so;
 
-    #if 0 // runsisi AT hust.edu.cn @2013/10/25
     so = uma_zalloc(socket_zone, M_NOWAIT | M_ZERO);
     if (so == NULL)
         return (NULL);
@@ -368,7 +367,6 @@ soalloc(struct vnet *vnet)
     so->so_vnet = vnet;
     #endif
     mtx_unlock(&so_global_mtx);
-    #endif // ------- @2013/10/25
 	return (so);
 }
 
@@ -381,7 +379,6 @@ static void
 sodealloc(struct bsd_socket *so)
 {
 
-    #if 0 // runsisi AT hust.edu.cn @2013/10/25
     KASSERT(so->so_count == 0, ("sodealloc(): so_count %d", so->so_count));
     KASSERT(so->so_pcb == NULL, ("sodealloc(): so_pcb != NULL"));
 
@@ -395,15 +392,17 @@ sodealloc(struct bsd_socket *so)
     #endif
     mtx_unlock(&so_global_mtx);
     if (so->so_rcv.sb_hiwat)
-        (void)chgsbsize(so->so_cred->cr_uidinfo,
+        (void)chgsbsize(NULL /*so->so_cred->cr_uidinfo*/,
             &so->so_rcv.sb_hiwat, 0, RLIM_INFINITY);
     if (so->so_snd.sb_hiwat)
-        (void)chgsbsize(so->so_cred->cr_uidinfo,
+        (void)chgsbsize(NULL /*so->so_cred->cr_uidinfo*/,
             &so->so_snd.sb_hiwat, 0, RLIM_INFINITY);
     #ifdef INET
+    #if 0	// runsisi AT hust.edu.cn @2013/11/10
     /* remove acccept filter if one is present. */
     if (so->so_accf != NULL)
         do_setopt_accept_filter(so, NULL);
+    #endif 	// ---------------------- @2013/11/10
     #endif
     #ifdef MAC
     mac_socket_destroy(so);
@@ -414,82 +413,7 @@ sodealloc(struct bsd_socket *so)
     SOCKBUF_LOCK_DESTROY(&so->so_snd);
     SOCKBUF_LOCK_DESTROY(&so->so_rcv);
     uma_zfree(socket_zone, so);
-    #endif // ------- @2013/10/25
 }
-
-// runsisi AT hust.edu.cn @2013/10/25
-/*
- * Corresponds to soalloc
- */
-static struct bsd_socket *
-soinit(struct bsd_socket *so, struct vnet *vnet)
-{
-    if (so == NULL)
-        return (NULL);
-//#ifdef MAC
-//    if (mac_socket_init(so, M_NOWAIT) != 0) {
-//        uma_zfree(socket_zone, so);
-//        return (NULL);
-//    }
-//#endif
-//    SOCKBUF_LOCK_INIT(&so->so_snd, "so_snd");
-//    SOCKBUF_LOCK_INIT(&so->so_rcv, "so_rcv");
-//    sx_init(&so->so_snd.sb_sx, "so_snd_sx");
-//    sx_init(&so->so_rcv.sb_sx, "so_rcv_sx");
-//    BSD_TAILQ_INIT(&so->so_aiojobq);
-//    mtx_lock(&so_global_mtx);
-    so->so_gencnt = ++so_gencnt;
-    ++numopensockets;
-//#ifdef VIMAGE
-//    VNET_ASSERT(vnet != NULL, ("%s:%d vnet is NULL, so=%p",
-//        __func__, __LINE__, so));
-//    vnet->vnet_sockcnt++;
-//    so->so_vnet = vnet;
-//#endif
-//    mtx_unlock(&so_global_mtx);
-    return (so);
-}
-
-/*
- * Corresponds to sodealloc
- */
-static void
-souninit(struct bsd_socket *so)
-{
-
-    KASSERT(so->so_count == 0, ("sodealloc(): so_count %d", so->so_count));
-    KASSERT(so->so_pcb == NULL, ("sodealloc(): so_pcb != NULL"));
-
-//    mtx_lock(&so_global_mtx);
-    so->so_gencnt = ++so_gencnt;
-    --numopensockets;   /* Could be below, but faster here. */
-//#ifdef VIMAGE
-//    VNET_ASSERT(so->so_vnet != NULL, ("%s:%d so_vnet is NULL, so=%p",
-//        __func__, __LINE__, so));
-//    so->so_vnet->vnet_sockcnt--;
-//#endif
-//    mtx_unlock(&so_global_mtx);
-//    if (so->so_rcv.sb_hiwat)
-//        (void)chgsbsize(so->so_cred->cr_uidinfo,
-//            &so->so_rcv.sb_hiwat, 0, RLIM_INFINITY);
-//    if (so->so_snd.sb_hiwat)
-//        (void)chgsbsize(so->so_cred->cr_uidinfo,
-//            &so->so_snd.sb_hiwat, 0, RLIM_INFINITY);
-//#ifdef INET
-    /* remove acccept filter if one is present. */
-//    if (so->so_accf != NULL)
-//        do_setopt_accept_filter(so, NULL);
-//#endif
-//#ifdef MAC
-//    mac_socket_destroy(so);
-//#endif
-//    crfree(so->so_cred);
-//    sx_destroy(&so->so_snd.sb_sx);
-//    sx_destroy(&so->so_rcv.sb_sx);
-//    SOCKBUF_LOCK_DESTROY(&so->so_snd);
-//    SOCKBUF_LOCK_DESTROY(&so->so_rcv);
-}
-// ------- @2013/10/25
 
 /*
  * socreate returns a socket with a ref count of 1.  The socket should be
@@ -517,8 +441,7 @@ bsd_socreate(int dom, struct bsd_socket **aso, int type, int proto,
 
 	if (prp->pr_type != type)
 		return (BSD_EPROTOTYPE);
-//	so = soalloc(CRED_TO_VNET(cred));
-	so = soinit(*aso, CRED_TO_VNET(cred));
+	so = soalloc(CRED_TO_VNET(cred));
 	if (so == NULL)
 		return (BSD_ENOBUFS);
 
@@ -526,18 +449,18 @@ bsd_socreate(int dom, struct bsd_socket **aso, int type, int proto,
 	BSD_TAILQ_INIT(&so->so_comp);
 	so->so_type = type;
 	so->so_cred = crhold(cred);
-//	if ((prp->pr_domain->dom_family == BSD_PF_INET) ||
-//	    (prp->pr_domain->dom_family == BSD_PF_INET6) ||
-//	    (prp->pr_domain->dom_family == BSD_PF_ROUTE))
-//		so->so_fibnum = td->td_proc->p_fibnum;
-//	else
+	if ((prp->pr_domain->dom_family == BSD_PF_INET) ||
+	    (prp->pr_domain->dom_family == BSD_PF_INET6) ||
+	    (prp->pr_domain->dom_family == BSD_PF_ROUTE))
+		so->so_fibnum = 0; //td->td_proc->p_fibnum;
+	else
 		so->so_fibnum = 0;
 	so->so_proto = prp;
 #ifdef MAC
 	mac_socket_create(cred, so);
 #endif
-//	knlist_init_mtx(&so->so_rcv.sb_sel.si_note, SOCKBUF_MTX(&so->so_rcv));
-//	knlist_init_mtx(&so->so_snd.sb_sel.si_note, SOCKBUF_MTX(&so->so_snd));
+	knlist_init_mtx(&so->so_rcv.sb_sel.si_note, SOCKBUF_MTX(&so->so_rcv));
+	knlist_init_mtx(&so->so_snd.sb_sel.si_note, SOCKBUF_MTX(&so->so_snd));
 	so->so_count = 1;
 	/*
 	 * Auto-sizing of socket buffers is managed by the protocols and
@@ -550,8 +473,7 @@ bsd_socreate(int dom, struct bsd_socket **aso, int type, int proto,
 		KASSERT(so->so_count == 1, ("socreate: so_count %d",
 		    so->so_count));
 		so->so_count = 0;
-//		sodealloc(so);
-		souninit(so);
+		sodealloc(so);
 		return (error);
 	}
 	*aso = so;
@@ -832,9 +754,9 @@ sofree(struct bsd_socket *so)
     #if 0	// runsisi AT hust.edu.cn @2013/11/06
     seldrain(&so->so_snd.sb_sel);
     seldrain(&so->so_rcv.sb_sel);
+    #endif  // ---------------------- @2013/11/06
     knlist_destroy(&so->so_rcv.sb_sel.si_note);
     knlist_destroy(&so->so_snd.sb_sel.si_note);
-    #endif 	// ---------------------- @2013/11/06
 	sodealloc(so);
 }
 
@@ -962,7 +884,7 @@ soabort(struct bsd_socket *so)
 }
 
 int
-soaccept(struct bsd_socket *so, struct bsd_sockaddr **nam)
+bsd_soaccept(struct bsd_socket *so, struct bsd_sockaddr **nam)
 {
 	int error;
 
@@ -3174,10 +3096,14 @@ restart:
 			head->so_qlen++;
 			so->so_qstate |= SQ_COMP;
 			ACCEPT_UNLOCK();
+            #if 0   // runsisi AT hust.edu.cn @2013/11/06
+			/* accept notification is specialized */
 			sorwakeup(head);
-            #if 0	// runsisi AT hust.edu.cn @2013/11/06
             wakeup_one(&head->so_timeo);
             #endif 	// ---------------------- @2013/11/06
+            // runsisi AT hust.edu.cn @2013/11/11
+            soasyncnotify(head, SAN_ACCEPT);
+            // ---------------------- @2013/11/11
 		} else {
 			ACCEPT_UNLOCK();
 			soupcall_set(so, SO_RCV,
@@ -3197,10 +3123,14 @@ restart:
 	SOCK_UNLOCK(so);
 	ACCEPT_UNLOCK();
     #if 0	// runsisi AT hust.edu.cn @2013/11/08
+	/* connected notification is specialized */
     wakeup(&so->so_timeo);
-    #endif 	// ---------------------- @2013/11/08
 	sorwakeup(so);
 	sowwakeup(so);
+    #endif  // ---------------------- @2013/11/08
+    // runsisi AT hust.edu.cn @2013/11/13
+    soasyncnotify(head, SAN_CONNECTED);
+    // ---------------------- @2013/11/13
 }
 
 void
@@ -3489,7 +3419,6 @@ bsd_socket_init()
 {
     socket_init(NULL);
     init_maxsockets(NULL);
-
     return 0;
 }
 // ---------------------- @2013/11/05
