@@ -3102,7 +3102,7 @@ restart:
             wakeup_one(&head->so_timeo);
             #endif 	// ---------------------- @2013/11/06
             // runsisi AT hust.edu.cn @2013/11/11
-            soasyncnotify(head, SAN_ACCEPT);
+            soasyncnotify(head, NULL, SAN_ACCEPT);
             // ---------------------- @2013/11/11
 		} else {
 			ACCEPT_UNLOCK();
@@ -3129,7 +3129,7 @@ restart:
 	sowwakeup(so);
     #endif  // ---------------------- @2013/11/08
     // runsisi AT hust.edu.cn @2013/11/13
-    soasyncnotify(head, SAN_CONNECTED);
+    soasyncnotify(head, NULL, SAN_CONNECTED);
     // ---------------------- @2013/11/13
 }
 
@@ -3145,11 +3145,13 @@ soisdisconnecting(struct bsd_socket *so)
 	so->so_state &= ~SS_ISCONNECTING;
 	so->so_state |= SS_ISDISCONNECTING;
 	so->so_rcv.sb_state |= SBS_CANTRCVMORE;
-	sorwakeup_locked(so);
+    #if 0	// runsisi AT hust.edu.cn @2013/11/13
+    sorwakeup_locked(so);
+    #endif 	// ---------------------- @2013/11/13
 	SOCKBUF_LOCK(&so->so_snd);
 	so->so_snd.sb_state |= SBS_CANTSENDMORE;
+    #if 0   // runsisi AT hust.edu.cn @2013/11/08
 	sowwakeup_locked(so);
-    #if 0	// runsisi AT hust.edu.cn @2013/11/08
     wakeup(&so->so_timeo);
     #endif 	// ---------------------- @2013/11/08
 }
@@ -3166,14 +3168,27 @@ soisdisconnected(struct bsd_socket *so)
 	so->so_state &= ~(SS_ISCONNECTING|SS_ISCONNECTED|SS_ISDISCONNECTING);
 	so->so_state |= SS_ISDISCONNECTED;
 	so->so_rcv.sb_state |= SBS_CANTRCVMORE;
-	sorwakeup_locked(so);
+    #if 0	// runsisi AT hust.edu.cn @2013/11/13
+    sorwakeup_locked(so);
+    #endif 	// ---------------------- @2013/11/13
 	SOCKBUF_LOCK(&so->so_snd);
 	so->so_snd.sb_state |= SBS_CANTSENDMORE;
 	sbdrop_locked(&so->so_snd, so->so_snd.sb_cc);
+    #if 0   // runsisi AT hust.edu.cn @2013/11/08
 	sowwakeup_locked(so);
-    #if 0	// runsisi AT hust.edu.cn @2013/11/08
     wakeup(&so->so_timeo);
     #endif 	// ---------------------- @2013/11/08
+
+    // runsisi AT hust.edu.cn @2013/11/13
+    /*
+     * notify app that we are disconnected, if the peer initiated the
+     * abortive close, then report
+     */
+    if (so->so_error)
+    {
+        soasyncnotify(so, &so->so_error, SAN_DISCONNECTED);
+    }
+    // ---------------------- @2013/11/13
 }
 
 /*

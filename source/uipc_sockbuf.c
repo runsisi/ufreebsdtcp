@@ -52,7 +52,7 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/kern/uipc_sockbuf.c 252532 2013-07-03 03:3
 #include <sys/bsd_sysctl.h>
 
 // runsisi AT hust.edu.cn @2013/11/13
-extern int brs_soasyncnotify(struct bsd_socket *so, int ev);
+extern int brs_soasyncnotify(struct bsd_socket *so, void *arg, int ev);
 // ---------------------- @2013/11/13
 
 /*
@@ -176,9 +176,9 @@ sbunlock(struct sockbuf *sb)
 
 // runsisi AT hust.edu.cn @2013/11/13
 int
-soasyncnotify(struct bsd_socket *so, int ev)
+soasyncnotify(struct bsd_socket *so, void *arg, int ev)
 {
-    return brs_soasyncnotify(so, ev);
+    return brs_soasyncnotify(so, arg, ev);
 }
 // ---------------------- @2013/11/13
 
@@ -232,15 +232,16 @@ sowakeup(struct bsd_socket *so, struct sockbuf *sb)
     // runsisi AT hust.edu.cn @2013/11/13
     /*
      * Only readable/writable events are emitted from here,
-     * data/accept/connected/disconnected/error events are specialized
+     * data/accept/connected/disconnected/error events are specialized,
+     * TODO: socantrcvmore/socantsendmore will also call this, fixed it
      */
     if (&so->so_rcv == sb)
     {
-        soasyncnotify(so, SAN_READ);
+        soasyncnotify(so, NULL, SAN_READ);
     }
     else /*if (&so->so_snd == sb)*/ /* other branch is not possible:) */
     {
-        soasyncnotify(so, SAN_WRITE);
+        soasyncnotify(so, NULL, SAN_WRITE);
     }
 
     // ---------------------- @2013/11/13

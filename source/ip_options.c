@@ -156,3 +156,56 @@ ip_stripoptions(struct mbuf *m, struct mbuf *mopt)
 	ip->ip_v = IPVERSION;
 	ip->ip_hl = sizeof(struct bsd_ip) >> 2;
 }
+
+/*
+ * Insert IP options into preformed packet.  Adjust IP destination as
+ * required for IP source routing, as indicated by a non-zero in_addr at the
+ * start of the options.
+ *
+ * XXX This routine assumes that the packet has no options in place.
+ */
+struct mbuf *
+ip_insertoptions(struct mbuf *m, struct mbuf *opt, int *phlen)
+{
+    struct ipoption *p = mtod(opt, struct ipoption *);
+    struct mbuf *n;
+    struct bsd_ip *ip = mtod(m, struct bsd_ip *);
+    unsigned optlen;
+
+    optlen = opt->m_len - sizeof(p->ipopt_dst);
+    if (optlen + ip->ip_len > IP_MAXPACKET) {
+        *phlen = 0;
+        return (m);     /* XXX should fail */
+    }
+    if (p->ipopt_dst.s_addr)
+        ip->ip_dst = p->ipopt_dst;
+    if (m->m_flags & M_EXT || m->m_data - optlen < m->m_pktdat) {
+        MGETHDR(n, M_DONTWAIT, MT_DATA);
+        if (n == NULL) {
+            *phlen = 0;
+            return (m);
+        }
+        M_MOVE_PKTHDR(n, m);
+        n->m_pkthdr.rcvif = NULL;
+        n->m_pkthdr.len += optlen;
+        m->m_len -= sizeof(struct bsd_ip);
+        m->m_data += sizeof(struct bsd_ip);
+        n->m_next = m;
+        m = n;
+        m->m_len = optlen + sizeof(struct bsd_ip);
+        m->m_data += max_linkhdr;
+        bcopy(ip, mtod(m, void *), sizeof(struct bsd_ip));
+    } else {
+        m->m_data -= optlen;
+        m->m_len += optlen;
+        m->m_pkthdr.len += optlen;
+        bcopy(ip, mtod(m, void *), sizeof(struct bsd_ip));
+    }
+    ip = mtod(m, struct bsd_ip *);
+    bcopy(p->ipopt_list, ip + 1, optlen);
+    *phlen = sizeof(struct bsd_ip) + optlen;
+    ip->ip_v = IPVERSION;
+    ip->ip_hl = *phlen >> 2;
+    ip->ip_len += optlen;
+    return (m);
+}

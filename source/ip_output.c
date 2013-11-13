@@ -108,18 +108,108 @@ int
 ip_output(struct mbuf *m, struct mbuf *opt, struct route *ro, int flags,
     struct ip_moptions *imo, struct inpcb *inp)
 {
+    struct bsd_ip *ip;
+    int hlen = sizeof (struct bsd_ip);
+    int error = 0;
     int sw_csum;
+    struct route iproute;
 
-	M_ASSERTPKTHDR(m);
+    M_ASSERTPKTHDR(m);
 
-	m->m_pkthdr.csum_flags |= CSUM_IP;
-    sw_csum = m->m_pkthdr.csum_flags;
+    if (inp != NULL) {
+        INP_LOCK_ASSERT(inp);
+        M_SETFIB(m, inp->inp_inc.inc_fibnum);
+        if (inp->inp_flags & (INP_HW_FLOWID|INP_SW_FLOWID)) {
+            m->m_pkthdr.flowid = inp->inp_flowid;
+            m->m_flags |= M_FLOWID;
+        }
+    }
+
+    if (ro == NULL) {
+        ro = &iproute;
+        bzero(ro, sizeof (*ro));
+    }
+
+#ifdef FLOWTABLE
+    if (ro->ro_rt == NULL) {
+        struct flentry *fle;
+
+        /*
+         * The flow table returns route entries valid for up to 30
+         * seconds; we rely on the remainder of ip_output() taking no
+         * longer than that long for the stability of ro_rt. The
+         * flow ID assignment must have happened before this point.
+         */
+        fle = flowtable_lookup_mbuf(V_ip_ft, m, AF_INET);
+        if (fle != NULL)
+            flow_to_route(fle, ro);
+    }
+#endif
+
+    if (opt) {
+        int len = 0;
+        m = ip_insertoptions(m, opt, &len);
+        if (len != 0)
+            hlen = len; /* ip->ip_hl is updated above */
+    }
+    ip = mtod(m, struct bsd_ip *);
+
+    /*
+     * Fill in IP header.  If we are not allowing fragmentation,
+     * then the ip_id field is meaningless, but we don't set it
+     * to zero.  Doing so causes various problems when devices along
+     * the path (routers, load balancers, firewalls, etc.) illegally
+     * disable DF on our packet.  Note that a 16-bit counter
+     * will wrap around in less than 10 seconds at 100 Mbit/s on a
+     * medium with MTU 1500.  See Steven M. Bellovin, "A Technique
+     * for Counting NATted Hosts", Proc. IMW'02, available at
+     * <http://www.cs.columbia.edu/~smb/papers/fnat.pdf>.
+     */
+    if ((flags & (IP_FORWARDING|IP_RAWOUTPUT)) == 0) {
+        ip->ip_v = IPVERSION;
+        ip->ip_hl = hlen >> 2;
+        #if 0	// runsisi AT hust.edu.cn @2013/11/13
+        ip->ip_id = ip_newid();
+        IPSTAT_INC(ips_localout);
+        #endif  // ---------------------- @2013/11/13
+    } else {
+        /* Header already set, fetch hlen from there */
+        hlen = ip->ip_hl << 2;
+    }
+
+    /* 127/8 must not appear on wire - RFC1122. */
+    if ((bsd_ntohl(ip->ip_dst.s_addr) >> BSD_IN_CLASSA_NSHIFT) == BSD_IN_LOOPBACKNET ||
+        (bsd_ntohl(ip->ip_src.s_addr) >> BSD_IN_CLASSA_NSHIFT) == BSD_IN_LOOPBACKNET) {
+        /*if ((ifp->if_flags & IFF_LOOPBACK) == 0)*/ {
+            #if 0	// runsisi AT hust.edu.cn @2013/11/13
+            IPSTAT_INC(ips_badaddr);
+            #endif 	// ---------------------- @2013/11/13
+            error = BSD_EADDRNOTAVAIL;
+            goto bad;
+        }
+    }
+
+    m->m_pkthdr.csum_flags |= CSUM_IP;
+    sw_csum = m->m_pkthdr.csum_flags /*& ~ifp->if_hwassist*/;
     if (sw_csum & CSUM_DELAY_DATA) {
         in_delayed_cksum(m);
         sw_csum &= ~CSUM_DELAY_DATA;
     }
+#ifdef SCTP
+    if (sw_csum & CSUM_SCTP) {
+        sctp_delayed_cksum(m, (uint32_t)(ip->ip_hl << 2));
+        sw_csum &= ~CSUM_SCTP;
+    }
+#endif
+    m->m_pkthdr.csum_flags &= 0/*ifp->if_hwassist*/;
 
-	return brs_ip_output(m, 1);
+    error = brs_ip_output(m, 1);
+
+done:
+    return (error);
+bad:
+    m_freem(m);
+    goto done;
 }
 
 void

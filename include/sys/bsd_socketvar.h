@@ -125,6 +125,10 @@ struct bsd_socket {
 	 */
 	int so_fibnum;		/* routing domain for this socket */
 	bsd_uint32_t so_user_cookie;
+
+	// runsisi AT hust.edu.cn @2013/11/13
+	int so_fd;          /* this socket's corresponding fd */
+    // ---------------------- @2013/11/13
 };
 
 /*
@@ -368,7 +372,7 @@ void	soupcall_clear(struct bsd_socket *so, int which);
 void	soupcall_set(struct bsd_socket *so, int which,
 	    int (*func)(struct bsd_socket *, void *, int), void *arg);
 // runsisi AT hust.edu.cn @2013/11/13
-int     soasyncnotify(struct bsd_socket *so, int ev);
+int     soasyncnotify(struct bsd_socket *so, void *arg, int ev);
 // ---------------------- @2013/11/13
 void	sowakeup(struct bsd_socket *so, struct sockbuf *sb);
 int	selsocket(struct bsd_socket *so, int events, struct bsd_timeval *tv,
