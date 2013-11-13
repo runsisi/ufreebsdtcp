@@ -602,8 +602,8 @@ sonewconn(struct bsd_socket *head, int connstatus)
 	}
 	ACCEPT_UNLOCK();
 	if (connstatus) {
-		sorwakeup(head);
-        #if 0	// runsisi AT hust.edu.cn @2013/11/06
+        #if 0   // runsisi AT hust.edu.cn @2013/11/06
+	    sorwakeup(head);
         wakeup_one(&head->so_timeo);
         #endif 	// ---------------------- @2013/11/06
 	}
