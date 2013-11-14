@@ -51,6 +51,7 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/netinet/cc/cc.c 220560 2011-04-12 08:13:18
 
 #include <stdio.h>
 #include <string.h>
+#include "dps_frame.h"
 
 #include <sys/bsd_param.h>
 #include <sys/bsd_kernel.h>

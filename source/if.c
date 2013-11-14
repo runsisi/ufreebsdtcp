@@ -36,6 +36,7 @@
 
 #include <string.h>
 #include <stdio.h>
+#include "dps_frame.h"
 
 #include <sys/bsd_param.h>
 #include <sys/bsd_types.h>

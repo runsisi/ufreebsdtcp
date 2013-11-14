@@ -41,22 +41,24 @@ typedef	__bsd_va_list	va_list;
 
 #ifdef __GNUCLIKE_BUILTIN_STDARG
 
+#if 0	// runsisi AT hust.edu.cn @2013/11/14
 #define	va_start(ap, last) \
-	__builtin_va_start((ap), (last))
+    __builtin_va_start((ap), (last))
 
 #define	va_arg(ap, type) \
-	__builtin_va_arg((ap), type)
+    __builtin_va_arg((ap), type)
 
 #define	__va_copy(dest, src) \
-	__builtin_va_copy((dest), (src))
+    __builtin_va_copy((dest), (src))
 
 #if __ISO_C_VISIBLE >= 1999
 #define	va_copy(dest, src) \
-	__va_copy(dest, src)
+    __va_copy(dest, src)
 #endif
 
 #define	va_end(ap) \
-	__builtin_va_end(ap)
+    __builtin_va_end(ap)
+#endif 	// ---------------------- @2013/11/14
 
 #elif defined(lint)
 /* Provide a fake implementation for lint's benefit */

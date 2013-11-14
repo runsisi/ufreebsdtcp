@@ -51,6 +51,8 @@
 #include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/netinet/cc/cc_newreno.c 220560 2011-04-12 08:13:18Z lstewart $");
 
+#include "dps_frame.h"
+
 #include <sys/bsd_param.h>
 #include <sys/bsd_kernel.h>
 #include <sys/bsd_malloc.h>

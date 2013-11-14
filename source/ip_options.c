@@ -36,6 +36,7 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/netinet/ip_options.c 213832 2010-10-14 12:
 
 #include <string.h>
 #include <stdio.h>
+#include "dps_frame.h"
 
 #include <sys/bsd_param.h>
 #include <sys/bsd_systm.h>

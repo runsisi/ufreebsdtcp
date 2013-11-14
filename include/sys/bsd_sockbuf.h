@@ -64,6 +64,9 @@
 #define SAN_CONNECTED   0x08        /* active connect succeeded */
 #define SAN_DISCONNECTED    0x10    /* tcp connection aborted/finished */
 #define SAN_ERROR       0x20        /* something bad happened */
+
+#define SQT_RCV     0x01        /* dps queue type for socket receive */
+#define SQT_SND     0x02        /* dps queue type for socket send */
 // ---------------------- @2013/11/13
 
 struct mbuf;

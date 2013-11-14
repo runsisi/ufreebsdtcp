@@ -40,6 +40,7 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/netinet/ip_input.c 243586 2012-11-27 01:59
 
 #include <stdio.h>
 #include <string.h>
+#include "dps_frame.h"
 
 #include <sys/bsd_param.h>
 #include <sys/bsd_systm.h>

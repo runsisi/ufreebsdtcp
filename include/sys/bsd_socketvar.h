@@ -128,6 +128,11 @@ struct bsd_socket {
 
 	// runsisi AT hust.edu.cn @2013/11/13
 	int so_fd;          /* this socket's corresponding fd */
+	int so_otype;       /* original type, dps use the msb to identify sock for rpc */
+	DPS_AO_ID so_aoid;      /* the ao we are live in */
+	DPS_AO_ID so_appaoid;   /* the ao who created the so live in */
+	bsd_uint32_t so_rcvq_id;    /* dps queue id for receive */
+	bsd_uint32_t so_sndq_id;    /* dps queue id for send */
     // ---------------------- @2013/11/13
 };
 
@@ -159,6 +164,10 @@ extern struct mtx accept_mtx;
  */
 #define	SQ_INCOMP		0x0800	/* unaccepted, incomplete connection */
 #define	SQ_COMP			0x1000	/* unaccepted, complete connection */
+
+// runsisi AT hust.edu.cn @2013/11/14
+#define SO_FOR_RPC(so)  ((so)->so_otype & 0x80000000)  /* if it's a sock created by rpc */
+// ---------------------- @2013/11/14
 
 /*
  * Externalized form of struct socket used by the sysctl(3) interface.
@@ -372,7 +381,13 @@ void	soupcall_clear(struct bsd_socket *so, int which);
 void	soupcall_set(struct bsd_socket *so, int which,
 	    int (*func)(struct bsd_socket *, void *, int), void *arg);
 // runsisi AT hust.edu.cn @2013/11/13
-int     soasyncnotify(struct bsd_socket *so, void *arg, int ev);
+/*
+ * these functions are implemented in socket_kernel.c
+ */
+int     sogetqsize(int qtype);
+int     socreateq(struct bsd_socket *so);
+int     sodelq(struct bsd_socket *so);
+int     soasyncnotify(struct bsd_socket *so, int ev);
 // ---------------------- @2013/11/13
 void	sowakeup(struct bsd_socket *so, struct sockbuf *sb);
 int	selsocket(struct bsd_socket *so, int events, struct bsd_timeval *tv,

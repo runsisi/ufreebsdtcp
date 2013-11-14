@@ -523,6 +523,26 @@ sonewconn(struct bsd_socket *head, int connstatus)
 		    __func__, head->so_pcb);
 		return (NULL);
 	}
+
+	// runsisi AT hust.edu.cn @2013/11/14
+	/*
+	 * sock descriptor is unavailable right now, so we have to init some
+	 * fields manually here
+	 */
+	so->so_fd = 0;  /* will be set in ps_accept */
+	so->so_otype = head->so_otype;
+	so->so_aoid = head->so_aoid;
+	so->so_appaoid = head->so_appaoid;
+
+	if (socreateq(so))
+	{
+	    sodealloc(so);
+        bsd_log(LOG_DEBUG, "%s: pcb %p: socreateq() failed\n",
+            __func__, head->so_pcb);
+        return (NULL);
+	}
+    // ---------------------- @2013/11/14
+
 	if ((head->so_options & BSD_SO_ACCEPTFILTER) != 0)
 		connstatus = 0;
 	so->so_head = head;
@@ -607,7 +627,7 @@ sonewconn(struct bsd_socket *head, int connstatus)
         wakeup_one(&head->so_timeo);
         #endif 	// ---------------------- @2013/11/06
         // runsisi AT hust.edu.cn @2013/11/13
-        soasyncnotify(head, NULL, SAN_ACCEPT);
+        soasyncnotify(head, SAN_ACCEPT);
         // ---------------------- @2013/11/13
 	}
 	return (so);
@@ -758,6 +778,11 @@ sofree(struct bsd_socket *so)
     seldrain(&so->so_snd.sb_sel);
     seldrain(&so->so_rcv.sb_sel);
     #endif  // ---------------------- @2013/11/06
+
+    // runsisi AT hust.edu.cn @2013/11/14
+    sodelq(so);
+    // ---------------------- @2013/11/14
+
     knlist_destroy(&so->so_rcv.sb_sel.si_note);
     knlist_destroy(&so->so_snd.sb_sel.si_note);
 	sodealloc(so);
@@ -3105,7 +3130,7 @@ restart:
             wakeup_one(&head->so_timeo);
             #endif 	// ---------------------- @2013/11/06
             // runsisi AT hust.edu.cn @2013/11/11
-            soasyncnotify(head, NULL, SAN_ACCEPT);
+            soasyncnotify(head, SAN_ACCEPT);
             // ---------------------- @2013/11/11
 		} else {
 			ACCEPT_UNLOCK();
@@ -3134,7 +3159,7 @@ restart:
     // runsisi AT hust.edu.cn @2013/11/13
 	if (head == NULL)
 	{
-	    soasyncnotify(so, NULL, SAN_CONNECTED);
+	    soasyncnotify(so, SAN_CONNECTED);
 	}
     // ---------------------- @2013/11/13
 }
@@ -3192,7 +3217,7 @@ soisdisconnected(struct bsd_socket *so)
      */
     if (so->so_error)
     {
-        soasyncnotify(so, &so->so_error, SAN_DISCONNECTED);
+        soasyncnotify(so, SAN_DISCONNECTED);
     }
     // ---------------------- @2013/11/13
 }
