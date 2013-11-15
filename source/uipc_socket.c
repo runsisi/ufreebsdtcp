@@ -3157,10 +3157,19 @@ restart:
 	sowwakeup(so);
     #endif  // ---------------------- @2013/11/08
     // runsisi AT hust.edu.cn @2013/11/13
+	/*
+	 * we may notify user that we have a passive connection here, but
+	 * as you can see, freebsd do this in sonewconn, so i commented
+	 * some of the code below
+	 */
 	if (head == NULL)
 	{
 	    soasyncnotify(so, SAN_CONNECTED);
 	}
+	/*else
+	{
+	    soasyncnotify(head, SAN_ACCEPT);
+	}*/
     // ---------------------- @2013/11/13
 }
 
