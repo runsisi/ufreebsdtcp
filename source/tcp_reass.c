@@ -270,7 +270,8 @@ tcp_reass(struct tcpcb *tp, struct bsd_tcphdr *th, int *tlenp, struct mbuf *m)
 				TCPSTAT_INC(tcps_rcvduppack);
 				TCPSTAT_ADD(tcps_rcvdupbyte, *tlenp);
 				m_freem(m);
-				uma_zfree(V_tcp_reass_zone, te);
+				uma_zfree(V_tcp_reass_zone, te);    /* runsisi: think twice, if we reached
+				                                       here, te can not be on stack:) */
 				tp->t_segqlen--;
 				/*
 				 * Try to present any queued data
@@ -278,7 +279,7 @@ tcp_reass(struct tcpcb *tp, struct bsd_tcphdr *th, int *tlenp, struct mbuf *m)
 				 * This is needed after the 3-WHS
 				 * completes.
 				 */
-				goto present;	/* ??? */
+				goto present;	/* ??? */           /* runsisi: think the pre-established data */
 			}
 			m_adj(m, i);
 			*tlenp -= i;
