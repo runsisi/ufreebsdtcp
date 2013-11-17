@@ -131,8 +131,8 @@ struct bsd_socket {
 	int so_otype;       /* original type, dps use the msb to identify sock for rpc */
 	DPS_AO_ID so_aoid;      /* the ao we are live in */
 	DPS_AO_ID so_appaoid;   /* the ao who created the so live in */
-	bsd_uint32_t so_rcvq_id;    /* dps queue id for receive */
-	bsd_uint32_t so_sndq_id;    /* dps queue id for send */
+	T_QUE_HANDLE so_rcvq;    /* dps queue for receive */
+	T_QUE_HANDLE so_sndq;    /* dps queue for send */
     // ---------------------- @2013/11/13
 };
 

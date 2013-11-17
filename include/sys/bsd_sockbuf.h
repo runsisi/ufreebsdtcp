@@ -168,6 +168,10 @@ void	sbtoxsockbuf(struct sockbuf *sb, struct xsockbuf *xsb);
 int	sbwait(struct sockbuf *sb);
 int	sblock(struct sockbuf *sb, int flags);
 void	sbunlock(struct sockbuf *sb);
+// runsisi AT hust.edu.cn @2013/11/16
+int     soappendstreamtorcvq(struct bsd_socket *so, struct mbuf *m);
+int     soappendstreamtorcvq_locked(struct bsd_socket *so, struct mbuf *m);
+// ---------------------- @2013/11/16
 
 /*
  * How much space is there in a socket buffer (so->so_snd or so->so_rcv)?

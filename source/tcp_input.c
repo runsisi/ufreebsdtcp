@@ -1798,7 +1798,12 @@ tcp_do_segment(struct mbuf *m, struct bsd_tcphdr *th, struct bsd_socket *so,
 					    newsize, so, NULL))
 						so->so_rcv.sb_flags &= ~SB_AUTOSIZE;
 				m_adj(m, drop_hdrlen);	/* delayed header drop */
-				sbappendstream_locked(&so->so_rcv, m);
+                #if 0	// runsisi AT hust.edu.cn @2013/11/16
+                sbappendstream_locked(&so->so_rcv, m);
+                #endif 	// ---------------------- @2013/11/16
+                // runsisi AT hust.edu.cn @2013/11/16
+                soappendstreamtorcvq_locked(so, m);
+                // ---------------------- @2013/11/16
 			}
 			/* NB: sorwakeup_locked() does an implicit unlock. */
 			sorwakeup_locked(so);
@@ -2872,7 +2877,18 @@ dodata:							/* XXX */
 			if (so->so_rcv.sb_state & SBS_CANTRCVMORE)
 				m_freem(m);
 			else
-				sbappendstream_locked(&so->so_rcv, m);
+                #if 0	// runsisi AT hust.edu.cn @2013/11/16
+                sbappendstream_locked(&so->so_rcv, m);
+                #endif 	// ---------------------- @2013/11/16
+            // runsisi AT hust.edu.cn @2013/11/16
+			{
+                if (thflags & BSD_TH_FIN)
+                {
+                    m->m_flags |= M_EOR;
+                }
+                soappendstreamtorcvq_locked(so, m);
+			}
+            // ---------------------- @2013/11/16
 			/* NB: sorwakeup_locked() does an implicit unlock. */
 			sorwakeup_locked(so);
 		} else {
