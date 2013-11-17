@@ -139,6 +139,7 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/kern/uipc_socket.c 253035 2013-07-08 13:24
 #include <sys/bsd_jail.h>
 #include <sys/bsd_syslog.h>
 #include <netinet/bsd_in.h>
+#include <netinet/in_pcb.h>
 
 #include <net/vnet.h>
 
@@ -626,9 +627,14 @@ sonewconn(struct bsd_socket *head, int connstatus)
 	    sorwakeup(head);
         wakeup_one(&head->so_timeo);
         #endif 	// ---------------------- @2013/11/06
+        #if 0	// runsisi AT hust.edu.cn @2013/11/17
+        /* we have to defer this notification, coz app need to know vcid and
+         * vcid is set outsize of this function
+         */
         // runsisi AT hust.edu.cn @2013/11/13
         soasyncnotify(head, SAN_ACCEPT);
         // ---------------------- @2013/11/13
+        #endif 	// ---------------------- @2013/11/17
 	}
 	return (so);
 }
@@ -3107,6 +3113,9 @@ soisconnected(struct bsd_socket *so)
 {
 	struct bsd_socket *head;	
 	int ret;
+    // runsisi AT hust.edu.cn @2013/11/17
+    struct inpcb *linp = NULL, *inp = NULL;
+    // ---------------------- @2013/11/17
 
 restart:
 	ACCEPT_LOCK();
@@ -3130,6 +3139,9 @@ restart:
             wakeup_one(&head->so_timeo);
             #endif 	// ---------------------- @2013/11/06
             // runsisi AT hust.edu.cn @2013/11/11
+            linp = sotoinpcb(head);
+            inp = sotoinpcb(so);
+            linp->inp_inc.inc_fibnum = inp->inp_inc.inc_fibnum;
             soasyncnotify(head, SAN_ACCEPT);
             // ---------------------- @2013/11/11
 		} else {
@@ -3158,18 +3170,21 @@ restart:
     #endif  // ---------------------- @2013/11/08
     // runsisi AT hust.edu.cn @2013/11/13
 	/*
-	 * we may notify user that we have a passive connection here, but
-	 * as you can see, freebsd do this in sonewconn, so i commented
-	 * some of the code below
+	 * we may notify user that we have a passive connection here, as you
+	 * can see, freebsd do this in sonewconn, we must deferred to here, coz
+	 * vcid is set after sonewconn
 	 */
 	if (head == NULL)
 	{
 	    soasyncnotify(so, SAN_CONNECTED);
 	}
-	/*else
+	else
 	{
+	    linp = sotoinpcb(head);
+	    inp = sotoinpcb(so);
+	    linp->inp_inc.inc_fibnum = inp->inp_inc.inc_fibnum;
 	    soasyncnotify(head, SAN_ACCEPT);
-	}*/
+	}
     // ---------------------- @2013/11/13
 }
 

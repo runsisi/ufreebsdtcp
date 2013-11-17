@@ -118,6 +118,8 @@ SYSCTL_VNET_INT(_net_inet_tcp, OID_AUTO, syncookies_only, CTLFLAG_RW,
 #define ADDED_BY_TOE(sc) ((sc)->sc_tod != NULL)
 #endif
 
+extern int brs_get_vcid(struct mbuf *m);
+
 static void	 syncache_drop(struct syncache *, struct syncache_head *);
 static void	 syncache_free(struct syncache *);
 static void	 syncache_insert(struct syncache *, struct syncache_head *);
@@ -659,7 +661,7 @@ syncache_socket(struct syncache *sc, struct bsd_socket *lso, struct mbuf *m)
 #endif
 
 	inp = sotoinpcb(so);
-	inp->inp_inc.inc_fibnum = so->so_fibnum;
+	inp->inp_inc.inc_fibnum = sc->sc_inc.inc_fibnum;    //so->so_fibnum;
 	INP_WLOCK(inp);
 	INP_HASH_WLOCK(&V_tcbinfo);
 
@@ -1209,6 +1211,9 @@ _syncache_add(struct in_conninfo *inc, struct tcpopt *to, struct bsd_tcphdr *th,
 	win = imax(win, 0);
 	win = imin(win, BSD_TCP_MAXWIN);
 	sc->sc_wnd = win;
+    // runsisi AT hust.edu.cn @2013/11/17
+    sc->sc_inc.inc_fibnum = brs_get_vcid(m);
+    // ---------------------- @2013/11/17
 
 	if (V_tcp_do_rfc1323) {
 		/*

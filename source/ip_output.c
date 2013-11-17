@@ -204,7 +204,7 @@ ip_output(struct mbuf *m, struct mbuf *opt, struct route *ro, int flags,
 #endif
     m->m_pkthdr.csum_flags &= 0/*ifp->if_hwassist*/;
 
-    error = brs_ip_output(m, 1);
+    error = brs_ip_output(m, m->m_fibnum);
 
 done:
     return (error);

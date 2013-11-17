@@ -93,7 +93,12 @@ struct m_hdr {
 	int		 mh_len;	/* amount of data in this mbuf */
 	int		 mh_flags;	/* flags; see below */
 	short		 mh_type;	/* type of data in this mbuf */
-	bsd_uint8_t          pad[M_HDR_PAD];/* word align                  */
+    #if 0	// runsisi AT hust.edu.cn @2013/11/17
+    bsd_uint8_t          pad[M_HDR_PAD];/* word align                  */
+    #endif 	// ---------------------- @2013/11/17
+    // runsisi AT hust.edu.cn @2013/11/17
+    short   mh_fibnum;  /* used for vcid, vcid must not great than MAX_SHORT */
+    // ---------------------- @2013/11/17
 };
 
 /*
@@ -167,6 +172,9 @@ struct mbuf {
 #define	m_data		m_hdr.mh_data
 #define	m_type		m_hdr.mh_type
 #define	m_flags		m_hdr.mh_flags
+// runsisi AT hust.edu.cn @2013/11/17
+#define m_fibnum    m_hdr.mh_fibnum
+// ---------------------- @2013/11/17
 #define	m_nextpkt	m_hdr.mh_nextpkt
 #define	m_act		m_nextpkt
 #define	m_pkthdr	M_dat.MH.MH_pkthdr
@@ -1095,6 +1103,7 @@ m_tag_find(struct mbuf *m, int type, struct m_tag *start)
 	    m_tag_locate(m, MTAG_ABI_COMPAT, type, start));
 }
 
+#if 0	// runsisi AT hust.edu.cn @2013/11/17
 /* XXX temporary FIB methods probably eventually use tags.*/
 #define M_FIBSHIFT    28
 #define M_FIBMASK	0x0F
@@ -1104,8 +1113,17 @@ m_tag_find(struct mbuf *m, int type, struct m_tag *start)
     ((((_m)->m_flags & M_FIB) >> M_FIBSHIFT) & M_FIBMASK)
 
 #define M_SETFIB(_m, _fib) do {						\
-	_m->m_flags &= ~M_FIB;					   	\
-	_m->m_flags |= (((_fib) << M_FIBSHIFT) & M_FIB);  \
+    _m->m_flags &= ~M_FIB;					   	\
+    _m->m_flags |= (((_fib) << M_FIBSHIFT) & M_FIB);  \
+} while (0)
+#endif 	// ---------------------- @2013/11/17
+
+/* get the fib from an mbuf and if it is not set, return the default */
+#define M_GETFIB(_m) \
+    ((_m)->m_fibnum)
+
+#define M_SETFIB(_m, _fib) do {                     \
+    (_m)->m_fibnum = (_fib);                      \
 } while (0)
 
 #endif /* _KERNEL */

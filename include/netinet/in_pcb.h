@@ -105,9 +105,6 @@ struct in_endpoints {
  * references.
  */
 struct in_conninfo {
-    // runsisi AT hust.edu.cn @2013/11/14
-    int inc_vcid;   /* the vc of the connection belongs to */
-    // ---------------------- @2013/11/14
 	bsd_uint8_t	inc_flags;
 	bsd_uint8_t	inc_len;
 	bsd_uint16_t	inc_fibnum;	/* XXX was pad, 16 bits is plenty */
