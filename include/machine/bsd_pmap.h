@@ -102,16 +102,16 @@
  */
 #define KVADDR(l4, l3, l2, l1) ( \
 	((unsigned long)-1 << 47) | \
-	((unsigned long)(l4) << PML4SHIFT) | \
-	((unsigned long)(l3) << PDPSHIFT) | \
-	((unsigned long)(l2) << PDRSHIFT) | \
-	((unsigned long)(l1) << PAGE_SHIFT))
+	((unsigned long)(l4) << BSD_PML4SHIFT) | \
+	((unsigned long)(l3) << BSD_PDPSHIFT) | \
+	((unsigned long)(l2) << BSD_PDRSHIFT) | \
+	((unsigned long)(l1) << BSD_PAGE_SHIFT))
 
 #define UVADDR(l4, l3, l2, l1) ( \
-	((unsigned long)(l4) << PML4SHIFT) | \
-	((unsigned long)(l3) << PDPSHIFT) | \
-	((unsigned long)(l2) << PDRSHIFT) | \
-	((unsigned long)(l1) << PAGE_SHIFT))
+	((unsigned long)(l4) << BSD_PML4SHIFT) | \
+	((unsigned long)(l3) << BSD_PDPSHIFT) | \
+	((unsigned long)(l2) << BSD_PDRSHIFT) | \
+	((unsigned long)(l1) << BSD_PAGE_SHIFT))
 
 /* Initial number of kernel page tables. */
 #ifndef NKPT
@@ -121,9 +121,9 @@
 #define NKPML4E		1		/* number of kernel PML4 slots */
 #define NKPDPE		howmany(NKPT, NPDEPG)/* number of kernel PDP slots */
 
-#define	NUPML4E		(NPML4EPG/2)	/* number of userland PML4 pages */
-#define	NUPDPE		(NUPML4E*NPDPEPG)/* number of userland PDP pages */
-#define	NUPDE		(NUPDPE*NPDEPG)	/* number of userland PD entries */
+#define	NUPML4E		(BSD_NPML4EPG/2)	/* number of userland PML4 pages */
+#define	NUPDPE		(NUPML4E*BSD_NPDPEPG)/* number of userland PDP pages */
+#define	NUPDE		(NUPDPE*BSD_NPDEPG)	/* number of userland PD entries */
 
 /*
  * NDMPML4E is the number of PML4 entries that are used to implement the

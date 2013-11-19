@@ -29,8 +29,8 @@
 #define	_X86_VDSO_H
 
 #define	VDSO_TIMEHANDS_MD			\
-	uint32_t	th_x86_shift;		\
-	uint32_t	th_res[7];
+	bsd_uint32_t	th_x86_shift;		\
+	bsd_uint32_t	th_res[7];
 
 #ifdef _KERNEL
 #ifdef COMPAT_FREEBSD32

@@ -46,7 +46,7 @@
  * MNTK_* flags also update DDB show mount command in vfs_subr.c.
  */
 
-//typedef struct fsid { bsd_int32_t val[2]; } fsid_t;	/* filesystem id type */
+typedef struct fsid { bsd_int32_t val[2]; } fsid_t;	/* filesystem id type */
 
 /*
  * File identifier.

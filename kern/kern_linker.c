@@ -1068,7 +1068,7 @@ sys_kldload(struct thread *td, struct kldload_args *uap)
 	td->td_retval[0] = -1;
 
 	pathname = bsd_malloc(MAXPATHLEN, M_TEMP, M_WAITOK);
-	error = copyinstr(uap->file, pathname, MAXPATHLEN, NULL);
+	error = bsd_copyinstr(uap->file, pathname, MAXPATHLEN, NULL);
 	if (error == 0) {
 		error = kern_kldload(td, pathname, &fileid);
 		if (error == 0)
@@ -1173,7 +1173,7 @@ sys_kldfind(struct thread *td, struct kldfind_args *uap)
 	td->td_retval[0] = -1;
 
 	pathname = bsd_malloc(MAXPATHLEN, M_TEMP, M_WAITOK);
-	if ((error = copyinstr(uap->file, pathname, MAXPATHLEN, NULL)) != 0)
+	if ((error = bsd_copyinstr(uap->file, pathname, MAXPATHLEN, NULL)) != 0)
 		goto out;
 
 	filename = linker_basename(pathname);
@@ -1339,7 +1339,7 @@ sys_kldsym(struct thread *td, struct kldsym_args *uap)
 	    uap->cmd != KLDSYM_LOOKUP)
 		return (EINVAL);
 	symstr = bsd_malloc(MAXPATHLEN, M_TEMP, M_WAITOK);
-	if ((error = copyinstr(lookup.symname, symstr, MAXPATHLEN, NULL)) != 0)
+	if ((error = bsd_copyinstr(lookup.symname, symstr, MAXPATHLEN, NULL)) != 0)
 		goto out;
 	KLD_LOCK();
 	if (uap->fileid != 0) {

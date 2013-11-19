@@ -236,10 +236,22 @@ tcp_hc_init(void)
 	/*
 	 * Set up periodic cache cleanup.
 	 */
-	callout_init(&V_tcp_hc_callout, CALLOUT_MPSAFE);
-	callout_reset(&V_tcp_hc_callout, V_tcp_hostcache.prune * hz,
-	    tcp_hc_purge, curvnet);
+    #if 0	// runsisi AT hust.edu.cn @2013/11/19
+    callout_init(&V_tcp_hc_callout, CALLOUT_MPSAFE);
+    callout_reset(&V_tcp_hc_callout, V_tcp_hostcache.prune * hz,
+        tcp_hc_purge, curvnet);
+    #endif 	// ---------------------- @2013/11/19
 }
+
+// runsisi AT hust.edu.cn @2013/11/19
+void
+tcp_hc_callout_init(void)
+{
+    callout_init(&V_tcp_hc_callout, CALLOUT_MPSAFE);
+    callout_reset(&V_tcp_hc_callout, V_tcp_hostcache.prune * hz,
+        tcp_hc_purge, curvnet);
+}
+// ---------------------- @2013/11/19
 
 #ifdef VIMAGE
 void

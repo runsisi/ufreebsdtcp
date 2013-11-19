@@ -99,11 +99,15 @@ init_param2(long physpages)
 }
 
 // runsisi AT hust.edu.cn @2013/11/08
-int
-bsd_param_init()
+static void
+bsd_param_init(void *dummy)
 {
     init_param1();
     init_param2(0);
-    return 0;
 }
+
+/*
+ * be careful with the order
+ */
+SYSINIT(param_init, SI_SUB_TUNABLES, SI_ORDER_FIRST, bsd_param_init, NULL);
 // ---------------------- @2013/11/08

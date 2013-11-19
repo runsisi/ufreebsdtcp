@@ -74,7 +74,7 @@ void	kdb_backtrace_thread(struct thread *);
 int	kdb_dbbe_select(const char *);
 void	kdb_enter(const char *, const char *);
 void	kdb_init(void);
-void *	kdb_jmpbuf(jmp_buf);
+//void *	kdb_jmpbuf(jmp_buf);
 void	kdb_panic(const char *);
 void	kdb_reboot(void);
 void	kdb_reenter(void);

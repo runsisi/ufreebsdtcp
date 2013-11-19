@@ -538,7 +538,7 @@ sys_thr_set_name(struct thread *td, struct thr_set_name_args *uap)
 	error = 0;
 	name[0] = '\0';
 	if (uap->name != NULL) {
-		error = copyinstr(uap->name, name, sizeof(name),
+		error = bsd_copyinstr(uap->name, name, sizeof(name),
 			NULL);
 		if (error)
 			return (error);

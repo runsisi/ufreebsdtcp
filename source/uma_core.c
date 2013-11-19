@@ -427,10 +427,5 @@ uma_find_refcnt(uma_zone_t zone, void *item)
 }
 
 // runsisi AT hust.edu.cn @2013/11/08
-int
-bsd_uma_init()
-{
-    uma_startup(NULL, 0);
-    return 0;
-}
+SYSINIT(vm_mem, SI_SUB_VM, SI_ORDER_FIRST, uma_startup, NULL);
 // ---------------------- @2013/11/08

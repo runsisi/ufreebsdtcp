@@ -228,7 +228,7 @@ void	*memmove(void *dest, const void *src, bsd_size_t n) __nonnull(1) __nonnull(
 #endif
 
 int	copystr(const void * kfaddr, void * kdaddr, bsd_size_t len, bsd_size_t * lencopied);
-int	copyinstr(const void * udaddr, void * kaddr, bsd_size_t len, bsd_size_t * lencopied);
+int	bsd_copyinstr(const void * udaddr, void * kaddr, bsd_size_t len, bsd_size_t * lencopied);
 int	copyin(const void * udaddr, void * kaddr, bsd_size_t len);
 int	copyin_nofault(const void * udaddr, void * kaddr, bsd_size_t len);
 int	copyout(const void * kaddr, void * udaddr, bsd_size_t len);

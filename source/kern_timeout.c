@@ -548,16 +548,16 @@ _callout_init_lock(c, lock, flags)
 
 
 // runsisi AT hust.edu.cn @2013/11/01
-volatile int    ticks;  /* stolen from kern_clock.c */
-volatile bsd_time_t time_uptime = 1;    /* stolen from kern_tc.c */
-
-static DPS_Timer drv_timer;
+extern void hardclock(int usermode, bsd_uintfptr_t pc);
+extern void tcp_hc_callout_init(void);
+/*
+ * out callout system is driven by this timer
+ */
+static DPS_Timer dps_drive_timer;
 static void
-drv_timer_handler(DPS_Timer *timer, void *arg)
+clock_drive(DPS_Timer *timer, void *arg)
 {
-    atomic_add_int(&ticks, 1);
-    // TODO: handle timecounter
-    callout_tick();
+    hardclock(0, 0);
 }
 
 int
@@ -588,9 +588,11 @@ again:
     kern_timeout_callwheel_init();
 
     /* hz = 100, reference to subr_param.c */
-    ret = DPS_ResetAoTimer(&drv_timer, PERIODICAL, 10,
-            (DPS_TIMER_CBK)drv_timer_handler, (void*)0,
+    ret = DPS_ResetAoTimer(&dps_drive_timer, PERIODICAL, 10,
+            (DPS_TIMER_CBK)clock_drive, (void*)0,
             (DPS_GetAoByID(DPS_GetSelfAoID()))->dwLcoreId);
+
+    tcp_hc_callout_init();
 
     return 0;
 }

@@ -83,7 +83,7 @@ int exec_unregister(const struct execsw *);
  * moduledata_t.
  */
 
-#include <sys/module.h>
+#include <sys/bsd_module.h>
 
 #define EXEC_SET(name, execsw_arg) \
 	static int __CONCAT(name,_modevent)(module_t mod, int type, \

@@ -493,7 +493,7 @@ sbuf_copyin(struct sbuf *s, const void *uaddr, bsd_size_t len)
 		if (SBUF_FREESPACE(s) < len)
 			len = SBUF_FREESPACE(s);
 	}
-	switch (copyinstr(uaddr, s->s_buf + s->s_len, len + 1, &done)) {
+	switch (bsd_copyinstr(uaddr, s->s_buf + s->s_len, len + 1, &done)) {
 	case ENAMETOOLONG:
 		s->s_error = ENOMEM;
 		/* fall through */

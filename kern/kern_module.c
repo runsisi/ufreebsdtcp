@@ -430,7 +430,7 @@ sys_modfind(struct thread *td, struct modfind_args *uap)
 	char name[MAXMODNAME];
 	module_t mod;
 
-	if ((error = copyinstr(uap->name, name, sizeof name, 0)) != 0)
+	if ((error = bsd_copyinstr(uap->name, name, sizeof name, 0)) != 0)
 		return (error);
 
 	MOD_SLOCK;

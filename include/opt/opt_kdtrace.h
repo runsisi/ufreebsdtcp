@@ -1,2 +1,2 @@
-#define KDTRACE_HOOKS 1
-#define KDTRACE_FRAME 1
+#define KDTRACE_HOOKS 0
+#define KDTRACE_FRAME 0

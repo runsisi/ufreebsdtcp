@@ -17,17 +17,27 @@
 
 VNET_DEFINE(int, ip_defttl) = IPDEFTTL;
 
-extern int bsd_param_init();
-extern int bsd_uma_init();
-extern int bsd_tunable_mbinit();
-extern int bsd_mbuf_init();
-extern int bsd_callout_init();
-extern int bsd_socket_init();
-extern int bsd_domain_init();
-
 bsd_uint32_t arc4random(void)
 {
     return (bsd_uint32_t)random();
+}
+
+int
+copystr(const void * kfaddr, void * kdaddr, bsd_size_t len, bsd_size_t * lencopied)
+{
+    strncpy(kdaddr, kfaddr, len);
+    if (lencopied != NULL)
+        *lencopied = len;
+    return 0;
+}
+
+int
+bsd_copyinstr(const void * udaddr, void * kaddr, bsd_size_t len, bsd_size_t * lencopied)
+{
+    strncpy(kaddr, udaddr, len);
+    if (lencopied != NULL)
+        *lencopied = len;
+    return 0;
 }
 
 int
@@ -74,18 +84,5 @@ read_random(void *buf, int len)
         rnd = random();
         bcopy(&rnd, buf, res);
     }
-    return 0;
-}
-
-int
-bsd_init()
-{
-    bsd_param_init();
-    bsd_uma_init();
-    bsd_tunable_mbinit();
-    bsd_mbuf_init();
-    bsd_callout_init();
-    bsd_socket_init();
-    bsd_domain_init();
     return 0;
 }

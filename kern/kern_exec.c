@@ -1141,7 +1141,7 @@ exec_copyin_args(struct image_args *args, char *fname,
 		args->fname = args->buf;
 		error = (segflg == UIO_SYSSPACE) ?
 		    copystr(fname, args->fname, PATH_MAX, &length) :
-		    copyinstr(fname, args->fname, PATH_MAX, &length);
+		    bsd_copyinstr(fname, args->fname, PATH_MAX, &length);
 		if (error != 0)
 			goto err_exit;
 	} else
@@ -1159,7 +1159,7 @@ exec_copyin_args(struct image_args *args, char *fname,
 			error = EFAULT;
 			goto err_exit;
 		}
-		if ((error = copyinstr(argp, args->endp,
+		if ((error = bsd_copyinstr(argp, args->endp,
 		    args->stringspace, &length))) {
 			if (error == ENAMETOOLONG) 
 				error = E2BIG;
@@ -1181,7 +1181,7 @@ exec_copyin_args(struct image_args *args, char *fname,
 				error = EFAULT;
 				goto err_exit;
 			}
-			if ((error = copyinstr(envp, args->endp,
+			if ((error = bsd_copyinstr(envp, args->endp,
 			    args->stringspace, &length))) {
 				if (error == ENAMETOOLONG)
 					error = E2BIG;

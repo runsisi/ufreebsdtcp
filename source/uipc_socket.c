@@ -3482,13 +3482,3 @@ so_unlock(struct bsd_socket *so)
 {
 	SOCK_UNLOCK(so);
 }
-
-// runsisi AT hust.edu.cn @2013/11/05
-int
-bsd_socket_init()
-{
-    socket_init(NULL);
-    init_maxsockets(NULL);
-    return 0;
-}
-// ---------------------- @2013/11/05

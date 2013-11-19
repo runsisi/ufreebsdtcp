@@ -34,25 +34,29 @@
  * the kernel.
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/kern/kern_environment.c 241222 2012-10-05 09:47:54Z jh $");
 
-#include <sys/types.h>
-#include <sys/param.h>
-#include <sys/proc.h>
-#include <sys/queue.h>
-#include <sys/lock.h>
-#include <sys/malloc.h>
-#include <sys/mutex.h>
-#include <sys/priv.h>
-#include <sys/kernel.h>
-#include <sys/systm.h>
-#include <sys/sysent.h>
-#include <sys/sysproto.h>
-#include <sys/libkern.h>
-#include <sys/kenv.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
-#include <security/mac/mac_framework.h>
+#include <sys/bsd_types.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_proc.h>
+#include <sys/bsd_queue.h>
+#include <sys/bsd_lock.h>
+#include <sys/bsd_malloc.h>
+#include <sys/bsd_mutex.h>
+#include <sys/bsd_priv.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_sysent.h>
+#include <sys/bsd_sysproto.h>
+#include <sys/bsd_libkern.h>
+#include <sys/bsd_kenv.h>
+
+//#include <security/mac/mac_framework.h>
 
 static MALLOC_DEFINE(M_KENV, "kenv", "kernel environment");
 
@@ -77,8 +81,9 @@ int	dynamic_kenv = 0;
 			    panic("%s: called before SI_SUB_KMEM", __func__)
 
 int
-sys_kenv(td, uap)
-	struct thread *td;
+bsd_sys_kenv(td, ret, uap)
+    struct thread *td;
+    int *ret;
 	struct kenv_args /* {
 		int what;
 		const char *name;
@@ -125,7 +130,12 @@ sys_kenv(td, uap)
 			error = copyout(buffer, uap->value, done);
 			bsd_free(buffer, M_TEMP);
 		}
-		td->td_retval[0] = ((done == needed) ? 0 : needed);
+        #if 0	// runsisi AT hust.edu.cn @2013/11/18
+        td->td_retval[0] = ((done == needed) ? 0 : needed);
+        #endif 	// ---------------------- @2013/11/18
+        // runsisi AT hust.edu.cn @2013/11/18
+        *ret = ((done == needed) ? 0 : needed);
+        // ---------------------- @2013/11/18
 		return (error);
 	}
 
@@ -145,7 +155,7 @@ sys_kenv(td, uap)
 
 	name = bsd_malloc(KENV_MNAMELEN + 1, M_TEMP, M_WAITOK);
 
-	error = copyinstr(uap->name, name, KENV_MNAMELEN + 1, NULL);
+	error = bsd_copyinstr(uap->name, name, KENV_MNAMELEN + 1, NULL);
 	if (error)
 		goto done;
 
@@ -158,7 +168,7 @@ sys_kenv(td, uap)
 #endif
 		value = getenv(name);
 		if (value == NULL) {
-			error = ENOENT;
+			error = BSD_ENOENT;
 			goto done;
 		}
 		len = strlen(value) + 1;
@@ -168,18 +178,23 @@ sys_kenv(td, uap)
 		freeenv(value);
 		if (error)
 			goto done;
-		td->td_retval[0] = len;
+        #if 0	// runsisi AT hust.edu.cn @2013/11/18
+        td->td_retval[0] = len;
+        #endif 	// ---------------------- @2013/11/18
+        // runsisi AT hust.edu.cn @2013/11/18
+        *ret = len;
+        // ---------------------- @2013/11/18
 		break;
 	case KENV_SET:
 		len = uap->len;
 		if (len < 1) {
-			error = EINVAL;
+			error = BSD_EINVAL;
 			goto done;
 		}
 		if (len > KENV_MVALLEN + 1)
 			len = KENV_MVALLEN + 1;
 		value = bsd_malloc(len, M_TEMP, M_WAITOK);
-		error = copyinstr(uap->value, value, len, NULL);
+		error = bsd_copyinstr(uap->value, value, len, NULL);
 		if (error) {
 			bsd_free(value, M_TEMP);
 			goto done;
@@ -188,7 +203,7 @@ sys_kenv(td, uap)
 		error = mac_kenv_check_set(td->td_ucred, name, value);
 		if (error == 0)
 #endif
-			setenv(name, value);
+			bsd_setenv(name, value);
 		bsd_free(value, M_TEMP);
 		break;
 	case KENV_UNSET:
@@ -197,12 +212,12 @@ sys_kenv(td, uap)
 		if (error)
 			goto done;
 #endif
-		error = unsetenv(name);
+		error = bsd_unsetenv(name);
 		if (error)
-			error = ENOENT;
+			error = BSD_ENOENT;
 		break;
 	default:
-		error = EINVAL;
+		error = BSD_EINVAL;
 		break;
 	}
 done:
@@ -222,7 +237,7 @@ init_static_kenv(char *buf, bsd_size_t len)
  * Setup the dynamic kernel environment.
  */
 static void
-init_dynamic_kenv(void *data __unused)
+init_dynamic_kenv(void *data __bsd_unused)
 {
 	char *cp;
 	bsd_size_t len;
@@ -248,7 +263,7 @@ init_dynamic_kenv(void *data __unused)
 	}
 	kenvp[i] = NULL;
 
-	mtx_init(&kenv_lock, "kernel environment", NULL, MTX_DEF);
+//	mtx_init(&kenv_lock, "kernel environment", NULL, MTX_DEF);
 	dynamic_kenv = 1;
 }
 SYSINIT(kenv, SI_SUB_KMEM, SI_ORDER_ANY, init_dynamic_kenv, NULL);
@@ -378,7 +393,7 @@ setenv_static(const char *name, const char *value)
  * Set an environment variable by name.
  */
 int
-setenv(const char *name, const char *value)
+bsd_setenv(const char *name, const char *value)
 {
 	char *buf, *cp, *oldenv;
 	int namelen, vallen, i;
@@ -427,7 +442,7 @@ setenv(const char *name, const char *value)
  * Unset an environment variable string.
  */
 int
-unsetenv(const char *name)
+bsd_unsetenv(const char *name)
 {
 	char *cp, *oldenv;
 	int i, j;

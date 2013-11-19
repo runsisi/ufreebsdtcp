@@ -260,6 +260,7 @@ CTASSERT((((MSIZE - 1) ^ MSIZE) + 1) >> 1 == MSIZE);
 /*
  * Initialize FreeBSD Network buffer allocation.
  */
+SYSINIT(mbuf, SI_SUB_MBUF, SI_ORDER_FIRST, mbuf_init, NULL);
 static void
 mbuf_init(void *dummy)
 {
@@ -720,19 +721,3 @@ mb_reclaim(void *junk)
 				(*pr->pr_drain)();
 }
 #endif  // ---------------------- @2013/11/05
-
-// runsisi AT hust.edu.cn @2013/11/10
-int
-bsd_tunable_mbinit()
-{
-    tunable_mbinit(NULL);
-    return 0;
-}
-
-int
-bsd_mbuf_init()
-{
-    mbuf_init(NULL);
-    return 0;
-}
-// ---------------------- @2013/11/10

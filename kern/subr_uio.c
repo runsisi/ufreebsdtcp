@@ -475,7 +475,7 @@ copyinstrfrom(const void * __restrict src, void * __restrict dst, bsd_size_t len
 
 	switch (seg) {
 	case UIO_USERSPACE:
-		error = copyinstr(src, dst, len, copied);
+		error = bsd_copyinstr(src, dst, len, copied);
 		break;
 	case UIO_SYSSPACE:
 		error = copystr(src, dst, len, copied);

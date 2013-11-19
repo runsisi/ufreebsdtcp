@@ -227,16 +227,34 @@ struct sysinit {
  * correct warnings when -Wcast-qual is used.
  *
  */
-#define	C_SYSINIT(uniquifier, subsystem, order, func, ident)
+#define	C_SYSINIT(uniquifier, subsystem, order, func, ident)	\
+	static struct sysinit uniquifier ## _sys_init = {	\
+		subsystem,					\
+		order,						\
+		func,						\
+		(ident)						\
+	};							\
+	DATA_SET(sysinit_set,uniquifier ## _sys_init)
 
-#define	SYSINIT(uniquifier, subsystem, order, func, ident)
+#define	SYSINIT(uniquifier, subsystem, order, func, ident)	\
+	C_SYSINIT(uniquifier, subsystem, order,			\
+	(sysinit_cfunc_t)(sysinit_nfunc_t)func, (void *)(ident))
 
 /*
  * Called on module unload: no special processing
  */
-#define	C_SYSUNINIT(uniquifier, subsystem, order, func, ident)
+#define	C_SYSUNINIT(uniquifier, subsystem, order, func, ident)	\
+	static struct sysinit uniquifier ## _sys_uninit = {	\
+		subsystem,					\
+		order,						\
+		func,						\
+		(ident)						\
+	};							\
+	DATA_SET(sysuninit_set,uniquifier ## _sys_uninit)
 
-#define	SYSUNINIT(uniquifier, subsystem, order, func, ident)
+#define	SYSUNINIT(uniquifier, subsystem, order, func, ident)	\
+	C_SYSUNINIT(uniquifier, subsystem, order,		\
+	(sysinit_cfunc_t)(sysinit_nfunc_t)func, (void *)(ident))
 
 void	sysinit_add(struct sysinit **set, struct sysinit **set_end);
 
@@ -258,9 +276,16 @@ struct tunable_int {
 	const char *path;
 	int *var;
 };
-#define	TUNABLE_INT(path, var)
+#define	TUNABLE_INT(path, var)					\
+	static struct tunable_int __CONCAT(__tunable_int_, __LINE__) = { \
+		(path),						\
+		(var),						\
+	};							\
+	SYSINIT(__CONCAT(__Tunable_init_, __LINE__),		\
+	    SI_SUB_TUNABLES, SI_ORDER_MIDDLE, tunable_int_init,	\
+	    &__CONCAT(__tunable_int_, __LINE__))
 
-#define	TUNABLE_INT_FETCH(path, var)
+#define	TUNABLE_INT_FETCH(path, var)	getenv_int((path), (var))
 
 /*
  * long
@@ -270,9 +295,16 @@ struct tunable_long {
 	const char *path;
 	long *var;
 };
-#define	TUNABLE_LONG(path, var)
+#define	TUNABLE_LONG(path, var)					\
+	static struct tunable_long __CONCAT(__tunable_long_, __LINE__) = { \
+		(path),						\
+		(var),						\
+	};							\
+	SYSINIT(__CONCAT(__Tunable_init_, __LINE__),		\
+	    SI_SUB_TUNABLES, SI_ORDER_MIDDLE, tunable_long_init,\
+	    &__CONCAT(__tunable_long_, __LINE__))
 
-#define	TUNABLE_LONG_FETCH(path, var)
+#define	TUNABLE_LONG_FETCH(path, var)	getenv_long((path), (var))
 
 /*
  * unsigned long
@@ -282,9 +314,16 @@ struct tunable_ulong {
 	const char *path;
 	unsigned long *var;
 };
-#define	TUNABLE_ULONG(path, var)
+#define	TUNABLE_ULONG(path, var)				\
+	static struct tunable_ulong __CONCAT(__tunable_ulong_, __LINE__) = { \
+		(path),						\
+		(var),						\
+	};							\
+	SYSINIT(__CONCAT(__Tunable_init_, __LINE__),		\
+	    SI_SUB_TUNABLES, SI_ORDER_MIDDLE, tunable_ulong_init, \
+	    &__CONCAT(__tunable_ulong_, __LINE__))
 
-#define	TUNABLE_ULONG_FETCH(path, var)
+#define	TUNABLE_ULONG_FETCH(path, var)	getenv_ulong((path), (var))
 
 /*
  * quad
@@ -294,9 +333,16 @@ struct tunable_quad {
 	const char *path;
 	bsd_quad_t *var;
 };
-#define	TUNABLE_QUAD(path, var)
+#define	TUNABLE_QUAD(path, var)					\
+	static struct tunable_quad __CONCAT(__tunable_quad_, __LINE__) = { \
+		(path),						\
+		(var),						\
+	};							\
+	SYSINIT(__CONCAT(__Tunable_init_, __LINE__),		\
+	    SI_SUB_TUNABLES, SI_ORDER_MIDDLE, tunable_quad_init, \
+	    &__CONCAT(__tunable_quad_, __LINE__))
 
-#define	TUNABLE_QUAD_FETCH(path, var)
+#define	TUNABLE_QUAD_FETCH(path, var)	getenv_quad((path), (var))
 
 extern void tunable_str_init(void *);
 struct tunable_str {
@@ -304,9 +350,18 @@ struct tunable_str {
 	char *var;
 	int size;
 };
-#define	TUNABLE_STR(path, var, size)
+#define	TUNABLE_STR(path, var, size)				\
+	static struct tunable_str __CONCAT(__tunable_str_, __LINE__) = { \
+		(path),						\
+		(var),						\
+		(size),						\
+	};							\
+	SYSINIT(__CONCAT(__Tunable_init_, __LINE__),		\
+	    SI_SUB_TUNABLES, SI_ORDER_MIDDLE, tunable_str_init,	\
+	    &__CONCAT(__tunable_str_, __LINE__))
 
-#define	TUNABLE_STR_FETCH(path, var, size)
+#define	TUNABLE_STR_FETCH(path, var, size)			\
+	getenv_string((path), (var), (size))
 
 struct intr_config_hook {
 	BSD_TAILQ_ENTRY(intr_config_hook) ich_links;
@@ -316,5 +371,18 @@ struct intr_config_hook {
 
 int	config_intrhook_establish(struct intr_config_hook *hook);
 void	config_intrhook_disestablish(struct intr_config_hook *hook);
+
+// runsisi AT hust.edu.cn @2013/11/18
+char *  getenv(const char *name);
+void    freeenv(char *env);
+int bsd_setenv(const char *name, const char *value);
+int bsd_unsetenv(const char *name);
+int getenv_string(const char *name, char *data, int size);
+int getenv_int(const char *name, int *data);
+int getenv_uint(const char *name, unsigned int *data);
+int getenv_long(const char *name, long *data);
+int getenv_ulong(const char *name, unsigned long *data);
+int getenv_quad(const char *name, bsd_quad_t *data);
+// ---------------------- @2013/11/18
 
 #endif /* !_SYS_KERNEL_H_*/

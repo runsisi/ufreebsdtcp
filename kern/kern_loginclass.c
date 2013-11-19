@@ -195,7 +195,7 @@ sys_setloginclass(struct thread *td, struct setloginclass_args *uap)
 	error = priv_check(td, PRIV_PROC_SETLOGINCLASS);
 	if (error != 0)
 		return (error);
-	error = copyinstr(uap->namebuf, lcname, sizeof(lcname), NULL);
+	error = bsd_copyinstr(uap->namebuf, lcname, sizeof(lcname), NULL);
 	if (error != 0)
 		return (error);
 

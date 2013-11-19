@@ -268,8 +268,11 @@ domainfinalize(void *dummy)
 	domain_init_status = 2;
 	mtx_unlock(&dom_mtx);	
 
-	callout_reset(&pffast_callout, 1, pffasttimo, NULL);
-	callout_reset(&pfslow_callout, 1, pfslowtimo, NULL);
+    #if 0	// runsisi AT hust.edu.cn @2013/11/18
+	/* timer is ao related, so initialization deferred */
+    callout_reset(&pffast_callout, 1, pffasttimo, NULL);
+    callout_reset(&pfslow_callout, 1, pfslowtimo, NULL);
+    #endif 	// ---------------------- @2013/11/18
 }
 
 struct bsd_protosw *
@@ -516,16 +519,3 @@ pffasttimo(void *arg)
 				(*pr->pr_fasttimo)();
 	callout_reset(&pffast_callout, hz/5, pffasttimo, NULL);
 }
-
-// runsisi AT hust.edu.cn @2013/11/08
-extern struct bsd_domain inetdomain;
-int
-bsd_domain_init()
-{
-    domaininit(NULL);
-    domain_add(&inetdomain);
-    domain_init(&inetdomain);
-    domainfinalize(NULL);
-    return 0;
-}
-// ---------------------- @2013/11/08
