@@ -555,9 +555,9 @@ _callout_init_lock(c, lock, flags)
 extern void hardclock(int usermode, bsd_uintfptr_t pc);
 
 /*
- * out callout system is driven by this timer
+ * out callout system is driven by this timer, and used for clock
  */
-static DPS_Timer dps_drive_timer;
+static DPS_Timer callout_drive_timer;
 
 static void
 clock_drive(DPS_Timer *timer, void *arg)
@@ -565,8 +565,8 @@ clock_drive(DPS_Timer *timer, void *arg)
     hardclock(0, 0);
 }
 
-int
-bsd_callout_init()
+static void
+callout_drive_init(void *dummy)
 {
     void *firstaddr;
     caddr_t v;
@@ -584,8 +584,7 @@ again:
         firstaddr = DPS_Malloc("brs callout", (WORD32)size);
         if (firstaddr == 0)
         {
-            bsd_log(BSD_LOG_ERROR, "startup: no room for tables");
-            return BSD_ENOMEM;
+            panic("%s: no room for tables", __func__);
         }
         goto again;
     }
@@ -593,10 +592,15 @@ again:
     kern_timeout_callwheel_init();
 
     /* hz = 100, reference to subr_param.c */
-    ret = DPS_ResetAoTimer(&dps_drive_timer, PERIODICAL, 10,
+    ret = DPS_ResetAoTimer(&callout_drive_timer, PERIODICAL, 10,
             (DPS_TIMER_CBK)clock_drive, (void*)0,
             (DPS_GetAoByID(DPS_GetSelfAoID()))->dwLcoreId);
-
-    return 0;
+    if (ret != 0)
+    {
+        panic("%s: failed to init driver timer", __func__);
+    }
 }
+
+VNET_SYSINIT(callout, SI_SUB_SOFTINTR, SI_ORDER_FIRST,
+        callout_drive_init, NULL);
 // ---------------------- @2013/11/01

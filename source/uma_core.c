@@ -427,5 +427,11 @@ uma_find_refcnt(uma_zone_t zone, void *item)
 }
 
 // runsisi AT hust.edu.cn @2013/11/08
-SYSINIT(vm_mem, SI_SUB_VM, SI_ORDER_FIRST, uma_startup, NULL);
+static void
+uma_statup_init(void *dummy)
+{
+    uma_startup(NULL, 0);
+}
+
+SYSINIT(vm_mem, SI_SUB_VM, SI_ORDER_FIRST, uma_statup_init, NULL);
 // ---------------------- @2013/11/08
