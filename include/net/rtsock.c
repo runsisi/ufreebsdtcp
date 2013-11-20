@@ -982,7 +982,7 @@ rt_setmetrics(u_long which, const struct rt_metrics *in,
 	/* Userland -> kernel timebase conversion. */
 	if (which & RTV_EXPIRE)
 		out->rmx_expire = in->rmx_expire ?
-		    in->rmx_expire - time_second + time_uptime : 0;
+		    in->rmx_expire - time_second + V_time_uptime : 0;
 #undef metric
 }
 
@@ -995,7 +995,7 @@ rt_getmetrics(const struct rt_metrics_lite *in, struct rt_metrics *out)
 	metric(rmx_weight);
 	/* Kernel -> userland timebase conversion. */
 	out->rmx_expire = in->rmx_expire ?
-	    in->rmx_expire - time_uptime + time_second : 0;
+	    in->rmx_expire - V_time_uptime + time_second : 0;
 #undef metric
 }
 

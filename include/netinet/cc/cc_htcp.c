@@ -257,7 +257,7 @@ htcp_cb_init(struct cc_var *ccv)
 	htcp_data->maxrtt = TCPTV_SRTTBASE;
 	htcp_data->minrtt = TCPTV_SRTTBASE;
 	htcp_data->prev_cwnd = 0;
-	htcp_data->t_last_cong = ticks;
+	htcp_data->t_last_cong = V_ticks;
 
 	ccv->cc_data = htcp_data;
 
@@ -287,7 +287,7 @@ htcp_cong_signal(struct cc_var *ccv, bsd_uint32_t type)
 				    (htcp_data->maxrtt - htcp_data->minrtt) *
 				    95) / 100;
 				htcp_ssthresh_update(ccv);
-				htcp_data->t_last_cong = ticks;
+				htcp_data->t_last_cong = V_ticks;
 				htcp_data->prev_cwnd = CCV(ccv, snd_cwnd);
 			}
 			ENTER_RECOVERY(CCV(ccv, t_flags));
@@ -304,7 +304,7 @@ htcp_cong_signal(struct cc_var *ccv, bsd_uint32_t type)
 			    htcp_data->minrtt) * 95) / 100;
 			htcp_ssthresh_update(ccv);
 			CCV(ccv, snd_cwnd) = CCV(ccv, snd_ssthresh);
-			htcp_data->t_last_cong = ticks;
+			htcp_data->t_last_cong = V_ticks;
 			htcp_data->prev_cwnd = CCV(ccv, snd_cwnd);
 			ENTER_CONGRECOVERY(CCV(ccv, t_flags));
 		}
@@ -319,7 +319,7 @@ htcp_cong_signal(struct cc_var *ccv, bsd_uint32_t type)
 		 * congestion.
 		 */
 		if (CCV(ccv, t_rxtshift) >= 2)
-			htcp_data->t_last_cong = ticks;
+			htcp_data->t_last_cong = V_ticks;
 		break;
 	}
 }
@@ -376,7 +376,7 @@ htcp_recalc_alpha(struct cc_var *ccv)
 	int alpha, diff, now;
 
 	htcp_data = ccv->cc_data;
-	now = ticks;
+	now = V_ticks;
 
 	/*
 	 * If ticks has wrapped around (will happen approximately once every 49

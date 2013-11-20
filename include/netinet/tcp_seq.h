@@ -92,7 +92,7 @@ tcp_ts_getticks(void)
     return (ms);
     #endif 	// ---------------------- @2013/11/06
 
-    return ticks;
+    return V_ticks;
 }
 #endif /* _KERNEL */
 

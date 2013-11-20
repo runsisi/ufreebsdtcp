@@ -947,7 +947,7 @@ sched_sleep(struct thread *td, int pri)
 {
 
 	THREAD_LOCK_ASSERT(td, MA_OWNED);
-	td->td_slptick = ticks;
+	td->td_slptick = V_ticks;
 	td->td_sched->ts_slptime = 0;
 	if (pri != 0 && PRI_BASE(td->td_pri_class) == PRI_TIMESHARE)
 		sched_prio(td, pri);
@@ -1666,7 +1666,7 @@ sched_throw(struct thread *td)
 		mtx_lock_spin(&sched_lock);
 		spinlock_exit();
 		PCPU_SET(switchtime, cpu_ticks());
-		PCPU_SET(switchticks, ticks);
+		PCPU_SET(switchticks, V_ticks);
 	} else {
 		lock_profile_release_lock(&sched_lock.lock_object);
 		MPASS(td->td_lock == &sched_lock);

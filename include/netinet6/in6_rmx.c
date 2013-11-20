@@ -207,7 +207,7 @@ in6_mtuexpire(struct radix_node *rn, void *rock)
 		panic("rt == NULL in in6_mtuexpire");
 
 	if (rt->rt_rmx.rmx_expire && !(rt->rt_flags & RTF_PROBEMTU)) {
-		if (rt->rt_rmx.rmx_expire <= time_uptime) {
+		if (rt->rt_rmx.rmx_expire <= V_time_uptime) {
 			rt->rt_flags |= RTF_PROBEMTU;
 		} else {
 			ap->nextstop = lmin(ap->nextstop,
@@ -226,7 +226,7 @@ in6_mtutimo_one(struct radix_node_head *rnh)
 	struct mtuex_arg arg;
 
 	arg.rnh = rnh;
-	arg.nextstop = time_uptime + MTUTIMO_DEFAULT;
+	arg.nextstop = V_time_uptime + MTUTIMO_DEFAULT;
 	RADIX_NODE_HEAD_LOCK(rnh);
 	rnh->rnh_walktree(rnh, in6_mtuexpire, &arg);
 	RADIX_NODE_HEAD_UNLOCK(rnh);

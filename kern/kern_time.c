@@ -828,7 +828,7 @@ ppsratecheck(struct bsd_timeval *lasttime, int *curpps, int maxpps)
 	 * or more than a second has passed since the last update of
 	 * lasttime.
 	 */
-	now = ticks;
+	now = V_ticks;
 	if (lasttime->tv_sec == 0 || (u_int)(now - lasttime->tv_sec) >= hz) {
 		lasttime->tv_sec = now;
 		*curpps = 1;

@@ -33,36 +33,38 @@
  * SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/net/vnet.c 249132 2013-04-05 08:22:11Z mav $");
 
 #include "opt_ddb.h"
 #include "opt_kdb.h"
 #include "opt_kdtrace.h"
 
-#include <sys/param.h>
-#include <sys/kdb.h>
-#include <sys/kernel.h>
-#include <sys/jail.h>
-#include <sys/sdt.h>
-#include <sys/systm.h>
-#include <sys/sysctl.h>
-#include <sys/eventhandler.h>
-#include <sys/lock.h>
-#include <sys/malloc.h>
-#include <sys/proc.h>
-#include <sys/socket.h>
-#include <sys/sx.h>
-#include <sys/sysctl.h>
+#include "dps_frame.h"
 
-#include <machine/stdarg.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_kdb.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_jail.h>
+#include <sys/bsd_sdt.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_sysctl.h>
+#include <sys/bsd_eventhandler.h>
+#include <sys/bsd_lock.h>
+#include <sys/bsd_malloc.h>
+#include <sys/bsd_proc.h>
+#include <sys/bsd_socket.h>
+#include <sys/bsd_sx.h>
+#include <sys/bsd_sysctl.h>
+
+#include <machine/bsd_stdarg.h>
 
 #ifdef DDB
 #include <ddb/ddb.h>
 #include <ddb/db_sym.h>
 #endif
 
-#include <net/if.h>
+#include <net/bsd_if.h>
 #include <net/if_var.h>
 #include <net/vnet.h>
 
@@ -92,15 +94,15 @@ static MALLOC_DEFINE(M_VNET, "vnet", "network stack control block");
 struct rwlock		vnet_rwlock;
 struct sx		vnet_sxlock;
 
-#define	VNET_LIST_WLOCK() do {						\
+#define	VNET_LIST_WLOCK() /*do {						\
 	sx_xlock(&vnet_sxlock);						\
 	rw_wlock(&vnet_rwlock);						\
-} while (0)
+} while (0)*/
 
-#define	VNET_LIST_WUNLOCK() do {					\
+#define	VNET_LIST_WUNLOCK() /*do {					\
 	rw_wunlock(&vnet_rwlock);					\
 	sx_xunlock(&vnet_sxlock);					\
-} while (0)
+} while (0)*/
 
 struct vnet_list_head vnet_head;
 struct vnet *vnet0;
@@ -171,7 +173,7 @@ static MALLOC_DEFINE(M_VNET_DATA, "vnet_data", "VNET data");
  * have more space than that in practice.
  */
 #define	VNET_MODMIN	8192
-#define	VNET_SIZE	roundup2(VNET_BYTES, PAGE_SIZE)
+#define	VNET_SIZE	bsd_roundup2(VNET_BYTES, BSD_PAGE_SIZE)
 #define	VNET_MODSIZE	(VNET_SIZE - (VNET_BYTES - VNET_MODMIN))
 
 /*
@@ -185,10 +187,10 @@ static VNET_DEFINE(char, modspace[VNET_MODMIN]);
  * registered via VNET_SYSINIT() and VNET_SYSUNINIT().  Both lists are
  * protected by the vnet_sysinit_sxlock global lock.
  */
-static TAILQ_HEAD(vnet_sysinit_head, vnet_sysinit) vnet_constructors =
-	TAILQ_HEAD_INITIALIZER(vnet_constructors);
-static TAILQ_HEAD(vnet_sysuninit_head, vnet_sysinit) vnet_destructors =
-	TAILQ_HEAD_INITIALIZER(vnet_destructors);
+static BSD_TAILQ_HEAD(vnet_sysinit_head, vnet_sysinit) vnet_constructors =
+	BSD_TAILQ_HEAD_INITIALIZER(vnet_constructors);
+static BSD_TAILQ_HEAD(vnet_sysuninit_head, vnet_sysinit) vnet_destructors =
+	BSD_TAILQ_HEAD_INITIALIZER(vnet_destructors);
 
 struct sx		vnet_sysinit_sxlock;
 
@@ -200,14 +202,16 @@ struct sx		vnet_sysinit_sxlock;
 struct vnet_data_free {
 	bsd_uintptr_t	vnd_start;
 	int		vnd_len;
-	TAILQ_ENTRY(vnet_data_free) vnd_link;
+	BSD_TAILQ_ENTRY(vnet_data_free) vnd_link;
 };
 
 static MALLOC_DEFINE(M_VNET_DATA_FREE, "vnet_data_free",
     "VNET resource accounting");
-static TAILQ_HEAD(, vnet_data_free) vnet_data_free_head =
-	    TAILQ_HEAD_INITIALIZER(vnet_data_free_head);
+static BSD_TAILQ_HEAD(, vnet_data_free) vnet_data_free_head =
+	    BSD_TAILQ_HEAD_INITIALIZER(vnet_data_free_head);
+#if 0	// runsisi AT hust.edu.cn @2013/11/20
 static struct sx vnet_data_free_lock;
+#endif 	// ---------------------- @2013/11/20
 
 SDT_PROVIDER_DEFINE(vnet);
 SDT_PROBE_DEFINE1(vnet, functions, vnet_alloc, entry, entry, "int");
@@ -251,13 +255,21 @@ vnet_alloc(void)
 	 */
 	vnet->vnet_data_base = (bsd_uintptr_t)vnet->vnet_data_mem - VNET_START;
 
+    // runsisi AT hust.edu.cn @2013/11/20
+	/* some module only need to be initialized once */
+    if (aoisinjob(curao))
+    {
+        curvnet = vnet0 = vnet;
+    }
+    // ---------------------- @2013/11/20
+
 	/* Initialize / attach vnet module instances. */
 	CURVNET_SET_QUIET(vnet);
 	vnet_sysinit();
 	CURVNET_RESTORE();
 
 	VNET_LIST_WLOCK();
-	LIST_INSERT_HEAD(&vnet_head, vnet, vnet_le);
+	BSD_LIST_INSERT_HEAD(&vnet_head, vnet, vnet_le);
 	VNET_LIST_WUNLOCK();
 
 	SDT_PROBE2(vnet, functions, vnet_alloc, return, __LINE__, vnet);
@@ -270,23 +282,27 @@ vnet_alloc(void)
 void
 vnet_destroy(struct vnet *vnet)
 {
-	struct ifnet *ifp, *nifp;
+    #if 0	// runsisi AT hust.edu.cn @2013/11/20
+    struct ifnet *ifp, *nifp;
+    #endif 	// ---------------------- @2013/11/20
 
 	SDT_PROBE2(vnet, functions, vnet_destroy, entry, __LINE__, vnet);
 	KASSERT(vnet->vnet_sockcnt == 0,
 	    ("%s: vnet still has sockets", __func__));
 
 	VNET_LIST_WLOCK();
-	LIST_REMOVE(vnet, vnet_le);
+	BSD_LIST_REMOVE(vnet, vnet_le);
 	VNET_LIST_WUNLOCK();
 
 	CURVNET_SET_QUIET(vnet);
 
-	/* Return all inherited interfaces to their parent vnets. */
-	TAILQ_FOREACH_SAFE(ifp, &V_ifnet, if_link, nifp) {
-		if (ifp->if_home_vnet != ifp->if_vnet)
-			if_vmove(ifp, ifp->if_home_vnet);
-	}
+    #if 0	// runsisi AT hust.edu.cn @2013/11/20
+    /* Return all inherited interfaces to their parent vnets. */
+    BSD_TAILQ_FOREACH_SAFE(ifp, &V_ifnet, if_link, nifp) {
+        if (ifp->if_home_vnet != ifp->if_vnet)
+            if_vmove(ifp, ifp->if_home_vnet);
+    }
+    #endif 	// ---------------------- @2013/11/20
 
 	vnet_sysuninit();
 	CURVNET_RESTORE();
@@ -309,10 +325,10 @@ static void
 vnet_init_prelink(void *arg)
 {
 
-	rw_init(&vnet_rwlock, "vnet_rwlock");
-	sx_init(&vnet_sxlock, "vnet_sxlock");
-	sx_init(&vnet_sysinit_sxlock, "vnet_sysinit_sxlock");
-	LIST_INIT(&vnet_head);
+    rw_init(&vnet_rwlock, "vnet_rwlock");
+    sx_init(&vnet_sxlock, "vnet_sxlock");
+    sx_init(&vnet_sysinit_sxlock, "vnet_sysinit_sxlock");
+	BSD_LIST_INIT(&vnet_head);
 }
 SYSINIT(vnet_init_prelink, SI_SUB_VNET_PRELINK, SI_ORDER_FIRST,
     vnet_init_prelink, NULL);
@@ -321,16 +337,18 @@ static void
 vnet0_init(void *arg)
 {
 
-	/* Warn people before take off - in case we crash early. */
-	printf("WARNING: VIMAGE (virtualized network stack) is a highly "
-	    "experimental feature.\n");
+    #if 0	// runsisi AT hust.edu.cn @2013/11/20
+    /* Warn people before take off - in case we crash early. */
+    printf("WARNING: VIMAGE (virtualized network stack) is a highly "
+        "experimental feature.\n");
 
-	/*
-	 * We MUST clear curvnet in vi_init_done() before going SMP,
-	 * otherwise CURVNET_SET() macros would scream about unnecessary
-	 * curvnet recursions.
-	 */
-	curvnet = prison0.pr_vnet = vnet0 = vnet_alloc();
+    /*
+     * We MUST clear curvnet in vi_init_done() before going SMP,
+     * otherwise CURVNET_SET() macros would scream about unnecessary
+     * curvnet recursions.
+     */
+    curvnet = prison0.pr_vnet = vnet0 = vnet_alloc();
+    #endif 	// ---------------------- @2013/11/20
 }
 SYSINIT(vnet0_init, SI_SUB_VNET, SI_ORDER_FIRST, vnet0_init, NULL);
 
@@ -338,7 +356,9 @@ static void
 vnet_init_done(void *unused)
 {
 
-	curvnet = NULL;
+    #if 0	// runsisi AT hust.edu.cn @2013/11/20
+    curvnet = NULL;
+    #endif 	// ---------------------- @2013/11/20
 }
 
 SYSINIT(vnet_init_done, SI_SUB_VNET_DONE, SI_ORDER_FIRST, vnet_init_done,
@@ -348,14 +368,14 @@ SYSINIT(vnet_init_done, SI_SUB_VNET_DONE, SI_ORDER_FIRST, vnet_init_done,
  * Once on boot, initialize the modspace freelist to entirely cover modspace.
  */
 static void
-vnet_data_startup(void *dummy __unused)
+vnet_data_startup(void *dummy __bsd_unused)
 {
 	struct vnet_data_free *df;
 
 	df = bsd_malloc(sizeof(*df), M_VNET_DATA_FREE, M_WAITOK | M_ZERO);
 	df->vnd_start = (bsd_uintptr_t)&VNET_NAME(modspace);
 	df->vnd_len = VNET_MODMIN;
-	TAILQ_INSERT_HEAD(&vnet_data_free_head, df, vnd_link);
+	BSD_TAILQ_INSERT_HEAD(&vnet_data_free_head, df, vnd_link);
 	sx_init(&vnet_data_free_lock, "vnet_data alloc lock");
 }
 SYSINIT(vnet_data, SI_SUB_KLD, SI_ORDER_FIRST, vnet_data_startup, 0);
@@ -372,14 +392,14 @@ vnet_data_alloc(int size)
 	void *s;
 
 	s = NULL;
-	size = roundup2(size, sizeof(void *));
+	size = bsd_roundup2(size, sizeof(void *));
 	sx_xlock(&vnet_data_free_lock);
-	TAILQ_FOREACH(df, &vnet_data_free_head, vnd_link) {
+	BSD_TAILQ_FOREACH(df, &vnet_data_free_head, vnd_link) {
 		if (df->vnd_len < size)
 			continue;
 		if (df->vnd_len == size) {
 			s = (void *)df->vnd_start;
-			TAILQ_REMOVE(&vnet_data_free_head, df, vnd_link);
+			BSD_TAILQ_REMOVE(&vnet_data_free_head, df, vnd_link);
 			bsd_free(df, M_VNET_DATA_FREE);
 			break;
 		}
@@ -404,7 +424,7 @@ vnet_data_free(void *start_arg, int size)
 	bsd_uintptr_t start;
 	bsd_uintptr_t end;
 
-	size = roundup2(size, sizeof(void *));
+	size = bsd_roundup2(size, sizeof(void *));
 	start = (bsd_uintptr_t)start_arg;
 	end = start + size;
 	/*
@@ -412,7 +432,7 @@ vnet_data_free(void *start_arg, int size)
 	 * possible.  Keeping the list sorted simplifies this operation.
 	 */
 	sx_xlock(&vnet_data_free_lock);
-	TAILQ_FOREACH(df, &vnet_data_free_head, vnd_link) {
+	BSD_TAILQ_FOREACH(df, &vnet_data_free_head, vnd_link) {
 		if (df->vnd_start > end)
 			break;
 		/*
@@ -421,10 +441,10 @@ vnet_data_free(void *start_arg, int size)
 		 */
 		if (df->vnd_start + df->vnd_len == start) {
 			df->vnd_len += size;
-			dn = TAILQ_NEXT(df, vnd_link);
+			dn = BSD_TAILQ_NEXT(df, vnd_link);
 			if (df->vnd_start + df->vnd_len == dn->vnd_start) {
 				df->vnd_len += dn->vnd_len;
-				TAILQ_REMOVE(&vnet_data_free_head, dn,
+				BSD_TAILQ_REMOVE(&vnet_data_free_head, dn,
 				    vnd_link);
 				bsd_free(dn, M_VNET_DATA_FREE);
 			}
@@ -442,9 +462,9 @@ vnet_data_free(void *start_arg, int size)
 	dn->vnd_start = start;
 	dn->vnd_len = size;
 	if (df)
-		TAILQ_INSERT_BEFORE(df, dn, vnd_link);
+		BSD_TAILQ_INSERT_BEFORE(df, dn, vnd_link);
 	else
-		TAILQ_INSERT_TAIL(&vnet_data_free_head, dn, vnd_link);
+		BSD_TAILQ_INSERT_TAIL(&vnet_data_free_head, dn, vnd_link);
 	sx_xunlock(&vnet_data_free_lock);
 }
 
@@ -458,7 +478,7 @@ vnet_data_copy(void *start, int size)
 	struct vnet *vnet;
 
 	VNET_LIST_RLOCK();
-	LIST_FOREACH(vnet, &vnet_head, vnet_le)
+	BSD_LIST_FOREACH(vnet, &vnet_head, vnet_le)
 		memcpy((void *)((bsd_uintptr_t)vnet->vnet_data_base +
 		    (bsd_uintptr_t)start), start, size);
 	VNET_LIST_RUNLOCK();
@@ -520,16 +540,16 @@ vnet_register_sysinit(void *arg)
 
 	/* Add the constructor to the global list of vnet constructors. */
 	VNET_SYSINIT_WLOCK();
-	TAILQ_FOREACH(vs2, &vnet_constructors, link) {
+	BSD_TAILQ_FOREACH(vs2, &vnet_constructors, link) {
 		if (vs2->subsystem > vs->subsystem)
 			break;
 		if (vs2->subsystem == vs->subsystem && vs2->order > vs->order)
 			break;
 	}
 	if (vs2 != NULL)
-		TAILQ_INSERT_BEFORE(vs2, vs, link);
+		BSD_TAILQ_INSERT_BEFORE(vs2, vs, link);
 	else
-		TAILQ_INSERT_TAIL(&vnet_constructors, vs, link);
+		BSD_TAILQ_INSERT_TAIL(&vnet_constructors, vs, link);
 
 	/*
 	 * Invoke the constructor on all the existing vnets when it is
@@ -552,7 +572,7 @@ vnet_deregister_sysinit(void *arg)
 
 	/* Remove the constructor from the global list of vnet constructors. */
 	VNET_SYSINIT_WLOCK();
-	TAILQ_REMOVE(&vnet_constructors, vs, link);
+	BSD_TAILQ_REMOVE(&vnet_constructors, vs, link);
 	VNET_SYSINIT_WUNLOCK();
 }
 
@@ -565,16 +585,16 @@ vnet_register_sysuninit(void *arg)
 
 	/* Add the destructor to the global list of vnet destructors. */
 	VNET_SYSINIT_WLOCK();
-	TAILQ_FOREACH(vs2, &vnet_destructors, link) {
+	BSD_TAILQ_FOREACH(vs2, &vnet_destructors, link) {
 		if (vs2->subsystem > vs->subsystem)
 			break;
 		if (vs2->subsystem == vs->subsystem && vs2->order > vs->order)
 			break;
 	}
 	if (vs2 != NULL)
-		TAILQ_INSERT_BEFORE(vs2, vs, link);
+		BSD_TAILQ_INSERT_BEFORE(vs2, vs, link);
 	else
-		TAILQ_INSERT_TAIL(&vnet_destructors, vs, link);
+		BSD_TAILQ_INSERT_TAIL(&vnet_destructors, vs, link);
 	VNET_SYSINIT_WUNLOCK();
 }
 
@@ -598,7 +618,7 @@ vnet_deregister_sysuninit(void *arg)
 	}
 
 	/* Remove the destructor from the global list of vnet destructors. */
-	TAILQ_REMOVE(&vnet_destructors, vs, link);
+	BSD_TAILQ_REMOVE(&vnet_destructors, vs, link);
 	VNET_SYSINIT_WUNLOCK();
 }
 
@@ -613,7 +633,7 @@ vnet_sysinit(void)
 	struct vnet_sysinit *vs;
 
 	VNET_SYSINIT_RLOCK();
-	TAILQ_FOREACH(vs, &vnet_constructors, link) {
+	BSD_TAILQ_FOREACH(vs, &vnet_constructors, link) {
 		vs->func(vs->arg);
 	}
 	VNET_SYSINIT_RUNLOCK();
@@ -630,7 +650,7 @@ vnet_sysuninit(void)
 	struct vnet_sysinit *vs;
 
 	VNET_SYSINIT_RLOCK();
-	TAILQ_FOREACH_REVERSE(vs, &vnet_destructors, vnet_sysuninit_head,
+	BSD_TAILQ_FOREACH_REVERSE(vs, &vnet_destructors, vnet_sysuninit_head,
 	    link) {
 		vs->func(vs->arg);
 	}
@@ -704,7 +724,7 @@ vnet_log_recursion(struct vnet *old_vnet, const char *old_fn, int line)
 	struct vnet_recursion *vnr;
 
 	/* Skip already logged recursion events. */
-	SLIST_FOREACH(vnr, &vnet_recursions, vnr_le)
+	BSD_SLIST_FOREACH(vnr, &vnet_recursions, vnr_le)
 		if (vnr->prev_fn == old_fn &&
 		    vnr->where_fn == curthread->td_vnet_lpush &&
 		    vnr->where_line == line &&
@@ -790,7 +810,7 @@ DB_SHOW_COMMAND(vnet_sysinit, db_show_vnet_sysinit)
 	db_printf("VNET_SYSINIT vs Name(Ptr)\n");
 	db_printf("  Subsystem  Order\n");
 	db_printf("  Function(Name)(Arg)\n");
-	TAILQ_FOREACH(vs, &vnet_constructors, link) {
+	BSD_TAILQ_FOREACH(vs, &vnet_constructors, link) {
 		db_show_vnet_print_vs(vs, 1);
 		if (db_pager_quit)
 			break;
@@ -804,7 +824,7 @@ DB_SHOW_COMMAND(vnet_sysuninit, db_show_vnet_sysuninit)
 	db_printf("VNET_SYSUNINIT vs Name(Ptr)\n");
 	db_printf("  Subsystem  Order\n");
 	db_printf("  Function(Name)(Arg)\n");
-	TAILQ_FOREACH_REVERSE(vs, &vnet_destructors, vnet_sysuninit_head,
+	BSD_TAILQ_FOREACH_REVERSE(vs, &vnet_destructors, vnet_sysuninit_head,
 	    link) {
 		db_show_vnet_print_vs(vs, 1);
 		if (db_pager_quit)
@@ -817,7 +837,7 @@ DB_SHOW_COMMAND(vnetrcrs, db_show_vnetrcrs)
 {
 	struct vnet_recursion *vnr;
 
-	SLIST_FOREACH(vnr, &vnet_recursions, vnr_le)
+	BSD_SLIST_FOREACH(vnr, &vnet_recursions, vnr_le)
 		vnet_print_recursion(vnr, 1);
 }
 #endif

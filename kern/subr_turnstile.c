@@ -738,7 +738,7 @@ turnstile_wait(struct turnstile *ts, struct thread *owner, int queue)
 	td->td_tsqueue = queue;
 	td->td_blocked = ts;
 	td->td_lockname = lock->lo_name;
-	td->td_blktick = ticks;
+	td->td_blktick = V_ticks;
 	TD_SET_LOCK(td);
 	mtx_unlock_spin(&tc->tc_lock);
 	propagate_priority(td);

@@ -1375,8 +1375,8 @@ bridge_ioctl_rts(struct bridge_softc *sc, void *arg)
 		memcpy(bareq.ifba_dst, brt->brt_addr, sizeof(brt->brt_addr));
 		bareq.ifba_vlan = brt->brt_vlan;
 		if ((brt->brt_flags & IFBAF_TYPEMASK) == IFBAF_DYNAMIC &&
-				time_uptime < brt->brt_expire)
-			bareq.ifba_expire = brt->brt_expire - time_uptime;
+				V_time_uptime < brt->brt_expire)
+			bareq.ifba_expire = brt->brt_expire - V_time_uptime;
 		else
 			bareq.ifba_expire = 0;
 		bareq.ifba_flags = brt->brt_flags;
@@ -2628,7 +2628,7 @@ bridge_rtupdate(struct bridge_softc *sc, const bsd_uint8_t *dst, bsd_uint16_t vl
 	}
 
 	if ((flags & IFBAF_TYPEMASK) == IFBAF_DYNAMIC)
-		brt->brt_expire = time_uptime + sc->sc_brttimeout;
+		brt->brt_expire = V_time_uptime + sc->sc_brttimeout;
 	if (setflags)
 		brt->brt_flags = flags;
 
@@ -2718,7 +2718,7 @@ bridge_rtage(struct bridge_softc *sc)
 
 	LIST_FOREACH_SAFE(brt, &sc->sc_rtlist, brt_list, nbrt) {
 		if ((brt->brt_flags & IFBAF_TYPEMASK) == IFBAF_DYNAMIC) {
-			if (time_uptime >= brt->brt_expire)
+			if (V_time_uptime >= brt->brt_expire)
 				bridge_rtnode_destroy(sc, brt);
 		}
 	}
@@ -2990,9 +2990,9 @@ bridge_rtable_expire(struct ifnet *ifp, int age)
 		LIST_FOREACH(brt, &sc->sc_rtlist, brt_list) {
 			/* Cap the expiry time to 'age' */
 			if (brt->brt_ifp == ifp &&
-			    brt->brt_expire > time_uptime + age &&
+			    brt->brt_expire > V_time_uptime + age &&
 			    (brt->brt_flags & IFBAF_TYPEMASK) == IFBAF_DYNAMIC)
-				brt->brt_expire = time_uptime + age;
+				brt->brt_expire = V_time_uptime + age;
 		}
 	}
 	BRIDGE_UNLOCK(sc);

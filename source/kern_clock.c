@@ -44,6 +44,8 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/kern/kern_clock.c 250600 2013-05-13 15:18:
 #include "opt_ntp.h"
 #include "opt_watchdog.h"
 
+#include "dps_frame.h"
+
 #include <sys/bsd_param.h>
 #include <sys/bsd_systm.h>
 #include <sys/bsd_callout.h>
@@ -69,6 +71,10 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/kern/kern_clock.c 250600 2013-05-13 15:18:
 #include <sys/bsd_interrupt.h>
 #include <sys/bsd_limits.h>
 #include <sys/bsd_timetc.h>
+
+// runsisi AT hust.edu.cn @2013/11/20
+#include <net/vnet.h>
+// ---------------------- @2013/11/20
 
 /*
  * Clock handling routines.
@@ -102,7 +108,13 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/kern/kern_clock.c 250600 2013-05-13 15:18:
  * interrupts.
  */
 
+#if 0	// runsisi AT hust.edu.cn @2013/11/20
 volatile int	ticks;
+#endif 	// ---------------------- @2013/11/20
+// runsisi AT hust.edu.cn @2013/11/20
+VNET_DEFINE(volatile int, ticks);
+#define V_ticks     VNET(ticks)
+// ---------------------- @2013/11/20
 
 /*
  * Each time the real-time timer fires, this function is called on all CPUs.
@@ -121,7 +133,7 @@ hardclock_cpu(int usermode)
 void
 hardclock(int usermode, bsd_uintfptr_t pc)
 {
-	atomic_add_int(&ticks, 1);
+    atomic_add_int(&V_ticks, 1);
 	hardclock_cpu(usermode);
 	tc_ticktock(1);
 }

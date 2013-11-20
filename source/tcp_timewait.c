@@ -340,8 +340,8 @@ tcp_twrecycleable(struct tcptw *tw)
 	tcp_seq new_irs = tw->irs;
 
 	INP_INFO_WLOCK_ASSERT(&V_tcbinfo);
-	new_iss += (ticks - tw->t_starttime) * (ISN_BYTES_PER_SECOND / hz);
-	new_irs += (ticks - tw->t_starttime) * (MS_ISN_BYTES_PER_SECOND / hz);
+	new_iss += (V_ticks - tw->t_starttime) * (ISN_BYTES_PER_SECOND / hz);
+	new_irs += (V_ticks - tw->t_starttime) * (MS_ISN_BYTES_PER_SECOND / hz);
 
 	if (SEQ_GT(new_iss, tw->snd_nxt) && SEQ_GT(new_irs, tw->rcv_nxt))
 		return (1);
@@ -624,7 +624,7 @@ tcp_tw_2msl_reset(struct tcptw *tw, int rearm)
 	INP_WLOCK_ASSERT(tw->tw_inpcb);
 	if (rearm)
 	    BSD_TAILQ_REMOVE(&V_twq_2msl, tw, tw_2msl);
-	tw->tw_time = ticks + 2 * tcp_msl;
+	tw->tw_time = V_ticks + 2 * tcp_msl;
 	BSD_TAILQ_INSERT_TAIL(&V_twq_2msl, tw, tw_2msl);
 }
 
@@ -644,7 +644,7 @@ tcp_tw_2msl_scan(int reuse)
 	INP_INFO_WLOCK_ASSERT(&V_tcbinfo);
 	for (;;) {
 		tw = BSD_TAILQ_FIRST(&V_twq_2msl);
-		if (tw == NULL || (!reuse && (tw->tw_time - ticks) > 0))
+		if (tw == NULL || (!reuse && (tw->tw_time - V_ticks) > 0))
 			break;
 		INP_WLOCK(tw->tw_inpcb);
 		tcp_twclose(tw, reuse);

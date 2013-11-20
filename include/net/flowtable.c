@@ -874,7 +874,7 @@ flow_stale(struct flowtable *ft, struct flentry *fle)
 	    || !RT_LINK_IS_UP(fle->f_rt->rt_ifp))
 		return (1);
 
-	idle_time = time_uptime - fle->f_uptime;
+	idle_time = V_time_uptime - fle->f_uptime;
 
 	if ((fle->f_flags & FL_STALE) ||
 	    ((fle->f_flags & (TH_SYN|TH_ACK|TH_FIN)) == 0
@@ -1034,7 +1034,7 @@ skip:
 	fle->f_lle = ro->ro_lle;
 	fle->f_fhash = hash;
 	fle->f_fibnum = fibnum;
-	fle->f_uptime = time_uptime;
+	fle->f_uptime = V_time_uptime;
 	FL_ENTRY_UNLOCK(ft, hash);
 	return (0);
 }
@@ -1196,7 +1196,7 @@ keycheck:
 	    && (rt->rt_ifp != NULL)
 	    && (lle->la_flags & LLE_VALID)) {
 		fs->ft_hits++;
-		fle->f_uptime = time_uptime;
+		fle->f_uptime = V_time_uptime;
 		fle->f_flags |= flags;
 		FL_ENTRY_UNLOCK(ft, hash);
 		return (fle);
@@ -1701,7 +1701,7 @@ flow_show(struct flowtable *ft, struct flentry *fle)
 	volatile struct rtentry *rt;
 	struct ifnet *ifp = NULL;
 
-	idle_time = (int)(time_uptime - fle->f_uptime);
+	idle_time = (int)(V_time_uptime - fle->f_uptime);
 	rt = fle->f_rt;
 	rt_valid = rt != NULL;
 	if (rt_valid) 

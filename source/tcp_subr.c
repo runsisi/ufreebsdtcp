@@ -723,7 +723,7 @@ tcp_newtcpcb(struct inpcb *inp)
 	tp->t_rxtcur = TCPTV_RTOBASE;
 	tp->snd_cwnd = BSD_TCP_MAXWIN << BSD_TCP_MAX_WINSHIFT;
 	tp->snd_ssthresh = BSD_TCP_MAXWIN << BSD_TCP_MAX_WINSHIFT;
-	tp->t_rcvtime = ticks;
+	tp->t_rcvtime = V_ticks;
 	/*
 	 * IPv4 TTL initialization is necessary for an IPv6 socket as well,
 	 * because the socket may be bound to an IPv6 wildcard address,
@@ -1582,9 +1582,9 @@ tcp_new_isn(struct tcpcb *tp)
 	/* Seed if this is the first use, reseed if requested. */
 	if ((V_isn_last_reseed == 0) || ((V_tcp_isn_reseed_interval > 0) &&
 	     (((u_int)V_isn_last_reseed + (u_int)V_tcp_isn_reseed_interval*hz)
-		< (u_int)ticks))) {
+		< (u_int)V_ticks))) {
 		read_random(&V_isn_secret, sizeof(V_isn_secret));
-		V_isn_last_reseed = ticks;
+		V_isn_last_reseed = V_ticks;
 	}
 
 	/* Compute the md5 hash and return the ISN. */
@@ -1610,13 +1610,13 @@ tcp_new_isn(struct tcpcb *tp)
 	new_isn = (tcp_seq) md5_buffer[0];
 	V_isn_offset += ISN_STATIC_INCREMENT +
 		(arc4random() & ISN_RANDOM_INCREMENT);
-	if (ticks != V_isn_last) {
+	if (V_ticks != V_isn_last) {
 		projected_offset = V_isn_offset_old +
-		    ISN_BYTES_PER_SECOND / hz * (ticks - V_isn_last);
+		    ISN_BYTES_PER_SECOND / hz * (V_ticks - V_isn_last);
 		if (SEQ_GT(projected_offset, V_isn_offset))
 			V_isn_offset = projected_offset;
 		V_isn_offset_old = V_isn_offset;
-		V_isn_last = ticks;
+		V_isn_last = V_ticks;
 	}
 	new_isn += V_isn_offset;
 	ISN_UNLOCK();

@@ -162,7 +162,7 @@ struct sdt_provider {
 	bsd_uintptr_t	id;		/* DTrace provider ID. */
 };
 
-#define SDT_PROVIDER_DEFINE(prov)						\
+#define SDT_PROVIDER_DEFINE(prov)						/*\
 	struct sdt_provider sdt_provider_##prov[1] = {				\
 		{ #prov, { NULL, NULL }, { NULL, NULL } }			\
 	};									\
@@ -171,7 +171,7 @@ struct sdt_provider {
 	    sdt_provider_##prov );						\
 	SYSUNINIT(sdt_provider_##prov##_uninit, SI_SUB_KDTRACE,			\
 	    SI_ORDER_SECOND, sdt_provider_deregister, 				\
-	    sdt_provider_##prov )
+	    sdt_provider_##prov )*/
 
 #define SDT_PROVIDER_DECLARE(prov)						\
 	extern struct sdt_provider sdt_provider_##prov[1]
@@ -209,14 +209,14 @@ struct sdt_provider {
 	    SI_SUB_KDTRACE, SI_ORDER_SECOND + 2, sdt_argtype_deregister,	\
 	    sdt_##prov##_##mod##_##func##_##name##num )
 
-#define	SDT_PROBE_DEFINE1(prov, mod, func, name, sname, arg0)		\
+#define	SDT_PROBE_DEFINE1(prov, mod, func, name, sname, arg0)		/*\
 	SDT_PROBE_DEFINE(prov, mod, func, name, sname);			\
-	SDT_PROBE_ARGTYPE(prov, mod, func, name, 0, arg0)
+	SDT_PROBE_ARGTYPE(prov, mod, func, name, 0, arg0)*/
 
-#define	SDT_PROBE_DEFINE2(prov, mod, func, name, sname, arg0, arg1)	\
+#define	SDT_PROBE_DEFINE2(prov, mod, func, name, sname, arg0, arg1)	/*\
 	SDT_PROBE_DEFINE(prov, mod, func, name, sname);			\
 	SDT_PROBE_ARGTYPE(prov, mod, func, name, 0, arg0);		\
-	SDT_PROBE_ARGTYPE(prov, mod, func, name, 1, arg1)
+	SDT_PROBE_ARGTYPE(prov, mod, func, name, 1, arg1)*/
 
 #define	SDT_PROBE_DEFINE3(prov, mod, func, name, sname, arg0, arg1, arg2)\
 	SDT_PROBE_DEFINE(prov, mod, func, name, sname);			\
@@ -262,10 +262,10 @@ struct sdt_provider {
 
 #define	SDT_PROBE0(prov, mod, func, name)				\
 	SDT_PROBE(prov, mod, func, name, 0, 0, 0, 0, 0)
-#define	SDT_PROBE1(prov, mod, func, name, arg0)				\
-	SDT_PROBE(prov, mod, func, name, arg0, 0, 0, 0, 0)
-#define	SDT_PROBE2(prov, mod, func, name, arg0, arg1)			\
-	SDT_PROBE(prov, mod, func, name, arg0, arg1, 0, 0, 0)
+#define	SDT_PROBE1(prov, mod, func, name, arg0)				/*\
+	SDT_PROBE(prov, mod, func, name, arg0, 0, 0, 0, 0)*/
+#define	SDT_PROBE2(prov, mod, func, name, arg0, arg1)			/*\
+	SDT_PROBE(prov, mod, func, name, arg0, arg1, 0, 0, 0)*/
 #define	SDT_PROBE3(prov, mod, func, name, arg0, arg1, arg2)		\
 	SDT_PROBE(prov, mod, func, name, arg0, arg1, arg2,  0, 0)
 #define	SDT_PROBE4(prov, mod, func, name, arg0, arg1, arg2, arg3)	\

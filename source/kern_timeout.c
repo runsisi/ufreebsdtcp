@@ -49,6 +49,10 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/kern/kern_timeout.c 249132 2013-04-05 08:2
 #include <sys/bsd_lock.h>
 #include <sys/bsd_mutex.h>
 
+// runsisi AT hust.edu.cn @2013/11/20
+#include <net/vnet.h>
+// ---------------------- @2013/11/20
+
 static int avg_depth;
 static int avg_gcalls;
 static int avg_lockcalls;
@@ -189,7 +193,7 @@ callout_tick(void)
 	need_softclock = 0;
 	cc = CC_SELF();
 	mtx_lock_spin_flags(&cc->cc_lock, MTX_QUIET);
-	cc->cc_firsttick = cc->cc_ticks = ticks;
+	cc->cc_firsttick = cc->cc_ticks = V_ticks;
 	for (; (cc->cc_softticks - cc->cc_ticks) <= 0; cc->cc_softticks++) {
 		bucket = cc->cc_softticks & callwheelmask;
 		if (!BSD_TAILQ_EMPTY(&cc->cc_callwheel[bucket])) {
@@ -235,14 +239,14 @@ callout_cc_add(struct callout *c, struct callout_cpu *cc, int to_ticks,
 	c->c_arg = arg;
 	c->c_flags |= (CALLOUT_ACTIVE | CALLOUT_PENDING);
 	c->c_func = func;
-	c->c_time = ticks + to_ticks;
+	c->c_time = V_ticks + to_ticks;
 	BSD_TAILQ_INSERT_TAIL(&cc->cc_callwheel[c->c_time & callwheelmask],
 	    c, c_links.tqe);
 	if ((c->c_time - cc->cc_firsttick) < 0 &&
 	    callout_new_inserted != NULL) {
 		cc->cc_firsttick = c->c_time;
 		(*callout_new_inserted)(cpu,
-		    to_ticks + (ticks - cc->cc_ticks));
+		    to_ticks + (V_ticks - cc->cc_ticks));
 	}
 }
 
@@ -549,11 +553,12 @@ _callout_init_lock(c, lock, flags)
 
 // runsisi AT hust.edu.cn @2013/11/01
 extern void hardclock(int usermode, bsd_uintfptr_t pc);
-extern void tcp_hc_callout_init(void);
+
 /*
  * out callout system is driven by this timer
  */
 static DPS_Timer dps_drive_timer;
+
 static void
 clock_drive(DPS_Timer *timer, void *arg)
 {
@@ -591,8 +596,6 @@ again:
     ret = DPS_ResetAoTimer(&dps_drive_timer, PERIODICAL, 10,
             (DPS_TIMER_CBK)clock_drive, (void*)0,
             (DPS_GetAoByID(DPS_GetSelfAoID()))->dwLcoreId);
-
-    tcp_hc_callout_init();
 
     return 0;
 }

@@ -241,7 +241,7 @@ msgbuf_addstr(struct msgbuf *mbp, int pri, char *str, int filter_cr)
 		    (mbp->msg_flags & MSGBUF_NEEDNL) == 0) {
 
 			snprintf(buf, sizeof(buf), "[%jd] ",
-			    (intmax_t)time_uptime);
+			    (intmax_t)V_time_uptime);
 			for (j = 0; buf[j] != '\0'; j++)
 				msgbuf_do_addchar(mbp, &seq, buf[j]);
 			needtime = 0;

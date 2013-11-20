@@ -1266,7 +1266,7 @@ tcp_fill_info(struct tcpcb *tp, struct tcp_info *ti)
 	}
 
 	ti->tcpi_rto = tp->t_rxtcur * tick;
-	ti->tcpi_last_data_recv = (long)(ticks - (int)tp->t_rcvtime) * tick;
+	ti->tcpi_last_data_recv = (long)(V_ticks - (int)tp->t_rcvtime) * tick;
 	ti->tcpi_rtt = ((bsd_uint64_t)tp->t_srtt * tick) >> TCP_RTT_SHIFT;
 	ti->tcpi_rttvar = ((bsd_uint64_t)tp->t_rttvar * tick) >> TCP_RTTVAR_SHIFT;
 

@@ -91,7 +91,7 @@
  * of the public interface and are wrappered with a macro.
  */
 void	sx_sysinit(void *arg);
-#define	sx_init(sx, desc)	sx_init_flags((sx), (desc), 0)
+#define	sx_init(sx, desc)	//sx_init_flags((sx), (desc), 0)
 void	sx_init_flags(struct sx *sx, const char *description, int opts);
 void	sx_destroy(struct sx *sx);
 int	_sx_slock(struct sx *sx, int opts, const char *file, int line);
@@ -254,13 +254,13 @@ __sx_sunlock(struct sx *sx, const char *file, int line)
 #define	sx_assert_(sx, what, file, line)	(void)0
 #endif
 
-#define	sx_xlock(sx)		sx_xlock_((sx), LOCK_FILE, LOCK_LINE)
-#define	sx_xlock_sig(sx)	sx_xlock_sig_((sx), LOCK_FILE, LOCK_LINE)
-#define	sx_xunlock(sx)		sx_xunlock_((sx), LOCK_FILE, LOCK_LINE)
-#define	sx_slock(sx)		sx_slock_((sx), LOCK_FILE, LOCK_LINE)
-#define	sx_slock_sig(sx)	sx_slock_sig_((sx), LOCK_FILE, LOCK_LINE)
-#define	sx_sunlock(sx)		sx_sunlock_((sx), LOCK_FILE, LOCK_LINE)
-#define	sx_assert(sx, what)	sx_assert_((sx), (what), __FILE__, __LINE__)
+#define	sx_xlock(sx)		//sx_xlock_((sx), LOCK_FILE, LOCK_LINE)
+#define	sx_xlock_sig(sx)	//sx_xlock_sig_((sx), LOCK_FILE, LOCK_LINE)
+#define	sx_xunlock(sx)		//sx_xunlock_((sx), LOCK_FILE, LOCK_LINE)
+#define	sx_slock(sx)		//sx_slock_((sx), LOCK_FILE, LOCK_LINE)
+#define	sx_slock_sig(sx)	//sx_slock_sig_((sx), LOCK_FILE, LOCK_LINE)
+#define	sx_sunlock(sx)		//sx_sunlock_((sx), LOCK_FILE, LOCK_LINE)
+#define	sx_assert(sx, what)	//sx_assert_((sx), (what), __FILE__, __LINE__)
 
 /*
  * Return a pointer to the owning thread if the lock is exclusively

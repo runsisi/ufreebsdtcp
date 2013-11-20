@@ -99,8 +99,8 @@ __GLOBL(__start_set_vnet);
 extern bsd_uintptr_t	*__stop_set_vnet;
 __GLOBL(__stop_set_vnet);
 
-#define	VNET_START	(uintptr_t)&__start_set_vnet
-#define	VNET_STOP	(uintptr_t)&__stop_set_vnet
+#define	VNET_START	(bsd_uintptr_t)&__start_set_vnet
+#define	VNET_STOP	(bsd_uintptr_t)&__stop_set_vnet
 
 /*
  * Functions to allocate and destroy virtual network stacks.
@@ -112,7 +112,20 @@ void	vnet_destroy(struct vnet *vnet);
  * The current virtual network stack -- we may wish to move this to struct
  * pcpu in the future.
  */
+#if 0	// runsisi AT hust.edu.cn @2013/11/20
 #define	curvnet	curthread->td_vnet
+#endif 	// ---------------------- @2013/11/20
+// runsisi AT hust.edu.cn @2013/11/20
+/*
+ * These two macros should be the same as those in brs_inst.h,
+ * i redefined here to reduce header file inclusion mess
+ */
+#define curaoid         (DPS_GetSelfAoID())
+#define curao           (DPS_GetAoByID(curaoid))
+#define aoisinjob(ao)   ((ao)->dwAoId == ACTIVE_OBJECT_BRS1)
+
+#define curvnet (*(struct vnet **)(curao)->pVarP)
+// ---------------------- @2013/11/20
 
 /*
  * Various macros -- get and set the current network stack, but also
@@ -179,6 +192,10 @@ void vnet_log_recursion(struct vnet *, const char *, int);
 extern struct vnet *vnet0;
 #define	IS_DEFAULT_VNET(arg)	((arg) == vnet0)
 
+// runsisi AT hust.edu.cn @2013/11/20
+#define AO_TO_VENT(ao)      ((struct vnet *)(ao)->pVarP)
+// ---------------------- @2013/11/20
+
 #define	CRED_TO_VNET(cr)	(cr)->cr_prison->pr_vnet
 #define	TD_TO_VNET(td)		CRED_TO_VNET((td)->td_ucred)
 #define	P_TO_VNET(p)		CRED_TO_VNET((p)->p_ucred)
@@ -212,7 +229,7 @@ extern struct sx vnet_sxlock;
 #define	VNET_DECLARE(t, n)	extern t VNET_NAME(n)
 #define	VNET_DEFINE(t, n)	t VNET_NAME(n) __section(VNET_SETNAME) __used
 #define	_VNET_PTR(b, n)		(__typeof(VNET_NAME(n))*)		\
-				    ((b) + (uintptr_t)&VNET_NAME(n))
+				    ((b) + (bsd_uintptr_t)&VNET_NAME(n))
 
 #define	_VNET(b, n)		(*_VNET_PTR(b, n))
 
@@ -275,7 +292,7 @@ int	vnet_sysctl_handle_uint(SYSCTL_HANDLER_ARGS);
 #define	VNET_SYSCTL_ARG(req, arg1) do {					\
 	if (arg1 != NULL)						\
 		arg1 = (void *)(TD_TO_VNET((req)->td)->vnet_data_base +	\
-		    (uintptr_t)(arg1));					\
+		    (bsd_uintptr_t)(arg1));					\
 } while (0)
 #endif /* SYSCTL_OID */
 
@@ -442,5 +459,17 @@ do {									\
 	eventhandler_register(NULL, #name, func, arg, priority)
 #endif /* VIMAGE */
 #endif /* _KERNEL */
+
+// runsisi AT hust.edu.cn @2013/11/20
+/*
+ * if i dont put it here, then i have to put it all over the c
+ * source files, i have no choice :(
+ */
+VNET_DECLARE(volatile int, ticks);
+#define V_ticks     VNET(ticks)
+
+VNET_DECLARE(volatile bsd_time_t, time_uptime);
+#define V_time_uptime     VNET(time_uptime)
+// ---------------------- @2013/11/20
 
 #endif /* !_NET_VNET_H_ */

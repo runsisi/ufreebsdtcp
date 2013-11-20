@@ -282,7 +282,9 @@ void	inittodr(bsd_time_t base);
 void	resettodr(void);
 
 extern volatile bsd_time_t	time_second;
+#if 0	// runsisi AT hust.edu.cn @2013/11/20
 extern volatile bsd_time_t	time_uptime;
+#endif 	// ---------------------- @2013/11/20
 extern struct bsd_bintime boottimebin;
 extern struct bsd_timeval boottime;
 

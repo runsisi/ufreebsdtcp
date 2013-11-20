@@ -674,7 +674,7 @@ faultin(p)
 			vm_thread_swapin(td);
 		PROC_LOCK(p);
 		swapclear(p);
-		p->p_swtick = ticks;
+		p->p_swtick = V_ticks;
 
 		wakeup(&p->p_flag);
 
@@ -723,7 +723,7 @@ loop:
 			PROC_UNLOCK(p);
 			continue;
 		}
-		swtime = (ticks - p->p_swtick) / hz;
+		swtime = (V_ticks - p->p_swtick) / hz;
 		FOREACH_THREAD_IN_PROC(p, td) {
 			/*
 			 * An otherwise runnable thread of a process
@@ -732,7 +732,7 @@ loop:
 			 */
 			thread_lock(td);
 			if (td->td_inhibitors == TDI_SWAPPED) {
-				slptime = (ticks - td->td_slptick) / hz;
+				slptime = (V_ticks - td->td_slptick) / hz;
 				pri = swtime + slptime;
 				if ((td->td_flags & TDF_SWAPINREQ) == 0)
 					pri -= p->p_nice * 8;
@@ -892,7 +892,7 @@ retry:
 					thread_unlock(td);
 					goto nextproc;
 				}
-				slptime = (ticks - td->td_slptick) / hz;
+				slptime = (V_ticks - td->td_slptick) / hz;
 				/*
 				 * Guarantee swap_idle_threshold1
 				 * time in memory.
@@ -1049,7 +1049,7 @@ swapout(p)
 
 	PROC_LOCK(p);
 	p->p_flag &= ~P_SWAPPINGOUT;
-	p->p_swtick = ticks;
+	p->p_swtick = V_ticks;
 	return (0);
 }
 #endif /* !NO_SWAPPING */

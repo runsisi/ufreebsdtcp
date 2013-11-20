@@ -1581,8 +1581,8 @@ schedinit(void)
 	 */
 	proc0.p_sched = NULL; /* XXX */
 	thread0.td_sched = &td_sched0;
-	td_sched0.ts_ltick = ticks;
-	td_sched0.ts_ftick = ticks;
+	td_sched0.ts_ltick = V_ticks;
+	td_sched0.ts_ftick = V_ticks;
 	td_sched0.ts_slice = sched_slice;
 }
 
@@ -1608,7 +1608,7 @@ sched_rr_interval(void)
 static void
 sched_pctcpu_update(struct td_sched *ts, int run)
 {
-	int t = ticks;
+	int t = V_ticks;
 
 	if (t - ts->ts_ltick >= SCHED_TICK_TARG) {
 		ts->ts_ticks = 0;
@@ -1843,7 +1843,7 @@ sched_switch(struct thread *td, struct thread *newtd, int flags)
 	ts = td->td_sched;
 	mtx = td->td_lock;
 	sched_pctcpu_update(ts, 1);
-	ts->ts_rltick = ticks;
+	ts->ts_rltick = V_ticks;
 	td->td_lastcpu = td->td_oncpu;
 	td->td_oncpu = NOCPU;
 	preempted = !(td->td_flags & TDF_SLICEEND);
@@ -1967,7 +1967,7 @@ sched_sleep(struct thread *td, int prio)
 
 	THREAD_LOCK_ASSERT(td, MA_OWNED);
 
-	td->td_slptick = ticks;
+	td->td_slptick = V_ticks;
 	if (TD_IS_SUSPENDED(td) || prio >= PSOCK)
 		td->td_flags |= TDF_CANSWAP;
 	if (PRI_BASE(td->td_pri_class) != PRI_TIMESHARE)
@@ -1997,8 +1997,8 @@ sched_wakeup(struct thread *td)
 	 */
 	slptick = td->td_slptick;
 	td->td_slptick = 0;
-	if (slptick && slptick != ticks) {
-		ts->ts_slptime += (ticks - slptick) << SCHED_TICK_SHIFT;
+	if (slptick && slptick != V_ticks) {
+		ts->ts_slptime += (V_ticks - slptick) << SCHED_TICK_SHIFT;
 		sched_interact_update(td);
 		sched_pctcpu_update(ts, 0);
 	}
@@ -2652,7 +2652,7 @@ sched_throw(struct thread *td)
 		TDQ_LOCK(tdq);
 		spinlock_exit();
 		PCPU_SET(switchtime, cpu_ticks());
-		PCPU_SET(switchticks, ticks);
+		PCPU_SET(switchticks, V_ticks);
 	} else {
 		MPASS(td->td_lock == TDQ_LOCKPTR(tdq));
 		tdq_load_rem(tdq, td);

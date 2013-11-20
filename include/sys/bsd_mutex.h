@@ -280,5 +280,10 @@ struct mtx_args {
  */
 #define	MTX_NETWORK_LOCK	"network driver"
 
+// runsisi AT hust.edu.cn @2013/11/20
+void mtx_init(struct mtx *m, const char *name, const char *type, int opts);
+void mtx_destroy(struct mtx *m);
+// ---------------------- @2013/11/20
+
 #endif	/* _KERNEL */
 #endif	/* _SYS_MUTEX_H_ */

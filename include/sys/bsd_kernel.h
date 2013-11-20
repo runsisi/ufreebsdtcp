@@ -63,7 +63,9 @@ extern int psratio;			/* ratio: prof / stat */
 extern int stathz;			/* statistics clock's frequency */
 extern int profhz;			/* profiling clock's frequency */
 extern int profprocs;			/* number of process's profiling */
+#if 0	// runsisi AT hust.edu.cn @2013/11/20
 extern volatile int ticks;
+#endif 	// ---------------------- @2013/11/20
 
 #endif /* _KERNEL */
 

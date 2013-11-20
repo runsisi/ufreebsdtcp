@@ -449,7 +449,7 @@ mi_switch(int flags, struct thread *newtd)
 		return;
 	if (flags & SW_VOL) {
 		td->td_ru.ru_nvcsw++;
-		td->td_swvoltick = ticks;
+		td->td_swvoltick = V_ticks;
 	} else
 		td->td_ru.ru_nivcsw++;
 #ifdef SCHED_STATS
@@ -466,7 +466,7 @@ mi_switch(int flags, struct thread *newtd)
 	PCPU_SET(switchtime, new_switchtime);
 	td->td_generation++;	/* bump preempt-detect counter */
 	PCPU_INC(cnt.v_swtch);
-	PCPU_SET(switchticks, ticks);
+	PCPU_SET(switchticks, V_ticks);
 	CTR4(KTR_PROC, "mi_switch: old thread %ld (td_sched %p, pid %ld, %s)",
 	    td->td_tid, td->td_sched, p->p_pid, td->td_name);
 #if (KTR_COMPILE & KTR_SCHED) != 0
@@ -578,7 +578,7 @@ int
 should_yield(void)
 {
 
-	return ((unsigned int)(ticks - curthread->td_swvoltick) >= hogticks);
+	return ((unsigned int)(V_ticks - curthread->td_swvoltick) >= hogticks);
 }
 
 void

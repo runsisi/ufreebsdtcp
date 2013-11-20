@@ -136,7 +136,7 @@ cubic_ack_received(struct cc_var *ccv, bsd_uint16_t type)
 		    cubic_data->min_rtt_ticks == TCPTV_SRTTBASE)
 			newreno_cc_algo.ack_received(ccv, type);
 		else {
-			ticks_since_cong = ticks - cubic_data->t_last_cong;
+			ticks_since_cong = V_ticks - cubic_data->t_last_cong;
 
 			/*
 			 * The mean RTT is used to best reflect the equations in
@@ -209,7 +209,7 @@ cubic_cb_init(struct cc_var *ccv)
 		return (ENOMEM);
 
 	/* Init some key variables with sensible defaults. */
-	cubic_data->t_last_cong = ticks;
+	cubic_data->t_last_cong = V_ticks;
 	cubic_data->min_rtt_ticks = TCPTV_SRTTBASE;
 	cubic_data->mean_rtt_ticks = 1;
 
@@ -247,7 +247,7 @@ cubic_cong_signal(struct cc_var *ccv, bsd_uint32_t type)
 			cubic_data->num_cong_events++;
 			cubic_data->prev_max_cwnd = cubic_data->max_cwnd;
 			cubic_data->max_cwnd = CCV(ccv, snd_cwnd);
-			cubic_data->t_last_cong = ticks;
+			cubic_data->t_last_cong = V_ticks;
 			CCV(ccv, snd_cwnd) = CCV(ccv, snd_ssthresh);
 			ENTER_CONGRECOVERY(CCV(ccv, t_flags));
 		}
@@ -263,7 +263,7 @@ cubic_cong_signal(struct cc_var *ccv, bsd_uint32_t type)
 		 */
 		if (CCV(ccv, t_rxtshift) >= 2)
 			cubic_data->num_cong_events++;
-			cubic_data->t_last_cong = ticks;
+			cubic_data->t_last_cong = V_ticks;
 		break;
 	}
 }
@@ -324,7 +324,7 @@ cubic_post_recovery(struct cc_var *ccv)
 			CCV(ccv, snd_cwnd) = max(1, ((CUBIC_BETA *
 			    cubic_data->max_cwnd) >> CUBIC_SHIFT));
 	}
-	cubic_data->t_last_cong = ticks;
+	cubic_data->t_last_cong = V_ticks;
 
 	/* Calculate the average RTT between congestion epochs. */
 	if (cubic_data->epoch_ack_count > 0 &&

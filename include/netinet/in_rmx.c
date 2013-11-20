@@ -167,7 +167,7 @@ in_clsroute(struct radix_node *rn, struct radix_node_head *head)
 	 */
 	if (V_rtq_reallyold != 0) {
 		rt->rt_flags |= RTPRF_OURS;
-		rt->rt_rmx.rmx_expire = time_uptime + V_rtq_reallyold;
+		rt->rt_rmx.rmx_expire = V_time_uptime + V_rtq_reallyold;
 	} else {
 		rtexpunge(rt);
 	}
@@ -199,7 +199,7 @@ in_rtqkill(struct radix_node *rn, void *rock)
 	if (rt->rt_flags & RTPRF_OURS) {
 		ap->found++;
 
-		if (ap->draining || rt->rt_rmx.rmx_expire <= time_uptime) {
+		if (ap->draining || rt->rt_rmx.rmx_expire <= V_time_uptime) {
 			if (rt->rt_refcnt > 0)
 				panic("rtqkill route really not free");
 
@@ -215,10 +215,10 @@ in_rtqkill(struct radix_node *rn, void *rock)
 			}
 		} else {
 			if (ap->updating &&
-			    (rt->rt_rmx.rmx_expire - time_uptime >
+			    (rt->rt_rmx.rmx_expire - V_time_uptime >
 			     V_rtq_reallyold)) {
 				rt->rt_rmx.rmx_expire =
-				    time_uptime + V_rtq_reallyold;
+				    V_time_uptime + V_rtq_reallyold;
 			}
 			ap->nextstop = lmin(ap->nextstop,
 					    rt->rt_rmx.rmx_expire);
@@ -265,7 +265,7 @@ in_rtqtimo_one(void *rock)
 
 	arg.found = arg.killed = 0;
 	arg.rnh = rnh;
-	arg.nextstop = time_uptime + V_rtq_timeout;
+	arg.nextstop = V_time_uptime + V_rtq_timeout;
 	arg.draining = arg.updating = 0;
 	RADIX_NODE_HEAD_LOCK(rnh);
 	rnh->rnh_walktree(rnh, in_rtqkill, &arg);
@@ -280,14 +280,14 @@ in_rtqtimo_one(void *rock)
 	 * hard.
 	 */
 	if ((arg.found - arg.killed > V_rtq_toomany) &&
-	    (time_uptime - last_adjusted_timeout >= V_rtq_timeout) &&
+	    (V_time_uptime - last_adjusted_timeout >= V_rtq_timeout) &&
 	    V_rtq_reallyold > V_rtq_minreallyold) {
 		V_rtq_reallyold = 2 * V_rtq_reallyold / 3;
 		if (V_rtq_reallyold < V_rtq_minreallyold) {
 			V_rtq_reallyold = V_rtq_minreallyold;
 		}
 
-		last_adjusted_timeout = time_uptime;
+		last_adjusted_timeout = V_time_uptime;
 #ifdef DIAGNOSTIC
 		bsd_log(LOG_DEBUG, "in_rtqtimo: adjusted rtq_reallyold to %d\n",
 		    V_rtq_reallyold);

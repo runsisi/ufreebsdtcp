@@ -265,7 +265,7 @@ syncache_destroy(void)
 		callout_drain(&sch->sch_timer);
 
 		SCH_LOCK(sch);
-		TAILQ_FOREACH_SAFE(sc, &sch->sch_bucket, sc_hash, nsc)
+		BSD_TAILQ_FOREACH_SAFE(sc, &sch->sch_bucket, sc_hash, nsc)
 			syncache_drop(sc, sch);
 		SCH_UNLOCK(sch);
 		KASSERT(TAILQ_EMPTY(&sch->sch_bucket),
@@ -332,7 +332,7 @@ syncache_insert(struct syncache *sc, struct syncache_head *sch)
 
 	/* Reinitialize the bucket row's timer. */
 	if (sch->sch_length == 1)
-		sch->sch_nextc = ticks + BSD_INT_MAX;
+		sch->sch_nextc = V_ticks + BSD_INT_MAX;
 	syncache_timeout(sc, sch, 1);
 
 	SCH_UNLOCK(sch);
@@ -370,13 +370,13 @@ syncache_drop(struct syncache *sc, struct syncache_head *sch)
 static void
 syncache_timeout(struct syncache *sc, struct syncache_head *sch, int docallout)
 {
-	sc->sc_rxttime = ticks +
+	sc->sc_rxttime = V_ticks +
 		TCPTV_RTOBASE * (tcp_backoff[sc->sc_rxmits]);
 	sc->sc_rxmits++;
 	if (TSTMP_LT(sc->sc_rxttime, sch->sch_nextc)) {
 		sch->sch_nextc = sc->sc_rxttime;
 		if (docallout)
-			callout_reset(&sch->sch_timer, sch->sch_nextc - ticks,
+			callout_reset(&sch->sch_timer, sch->sch_nextc - V_ticks,
 			    syncache_timer, (void *)sch);
 	}
 }
@@ -391,7 +391,7 @@ syncache_timer(void *xsch)
 {
 	struct syncache_head *sch = (struct syncache_head *)xsch;
 	struct syncache *sc, *nsc;
-	int tick = ticks;
+	int tick = V_ticks;
 	char *s;
 
 	CURVNET_SET(sch->sch_vnet);
@@ -1621,13 +1621,13 @@ syncookie_generate(struct syncache_head *sch, struct syncache *sc,
 			sch->sch_secbits_odd : sch->sch_secbits_even;
 
 	/* Reseed secret if too old. */
-	if (sch->sch_reseed < time_uptime) {
+	if (sch->sch_reseed < V_time_uptime) {
 		sch->sch_oddeven = sch->sch_oddeven ? 0 : 1;	/* toggle */
 		secbits = sch->sch_oddeven ?
 				sch->sch_secbits_odd : sch->sch_secbits_even;
 		for (i = 0; i < SYNCOOKIE_SECRET_SIZE; i++)
 			secbits[i] = arc4random();
-		sch->sch_reseed = time_uptime + SYNCOOKIE_LIFETIME;
+		sch->sch_reseed = V_time_uptime + SYNCOOKIE_LIFETIME;
 	}
 
 	/* Secret rotation offset. */
@@ -1707,7 +1707,7 @@ syncookie_lookup(struct in_conninfo *inc, struct syncache_head *sch,
 	 * The secret wasn't updated for the lifetime of a syncookie,
 	 * so this SYN-ACK/ACK is either too old (replay) or totally bogus.
 	 */
-	if (sch->sch_reseed + SYNCOOKIE_LIFETIME < time_uptime) {
+	if (sch->sch_reseed + SYNCOOKIE_LIFETIME < V_time_uptime) {
 		return (NULL);
 	}
 

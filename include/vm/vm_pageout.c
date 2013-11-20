@@ -1659,9 +1659,9 @@ vm_req_vmdaemon(int req)
 
 	mtx_lock(&vm_daemon_mtx);
 	vm_pageout_req_swapout |= req;
-	if ((ticks > (lastrun + hz)) || (ticks < lastrun)) {
+	if ((V_ticks > (lastrun + hz)) || (V_ticks < lastrun)) {
 		wakeup(&vm_daemon_needed);
-		lastrun = ticks;
+		lastrun = V_ticks;
 	}
 	mtx_unlock(&vm_daemon_mtx);
 }

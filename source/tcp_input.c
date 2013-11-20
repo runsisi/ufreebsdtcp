@@ -1466,7 +1466,7 @@ tcp_do_segment(struct mbuf *m, struct bsd_tcphdr *th, struct bsd_socket *so,
 	 * XXX: This should be done after segment
 	 * validation to ignore broken/spoofed segs.
 	 */
-	tp->t_rcvtime = ticks;
+	tp->t_rcvtime = V_ticks;
 	if (TCPS_HAVEESTABLISHED(tp->t_state))
 		tcp_timer_activate(tp, TT_KEEP, TP_KEEPIDLE(tp));
 
@@ -1608,7 +1608,7 @@ tcp_do_segment(struct mbuf *m, struct bsd_tcphdr *th, struct bsd_socket *so,
 				 */
 				if (tp->t_rxtshift == 1 &&
 				    tp->t_flags & TF_PREVVALID &&
-				    (int)(ticks - tp->t_badrxtwin) < 0) {
+				    (int)(V_ticks - tp->t_badrxtwin) < 0) {
 					cc_cong_signal(tp, th, CC_RTO_ERR);
 				}
 
@@ -1632,10 +1632,10 @@ tcp_do_segment(struct mbuf *m, struct bsd_tcphdr *th, struct bsd_socket *so,
 				} else if (tp->t_rtttime &&
 				    SEQ_GT(th->th_ack, tp->t_rtseq)) {
 					if (!tp->t_rttlow ||
-					    tp->t_rttlow > ticks - tp->t_rtttime)
-						tp->t_rttlow = ticks - tp->t_rtttime;
+					    tp->t_rttlow > V_ticks - tp->t_rtttime)
+						tp->t_rttlow = V_ticks - tp->t_rtttime;
 					tcp_xmit_timer(tp,
-							ticks - tp->t_rtttime);
+							V_ticks - tp->t_rtttime);
 				}
 				acked = BYTES_THIS_ACK(tp, th);
 
@@ -1912,7 +1912,7 @@ tcp_do_segment(struct mbuf *m, struct bsd_tcphdr *th, struct bsd_socket *so,
 			 *	SYN_SENT  --> ESTABLISHED
 			 *	SYN_SENT* --> FIN_WAIT_1
 			 */
-			tp->t_starttime = ticks;
+			tp->t_starttime = V_ticks;
 			if (tp->t_flags & TF_NEEDFIN) {
 				tp->t_state = TCPS_FIN_WAIT_1;
 				tp->t_flags &= ~TF_NEEDFIN;
@@ -2318,7 +2318,7 @@ tcp_do_segment(struct mbuf *m, struct bsd_tcphdr *th, struct bsd_socket *so,
 		 *      SYN-RECEIVED  -> ESTABLISHED
 		 *      SYN-RECEIVED* -> FIN-WAIT-1
 		 */
-		tp->t_starttime = ticks;
+		tp->t_starttime = V_ticks;
 		if (tp->t_flags & TF_NEEDFIN) {
 			tp->t_state = TCPS_FIN_WAIT_1;
 			tp->t_flags &= ~TF_NEEDFIN;
@@ -2600,7 +2600,7 @@ process_ACK:
 		 * we left off.
 		 */
 		if (tp->t_rxtshift == 1 && tp->t_flags & TF_PREVVALID &&
-		    (int)(ticks - tp->t_badrxtwin) < 0)
+		    (int)(V_ticks - tp->t_badrxtwin) < 0)
 			cc_cong_signal(tp, th, CC_RTO_ERR);
 
 		/*
@@ -2625,9 +2625,9 @@ process_ACK:
 				tp->t_rttlow = t;
 			tcp_xmit_timer(tp, TCP_TS_TO_TICKS(t) + 1);
 		} else if (tp->t_rtttime && SEQ_GT(th->th_ack, tp->t_rtseq)) {
-			if (!tp->t_rttlow || tp->t_rttlow > ticks - tp->t_rtttime)
-				tp->t_rttlow = ticks - tp->t_rtttime;
-			tcp_xmit_timer(tp, ticks - tp->t_rtttime);
+			if (!tp->t_rttlow || tp->t_rttlow > V_ticks - tp->t_rtttime)
+				tp->t_rttlow = V_ticks - tp->t_rtttime;
+			tcp_xmit_timer(tp, V_ticks - tp->t_rtttime);
 		}
 
 		/*
@@ -2947,7 +2947,7 @@ dodata:							/* XXX */
 		 * enter the CLOSE_WAIT state.
 		 */
 		case TCPS_SYN_RECEIVED:
-			tp->t_starttime = ticks;
+			tp->t_starttime = V_ticks;
 			/* FALLTHROUGH */
 		case TCPS_ESTABLISHED:
 			tp->t_state = TCPS_CLOSE_WAIT;

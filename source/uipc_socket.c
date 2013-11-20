@@ -442,7 +442,10 @@ bsd_socreate(int dom, struct bsd_socket **aso, int type, int proto,
 
 	if (prp->pr_type != type)
 		return (BSD_EPROTOTYPE);
-	so = soalloc(CRED_TO_VNET(cred));
+    #if 0	// runsisi AT hust.edu.cn @2013/11/20
+    so = soalloc(CRED_TO_VNET(cred));
+    #endif 	// ---------------------- @2013/11/20
+    so = soalloc(curvnet);
 	if (so == NULL)
 		return (BSD_ENOBUFS);
 

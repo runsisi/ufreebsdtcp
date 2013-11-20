@@ -13,6 +13,8 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/kern/kern_tc.c 248085 2013-03-09 02:36:32Z
 #include "opt_compat.h"
 #include "opt_ntp.h"
 
+#include "dps_frame.h"
+
 #include <sys/bsd_param.h>
 #include <sys/bsd_kernel.h>
 #include <sys/bsd_sysctl.h>
@@ -23,7 +25,17 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/kern/kern_tc.c 248085 2013-03-09 02:36:32Z
 #include <sys/bsd_timex.h>
 #include <sys/bsd_vdso.h>
 
+// runsisi AT hust.edu.cn @2013/11/20
+#include <net/vnet.h>
+// ---------------------- @2013/11/20
+
+#if 0	// runsisi AT hust.edu.cn @2013/11/20
 volatile bsd_time_t time_uptime = 1;
+#endif 	// ---------------------- @2013/11/20
+// runsisi AT hust.edu.cn @2013/11/20
+VNET_DEFINE(volatile bsd_time_t, time_uptime) = 1;
+#define V_time_uptime     VNET(time_uptime)
+// ---------------------- @2013/11/20
 
 static void tc_windup(void);
 
@@ -40,9 +52,9 @@ tc_windup(void)
      * fortunately in brs we always use time_uptime to calculate
      * relative time, and it ok if it not precise
      */
-    if ((unsigned int)ticks % hz == 0)
+    if ((unsigned int)V_ticks % hz == 0)
     {
-        time_uptime++;
+        V_time_uptime++;
     }
 }
 
