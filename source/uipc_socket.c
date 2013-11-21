@@ -2112,6 +2112,74 @@ bsd_soshutdown(struct bsd_socket *so, int how)
 	return (0);
 }
 
+// runsisi AT hust.edu.cn @2013/11/20
+int
+bsd_sogetsockname(struct bsd_socket *so, struct bsd_sockaddr **sa,
+        bsd_socklen_t *alen)
+{
+    bsd_socklen_t len;
+    int error;
+
+    if (*alen < 0)
+        return (BSD_EINVAL);
+
+    *sa = NULL;
+    CURVNET_SET(so->so_vnet);
+    error = (*so->so_proto->pr_usrreqs->pru_sockaddr)(so, sa);
+    CURVNET_RESTORE();
+    if (error)
+        goto bad;
+    if (*sa == NULL)
+        len = 0;
+    else
+        len = BSD_MIN(*alen, (*sa)->sa_len);
+    *alen = len;
+bad:
+    if (error && *sa)
+    {
+        bsd_free(*sa, M_SONAME);
+        *sa = NULL;
+    }
+    return (error);
+}
+
+int
+bsd_sogetpeername(struct bsd_socket *so, struct bsd_sockaddr **sa,
+        bsd_socklen_t *alen)
+{
+    bsd_socklen_t len;
+    int error;
+
+    if (*alen < 0)
+        return (BSD_EINVAL);
+
+    if ((so->so_state & (SS_ISCONNECTED|SS_ISCONFIRMING)) == 0)
+    {
+        error = BSD_ENOTCONN;
+        goto done;
+    }
+    *sa = NULL;
+    CURVNET_SET(so->so_vnet);
+    error = (*so->so_proto->pr_usrreqs->pru_peeraddr)(so, sa);
+    CURVNET_RESTORE();
+    if (error)
+        goto bad;
+    if (*sa == NULL)
+        len = 0;
+    else
+        len = BSD_MIN(*alen, (*sa)->sa_len);
+    *alen = len;
+bad:
+    if (error && *sa)
+    {
+        bsd_free(*sa, M_SONAME);
+        *sa = NULL;
+    }
+done:
+    return (error);
+}
+// ---------------------- @2013/11/20
+
 void
 sorflush(struct bsd_socket *so)
 {
@@ -3145,7 +3213,7 @@ restart:
             linp = sotoinpcb(head);
             inp = sotoinpcb(so);
             linp->inp_inc.inc_fibnum = inp->inp_inc.inc_fibnum;
-            soasyncnotify(head, SAN_ACCEPT);
+            soasyncnotify(head, SN_ACCEPT);
             // ---------------------- @2013/11/11
 		} else {
 			ACCEPT_UNLOCK();
@@ -3179,14 +3247,14 @@ restart:
 	 */
 	if (head == NULL)
 	{
-	    soasyncnotify(so, SAN_CONNECTED);
+	    soasyncnotify(so, SN_CONNECTED);
 	}
 	else
 	{
 	    linp = sotoinpcb(head);
 	    inp = sotoinpcb(so);
 	    linp->inp_inc.inc_fibnum = inp->inp_inc.inc_fibnum;
-	    soasyncnotify(head, SAN_ACCEPT);
+	    soasyncnotify(head, SN_ACCEPT);
 	}
     // ---------------------- @2013/11/13
 }
@@ -3244,7 +3312,7 @@ soisdisconnected(struct bsd_socket *so)
      */
     if (so->so_error)
     {
-        soasyncnotify(so, SAN_DISCONNECTED);
+        soasyncnotify(so, SN_DISCONNECTED);
     }
     // ---------------------- @2013/11/13
 }

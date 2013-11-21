@@ -376,6 +376,12 @@ int	sosend_generic(struct bsd_socket *so, struct bsd_sockaddr *addr,
 	    struct uio *uio, struct mbuf *top, struct mbuf *control,
 	    int flags, struct thread *td);
 int	bsd_soshutdown(struct bsd_socket *so, int how);
+// runsisi AT hust.edu.cn @2013/11/21
+int bsd_sogetsockname(struct bsd_socket *so, struct bsd_sockaddr **sa,
+        bsd_socklen_t *alen);
+int bsd_sogetpeername(struct bsd_socket *so, struct bsd_sockaddr **sa,
+        bsd_socklen_t *alen);
+// ---------------------- @2013/11/21
 void	sotoxsocket(struct bsd_socket *so, struct xsocket *xso);
 void	soupcall_clear(struct bsd_socket *so, int which);
 void	soupcall_set(struct bsd_socket *so, int which,

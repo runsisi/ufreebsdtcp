@@ -225,11 +225,11 @@ sowakeup(struct bsd_socket *so, struct sockbuf *sb)
      */
     if (&so->so_rcv == sb)
     {
-        soasyncnotify(so, SAN_READ);
+        soasyncnotify(so, SN_READ);
     }
     else /*if (&so->so_snd == sb)*/ /* other branch is not possible:) */
     {
-        soasyncnotify(so, SAN_WRITE);
+        soasyncnotify(so, SN_WRITE);
     }
 
     // ---------------------- @2013/11/13

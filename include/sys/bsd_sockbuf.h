@@ -58,12 +58,12 @@
 #define	SBS_RCVATMARK		0x0040	/* at mark on input */
 
 // runsisi AT hust.edu.cn @2013/11/13
-#define SAN_READ        0x01        /* asynchronous readable notification */
-#define SAN_WRITE       0x02        /* asynchronous writable notification */
-#define SAN_ACCEPT      0x04        /* listen sock can accept */
-#define SAN_CONNECTED   0x08        /* active connect succeeded */
-#define SAN_DISCONNECTED    0x10    /* tcp connection aborted/finished */
-#define SAN_ERROR       0x20        /* something bad happened */
+#define SN_READ         0x01        /* asynchronous readable notification */
+#define SN_WRITE        0x02        /* asynchronous writable notification */
+#define SN_ACCEPT       0x04        /* listen sock can accept */
+#define SN_CONNECTED    0x08        /* active connect succeeded */
+#define SN_DISCONNECTED 0x10        /* tcp connection aborted/finished */
+#define SN_ERROR        0x20        /* something bad happened */
 
 #define SQT_RCV     0x01        /* dps queue type for socket receive */
 #define SQT_SND     0x02        /* dps queue type for socket send */
