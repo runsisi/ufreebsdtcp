@@ -1291,8 +1291,18 @@ restart:
 release:
 	sbunlock(&so->so_snd);
 out:
-	if (top != NULL)
-		m_freem(top);
+    #if 0	// runsisi AT hust.edu.cn @2013/11/22
+    if (top != NULL)
+        m_freem(top);
+    #endif 	// ---------------------- @2013/11/22
+    // runsisi AT hust.edu.cn @2013/11/22
+    /* if can not send because of send space shortage, then we must not
+     * free it, we have leave it in dps send queue, then let the dps notify
+     * the user app that brs is too busy now
+     */
+    if (top != NULL && error != BSD_EWOULDBLOCK)
+        m_freem(top);
+    // ---------------------- @2013/11/22
 	if (control != NULL)
 		m_freem(control);
 	return (error);
