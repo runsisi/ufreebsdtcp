@@ -97,15 +97,29 @@ struct callout_cpu {
 	int 			cc_firsttick;
 };
 
+#if 0	// runsisi AT hust.edu.cn @2013/11/22
 struct callout_cpu cc_cpu;
 #define	CC_CPU(cpu)	&cc_cpu
 #define	CC_SELF()	&cc_cpu
+#endif 	// ---------------------- @2013/11/22
+// runsisi AT hust.edu.cn @2013/11/22
+VNET_DEFINE(struct callout_cpu, cc_cpu);
+#define V_cc_cpu     VNET(cc_cpu)
+#define CC_CPU(cpu) &V_cc_cpu
+#define CC_SELF()   &V_cc_cpu
+// ---------------------- @2013/11/22
 
 #define	CC_LOCK(cc)	mtx_lock_spin(&(cc)->cc_lock)
 #define	CC_UNLOCK(cc)	mtx_unlock_spin(&(cc)->cc_lock)
 #define	CC_LOCK_ASSERT(cc)	mtx_assert(&(cc)->cc_lock, MA_OWNED)
 
+#if 0	// runsisi AT hust.edu.cn @2013/11/22
 static int timeout_cpu;
+#endif 	// ---------------------- @2013/11/22
+// runsisi AT hust.edu.cn @2013/11/22
+static VNET_DEFINE(int, timeout_cpu);
+#define V_timeout_cpu     VNET(timeout_cpu)
+// ---------------------- @2013/11/22
 void (*callout_new_inserted)(int cpu, int ticks) = NULL;
 
 static void softclock(void *arg);
@@ -138,8 +152,8 @@ kern_timeout_callwheel_alloc(caddr_t v)
 {
 	struct callout_cpu *cc;
 
-	timeout_cpu = 0;
-	cc = CC_CPU(timeout_cpu);
+	V_timeout_cpu = 0;
+	cc = CC_CPU(V_timeout_cpu);
 	/*
 	 * Calculate callout wheel size
 	 */
@@ -176,7 +190,7 @@ callout_cpu_init(struct callout_cpu *cc)
 void
 kern_timeout_callwheel_init(void)
 {
-	callout_cpu_init(CC_CPU(timeout_cpu));
+	callout_cpu_init(CC_CPU(V_timeout_cpu));
 }
 
 void
@@ -528,7 +542,7 @@ callout_init(c, mpsafe)
 
     c->c_lock = NULL;
     c->c_flags = CALLOUT_RETURNUNLOCKED;
-	c->c_cpu = timeout_cpu;
+	c->c_cpu = V_timeout_cpu;
 }
 
 void
@@ -547,7 +561,7 @@ _callout_init_lock(c, lock, flags)
 	    (LC_SPINLOCK | LC_SLEEPABLE)), ("%s: invalid lock class",
 	    __func__));
 	c->c_flags = flags & (CALLOUT_RETURNUNLOCKED | CALLOUT_SHAREDLOCK);
-	c->c_cpu = timeout_cpu;
+	c->c_cpu = V_timeout_cpu;
 }
 
 
@@ -557,7 +571,8 @@ extern void hardclock(int usermode, bsd_uintfptr_t pc);
 /*
  * out callout system is driven by this timer, and used for clock
  */
-static DPS_Timer callout_drive_timer;
+static VNET_DEFINE(DPS_Timer, callout_drive_timer);
+#define V_callout_drive_timer     VNET(callout_drive_timer)
 
 static void
 clock_drive(DPS_Timer *timer, void *arg)
@@ -592,7 +607,7 @@ again:
     kern_timeout_callwheel_init();
 
     /* hz = 100, reference to subr_param.c */
-    ret = DPS_ResetAoTimer(&callout_drive_timer, PERIODICAL, 10,
+    ret = DPS_ResetAoTimer(&V_callout_drive_timer, PERIODICAL, 10,
             (DPS_TIMER_CBK)clock_drive, (void*)0,
             (DPS_GetAoByID(DPS_GetSelfAoID()))->dwLcoreId);
     if (ret != 0)
