@@ -152,7 +152,7 @@ VNET_DEFINE(int, tcp_ecn_maxretries) = 1;
 VNET_DEFINE(int, tcp_insecure_rst) = 0;
 #define	V_tcp_insecure_rst	VNET(tcp_insecure_rst)
 
-VNET_DEFINE(int, tcp_recvspace) = 1024*1024*2;  //1024*64;
+VNET_DEFINE(int, tcp_recvspace) = 1024*1024*4;  //1024*64;
 
 VNET_DEFINE(int, tcp_do_autorcvbuf) = 1;
 #define	V_tcp_do_autorcvbuf	VNET(tcp_do_autorcvbuf)
