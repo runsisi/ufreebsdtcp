@@ -424,6 +424,7 @@ static __inline int		 m_init(struct mbuf *m, uma_zone_t zone,
                     int size, int how, short type, int flags);
 #endif 	// ---------------------- @2013/11/05
 static __inline struct mbuf	*m_free(struct mbuf *m);
+static __inline struct mbuf *m_free1(struct mbuf *m, char *caller);
 static __inline void		 m_clget(struct mbuf *m, int how);
 static __inline void		*m_cljget(struct mbuf *m, int how, int size);
 static __inline void		 m_chtype(struct mbuf *m, short new_type);
@@ -432,7 +433,7 @@ static __inline struct mbuf	*m_last(struct mbuf *m);
 int				 m_pkthdr_init(struct mbuf *m, int how);
 // runsisi AT hust.edu.cn @2013/11/06
 extern struct mbuf *m_get_internal(uma_zone_t zone, void *arg, int how);
-extern void m_free_internal(uma_zone_t zone, struct mbuf *m);
+extern void m_free_internal(uma_zone_t zone, struct mbuf *m, char *caller);
 // ---------------------- @2013/11/06
 
 static __inline int
@@ -641,9 +642,27 @@ m_free(struct mbuf *m)
     #endif 	// ---------------------- @2013/11/04
 
     // runsisi AT hust.edu.cn @2013/11/04
-    m_free_internal(zone_mbuf, m);
+    m_free_internal(zone_mbuf, m, __func__);
     // ---------------------- @2013/11/04
 	return (n);
+}
+
+static __inline struct mbuf *
+m_free1(struct mbuf *m, char *caller)
+{
+    struct mbuf *n = m->m_next;
+
+    #if 0   // runsisi AT hust.edu.cn @2013/11/04
+    if (m->m_flags & M_EXT)
+        mb_free_ext(m);
+    else if ((m->m_flags & M_NOFREE) == 0)
+        uma_zfree(zone_mbuf, m);
+    #endif  // ---------------------- @2013/11/04
+
+    // runsisi AT hust.edu.cn @2013/11/04
+    m_free_internal(zone_mbuf, m, caller);
+    // ---------------------- @2013/11/04
+    return (n);
 }
 
 static __inline void

@@ -853,6 +853,26 @@ sbflush_internal(struct sockbuf *sb)
 		    sb->sb_cc, (void *)sb->sb_mb, sb->sb_mbcnt);
 }
 
+// runsisi AT hust.edu.cn @2013/11/25
+static void
+sbflush_internal1(struct sockbuf *sb, char *caller)
+{
+
+    while (sb->sb_mbcnt) {
+        /*
+         * Don't call sbdrop(sb, 0) if the leading mbuf is non-empty:
+         * we would loop forever. Panic instead.
+         */
+        if (!sb->sb_cc && (sb->sb_mb == NULL || sb->sb_mb->m_len))
+            break;
+        sbdrop_internal1(sb, (int)sb->sb_cc, caller);
+    }
+    if (sb->sb_cc || sb->sb_mb || sb->sb_mbcnt)
+        panic("sbflush_internal: cc %u || mb %p || mbcnt %u",
+            sb->sb_cc, (void *)sb->sb_mb, sb->sb_mbcnt);
+}
+// ---------------------- @2013/11/25
+
 void
 sbflush_locked(struct sockbuf *sb)
 {
@@ -924,6 +944,59 @@ sbdrop_internal(struct sockbuf *sb, int len)
 	}
 }
 
+// runsisi AT hust.edu.cn @2013/11/25
+static void
+sbdrop_internal1(struct sockbuf *sb, int len, char *caller)
+{
+    struct mbuf *m;
+    struct mbuf *next;
+
+    next = (m = sb->sb_mb) ? m->m_nextpkt : 0;
+    while (len > 0) {
+        if (m == 0) {
+            if (next == 0)
+                panic("sbdrop");
+            m = next;
+            next = m->m_nextpkt;
+            continue;
+        }
+        if (m->m_len > len) {
+            m->m_len -= len;
+            m->m_data += len;
+            sb->sb_cc -= len;
+            if (sb->sb_sndptroff != 0)
+                sb->sb_sndptroff -= len;
+            if (m->m_type != MT_DATA && m->m_type != MT_OOBDATA)
+                sb->sb_ctl -= len;
+            break;
+        }
+        len -= m->m_len;
+        sbfree(sb, m);
+        m = m_free1(m, caller);
+    }
+    while (m && m->m_len == 0) {
+        sbfree(sb, m);
+        m = m_free1(m, caller);
+    }
+    if (m) {
+        sb->sb_mb = m;
+        m->m_nextpkt = next;
+    } else
+        sb->sb_mb = next;
+    /*
+     * First part is an inline SB_EMPTY_FIXUP().  Second part makes sure
+     * sb_lastrecord is up-to-date if we dropped part of the last record.
+     */
+    m = sb->sb_mb;
+    if (m == NULL) {
+        sb->sb_mbtail = NULL;
+        sb->sb_lastrecord = NULL;
+    } else if (m->m_nextpkt == NULL) {
+        sb->sb_lastrecord = m;
+    }
+}
+// ---------------------- @2013/11/25
+
 /*
  * Drop data from (the front of) a sockbuf.
  */
@@ -935,6 +1008,17 @@ sbdrop_locked(struct sockbuf *sb, int len)
 
 	sbdrop_internal(sb, len);
 }
+
+// runsisi AT hust.edu.cn @2013/11/25
+void
+sbdrop_locked1(struct sockbuf *sb, int len, char *caller)
+{
+
+    SOCKBUF_LOCK_ASSERT(sb);
+
+    sbdrop_internal1(sb, len, caller);
+}
+// ---------------------- @2013/11/25
 
 void
 sbdrop(struct sockbuf *sb, int len)
