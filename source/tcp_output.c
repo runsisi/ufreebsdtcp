@@ -100,7 +100,7 @@ SYSCTL_VNET_INT(_net_inet_tcp, OID_AUTO, tso, CTLFLAG_RW,
 	&VNET_NAME(tcp_do_tso), 0,
 	"Enable TCP Segmentation Offload");
 
-VNET_DEFINE(int, tcp_sendspace) = 1024*32;
+VNET_DEFINE(int, tcp_sendspace) = 1024*1024*2;    //1024*32;
 #define	V_tcp_sendspace	VNET(tcp_sendspace)
 SYSCTL_VNET_INT(_net_inet_tcp, TCPCTL_SENDSPACE, sendspace, CTLFLAG_RW,
 	&VNET_NAME(tcp_sendspace), 0, "Initial send socket buffer size");

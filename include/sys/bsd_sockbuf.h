@@ -37,7 +37,13 @@
 #include <sys/_bsd_mutex.h>
 #include <sys/_bsd_sx.h>
 
+#if 0	// runsisi AT hust.edu.cn @2013/11/25
 #define	SB_MAX		(2*1024*1024)	/* default for max chars in sockbuf */
+#endif 	// ---------------------- @2013/11/25
+
+// runsisi AT hust.edu.cn @2013/11/25
+#define SB_MAX      (8*1024*1024)   /* default for max chars in sockbuf */
+// ---------------------- @2013/11/25
 
 /*
  * Constants for sb_flags field of struct sockbuf.
