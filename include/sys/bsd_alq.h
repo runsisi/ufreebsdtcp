@@ -74,10 +74,10 @@ struct ale {
  * Returns:
  *	error from open or 0 on success
  */
-struct bsd_ucred;
-int alq_open_flags(struct alq **alqp, const char *file, struct bsd_ucred *cred, int cmode,
+struct ucred;
+int alq_open_flags(struct alq **alqp, const char *file, struct ucred *cred, int cmode,
 	    int size, int flags);
-int alq_open(struct alq **alqp, const char *file, struct bsd_ucred *cred, int cmode,
+int alq_open(struct alq **alqp, const char *file, struct ucred *cred, int cmode,
 	    int size, int count);
 
 /*

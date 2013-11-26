@@ -43,14 +43,14 @@
 struct mld_ifinfo {
 	LIST_ENTRY(mld_ifinfo) mli_link;
 	struct ifnet *mli_ifp;	/* interface this instance belongs to */
-	bsd_uint32_t mli_version;	/* MLDv1 Host Compatibility Mode */
-	bsd_uint32_t mli_v1_timer;	/* MLDv1 Querier Present timer (s) */
-	bsd_uint32_t mli_v2_timer;	/* MLDv2 General Query (interface) timer (s)*/
-	bsd_uint32_t mli_flags;	/* MLD per-interface flags */
-	bsd_uint32_t mli_rv;	/* MLDv2 Robustness Variable */
-	bsd_uint32_t mli_qi;	/* MLDv2 Query Interval (s) */
-	bsd_uint32_t mli_qri;	/* MLDv2 Query Response Interval (s) */
-	bsd_uint32_t mli_uri;	/* MLDv2 Unsolicited Report Interval (s) */
+	uint32_t mli_version;	/* MLDv1 Host Compatibility Mode */
+	uint32_t mli_v1_timer;	/* MLDv1 Querier Present timer (s) */
+	uint32_t mli_v2_timer;	/* MLDv2 General Query (interface) timer (s)*/
+	uint32_t mli_flags;	/* MLD per-interface flags */
+	uint32_t mli_rv;	/* MLDv2 Robustness Variable */
+	uint32_t mli_qi;	/* MLDv2 Query Interval (s) */
+	uint32_t mli_qri;	/* MLDv2 Query Response Interval (s) */
+	uint32_t mli_uri;	/* MLDv2 Unsolicited Report Interval (s) */
 	SLIST_HEAD(,in6_multi)	mli_relinmhead; /* released groups */
 	struct ifqueue	 mli_gq;	/* queue of general query responses */
 };

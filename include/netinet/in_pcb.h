@@ -62,9 +62,9 @@ struct inpcbpolicy;
  * numbers, and pointers up (to a socket structure) and down (to a
  * protocol-specific control block) are stored here.
  */
-BSD_LIST_HEAD(inpcbhead, inpcb);
-BSD_LIST_HEAD(inpcbporthead, inpcbport);
-typedef	bsd_uquad_t	inp_gen_t;
+LIST_HEAD(inpcbhead, inpcb);
+LIST_HEAD(inpcbporthead, inpcbport);
+typedef	u_quad_t	inp_gen_t;
 
 /*
  * PCB with AF_INET6 null bind'ed laddr can receive AF_INET input packet.
@@ -72,8 +72,8 @@ typedef	bsd_uquad_t	inp_gen_t;
  * the following structure.
  */
 struct in_addr_4in6 {
-	bsd_uint32_t	ia46_pad32[3];
-	struct	bsd_in_addr	ia46_addr4;
+	u_int32_t	ia46_pad32[3];
+	struct	in_addr	ia46_addr4;
 };
 
 /*
@@ -81,18 +81,18 @@ struct in_addr_4in6 {
  * some extra padding to accomplish this.
  */
 struct in_endpoints {
-	bsd_uint16_t	ie_fport;		/* foreign port */
-	bsd_uint16_t	ie_lport;		/* local port */
+	u_int16_t	ie_fport;		/* foreign port */
+	u_int16_t	ie_lport;		/* local port */
 	/* protocol dependent part, local and foreign addr */
 	union {
 		/* foreign host table entry */
 		struct	in_addr_4in6 ie46_foreign;
-		struct	bsd_in6_addr ie6_foreign;
+		struct	in6_addr ie6_foreign;
 	} ie_dependfaddr;
 	union {
 		/* local host table entry */
 		struct	in_addr_4in6 ie46_local;
-		struct	bsd_in6_addr ie6_local;
+		struct	in6_addr ie6_local;
 	} ie_dependladdr;
 };
 #define	ie_faddr	ie_dependfaddr.ie46_foreign.ia46_addr4
@@ -105,9 +105,9 @@ struct in_endpoints {
  * references.
  */
 struct in_conninfo {
-	bsd_uint8_t	inc_flags;
-	bsd_uint8_t	inc_len;
-	bsd_uint16_t	inc_fibnum;	/* XXX was pad, 16 bits is plenty */
+	u_int8_t	inc_flags;
+	u_int8_t	inc_len;
+	u_int16_t	inc_fibnum;	/* XXX was pad, 16 bits is plenty */
 	/* protocol dependent part */
 	struct	in_endpoints inc_ie;
 };
@@ -161,23 +161,23 @@ struct	icmp6_filter;
  * The inp_vflag field is overloaded, and would otherwise ideally be (c).
  */
 struct inpcb {
-	BSD_LIST_ENTRY(inpcb) inp_hash;	/* (i/p) hash list */
-	BSD_LIST_ENTRY(inpcb) inp_pcbgrouphash;	/* (g/i) hash list */
-	BSD_LIST_ENTRY(inpcb) inp_list;	/* (i/p) list for all PCBs for proto */
+	LIST_ENTRY(inpcb) inp_hash;	/* (i/p) hash list */
+	LIST_ENTRY(inpcb) inp_pcbgrouphash;	/* (g/i) hash list */
+	LIST_ENTRY(inpcb) inp_list;	/* (i/p) list for all PCBs for proto */
 	void	*inp_ppcb;		/* (i) pointer to per-protocol pcb */
 	struct	inpcbinfo *inp_pcbinfo;	/* (c) PCB list info */
 	struct	inpcbgroup *inp_pcbgroup; /* (g/i) PCB group list */
-	BSD_LIST_ENTRY(inpcb) inp_pcbgroup_wild; /* (g/i/p) group wildcard entry */
-	struct	bsd_socket *inp_socket;	/* (i) back pointer to socket */
-	struct	bsd_ucred	*inp_cred;	/* (c) cache of socket cred */
-	bsd_uint32_t inp_flow;		/* (i) IPv6 flow information */
+	LIST_ENTRY(inpcb) inp_pcbgroup_wild; /* (g/i/p) group wildcard entry */
+	struct	socket *inp_socket;	/* (i) back pointer to socket */
+	struct	ucred	*inp_cred;	/* (c) cache of socket cred */
+	u_int32_t inp_flow;		/* (i) IPv6 flow information */
 	int	inp_flags;		/* (i) generic IP/datagram flags */
 	int	inp_flags2;		/* (i) generic IP/datagram flags #2*/
 	u_char	inp_vflag;		/* (i) IP version flag (v4/v6) */
 	u_char	inp_ip_ttl;		/* (i) time to live proto */
 	u_char	inp_ip_p;		/* (c) protocol proto */
 	u_char	inp_ip_minttl;		/* (i) minimum TTL or drop */
-	bsd_uint32_t inp_flowid;		/* (x) flow id / queue id */
+	uint32_t inp_flowid;		/* (x) flow id / queue id */
 	u_int	inp_refcount;		/* (i) refcount */
 	void	*inp_pspare[5];		/* (x) route caching / general use */
 	u_int	inp_ispare[6];		/* (x) route caching / user cookie /
@@ -209,9 +209,9 @@ struct inpcb {
 		int	inp6_cksum;
 		short	inp6_hops;
 	} inp_depend6;
-	BSD_LIST_ENTRY(inpcb) inp_portlist;	/* (i/p) */
+	LIST_ENTRY(inpcb) inp_portlist;	/* (i/p) */
 	struct	inpcbport *inp_phd;	/* (i/p) head of this list */
-#define inp_zero_size bsd_offsetof(struct inpcb, inp_gencnt)
+#define inp_zero_size offsetof(struct inpcb, inp_gencnt)
 	inp_gen_t	inp_gencnt;	/* (c) generation count */
 	struct llentry	*inp_lle;	/* cached L2 information */
 	struct rtentry	*inp_rt;	/* cached L3 information */
@@ -250,14 +250,14 @@ struct inpcb {
  */
 #ifdef _SYS_SOCKETVAR_H_
 struct	xinpcb {
-	bsd_size_t	xi_len;		/* length of this structure */
+	size_t	xi_len;		/* length of this structure */
 	struct	inpcb xi_inp;
 	struct	xsocket xi_socket;
-	bsd_uquad_t	xi_alignment_hack;
+	u_quad_t	xi_alignment_hack;
 };
 
 struct	xinpgen {
-	bsd_size_t	xig_len;	/* length of this structure */
+	size_t	xig_len;	/* length of this structure */
 	u_int	xig_count;	/* number of PCBs at this time */
 	inp_gen_t xig_gen;	/* generation count at this time */
 	so_gen_t xig_sogen;	/* socket generation count at this time */
@@ -265,7 +265,7 @@ struct	xinpgen {
 #endif /* _SYS_SOCKETVAR_H_ */
 
 struct inpcbport {
-	BSD_LIST_ENTRY(inpcbport) phd_hash;
+	LIST_ENTRY(inpcbport) phd_hash;
 	struct inpcbhead phd_pcblist;
 	u_short phd_port;
 };
@@ -304,7 +304,7 @@ struct inpcbinfo {
 	 * Generation count -- incremented each time a connection is allocated
 	 * or freed.
 	 */
-	bsd_uquad_t		 ipi_gencnt;		/* (g) */
+	u_quad_t		 ipi_gencnt;		/* (g) */
 
 	/*
 	 * Fields associated with port lookup and allocation.
@@ -388,23 +388,24 @@ struct inpcbgroup {
 	 * wildcard list in inpcbinfo.
 	 */
 	struct mtx		 ipg_lock;
-} __aligned(BSD_CACHE_LINE_SIZE);
+} __aligned(CACHE_LINE_SIZE);
 
-#define INP_LOCK_INIT(inp, d, t)
-#define INP_LOCK_DESTROY(inp)
-#define INP_RLOCK(inp)
-#define INP_WLOCK(inp)
-#define INP_TRY_RLOCK(inp)
-#define INP_TRY_WLOCK(inp)
-#define INP_RUNLOCK(inp)
-#define INP_WUNLOCK(inp)
-#define	INP_TRY_UPGRADE(inp)
-#define	INP_DOWNGRADE(inp)
-#define	INP_WLOCKED(inp)
-#define	INP_LOCK_ASSERT(inp)
-#define	INP_RLOCK_ASSERT(inp)
-#define	INP_WLOCK_ASSERT(inp)
-#define	INP_UNLOCK_ASSERT(inp)
+#define INP_LOCK_INIT(inp, d, t) \
+	rw_init_flags(&(inp)->inp_lock, (t), RW_RECURSE |  RW_DUPOK)
+#define INP_LOCK_DESTROY(inp)	rw_destroy(&(inp)->inp_lock)
+#define INP_RLOCK(inp)		rw_rlock(&(inp)->inp_lock)
+#define INP_WLOCK(inp)		rw_wlock(&(inp)->inp_lock)
+#define INP_TRY_RLOCK(inp)	rw_try_rlock(&(inp)->inp_lock)
+#define INP_TRY_WLOCK(inp)	rw_try_wlock(&(inp)->inp_lock)
+#define INP_RUNLOCK(inp)	rw_runlock(&(inp)->inp_lock)
+#define INP_WUNLOCK(inp)	rw_wunlock(&(inp)->inp_lock)
+#define	INP_TRY_UPGRADE(inp)	rw_try_upgrade(&(inp)->inp_lock)
+#define	INP_DOWNGRADE(inp)	rw_downgrade(&(inp)->inp_lock)
+#define	INP_WLOCKED(inp)	rw_wowned(&(inp)->inp_lock)
+#define	INP_LOCK_ASSERT(inp)	rw_assert(&(inp)->inp_lock, RA_LOCKED)
+#define	INP_RLOCK_ASSERT(inp)	rw_assert(&(inp)->inp_lock, RA_RLOCKED)
+#define	INP_WLOCK_ASSERT(inp)	rw_assert(&(inp)->inp_lock, RA_WLOCKED)
+#define	INP_UNLOCK_ASSERT(inp)	rw_assert(&(inp)->inp_lock, RA_UNLOCKED)
 
 /*
  * These locking functions are for inpcb consumers outside of sys/netinet,
@@ -421,12 +422,12 @@ void inp_lock_assert(struct inpcb *);
 void inp_unlock_assert(struct inpcb *);
 #else
 static __inline void
-inp_lock_assert(struct inpcb *inp __bsd_unused)
+inp_lock_assert(struct inpcb *inp __unused)
 {
 }
 
 static __inline void
-inp_unlock_assert(struct inpcb *inp __bsd_unused)
+inp_unlock_assert(struct inpcb *inp __unused)
 {
 }
 
@@ -435,50 +436,55 @@ inp_unlock_assert(struct inpcb *inp __bsd_unused)
 void	inp_apply_all(void (*func)(struct inpcb *, void *), void *arg);
 int 	inp_ip_tos_get(const struct inpcb *inp);
 void 	inp_ip_tos_set(struct inpcb *inp, int val);
-struct bsd_socket *
+struct socket *
 	inp_inpcbtosocket(struct inpcb *inp);
 struct tcpcb *
 	inp_inpcbtotcpcb(struct inpcb *inp);
-void 	inp_4tuple_get(struct inpcb *inp, bsd_uint32_t *laddr, bsd_uint16_t *lp,
-		bsd_uint32_t *faddr, bsd_uint16_t *fp);
+void 	inp_4tuple_get(struct inpcb *inp, uint32_t *laddr, uint16_t *lp,
+		uint32_t *faddr, uint16_t *fp);
 short	inp_so_options(const struct inpcb *inp);
 
 #endif /* _KERNEL */
 
-#define INP_INFO_LOCK_INIT(ipi, d)
-#define INP_INFO_LOCK_DESTROY(ipi)
-#define INP_INFO_RLOCK(ipi)
-#define INP_INFO_WLOCK(ipi)
-#define INP_INFO_TRY_RLOCK(ipi)         1
-#define INP_INFO_TRY_WLOCK(ipi)         1
-#define INP_INFO_TRY_UPGRADE(ipi)
-#define INP_INFO_RUNLOCK(ipi)
-#define INP_INFO_WUNLOCK(ipi)
-#define	INP_INFO_LOCK_ASSERT(ipi)
-#define INP_INFO_RLOCK_ASSERT(ipi)
-#define INP_INFO_WLOCK_ASSERT(ipi)
-#define INP_INFO_UNLOCK_ASSERT(ipi)
+#define INP_INFO_LOCK_INIT(ipi, d) \
+	rw_init_flags(&(ipi)->ipi_lock, (d), RW_RECURSE)
+#define INP_INFO_LOCK_DESTROY(ipi)  rw_destroy(&(ipi)->ipi_lock)
+#define INP_INFO_RLOCK(ipi)	rw_rlock(&(ipi)->ipi_lock)
+#define INP_INFO_WLOCK(ipi)	rw_wlock(&(ipi)->ipi_lock)
+#define INP_INFO_TRY_RLOCK(ipi)	rw_try_rlock(&(ipi)->ipi_lock)
+#define INP_INFO_TRY_WLOCK(ipi)	rw_try_wlock(&(ipi)->ipi_lock)
+#define INP_INFO_TRY_UPGRADE(ipi)	rw_try_upgrade(&(ipi)->ipi_lock)
+#define INP_INFO_RUNLOCK(ipi)	rw_runlock(&(ipi)->ipi_lock)
+#define INP_INFO_WUNLOCK(ipi)	rw_wunlock(&(ipi)->ipi_lock)
+#define	INP_INFO_LOCK_ASSERT(ipi)	rw_assert(&(ipi)->ipi_lock, RA_LOCKED)
+#define INP_INFO_RLOCK_ASSERT(ipi)	rw_assert(&(ipi)->ipi_lock, RA_RLOCKED)
+#define INP_INFO_WLOCK_ASSERT(ipi)	rw_assert(&(ipi)->ipi_lock, RA_WLOCKED)
+#define INP_INFO_UNLOCK_ASSERT(ipi)	rw_assert(&(ipi)->ipi_lock, RA_UNLOCKED)
 
-#define	INP_HASH_LOCK_INIT(ipi, d)
-#define	INP_HASH_LOCK_DESTROY(ipi)
-#define	INP_HASH_RLOCK(ipi)
-#define	INP_HASH_WLOCK(ipi)
-#define	INP_HASH_RUNLOCK(ipi)
-#define	INP_HASH_WUNLOCK(ipi)
-#define	INP_HASH_LOCK_ASSERT(ipi)
-#define	INP_HASH_WLOCK_ASSERT(ipi)
+#define	INP_HASH_LOCK_INIT(ipi, d) \
+	rw_init_flags(&(ipi)->ipi_hash_lock, (d), 0)
+#define	INP_HASH_LOCK_DESTROY(ipi)	rw_destroy(&(ipi)->ipi_hash_lock)
+#define	INP_HASH_RLOCK(ipi)		rw_rlock(&(ipi)->ipi_hash_lock)
+#define	INP_HASH_WLOCK(ipi)		rw_wlock(&(ipi)->ipi_hash_lock)
+#define	INP_HASH_RUNLOCK(ipi)		rw_runlock(&(ipi)->ipi_hash_lock)
+#define	INP_HASH_WUNLOCK(ipi)		rw_wunlock(&(ipi)->ipi_hash_lock)
+#define	INP_HASH_LOCK_ASSERT(ipi)	rw_assert(&(ipi)->ipi_hash_lock, \
+					    RA_LOCKED)
+#define	INP_HASH_WLOCK_ASSERT(ipi)	rw_assert(&(ipi)->ipi_hash_lock, \
+					    RA_WLOCKED)
 
-#define	INP_GROUP_LOCK_INIT(ipg, d)
-#define	INP_GROUP_LOCK_DESTROY(ipg)
+#define	INP_GROUP_LOCK_INIT(ipg, d)	mtx_init(&(ipg)->ipg_lock, (d), NULL, \
+					    MTX_DEF | MTX_DUPOK)
+#define	INP_GROUP_LOCK_DESTROY(ipg)	mtx_destroy(&(ipg)->ipg_lock)
 
-#define	INP_GROUP_LOCK(ipg)
-#define	INP_GROUP_LOCK_ASSERT(ipg)
-#define	INP_GROUP_UNLOCK(ipg)
+#define	INP_GROUP_LOCK(ipg)		mtx_lock(&(ipg)->ipg_lock)
+#define	INP_GROUP_LOCK_ASSERT(ipg)	mtx_assert(&(ipg)->ipg_lock, MA_OWNED)
+#define	INP_GROUP_UNLOCK(ipg)		mtx_unlock(&(ipg)->ipg_lock)
 
 #define INP_PCBHASH(faddr, lport, fport, mask) \
-	(((faddr) ^ ((faddr) >> 16) ^ bsd_ntohs((lport) ^ (fport))) & (mask))
+	(((faddr) ^ ((faddr) >> 16) ^ ntohs((lport) ^ (fport))) & (mask))
 #define INP_PCBPORTHASH(lport, mask) \
-	(bsd_ntohs((lport)) & (mask))
+	(ntohs((lport)) & (mask))
 
 /*
  * Flags for inp_vflags -- historically version flags only
@@ -533,7 +539,7 @@ short	inp_so_options(const struct inpcb *inp);
 /*
  * Flags for inp_flags2.
  */
-#define	INP_LLE_VALID		0x00000001 /* cached lle is valid */
+#define	INP_LLE_VALID		0x00000001 /* cached lle is valid */	
 #define	INP_RT_VALID		0x00000002 /* cached rtentry is valid */
 #define	INP_PCBGROUPWILD	0x00000004 /* in pcbgroup wildcard list */
 #define	INP_REUSEPORT		0x00000008 /* SO_REUSEPORT option is set */
@@ -595,15 +601,15 @@ VNET_DECLARE(int, ipport_tcpallocs);
 
 void	in_pcbinfo_destroy(struct inpcbinfo *);
 void	in_pcbinfo_init(struct inpcbinfo *, const char *, struct inpcbhead *,
-	    int, int, char *, uma_init, uma_fini, bsd_uint32_t, u_int);
+	    int, int, char *, uma_init, uma_fini, uint32_t, u_int);
 
 struct inpcbgroup *
-	in_pcbgroup_byhash(struct inpcbinfo *, u_int, bsd_uint32_t);
+	in_pcbgroup_byhash(struct inpcbinfo *, u_int, uint32_t);
 struct inpcbgroup *
 	in_pcbgroup_byinpcb(struct inpcb *);
 struct inpcbgroup *
-	in_pcbgroup_bytuple(struct inpcbinfo *, struct bsd_in_addr, u_short,
-	    struct bsd_in_addr, u_short);
+	in_pcbgroup_bytuple(struct inpcbinfo *, struct in_addr, u_short,
+	    struct in_addr, u_short);
 void	in_pcbgroup_destroy(struct inpcbinfo *);
 int	in_pcbgroup_enabled(struct inpcbinfo *);
 void	in_pcbgroup_init(struct inpcbinfo *, u_int, int);
@@ -612,18 +618,18 @@ void	in_pcbgroup_update(struct inpcb *);
 void	in_pcbgroup_update_mbuf(struct inpcb *, struct mbuf *);
 
 void	in_pcbpurgeif0(struct inpcbinfo *, struct ifnet *);
-int	in_pcballoc(struct bsd_socket *, struct inpcbinfo *);
-int	in_pcbbind(struct inpcb *, struct bsd_sockaddr *, struct bsd_ucred *);
-int	in_pcb_lport(struct inpcb *, struct bsd_in_addr *, u_short *,
-	    struct bsd_ucred *, int);
-int	in_pcbbind_setup(struct inpcb *, struct bsd_sockaddr *, bsd_in_addr_t *,
-	    u_short *, struct bsd_ucred *);
-int	in_pcbconnect(struct inpcb *, struct bsd_sockaddr *, struct bsd_ucred *);
-int	in_pcbconnect_mbuf(struct inpcb *, struct bsd_sockaddr *, struct bsd_ucred *,
+int	in_pcballoc(struct socket *, struct inpcbinfo *);
+int	in_pcbbind(struct inpcb *, struct sockaddr *, struct ucred *);
+int	in_pcb_lport(struct inpcb *, struct in_addr *, u_short *,
+	    struct ucred *, int);
+int	in_pcbbind_setup(struct inpcb *, struct sockaddr *, in_addr_t *,
+	    u_short *, struct ucred *);
+int	in_pcbconnect(struct inpcb *, struct sockaddr *, struct ucred *);
+int	in_pcbconnect_mbuf(struct inpcb *, struct sockaddr *, struct ucred *,
 	    struct mbuf *);
-int	in_pcbconnect_setup(struct inpcb *, struct bsd_sockaddr *, bsd_in_addr_t *,
-	    u_short *, bsd_in_addr_t *, u_short *, struct inpcb **,
-	    struct bsd_ucred *);
+int	in_pcbconnect_setup(struct inpcb *, struct sockaddr *, in_addr_t *,
+	    u_short *, in_addr_t *, u_short *, struct inpcb **,
+	    struct ucred *);
 void	in_pcbdetach(struct inpcb *);
 void	in_pcbdisconnect(struct inpcb *);
 void	in_pcbdrop(struct inpcb *);
@@ -632,14 +638,14 @@ int	in_pcbinshash(struct inpcb *);
 int	in_pcbinshash_nopcbgroup(struct inpcb *);
 struct inpcb *
 	in_pcblookup_local(struct inpcbinfo *,
-	    struct bsd_in_addr, u_short, int, struct bsd_ucred *);
+	    struct in_addr, u_short, int, struct ucred *);
 struct inpcb *
-	in_pcblookup(struct inpcbinfo *, struct bsd_in_addr, u_int,
-	    struct bsd_in_addr, u_int, int, struct ifnet *);
+	in_pcblookup(struct inpcbinfo *, struct in_addr, u_int,
+	    struct in_addr, u_int, int, struct ifnet *);
 struct inpcb *
-	in_pcblookup_mbuf(struct inpcbinfo *, struct bsd_in_addr, u_int,
-	    struct bsd_in_addr, u_int, int, struct ifnet *, struct mbuf *);
-void	in_pcbnotifyall(struct inpcbinfo *pcbinfo, struct bsd_in_addr,
+	in_pcblookup_mbuf(struct inpcbinfo *, struct in_addr, u_int,
+	    struct in_addr, u_int, int, struct ifnet *, struct mbuf *);
+void	in_pcbnotifyall(struct inpcbinfo *pcbinfo, struct in_addr,
 	    int, struct inpcb *(*)(struct inpcb *, int));
 void	in_pcbref(struct inpcb *);
 void	in_pcbrehash(struct inpcb *);
@@ -647,12 +653,12 @@ void	in_pcbrehash_mbuf(struct inpcb *, struct mbuf *);
 int	in_pcbrele(struct inpcb *);
 int	in_pcbrele_rlocked(struct inpcb *);
 int	in_pcbrele_wlocked(struct inpcb *);
-void	in_pcbsetsolabel(struct bsd_socket *so);
-int	in_getpeeraddr(struct bsd_socket *so, struct bsd_sockaddr **nam);
-int	in_getsockaddr(struct bsd_socket *so, struct bsd_sockaddr **nam);
-struct bsd_sockaddr *
-	in_sockaddr(bsd_in_port_t port, struct bsd_in_addr *addr);
-void	in_pcbsosetlabel(struct bsd_socket *so);
+void	in_pcbsetsolabel(struct socket *so);
+int	in_getpeeraddr(struct socket *so, struct sockaddr **nam);
+int	in_getsockaddr(struct socket *so, struct sockaddr **nam);
+struct sockaddr *
+	in_sockaddr(in_port_t port, struct in_addr *addr);
+void	in_pcbsosetlabel(struct socket *so);
 #endif /* _KERNEL */
 
 #endif /* !_NETINET_IN_PCB_H_ */

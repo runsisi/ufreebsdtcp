@@ -43,7 +43,7 @@ struct thread;
 /*
  * Head of run queues.
  */
-BSD_TAILQ_HEAD(rqhead, thread);
+TAILQ_HEAD(rqhead, thread);
 
 /*
  * Bit array which maintains the status of a run queue.  When a queue is

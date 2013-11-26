@@ -66,12 +66,12 @@
 #include <sys/bsd_queue.h>
 
 struct vnet {
-	BSD_LIST_ENTRY(vnet)	 vnet_le;	/* all vnets list */
+	LIST_ENTRY(vnet)	 vnet_le;	/* all vnets list */
 	u_int			 vnet_magic_n;
 	u_int			 vnet_ifcnt;
 	u_int			 vnet_sockcnt;
 	void			*vnet_data_mem;
-	bsd_uintptr_t		 vnet_data_base;
+	uintptr_t		 vnet_data_base;
 };
 #define	VNET_MAGIC_N	0x3e0d8f29
 
@@ -94,13 +94,13 @@ struct vnet {
 /*
  * Location of the kernel's 'set_vnet' linker set.
  */
-extern bsd_uintptr_t	*__start_set_vnet;
+extern uintptr_t	*__start_set_vnet;
 __GLOBL(__start_set_vnet);
-extern bsd_uintptr_t	*__stop_set_vnet;
+extern uintptr_t	*__stop_set_vnet;
 __GLOBL(__stop_set_vnet);
 
-#define	VNET_START	(bsd_uintptr_t)&__start_set_vnet
-#define	VNET_STOP	(bsd_uintptr_t)&__stop_set_vnet
+#define	VNET_START	(uintptr_t)&__start_set_vnet
+#define	VNET_STOP	(uintptr_t)&__stop_set_vnet
 
 /*
  * Functions to allocate and destroy virtual network stacks.
@@ -112,20 +112,7 @@ void	vnet_destroy(struct vnet *vnet);
  * The current virtual network stack -- we may wish to move this to struct
  * pcpu in the future.
  */
-#if 0	// runsisi AT hust.edu.cn @2013/11/20
 #define	curvnet	curthread->td_vnet
-#endif 	// ---------------------- @2013/11/20
-// runsisi AT hust.edu.cn @2013/11/20
-/*
- * These two macros should be the same as those in brs_inst.h,
- * i redefined here to reduce header file inclusion mess
- */
-#define curaoid         (DPS_GetSelfAoID())
-#define curao           (DPS_GetAoByID(curaoid))
-#define aoisinjob(ao)   ((ao)->dwAoId == ACTIVE_OBJECT_BRS1)
-
-#define curvnet (*(struct vnet **)(curao)->pVarP)
-// ---------------------- @2013/11/20
 
 /*
  * Various macros -- get and set the current network stack, but also
@@ -152,14 +139,14 @@ void vnet_log_recursion(struct vnet *, const char *, int);
 	const char *saved_vnet_lpush = curthread->td_vnet_lpush;	\
 	curvnet = arg;							\
 	curthread->td_vnet_lpush = __func__;
-
+ 
 #define	CURVNET_SET_VERBOSE(arg)					\
 	CURVNET_SET_QUIET(arg)						\
 	if (saved_vnet)							\
 		vnet_log_recursion(saved_vnet, saved_vnet_lpush, __LINE__);
 
 #define	CURVNET_SET(arg)	CURVNET_SET_VERBOSE(arg)
-
+ 
 #define	CURVNET_RESTORE()						\
 	VNET_ASSERT(curvnet != NULL && (saved_vnet == NULL ||		\
 	    saved_vnet->vnet_magic_n == VNET_MAGIC_N),			\
@@ -174,13 +161,13 @@ void vnet_log_recursion(struct vnet *, const char *, int);
 	    ("CURVNET_SET at %s:%d %s() curvnet=%p vnet=%p",		\
 	    __FILE__, __LINE__, __func__, curvnet, (arg)));		\
 	struct vnet *saved_vnet = curvnet;				\
-	curvnet = arg;
-
+	curvnet = arg;	
+ 
 #define	CURVNET_SET_VERBOSE(arg)					\
 	CURVNET_SET_QUIET(arg)
 
 #define	CURVNET_SET(arg)	CURVNET_SET_VERBOSE(arg)
-
+ 
 #define	CURVNET_RESTORE()						\
 	VNET_ASSERT(curvnet != NULL && (saved_vnet == NULL ||		\
 	    saved_vnet->vnet_magic_n == VNET_MAGIC_N),			\
@@ -192,10 +179,6 @@ void vnet_log_recursion(struct vnet *, const char *, int);
 extern struct vnet *vnet0;
 #define	IS_DEFAULT_VNET(arg)	((arg) == vnet0)
 
-// runsisi AT hust.edu.cn @2013/11/20
-#define AO_TO_VENT(ao)      ((struct vnet *)(ao)->pVarP)
-// ---------------------- @2013/11/20
-
 #define	CRED_TO_VNET(cr)	(cr)->cr_prison->pr_vnet
 #define	TD_TO_VNET(td)		CRED_TO_VNET((td)->td_ucred)
 #define	P_TO_VNET(p)		CRED_TO_VNET((p)->p_ucred)
@@ -205,7 +188,7 @@ extern struct vnet *vnet0;
  * access it.  If a caller may sleep while accessing the list, it must use
  * the sleepable lock macros.
  */
-BSD_LIST_HEAD(vnet_list_head, vnet);
+LIST_HEAD(vnet_list_head, vnet);
 extern struct vnet_list_head vnet_head;
 extern struct rwlock vnet_rwlock;
 extern struct sx vnet_sxlock;
@@ -219,7 +202,7 @@ extern struct sx vnet_sxlock;
  * Iteration macros to walk the global list of virtual network stacks.
  */
 #define	VNET_ITERATOR_DECL(arg)	struct vnet *arg
-#define	VNET_FOREACH(arg)	BSD_LIST_FOREACH((arg), &vnet_head, vnet_le)
+#define	VNET_FOREACH(arg)	LIST_FOREACH((arg), &vnet_head, vnet_le)
 
 /*
  * Virtual network stack memory allocator, which allows global variables to
@@ -229,7 +212,7 @@ extern struct sx vnet_sxlock;
 #define	VNET_DECLARE(t, n)	extern t VNET_NAME(n)
 #define	VNET_DEFINE(t, n)	t VNET_NAME(n) __section(VNET_SETNAME) __used
 #define	_VNET_PTR(b, n)		(__typeof(VNET_NAME(n))*)		\
-				    ((b) + (bsd_uintptr_t)&VNET_NAME(n))
+				    ((b) + (uintptr_t)&VNET_NAME(n))
 
 #define	_VNET(b, n)		(*_VNET_PTR(b, n))
 
@@ -292,7 +275,7 @@ int	vnet_sysctl_handle_uint(SYSCTL_HANDLER_ARGS);
 #define	VNET_SYSCTL_ARG(req, arg1) do {					\
 	if (arg1 != NULL)						\
 		arg1 = (void *)(TD_TO_VNET((req)->td)->vnet_data_base +	\
-		    (bsd_uintptr_t)(arg1));					\
+		    (uintptr_t)(arg1));					\
 } while (0)
 #endif /* SYSCTL_OID */
 
@@ -312,7 +295,7 @@ struct vnet_sysinit {
 	enum sysinit_elem_order	order;
 	sysinit_cfunc_t		func;
 	const void		*arg;
-	BSD_TAILQ_ENTRY(vnet_sysinit) link;
+	TAILQ_ENTRY(vnet_sysinit) link;
 };
 
 #define	VNET_SYSINIT(ident, subsystem, order, func, arg)		\
@@ -459,17 +442,5 @@ do {									\
 	eventhandler_register(NULL, #name, func, arg, priority)
 #endif /* VIMAGE */
 #endif /* _KERNEL */
-
-// runsisi AT hust.edu.cn @2013/11/20
-/*
- * if i dont put it here, then i have to put it all over the c
- * source files, i have no choice :(
- */
-VNET_DECLARE(volatile int, ticks);
-#define V_ticks     VNET(ticks)
-
-VNET_DECLARE(volatile bsd_time_t, time_uptime);
-#define V_time_uptime     VNET(time_uptime)
-// ---------------------- @2013/11/20
 
 #endif /* !_NET_VNET_H_ */

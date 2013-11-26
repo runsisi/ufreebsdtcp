@@ -39,7 +39,7 @@ struct scope6_id {
 	 * 16 is correspondent to 4bit multicast scope field.
 	 * i.e. from node-local to global with some reserved/unassigned types.
 	 */
-	bsd_uint32_t s6id_list[16];
+	u_int32_t s6id_list[16];
 };
 
 void	scope6_init(void);
@@ -49,12 +49,12 @@ int	scope6_set(struct ifnet *, struct scope6_id *);
 int	scope6_get(struct ifnet *, struct scope6_id *);
 void	scope6_setdefault(struct ifnet *);
 int	scope6_get_default(struct scope6_id *);
-bsd_uint32_t scope6_addr2default(struct bsd_in6_addr *);
-int	sa6_embedscope(struct bsd_sockaddr_in6 *, int);
-int	sa6_recoverscope(struct bsd_sockaddr_in6 *);
-int	in6_setscope(struct bsd_in6_addr *, struct ifnet *, bsd_uint32_t *);
-int	in6_clearscope(struct bsd_in6_addr *);
-bsd_uint16_t in6_getscope(struct bsd_in6_addr *);
+u_int32_t scope6_addr2default(struct in6_addr *);
+int	sa6_embedscope(struct sockaddr_in6 *, int);
+int	sa6_recoverscope(struct sockaddr_in6 *);
+int	in6_setscope(struct in6_addr *, struct ifnet *, u_int32_t *);
+int	in6_clearscope(struct in6_addr *);
+uint16_t in6_getscope(struct in6_addr *);
 #endif /* _KERNEL */
 
 #endif /* _NETINET6_SCOPE6_VAR_H_ */

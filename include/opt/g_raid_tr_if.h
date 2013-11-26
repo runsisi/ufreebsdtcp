@@ -101,12 +101,12 @@ static __inline void G_RAID_TR_IODONE(struct g_raid_tr_object *tr,
 extern struct kobjop_desc g_raid_tr_kerneldump_desc;
 /** @brief A function implementing the G_RAID_TR_KERNELDUMP() method */
 typedef int g_raid_tr_kerneldump_t(struct g_raid_tr_object *tr, void *virtual,
-                                   bsd_vm_offset_t physical, bsd_off_t offset,
-                                   bsd_size_t length);
+                                   vm_offset_t physical, off_t offset,
+                                   size_t length);
 
 static __inline int G_RAID_TR_KERNELDUMP(struct g_raid_tr_object *tr,
-                                         void *virtual, bsd_vm_offset_t physical,
-                                         bsd_off_t offset, bsd_size_t length)
+                                         void *virtual, vm_offset_t physical,
+                                         off_t offset, size_t length)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)tr)->ops,g_raid_tr_kerneldump);

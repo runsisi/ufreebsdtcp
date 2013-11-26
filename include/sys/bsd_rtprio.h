@@ -82,11 +82,11 @@ void	pri_to_rtp(struct thread *, struct rtprio *);
 #endif
 
 #ifndef _KERNEL
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 
 __BEGIN_DECLS
-int	rtprio(int, bsd_pid_t, struct rtprio *);
-int	rtprio_thread(int, bsd_lwpid_t, struct rtprio *);
+int	rtprio(int, pid_t, struct rtprio *);
+int	rtprio_thread(int, lwpid_t, struct rtprio *);
 __END_DECLS
 #endif	/* !_KERNEL */
 #endif	/* !_SYS_RTPRIO_H_ */

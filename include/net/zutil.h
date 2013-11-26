@@ -24,13 +24,13 @@
 
 #ifdef _KERNEL
 /* Assume this is a *BSD or SVR4 kernel */
-#include <sys/types.h>
-#include <sys/time.h>
-#include <sys/systm.h>
-#include <sys/module.h>
-#include <sys/errno.h>
-#include <sys/param.h>
-#include <sys/kernel.h>
+#include <sys/bsd_types.h>
+#include <sys/bsd_time.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_module.h>
+#include <sys/bsd_errno.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_kernel.h>
 #  define HAVE_MEMCPY
 #  define memcpy(d, s, n)	bcopy((s), (d), (n))
 #  define memset(d, v, n)	bzero((d), (n))

@@ -17,9 +17,9 @@
 /** @brief Unique descriptor for the VIRTIO_CONFIG_CHANGE() method */
 extern struct kobjop_desc virtio_config_change_desc;
 /** @brief A function implementing the VIRTIO_CONFIG_CHANGE() method */
-typedef int virtio_config_change_t(bsd_device_t dev);
+typedef int virtio_config_change_t(device_t dev);
 
-static __inline int VIRTIO_CONFIG_CHANGE(bsd_device_t dev)
+static __inline int VIRTIO_CONFIG_CHANGE(device_t dev)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,virtio_config_change);

@@ -146,7 +146,7 @@
 /*
  * Create a capability to wrap a file object.
  */
-int	kern_capwrap(struct thread *td, struct file *fp, bsd_cap_rights_t rights,
+int	kern_capwrap(struct thread *td, struct file *fp, cap_rights_t rights,
 	    int *capfd);
 
 /*
@@ -155,9 +155,9 @@ int	kern_capwrap(struct thread *td, struct file *fp, bsd_cap_rights_t rights,
  * Unwrapping a non-capability is effectively a no-op; the value of fp_cap
  * is simply copied into fpp.
  */
-int	cap_funwrap(struct file *fp_cap, bsd_cap_rights_t rights,
+int	cap_funwrap(struct file *fp_cap, cap_rights_t rights,
 	    struct file **fpp);
-int	cap_funwrap_mmap(struct file *fp_cap, bsd_cap_rights_t rights,
+int	cap_funwrap_mmap(struct file *fp_cap, cap_rights_t rights,
 	    u_char *maxprotp, struct file **fpp);
 
 /*
@@ -166,7 +166,7 @@ int	cap_funwrap_mmap(struct file *fp_cap, bsd_cap_rights_t rights,
  * kernel code generally, instead cap_funwrap() should be used in order to
  * keep all access control in one place.
  */
-bsd_cap_rights_t	cap_rights(struct file *fp_cap);
+cap_rights_t	cap_rights(struct file *fp_cap);
 
 #else /* !_KERNEL */
 
@@ -195,12 +195,12 @@ int	cap_getmode(u_int* modep);
  * descriptor with the specified rights.  If the existing file descriptor is
  * a capability, then the new rights must be a subset of the existing rights.
  */
-int	cap_new(int fd, bsd_cap_rights_t rights);
+int	cap_new(int fd, cap_rights_t rights);
 
 /*
  * cap_getrights(): Query the rights on a capability.
  */
-int	cap_getrights(int fd, bsd_cap_rights_t *rightsp);
+int	cap_getrights(int fd, cap_rights_t *rightsp);
 
 __END_DECLS
 

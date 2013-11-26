@@ -34,16 +34,16 @@
  * http://www.aciri.org/floyd/papers/draft-ipsec-ecn-00.txt
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/netinet/ip_ecn.c 172467 2007-10-07 20:44:24Z silby $");
 
 #include "opt_inet.h"
 #include "opt_inet6.h"
 
-#include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/mbuf.h>
-#include <sys/errno.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_mbuf.h>
+#include <sys/bsd_errno.h>
 
 #include <netinet/in.h>
 #include <netinet/in_systm.h>
@@ -92,7 +92,7 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/netinet/ip_ecn.c 172467 2007-10-07 20:44:2
  * modify outer ECN (TOS) field on ingress operation (tunnel encapsulation).
  */
 void
-ip_ecn_ingress(int mode, bsd_uint8_t *outer, const bsd_uint8_t *inner)
+ip_ecn_ingress(int mode, u_int8_t *outer, const u_int8_t *inner)
 {
 
 	if (!outer || !inner)
@@ -124,7 +124,7 @@ ip_ecn_ingress(int mode, bsd_uint8_t *outer, const bsd_uint8_t *inner)
  * the caller should drop the packet if the return value is 0.
  */
 int
-ip_ecn_egress(int mode, const bsd_uint8_t *outer, bsd_uint8_t *inner)
+ip_ecn_egress(int mode, const u_int8_t *outer, u_int8_t *inner)
 {
 
 	if (!outer || !inner)
@@ -160,7 +160,7 @@ ip_ecn_egress(int mode, const bsd_uint8_t *outer, bsd_uint8_t *inner)
 void
 ip6_ecn_ingress(int mode, u_int32_t *outer, const u_int32_t *inner)
 {
-	bsd_uint8_t outer8, inner8;
+	u_int8_t outer8, inner8;
 
 	if (!outer || !inner)
 		panic("NULL pointer passed to ip6_ecn_ingress");
@@ -174,7 +174,7 @@ ip6_ecn_ingress(int mode, u_int32_t *outer, const u_int32_t *inner)
 int
 ip6_ecn_egress(int mode, const u_int32_t *outer, u_int32_t *inner)
 {
-	bsd_uint8_t outer8, inner8, oinner8;
+	u_int8_t outer8, inner8, oinner8;
 
 	if (!outer || !inner)
 		panic("NULL pointer passed to ip6_ecn_egress");

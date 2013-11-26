@@ -42,15 +42,15 @@ union ccb;
 struct memdesc {
 	union {
 		void			*md_vaddr;
-		bsd_vm_paddr_t		md_paddr;
+		vm_paddr_t		md_paddr;
 		struct bus_dma_segment	*md_list;
 		struct bio		*md_bio;
 		struct uio		*md_uio;
 		struct mbuf		*md_mbuf;
 		union ccb		*md_ccb;
 	} u;
-	bsd_size_t		md_opaque;	/* type specific data. */
-	bsd_uint32_t	md_type;	/* Type of memory. */
+	size_t		md_opaque;	/* type specific data. */
+	uint32_t	md_type;	/* Type of memory. */
 };
 
 #define	MEMDESC_VADDR	1	/* Contiguous virtual address. */
@@ -63,7 +63,7 @@ struct memdesc {
 #define	MEMDESC_CCB	8	/* Cam control block. (scsi/ata io). */
 
 static inline struct memdesc
-memdesc_vaddr(void *vaddr, bsd_size_t len)
+memdesc_vaddr(void *vaddr, size_t len)
 {
 	struct memdesc mem;
 
@@ -75,7 +75,7 @@ memdesc_vaddr(void *vaddr, bsd_size_t len)
 }
 
 static inline struct memdesc
-memdesc_paddr(bsd_vm_paddr_t paddr, bsd_size_t len)
+memdesc_paddr(vm_paddr_t paddr, size_t len)
 {
 	struct memdesc mem;
 

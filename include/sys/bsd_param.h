@@ -35,23 +35,8 @@
  * $FreeBSD: release/9.2.0/sys/sys/param.h 253912 2013-08-03 12:41:21Z gjb $
  */
 
-#ifndef _BSD_SYS_PARAM_H_
-#define _BSD_SYS_PARAM_H_
-
-// runsisi AT hust.edu.cn @2013/11/01
-#ifndef _KERNEL
-#define _KERNEL
-#endif
-
-#ifdef _POSIX_SOURCE
-#undef _POSIX_SOURCE
-#endif
-
-#define BSD_LOG_DEBUG       1
-#define BSD_LOG_WARNING     2
-#define BSD_LOG_ERROR       3
-
-// ---------------------- @2013/11/01
+#ifndef _SYS_PARAM_H_
+#define _SYS_PARAM_H_
 
 #include <sys/_bsd_null.h>
 
@@ -109,16 +94,16 @@
  */
 #include <sys/bsd_syslimits.h>
 
-#define	BSD_MAXCOMLEN	19		/* max command name remembered */
-#define	BSD_MAXINTERP	BSD_PATH_MAX	/* max interpreter file name length */
-#define	BSD_MAXLOGNAME	17		/* max login name length (incl. NUL) */
-#define	BSD_MAXUPRC		BSD_CHILD_MAX	/* max simultaneous processes */
-#define	BSD_NCARGS		BSD_ARG_MAX		/* max bytes for an exec function */
-#define	BSD_NGROUPS		(NGROUPS_MAX+1)	/* max number groups */
-#define	BSD_NOFILE		BSD_OPEN_MAX	/* max open files per process */
-#define	BSD_NOGROUP		65535		/* marker for empty group set member */
-#define BSD_MAXHOSTNAMELEN	256		/* max hostname size */
-#define BSD_SPECNAMELEN	63		/* max length of devicename */
+#define	MAXCOMLEN	19		/* max command name remembered */
+#define	MAXINTERP	PATH_MAX	/* max interpreter file name length */
+#define	MAXLOGNAME	17		/* max login name length (incl. NUL) */
+#define	MAXUPRC		CHILD_MAX	/* max simultaneous processes */
+#define	NCARGS		ARG_MAX		/* max bytes for an exec function */
+#define	NGROUPS		(NGROUPS_MAX+1)	/* max number groups */
+#define	NOFILE		OPEN_MAX	/* max open files per process */
+#define	NOGROUP		65535		/* marker for empty group set member */
+#define MAXHOSTNAMELEN	256		/* max hostname size */
+#define SPECNAMELEN	63		/* max length of devicename */
 
 /* More types and definitions used throughout the kernel. */
 #ifdef _KERNEL
@@ -148,58 +133,44 @@
 #include <sys/bsd_limits.h>
 #endif
 
-#ifndef BSD_DEV_BSHIFT
-#define	BSD_DEV_BSHIFT	9		/* log2(DEV_BSIZE) */
+#ifndef DEV_BSHIFT
+#define	DEV_BSHIFT	9		/* log2(DEV_BSIZE) */
 #endif
-#define	BSD_DEV_BSIZE	(1<<BSD_DEV_BSHIFT)
+#define	DEV_BSIZE	(1<<DEV_BSHIFT)
 
-#ifndef BSD_BLKDEV_IOSIZE
-#define BSD_BLKDEV_IOSIZE  BSD_PAGE_SIZE	/* default block device I/O size */
+#ifndef BLKDEV_IOSIZE
+#define BLKDEV_IOSIZE  PAGE_SIZE	/* default block device I/O size */
 #endif
-#ifndef BSD_DFLTPHYS
-#define BSD_DFLTPHYS	(64 * 1024)	/* default max raw I/O transfer size */
+#ifndef DFLTPHYS
+#define DFLTPHYS	(64 * 1024)	/* default max raw I/O transfer size */
 #endif
-#ifndef BSD_MAXPHYS
-#define BSD_MAXPHYS		(128 * 1024)	/* max raw I/O transfer size */
+#ifndef MAXPHYS
+#define MAXPHYS		(128 * 1024)	/* max raw I/O transfer size */
 #endif
-#ifndef BSD_MAXDUMPPGS
-#define BSD_MAXDUMPPGS	(BSD_DFLTPHYS/BSD_PAGE_SIZE)
+#ifndef MAXDUMPPGS
+#define MAXDUMPPGS	(DFLTPHYS/PAGE_SIZE)
 #endif
 
 /*
  * Constants related to network buffer management.
  * MCLBYTES must be no larger than PAGE_SIZE.
  */
-#if 0	// runsisi AT hust.edu.cn @2013/11/04
 #ifndef	MSIZE
 #define MSIZE		256		/* size of an mbuf */
 #endif	/* MSIZE */
-#endif 	// ---------------------- @2013/11/04
-
-// runsisi AT hust.edu.cn @2013/11/04
-#ifndef MSIZE
-#define MSIZE       2048     /* size of an mbuf */
-#endif  /* MSIZE */
-// ---------------------- @2013/11/04
 
 #ifndef	MCLSHIFT
 #define MCLSHIFT	11		/* convert bytes to mbuf clusters */
 #endif	/* MCLSHIFT */
 
-#if 0	// runsisi AT hust.edu.cn @2013/11/04
 #define MCLBYTES	(1 << MCLSHIFT)	/* size of an mbuf cluster */
-#endif 	// ---------------------- @2013/11/04
 
-// runsisi AT hust.edu.cn @2013/11/04
-#define MCLBYTES    ((1 << MCLSHIFT) + 4) /* do not conflict with MSIZE */
-// ---------------------- @2013/11/04
-
-#if BSD_PAGE_SIZE < 2048
+#if PAGE_SIZE < 2048
 #define	MJUMPAGESIZE	MCLBYTES
-#elif BSD_PAGE_SIZE <= 8192
-#define	MJUMPAGESIZE	BSD_PAGE_SIZE
+#elif PAGE_SIZE <= 8192
+#define	MJUMPAGESIZE	PAGE_SIZE
 #else
-#define	BSD_MJUMPAGESIZE	(8 * 1024)
+#define	MJUMPAGESIZE	(8 * 1024)
 #endif
 
 #define	MJUM9BYTES	(9 * 1024)	/* jumbo cluster 9k */
@@ -228,28 +199,28 @@
 #ifndef btodb
 #define btodb(bytes)	 		/* calculates (bytes / DEV_BSIZE) */ \
 	(sizeof (bytes) > sizeof(long) \
-	 ? (daddr_t)((unsigned long long)(bytes) >> BSD_DEV_BSHIFT) \
-	 : (daddr_t)((unsigned long)(bytes) >> BSD_DEV_BSHIFT))
+	 ? (daddr_t)((unsigned long long)(bytes) >> DEV_BSHIFT) \
+	 : (daddr_t)((unsigned long)(bytes) >> DEV_BSHIFT))
 #endif
 
 #ifndef dbtob
 #define dbtob(db)			/* calculates (db * DEV_BSIZE) */ \
-	((off_t)(db) << BSD_DEV_BSHIFT)
+	((off_t)(db) << DEV_BSHIFT)
 #endif
 
-#define	BSD_PRIMASK	0x0ff
-#define	BSD_PCATCH	0x100		/* OR'd with pri for tsleep to check signals */
-#define	BSD_PDROP	0x200	/* OR'd with pri to stop re-entry of interlock mutex */
-#define	BSD_PBDRY	0x400	/* for PCATCH stop is done on the user boundary */
+#define	PRIMASK	0x0ff
+#define	PCATCH	0x100		/* OR'd with pri for tsleep to check signals */
+#define	PDROP	0x200	/* OR'd with pri to stop re-entry of interlock mutex */
+#define	PBDRY	0x400	/* for PCATCH stop is done on the user boundary */
 
-#define	BSD_NZERO	0		/* default "nice" */
+#define	NZERO	0		/* default "nice" */
 
-#define	BSD_NBBY	8		/* number of bits in a byte */
-#define	BSD_NBPW	sizeof(int)	/* number of bytes per word (integer) */
+#define	NBBY	8		/* number of bits in a byte */
+#define	NBPW	sizeof(int)	/* number of bytes per word (integer) */
 
-#define	BSD_CMASK	022		/* default file mask: S_IWGRP|S_IWOTH */
+#define	CMASK	022		/* default file mask: S_IWGRP|S_IWOTH */
 
-#define	BSD_NODEV	(bsd_dev_t)(-1)	/* non-existent device */
+#define	NODEV	(dev_t)(-1)	/* non-existent device */
 
 /*
  * File system parameters and macros.
@@ -274,9 +245,9 @@
  *		The default is 16384, roughly 2x the block size used by a
  *		normal UFS filesystem.
  */
-#define BSD_MAXBSIZE	65536	/* must be power of 2 */
-#define BSD_BKVASIZE	16384	/* must be power of 2 */
-#define BSD_BKVAMASK	(BSD_BKVASIZE-1)
+#define MAXBSIZE	65536	/* must be power of 2 */
+#define BKVASIZE	16384	/* must be power of 2 */
+#define BKVAMASK	(BKVASIZE-1)
 
 /*
  * MAXPATHLEN defines the longest permissible path length after expanding
@@ -287,30 +258,30 @@
  * It should be set high enough to allow all legitimate uses, but halt
  * infinite loops reasonably quickly.
  */
-#define	BSD_MAXPATHLEN	BSD_PATH_MAX
-#define BSD_MAXSYMLINKS	32
+#define	MAXPATHLEN	PATH_MAX
+#define MAXSYMLINKS	32
 
 /* Bit map related macros. */
-#define	bsd_setbit(a,i)	(((unsigned char *)(a))[(i)/BSD_NBBY] |= 1<<((i)%BSD_NBBY))
-#define	bsd_clrbit(a,i)	(((unsigned char *)(a))[(i)/BSD_NBBY] &= ~(1<<((i)%BSD_NBBY)))
-#define	bsd_isset(a,i)							\
-	(((const unsigned char *)(a))[(i)/BSD_NBBY] & (1<<((i)%BSD_NBBY)))
-#define	bsd_isclr(a,i)							\
-	((((const unsigned char *)(a))[(i)/BSD_NBBY] & (1<<((i)%BSD_NBBY))) == 0)
+#define	setbit(a,i)	(((unsigned char *)(a))[(i)/NBBY] |= 1<<((i)%NBBY))
+#define	clrbit(a,i)	(((unsigned char *)(a))[(i)/NBBY] &= ~(1<<((i)%NBBY)))
+#define	isset(a,i)							\
+	(((const unsigned char *)(a))[(i)/NBBY] & (1<<((i)%NBBY)))
+#define	isclr(a,i)							\
+	((((const unsigned char *)(a))[(i)/NBBY] & (1<<((i)%NBBY))) == 0)
 
 /* Macros for counting and rounding. */
-#ifndef bsd_howmany
-#define	bsd_howmany(x, y)	(((x)+((y)-1))/(y))
+#ifndef howmany
+#define	howmany(x, y)	(((x)+((y)-1))/(y))
 #endif
-#define	bsd_nitems(x)	(sizeof((x)) / sizeof((x)[0]))
-#define	bsd_rounddown(x, y)	(((x)/(y))*(y))
-#define	bsd_roundup(x, y)	((((x)+((y)-1))/(y))*(y))  /* to any y */
-#define	bsd_roundup2(x, y)	(((x)+((y)-1))&(~((y)-1))) /* if y is powers of two */
-#define bsd_powerof2(x)	((((x)-1)&(x))==0)
+#define	nitems(x)	(sizeof((x)) / sizeof((x)[0]))
+#define	rounddown(x, y)	(((x)/(y))*(y))
+#define	roundup(x, y)	((((x)+((y)-1))/(y))*(y))  /* to any y */
+#define	roundup2(x, y)	(((x)+((y)-1))&(~((y)-1))) /* if y is powers of two */
+#define powerof2(x)	((((x)-1)&(x))==0)
 
 /* Macros for min/max. */
-#define	BSD_MIN(a,b) (((a)<(b))?(a):(b))
-#define	BSD_MAX(a,b) (((a)>(b))?(a):(b))
+#define	MIN(a,b) (((a)<(b))?(a):(b))
+#define	MAX(a,b) (((a)>(b))?(a):(b))
 
 #ifdef _KERNEL
 /*
@@ -320,10 +291,10 @@
 #ifndef _BYTEORDER_PROTOTYPED
 #define	_BYTEORDER_PROTOTYPED
 __BEGIN_DECLS
-__bsd_uint32_t	 bsd_htonl(__bsd_uint32_t);
-__bsd_uint16_t	 bsd_htons(__bsd_uint16_t);
-__bsd_uint32_t	 bsd_ntohl(__bsd_uint32_t);
-__bsd_uint16_t	 bsd_ntohs(__bsd_uint16_t);
+__uint32_t	 htonl(__uint32_t);
+__uint16_t	 htons(__uint16_t);
+__uint32_t	 ntohl(__uint32_t);
+__uint16_t	 ntohs(__uint16_t);
 __END_DECLS
 #endif
 #endif
@@ -331,10 +302,10 @@ __END_DECLS
 #ifndef lint
 #ifndef _BYTEORDER_FUNC_DEFINED
 #define	_BYTEORDER_FUNC_DEFINED
-#define	bsd_htonl(x)	__htonl(x)
-#define	bsd_htons(x)	__htons(x)
-#define	bsd_ntohl(x)	__ntohl(x)
-#define	bsd_ntohs(x)	__ntohs(x)
+#define	htonl(x)	__htonl(x)
+#define	htons(x)	__htons(x)
+#define	ntohl(x)	__ntohl(x)
+#define	ntohs(x)	__ntohs(x)
 #endif /* !_BYTEORDER_FUNC_DEFINED */
 #endif /* lint */
 #endif /* _KERNEL */
@@ -350,14 +321,14 @@ __END_DECLS
  * For the scheduler to maintain a 1:1 mapping of CPU `tick' to `%age',
  * FSHIFT must be at least 11; this gives us a maximum load avg of ~1024.
  */
-#define	BSD_FSHIFT	11		/* bits to right of fixed binary point */
-#define BSD_FSCALE	(1<<BSD_FSHIFT)
+#define	FSHIFT	11		/* bits to right of fixed binary point */
+#define FSCALE	(1<<FSHIFT)
 
 #define dbtoc(db)			/* calculates devblks to pages */ \
-	((db + (ctodb(1) - 1)) >> (PAGE_SHIFT - BSD_DEV_BSHIFT))
+	((db + (ctodb(1) - 1)) >> (PAGE_SHIFT - DEV_BSHIFT))
  
 #define ctodb(db)			/* calculates pages to devblks */ \
-	((db) << (PAGE_SHIFT - BSD_DEV_BSHIFT))
+	((db) << (PAGE_SHIFT - DEV_BSHIFT))
 
 /*
  * Old spelling of __containerof().

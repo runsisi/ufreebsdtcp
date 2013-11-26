@@ -33,9 +33,9 @@
 #ifndef	_SYS_ELF_H_
 #define	_SYS_ELF_H_
 
-#include <sys/types.h>
-#include <machine/elf.h>
-#include <sys/elf32.h>
-#include <sys/elf64.h>
+#include <sys/bsd_types.h>
+#include <machine/bsd_elf.h>
+#include <sys/bsd_elf32.h>
+#include <sys/bsd_elf64.h>
 
 #endif /* !_SYS_ELF_H_ */

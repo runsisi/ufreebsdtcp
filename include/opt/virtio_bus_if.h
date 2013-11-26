@@ -20,11 +20,11 @@ struct vq_alloc_info;
 /** @brief Unique descriptor for the VIRTIO_BUS_NEGOTIATE_FEATURES() method */
 extern struct kobjop_desc virtio_bus_negotiate_features_desc;
 /** @brief A function implementing the VIRTIO_BUS_NEGOTIATE_FEATURES() method */
-typedef bsd_uint64_t virtio_bus_negotiate_features_t(bsd_device_t dev,
-                                                 bsd_uint64_t child_features);
+typedef uint64_t virtio_bus_negotiate_features_t(device_t dev,
+                                                 uint64_t child_features);
 
-static __inline bsd_uint64_t VIRTIO_BUS_NEGOTIATE_FEATURES(bsd_device_t dev,
-                                                       bsd_uint64_t child_features)
+static __inline uint64_t VIRTIO_BUS_NEGOTIATE_FEATURES(device_t dev,
+                                                       uint64_t child_features)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,virtio_bus_negotiate_features);
@@ -34,9 +34,9 @@ static __inline bsd_uint64_t VIRTIO_BUS_NEGOTIATE_FEATURES(bsd_device_t dev,
 /** @brief Unique descriptor for the VIRTIO_BUS_WITH_FEATURE() method */
 extern struct kobjop_desc virtio_bus_with_feature_desc;
 /** @brief A function implementing the VIRTIO_BUS_WITH_FEATURE() method */
-typedef int virtio_bus_with_feature_t(bsd_device_t dev, bsd_uint64_t feature);
+typedef int virtio_bus_with_feature_t(device_t dev, uint64_t feature);
 
-static __inline int VIRTIO_BUS_WITH_FEATURE(bsd_device_t dev, bsd_uint64_t feature)
+static __inline int VIRTIO_BUS_WITH_FEATURE(device_t dev, uint64_t feature)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,virtio_bus_with_feature);
@@ -46,10 +46,10 @@ static __inline int VIRTIO_BUS_WITH_FEATURE(bsd_device_t dev, bsd_uint64_t featu
 /** @brief Unique descriptor for the VIRTIO_BUS_ALLOC_VIRTQUEUES() method */
 extern struct kobjop_desc virtio_bus_alloc_virtqueues_desc;
 /** @brief A function implementing the VIRTIO_BUS_ALLOC_VIRTQUEUES() method */
-typedef int virtio_bus_alloc_virtqueues_t(bsd_device_t dev, int flags, int nvqs,
+typedef int virtio_bus_alloc_virtqueues_t(device_t dev, int flags, int nvqs,
                                           struct vq_alloc_info *info);
 
-static __inline int VIRTIO_BUS_ALLOC_VIRTQUEUES(bsd_device_t dev, int flags,
+static __inline int VIRTIO_BUS_ALLOC_VIRTQUEUES(device_t dev, int flags,
                                                 int nvqs,
                                                 struct vq_alloc_info *info)
 {
@@ -61,9 +61,9 @@ static __inline int VIRTIO_BUS_ALLOC_VIRTQUEUES(bsd_device_t dev, int flags,
 /** @brief Unique descriptor for the VIRTIO_BUS_SETUP_INTR() method */
 extern struct kobjop_desc virtio_bus_setup_intr_desc;
 /** @brief A function implementing the VIRTIO_BUS_SETUP_INTR() method */
-typedef int virtio_bus_setup_intr_t(bsd_device_t dev, enum intr_type type);
+typedef int virtio_bus_setup_intr_t(device_t dev, enum intr_type type);
 
-static __inline int VIRTIO_BUS_SETUP_INTR(bsd_device_t dev, enum intr_type type)
+static __inline int VIRTIO_BUS_SETUP_INTR(device_t dev, enum intr_type type)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,virtio_bus_setup_intr);
@@ -73,9 +73,9 @@ static __inline int VIRTIO_BUS_SETUP_INTR(bsd_device_t dev, enum intr_type type)
 /** @brief Unique descriptor for the VIRTIO_BUS_STOP() method */
 extern struct kobjop_desc virtio_bus_stop_desc;
 /** @brief A function implementing the VIRTIO_BUS_STOP() method */
-typedef void virtio_bus_stop_t(bsd_device_t dev);
+typedef void virtio_bus_stop_t(device_t dev);
 
-static __inline void VIRTIO_BUS_STOP(bsd_device_t dev)
+static __inline void VIRTIO_BUS_STOP(device_t dev)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,virtio_bus_stop);
@@ -85,9 +85,9 @@ static __inline void VIRTIO_BUS_STOP(bsd_device_t dev)
 /** @brief Unique descriptor for the VIRTIO_BUS_REINIT() method */
 extern struct kobjop_desc virtio_bus_reinit_desc;
 /** @brief A function implementing the VIRTIO_BUS_REINIT() method */
-typedef int virtio_bus_reinit_t(bsd_device_t dev, bsd_uint64_t features);
+typedef int virtio_bus_reinit_t(device_t dev, uint64_t features);
 
-static __inline int VIRTIO_BUS_REINIT(bsd_device_t dev, bsd_uint64_t features)
+static __inline int VIRTIO_BUS_REINIT(device_t dev, uint64_t features)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,virtio_bus_reinit);
@@ -97,9 +97,9 @@ static __inline int VIRTIO_BUS_REINIT(bsd_device_t dev, bsd_uint64_t features)
 /** @brief Unique descriptor for the VIRTIO_BUS_REINIT_COMPLETE() method */
 extern struct kobjop_desc virtio_bus_reinit_complete_desc;
 /** @brief A function implementing the VIRTIO_BUS_REINIT_COMPLETE() method */
-typedef void virtio_bus_reinit_complete_t(bsd_device_t dev);
+typedef void virtio_bus_reinit_complete_t(device_t dev);
 
-static __inline void VIRTIO_BUS_REINIT_COMPLETE(bsd_device_t dev)
+static __inline void VIRTIO_BUS_REINIT_COMPLETE(device_t dev)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,virtio_bus_reinit_complete);
@@ -109,9 +109,9 @@ static __inline void VIRTIO_BUS_REINIT_COMPLETE(bsd_device_t dev)
 /** @brief Unique descriptor for the VIRTIO_BUS_NOTIFY_VQ() method */
 extern struct kobjop_desc virtio_bus_notify_vq_desc;
 /** @brief A function implementing the VIRTIO_BUS_NOTIFY_VQ() method */
-typedef void virtio_bus_notify_vq_t(bsd_device_t dev, bsd_uint16_t queue);
+typedef void virtio_bus_notify_vq_t(device_t dev, uint16_t queue);
 
-static __inline void VIRTIO_BUS_NOTIFY_VQ(bsd_device_t dev, bsd_uint16_t queue)
+static __inline void VIRTIO_BUS_NOTIFY_VQ(device_t dev, uint16_t queue)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,virtio_bus_notify_vq);
@@ -121,10 +121,10 @@ static __inline void VIRTIO_BUS_NOTIFY_VQ(bsd_device_t dev, bsd_uint16_t queue)
 /** @brief Unique descriptor for the VIRTIO_BUS_READ_DEVICE_CONFIG() method */
 extern struct kobjop_desc virtio_bus_read_device_config_desc;
 /** @brief A function implementing the VIRTIO_BUS_READ_DEVICE_CONFIG() method */
-typedef void virtio_bus_read_device_config_t(bsd_device_t dev, bus_size_t offset,
+typedef void virtio_bus_read_device_config_t(device_t dev, bus_size_t offset,
                                              void *dst, int len);
 
-static __inline void VIRTIO_BUS_READ_DEVICE_CONFIG(bsd_device_t dev,
+static __inline void VIRTIO_BUS_READ_DEVICE_CONFIG(device_t dev,
                                                    bus_size_t offset, void *dst,
                                                    int len)
 {
@@ -136,10 +136,10 @@ static __inline void VIRTIO_BUS_READ_DEVICE_CONFIG(bsd_device_t dev,
 /** @brief Unique descriptor for the VIRTIO_BUS_WRITE_DEVICE_CONFIG() method */
 extern struct kobjop_desc virtio_bus_write_device_config_desc;
 /** @brief A function implementing the VIRTIO_BUS_WRITE_DEVICE_CONFIG() method */
-typedef void virtio_bus_write_device_config_t(bsd_device_t dev, bus_size_t offset,
+typedef void virtio_bus_write_device_config_t(device_t dev, bus_size_t offset,
                                               void *src, int len);
 
-static __inline void VIRTIO_BUS_WRITE_DEVICE_CONFIG(bsd_device_t dev,
+static __inline void VIRTIO_BUS_WRITE_DEVICE_CONFIG(device_t dev,
                                                     bus_size_t offset,
                                                     void *src, int len)
 {

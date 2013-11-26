@@ -45,10 +45,10 @@
  */
 struct mldv2_query {
 	struct icmp6_hdr	mld_icmp6_hdr;	/* ICMPv6 header */
-	struct bsd_in6_addr		mld_addr;	/* address being queried */
-	bsd_uint8_t		mld_misc;	/* reserved/suppress/robustness   */
-	bsd_uint8_t		mld_qqi;	/* querier's query interval       */
-	bsd_uint16_t	mld_numsrc;	/* number of sources              */
+	struct in6_addr		mld_addr;	/* address being queried */
+	uint8_t		mld_misc;	/* reserved/suppress/robustness   */
+	uint8_t		mld_qqi;	/* querier's query interval       */
+	uint16_t	mld_numsrc;	/* number of sources              */
 	/* followed by 1..numsrc source addresses */
 } __packed;
 #define MLD_V2_QUERY_MINLEN		sizeof(struct mldv2_query)
@@ -72,10 +72,10 @@ struct mldv2_report {
 #define mld_numrecs	mld_icmp6_hdr.icmp6_data16[1]
 
 struct mldv2_record {
-	bsd_uint8_t			mr_type;	/* record type */
-	bsd_uint8_t			mr_datalen;	/* length of auxiliary data */
-	bsd_uint16_t		mr_numsrc;	/* number of sources */
-	struct bsd_in6_addr		mr_addr;	/* address being reported */
+	uint8_t			mr_type;	/* record type */
+	uint8_t			mr_datalen;	/* length of auxiliary data */
+	uint16_t		mr_numsrc;	/* number of sources */
+	struct in6_addr		mr_addr;	/* address being reported */
 	/* followed by 1..numsrc source addresses */
 } __packed;
 #define MLD_V2_REPORT_MAXRECS		65535

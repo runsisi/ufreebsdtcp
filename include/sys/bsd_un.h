@@ -37,7 +37,7 @@
 #include <sys/_bsd_types.h>
 
 #ifndef _SA_FAMILY_T_DECLARED
-typedef	__bsd_sa_family_t	bsd_sa_family_t;
+typedef	__sa_family_t	sa_family_t;
 #define	_SA_FAMILY_T_DECLARED
 #endif
 
@@ -46,7 +46,7 @@ typedef	__bsd_sa_family_t	bsd_sa_family_t;
  */
 struct sockaddr_un {
 	unsigned char	sun_len;	/* sockaddr len including null */
-	bsd_sa_family_t	sun_family;	/* AF_UNIX */
+	sa_family_t	sun_family;	/* AF_UNIX */
 	char	sun_path[104];		/* path name (gag) */
 };
 

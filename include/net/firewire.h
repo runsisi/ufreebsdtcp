@@ -35,52 +35,52 @@
 #define FW_ENCAP_NEXT		3
 
 union fw_encap {
-		bsd_uint32_t ul[2];
+		uint32_t ul[2];
 		struct {
 #if BYTE_ORDER == BIG_ENDIAN
-			bsd_uint32_t lf		:2;
-			bsd_uint32_t reserved	:14;
-			bsd_uint32_t ether_type	:16;
+			uint32_t lf		:2;
+			uint32_t reserved	:14;
+			uint32_t ether_type	:16;
 #else
-			bsd_uint32_t ether_type	:16;
-			bsd_uint32_t reserved	:14;
-			bsd_uint32_t lf		:2;
+			uint32_t ether_type	:16;
+			uint32_t reserved	:14;
+			uint32_t lf		:2;
 #endif
 		} unfrag;
 		struct {
 #if BYTE_ORDER == BIG_ENDIAN
-			bsd_uint32_t lf		:2;
-			bsd_uint32_t reserved1	:2;
-			bsd_uint32_t datagram_size	:12;
-			bsd_uint32_t ether_type	:16;
-			bsd_uint32_t dgl		:16;
-			bsd_uint32_t reserved2	:16;
+			uint32_t lf		:2;
+			uint32_t reserved1	:2;
+			uint32_t datagram_size	:12;
+			uint32_t ether_type	:16;
+			uint32_t dgl		:16;
+			uint32_t reserved2	:16;
 #else
-			bsd_uint32_t ether_type	:16;
-			bsd_uint32_t datagram_size	:12;
-			bsd_uint32_t reserved1	:2;
-			bsd_uint32_t lf		:2;
-			bsd_uint32_t reserved2	:16;
-			bsd_uint32_t dgl		:16;
+			uint32_t ether_type	:16;
+			uint32_t datagram_size	:12;
+			uint32_t reserved1	:2;
+			uint32_t lf		:2;
+			uint32_t reserved2	:16;
+			uint32_t dgl		:16;
 #endif
 		} firstfrag;
 		struct {
 #if BYTE_ORDER == BIG_ENDIAN
-			bsd_uint32_t lf		:2;
-			bsd_uint32_t reserved1	:2;
-			bsd_uint32_t datagram_size	:12;
-			bsd_uint32_t reserved2	:4;
-			bsd_uint32_t fragment_offset :12;
-			bsd_uint32_t dgl		:16;
-			bsd_uint32_t reserved3	:16;
+			uint32_t lf		:2;
+			uint32_t reserved1	:2;
+			uint32_t datagram_size	:12;
+			uint32_t reserved2	:4;
+			uint32_t fragment_offset :12;
+			uint32_t dgl		:16;
+			uint32_t reserved3	:16;
 #else
-			bsd_uint32_t fragment_offset :12;
-			bsd_uint32_t reserved2	:4;
-			bsd_uint32_t datagram_size	:12;
-			bsd_uint32_t reserved1	:2;
-			bsd_uint32_t lf		:2;
-			bsd_uint32_t reserved3	:16;
-			bsd_uint32_t dgl		:16;
+			uint32_t fragment_offset :12;
+			uint32_t reserved2	:4;
+			uint32_t datagram_size	:12;
+			uint32_t reserved1	:2;
+			uint32_t lf		:2;
+			uint32_t reserved3	:16;
+			uint32_t dgl		:16;
 #endif
 		} nextfrag;
 };
@@ -90,21 +90,21 @@ union fw_encap {
 #define MTAG_FIREWIRE_SENDER_EUID	1
 
 struct fw_hwaddr {
-	bsd_uint32_t		sender_unique_ID_hi;
-	bsd_uint32_t		sender_unique_ID_lo;
-	bsd_uint8_t			sender_max_rec;
-	bsd_uint8_t			sspd;
-	bsd_uint16_t		sender_unicast_FIFO_hi;
-	bsd_uint32_t		sender_unicast_FIFO_lo;
+	uint32_t		sender_unique_ID_hi;
+	uint32_t		sender_unique_ID_lo;
+	uint8_t			sender_max_rec;
+	uint8_t			sspd;
+	uint16_t		sender_unicast_FIFO_hi;
+	uint32_t		sender_unicast_FIFO_lo;
 };
 
 /*
  * BPF wants to see one of these.
  */
 struct fw_bpfhdr {
-	bsd_uint8_t			firewire_dhost[8];
-	bsd_uint8_t			firewire_shost[8];
-	bsd_uint16_t		firewire_type;
+	uint8_t			firewire_dhost[8];
+	uint8_t			firewire_shost[8];
+	uint16_t		firewire_type;
 };
 
 #ifdef _KERNEL
@@ -115,7 +115,7 @@ struct fw_bpfhdr {
  */
 struct fw_reass {
 	STAILQ_ENTRY(fw_reass)	fr_link;
-	bsd_uint32_t		fr_id;		/* host+dgl */
+	uint32_t		fr_id;		/* host+dgl */
 	struct mbuf		*fr_frags;	/* chain of frags */
 };
 STAILQ_HEAD(fw_reass_list, fw_reass);
@@ -124,14 +124,14 @@ struct fw_com {
 	struct ifnet		*fc_ifp;
 	struct fw_hwaddr	fc_hwaddr;
 	struct firewire_comm	*fc_fc;
-	bsd_uint8_t			fc_broadcast_channel;
-	bsd_uint8_t			fc_speed;	/* our speed */
-	bsd_uint16_t		fc_node;	/* our nodeid */
+	uint8_t			fc_broadcast_channel;
+	uint8_t			fc_speed;	/* our speed */
+	uint16_t		fc_node;	/* our nodeid */
 	struct fw_reass_list	fc_frags;	/* partial datagrams */
 };
 #define	IFP2FWC(ifp)	((struct fw_com *)(ifp)->if_l2com)
 
-extern	void	firewire_input(struct ifnet *ifp, struct mbuf *m, bsd_uint16_t src);
+extern	void	firewire_input(struct ifnet *ifp, struct mbuf *m, uint16_t src);
 extern	void	firewire_ifattach(struct ifnet *, struct fw_hwaddr *);
 extern	void	firewire_ifdetach(struct ifnet *);
 extern	void	firewire_busreset(struct ifnet *);

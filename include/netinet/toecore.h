@@ -34,7 +34,7 @@
 #endif
 
 struct tcpopt;
-struct bsd_tcphdr;
+struct tcphdr;
 struct in_conninfo;
 
 struct toedev {
@@ -45,8 +45,8 @@ struct toedev {
 	 * Active open.  If a failure occurs, it is reported back by the driver
 	 * via toe_connect_failed.
 	 */
-	int (*tod_connect)(struct toedev *, struct bsd_socket *, struct rtentry *,
-	    struct bsd_sockaddr *);
+	int (*tod_connect)(struct toedev *, struct socket *, struct rtentry *,
+	    struct sockaddr *);
 
 	/* Passive open. */
 	int (*tod_listen_start)(struct toedev *, struct tcpcb *);
@@ -85,7 +85,7 @@ struct toedev {
 	 * the TOE driver enquired about previously (via toe_l2_resolve).
 	 */
 	void (*tod_l2_update)(struct toedev *, struct ifnet *,
-	    struct bsd_sockaddr *, bsd_uint8_t *, bsd_uint16_t);
+	    struct sockaddr *, uint8_t *, uint16_t);
 
 	/* XXX.  Route has been redirected. */
 	void (*tod_route_redirect)(struct toedev *, struct ifnet *,
@@ -95,13 +95,13 @@ struct toedev {
 	void (*tod_syncache_added)(struct toedev *, void *);
 	void (*tod_syncache_removed)(struct toedev *, void *);
 	int (*tod_syncache_respond)(struct toedev *, void *, struct mbuf *);
-	void (*tod_offload_socket)(struct toedev *, void *, struct bsd_socket *);
+	void (*tod_offload_socket)(struct toedev *, void *, struct socket *);
 
 	/* TCP socket option */
 	void (*tod_ctloutput)(struct toedev *, struct tcpcb *, int, int);
 };
 
-#include <sys/eventhandler.h>
+#include <sys/bsd_eventhandler.h>
 typedef	void (*tcp_offload_listen_start_fn)(void *, struct tcpcb *);
 typedef	void (*tcp_offload_listen_stop_fn)(void *, struct tcpcb *);
 EVENTHANDLER_DECLARE(tcp_offload_listen_start, tcp_offload_listen_start_fn);
@@ -116,15 +116,15 @@ int unregister_toedev(struct toedev *);
  * answer is not available right away then the TOE driver's tod_l2_update will
  * be called later.
  */
-int toe_l2_resolve(struct toedev *, struct ifnet *, struct bsd_sockaddr *,
-    bsd_uint8_t *, bsd_uint16_t *);
+int toe_l2_resolve(struct toedev *, struct ifnet *, struct sockaddr *,
+    uint8_t *, uint16_t *);
 
 void toe_connect_failed(struct toedev *, struct inpcb *, int);
 
-void toe_syncache_add(struct in_conninfo *, struct tcpopt *, struct bsd_tcphdr *,
+void toe_syncache_add(struct in_conninfo *, struct tcpopt *, struct tcphdr *,
     struct inpcb *, void *, void *);
-int  toe_syncache_expand(struct in_conninfo *, struct tcpopt *, struct bsd_tcphdr *,
-    struct bsd_socket **);
+int  toe_syncache_expand(struct in_conninfo *, struct tcpopt *, struct tcphdr *,
+    struct socket **);
 
-int toe_4tuple_check(struct in_conninfo *, struct bsd_tcphdr *, struct ifnet *);
+int toe_4tuple_check(struct in_conninfo *, struct tcphdr *, struct ifnet *);
 #endif

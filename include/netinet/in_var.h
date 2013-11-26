@@ -63,20 +63,20 @@ struct in_ifaddr {
 					/* ia_subnet{,mask} in host order */
 	u_long	ia_subnet;		/* subnet address */
 	u_long	ia_subnetmask;		/* mask of subnet */
-	BSD_LIST_ENTRY(in_ifaddr) ia_hash;	/* entry in bucket of inet addresses */
-	BSD_TAILQ_ENTRY(in_ifaddr) ia_link;	/* list of internet addresses */
-	struct	bsd_sockaddr_in ia_addr;	/* reserve space for interface name */
-	struct	bsd_sockaddr_in ia_dstaddr; /* reserve space for broadcast addr */
+	LIST_ENTRY(in_ifaddr) ia_hash;	/* entry in bucket of inet addresses */
+	TAILQ_ENTRY(in_ifaddr) ia_link;	/* list of internet addresses */
+	struct	sockaddr_in ia_addr;	/* reserve space for interface name */
+	struct	sockaddr_in ia_dstaddr; /* reserve space for broadcast addr */
 #define	ia_broadaddr	ia_dstaddr
-	struct	bsd_sockaddr_in ia_sockmask; /* reserve space for general netmask */
+	struct	sockaddr_in ia_sockmask; /* reserve space for general netmask */
 };
 
 struct	in_aliasreq {
 	char	ifra_name[IFNAMSIZ];		/* if name, e.g. "en0" */
-	struct	bsd_sockaddr_in ifra_addr;
-	struct	bsd_sockaddr_in ifra_broadaddr;
+	struct	sockaddr_in ifra_addr;
+	struct	sockaddr_in ifra_broadaddr;
 #define ifra_dstaddr ifra_broadaddr
-	struct	bsd_sockaddr_in ifra_mask;
+	struct	sockaddr_in ifra_mask;
 };
 /*
  * Given a pointer to an in_ifaddr (ifaddr),
@@ -97,8 +97,8 @@ extern	u_char	inetctlerrmap[];
 /*
  * Hash table for IP addresses.
  */
-BSD_TAILQ_HEAD(in_ifaddrhead, in_ifaddr);
-BSD_LIST_HEAD(in_ifaddrhashhead, in_ifaddr);
+TAILQ_HEAD(in_ifaddrhead, in_ifaddr);
+LIST_HEAD(in_ifaddrhashhead, in_ifaddr);
 
 VNET_DECLARE(struct in_ifaddrhashhead *, in_ifaddrhashtbl);
 VNET_DECLARE(struct in_ifaddrhead, in_ifaddrhead);
@@ -116,13 +116,13 @@ VNET_DECLARE(u_long, in_ifaddrhmask);		/* mask for hash table */
 
 extern	struct rwlock in_ifaddr_lock;
 
-#define	IN_IFADDR_LOCK_ASSERT()
-#define	IN_IFADDR_RLOCK()
-#define	IN_IFADDR_RLOCK_ASSERT()
-#define	IN_IFADDR_RUNLOCK()
-#define	IN_IFADDR_WLOCK()
-#define	IN_IFADDR_WLOCK_ASSERT()
-#define	IN_IFADDR_WUNLOCK()
+#define	IN_IFADDR_LOCK_ASSERT()	rw_assert(&in_ifaddr_lock, RA_LOCKED)
+#define	IN_IFADDR_RLOCK()	rw_rlock(&in_ifaddr_lock)
+#define	IN_IFADDR_RLOCK_ASSERT()	rw_assert(&in_ifaddr_lock, RA_RLOCKED)
+#define	IN_IFADDR_RUNLOCK()	rw_runlock(&in_ifaddr_lock)
+#define	IN_IFADDR_WLOCK()	rw_wlock(&in_ifaddr_lock)
+#define	IN_IFADDR_WLOCK_ASSERT()	rw_assert(&in_ifaddr_lock, RA_WLOCKED)
+#define	IN_IFADDR_WUNLOCK()	rw_wunlock(&in_ifaddr_lock)
 
 /*
  * Macro for finding the internet address structure (in_ifaddr)
@@ -133,7 +133,7 @@ extern	struct rwlock in_ifaddr_lock;
 	/* struct in_ifaddr *ia; */ \
 do { \
 \
-	BSD_LIST_FOREACH(ia, INADDR_HASH((addr).s_addr), ia_hash) \
+	LIST_FOREACH(ia, INADDR_HASH((addr).s_addr), ia_hash) \
 		if (IA_SIN(ia)->sin_addr.s_addr == (addr).s_addr) \
 			break; \
 } while (0)
@@ -161,9 +161,9 @@ do { \
 	/* struct in_ifaddr *ia; */					\
 do {									\
 	IN_IFADDR_RLOCK();						\
-	for ((ia) = BSD_TAILQ_FIRST(&V_in_ifaddrhead);			\
+	for ((ia) = TAILQ_FIRST(&V_in_ifaddrhead);			\
 	    (ia) != NULL && (ia)->ia_ifp != (ifp);			\
-	    (ia) = BSD_TAILQ_NEXT((ia), ia_link))				\
+	    (ia) = TAILQ_NEXT((ia), ia_link))				\
 		continue;						\
 	if ((ia) != NULL)						\
 		ifa_ref(&(ia)->ia_ifa);					\
@@ -187,25 +187,25 @@ struct router_info {
 	struct ifnet *rti_ifp;
 	int    rti_type; /* type of router which is querier on this interface */
 	int    rti_time; /* # of slow timeouts since last old query */
-	BSD_SLIST_ENTRY(router_info) rti_list;
+	SLIST_ENTRY(router_info) rti_list;
 };
 
 /*
  * Per-interface IGMP router version information.
  */
 struct igmp_ifinfo {
-	BSD_LIST_ENTRY(igmp_ifinfo) igi_link;
+	LIST_ENTRY(igmp_ifinfo) igi_link;
 	struct ifnet *igi_ifp;	/* interface this instance belongs to */
-	bsd_uint32_t igi_version;	/* IGMPv3 Host Compatibility Mode */
-	bsd_uint32_t igi_v1_timer;	/* IGMPv1 Querier Present timer (s) */
-	bsd_uint32_t igi_v2_timer;	/* IGMPv2 Querier Present timer (s) */
-	bsd_uint32_t igi_v3_timer;	/* IGMPv3 General Query (interface) timer (s)*/
-	bsd_uint32_t igi_flags;	/* IGMP per-interface flags */
-	bsd_uint32_t igi_rv;	/* IGMPv3 Robustness Variable */
-	bsd_uint32_t igi_qi;	/* IGMPv3 Query Interval (s) */
-	bsd_uint32_t igi_qri;	/* IGMPv3 Query Response Interval (s) */
-	bsd_uint32_t igi_uri;	/* IGMPv3 Unsolicited Report Interval (s) */
-	BSD_SLIST_HEAD(,in_multi)	igi_relinmhead; /* released groups */
+	uint32_t igi_version;	/* IGMPv3 Host Compatibility Mode */
+	uint32_t igi_v1_timer;	/* IGMPv1 Querier Present timer (s) */
+	uint32_t igi_v2_timer;	/* IGMPv2 Querier Present timer (s) */
+	uint32_t igi_v3_timer;	/* IGMPv3 General Query (interface) timer (s)*/
+	uint32_t igi_flags;	/* IGMP per-interface flags */
+	uint32_t igi_rv;	/* IGMPv3 Robustness Variable */
+	uint32_t igi_qi;	/* IGMPv3 Query Interval (s) */
+	uint32_t igi_qri;	/* IGMPv3 Query Response Interval (s) */
+	uint32_t igi_uri;	/* IGMPv3 Unsolicited Report Interval (s) */
+	SLIST_HEAD(,in_multi)	igi_relinmhead; /* released groups */
 	struct ifqueue	 igi_gq;	/* queue of general query responses */
 };
 
@@ -217,12 +217,12 @@ struct igmp_ifinfo {
  */
 struct ip_msource {
 	RB_ENTRY(ip_msource)	ims_link;	/* RB tree links */
-	bsd_in_addr_t		ims_haddr;	/* host byte order */
+	in_addr_t		ims_haddr;	/* host byte order */
 	struct ims_st {
-		bsd_uint16_t	ex;		/* # of exclusive members */
-		bsd_uint16_t	in;		/* # of inclusive members */
+		uint16_t	ex;		/* # of exclusive members */
+		uint16_t	in;		/* # of inclusive members */
 	}			ims_st[2];	/* state at t0, t1 */
-	bsd_uint8_t			ims_stp;	/* pending query */
+	uint8_t			ims_stp;	/* pending query */
 };
 
 /*
@@ -230,8 +230,8 @@ struct ip_msource {
  */
 struct in_msource {
 	RB_ENTRY(ip_msource)	ims_link;	/* RB tree links */
-	bsd_in_addr_t		ims_haddr;	/* host byte order */
-	bsd_uint8_t			imsl_st[2];	/* state before/at commit */
+	in_addr_t		ims_haddr;	/* host byte order */
+	uint8_t			imsl_st[2];	/* state before/at commit */
 };
 
 RB_HEAD(ip_msource_tree, ip_msource);	/* define struct ip_msource_tree */
@@ -254,7 +254,7 @@ RB_PROTOTYPE(ip_msource_tree, ip_msource, ims_link, ip_msource_cmp);
 struct in_mfilter {
 	struct ip_msource_tree	imf_sources; /* source list for (S,G) */
 	u_long			imf_nsrc;    /* # of source entries */
-	bsd_uint8_t			imf_st[2];   /* state before/at commit */
+	uint8_t			imf_st[2];   /* state before/at commit */
 };
 
 /*
@@ -280,8 +280,8 @@ struct in_mfilter {
  * w/o breaking the ABI for ifmcstat.
  */
 struct in_multi {
-	BSD_LIST_ENTRY(in_multi) inm_link;	/* to-be-released by in_ifdetach */
-	struct	bsd_in_addr inm_addr;	/* IP multicast address, convenience */
+	LIST_ENTRY(in_multi) inm_link;	/* to-be-released by in_ifdetach */
+	struct	in_addr inm_addr;	/* IP multicast address, convenience */
 	struct	ifnet *inm_ifp;		/* back pointer to ifnet */
 	struct	ifmultiaddr *inm_ifma;	/* back pointer to ifmultiaddr */
 	u_int	inm_timer;		/* IGMPv1/v2 group / v3 query timer */
@@ -291,15 +291,15 @@ struct in_multi {
 
 	/* New fields for IGMPv3 follow. */
 	struct igmp_ifinfo	*inm_igi;	/* IGMP info */
-	BSD_SLIST_ENTRY(in_multi)	 inm_nrele;	/* to-be-released by IGMP */
+	SLIST_ENTRY(in_multi)	 inm_nrele;	/* to-be-released by IGMP */
 	struct ip_msource_tree	 inm_srcs;	/* tree of sources */
 	u_long			 inm_nsrc;	/* # of tree entries */
 
 	struct ifqueue		 inm_scq;	/* queue of pending
 						 * state-change packets */
-	struct bsd_timeval		 inm_lastgsrtv;	/* Time of last G-S-R query */
-	bsd_uint16_t		 inm_sctimer;	/* state-change timer */
-	bsd_uint16_t		 inm_scrv;	/* state-change rexmit count */
+	struct timeval		 inm_lastgsrtv;	/* Time of last G-S-R query */
+	uint16_t		 inm_sctimer;	/* state-change timer */
+	uint16_t		 inm_scrv;	/* state-change rexmit count */
 
 	/*
 	 * SSM state counters which track state at T0 (the time the last
@@ -309,11 +309,11 @@ struct in_multi {
 	 * are maintained here to optimize for common use-cases.
 	 */
 	struct inm_st {
-		bsd_uint16_t	iss_fmode;	/* IGMP filter mode */
-		bsd_uint16_t	iss_asm;	/* # of ASM listeners */
-		bsd_uint16_t	iss_ex;		/* # of exclusive members */
-		bsd_uint16_t	iss_in;		/* # of inclusive members */
-		bsd_uint16_t	iss_rec;	/* # of recorded sources */
+		uint16_t	iss_fmode;	/* IGMP filter mode */
+		uint16_t	iss_asm;	/* # of ASM listeners */
+		uint16_t	iss_ex;		/* # of exclusive members */
+		uint16_t	iss_in;		/* # of inclusive members */
+		uint16_t	iss_rec;	/* # of recorded sources */
 	}			inm_st[2];	/* state at t0, t1 */
 };
 
@@ -325,18 +325,18 @@ struct in_multi {
  *  and at least one listener includes it.
  * May be used by ifmcstat(8).
  */
-static __inline bsd_uint8_t
+static __inline uint8_t
 ims_get_mode(const struct in_multi *inm, const struct ip_msource *ims,
-    bsd_uint8_t t)
+    uint8_t t)
 {
 
 	t = !!t;
 	if (inm->inm_st[t].iss_ex > 0 &&
 	    inm->inm_st[t].iss_ex == ims->ims_st[t].ex)
-		return (BSD_MCAST_EXCLUDE);
+		return (MCAST_EXCLUDE);
 	else if (ims->ims_st[t].in > 0 && ims->ims_st[t].ex == 0)
-		return (BSD_MCAST_INCLUDE);
-	return (BSD_MCAST_UNDEFINED);
+		return (MCAST_INCLUDE);
+	return (MCAST_UNDEFINED);
 }
 
 #ifdef _KERNEL
@@ -365,7 +365,7 @@ extern struct mtx in_multi_mtx;
  * The IN_MULTI_LOCK and IF_ADDR_LOCK on ifp must be held.
  */
 static __inline struct in_multi *
-inm_lookup_locked(struct ifnet *ifp, const struct bsd_in_addr ina)
+inm_lookup_locked(struct ifnet *ifp, const struct in_addr ina)
 {
 	struct ifmultiaddr *ifma;
 	struct in_multi *inm;
@@ -374,8 +374,8 @@ inm_lookup_locked(struct ifnet *ifp, const struct bsd_in_addr ina)
 	IF_ADDR_LOCK_ASSERT(ifp);
 
 	inm = NULL;
-	BSD_TAILQ_FOREACH(ifma, &((ifp)->if_multiaddrs), ifma_link) {
-		if (ifma->ifma_addr->sa_family == BSD_AF_INET) {
+	TAILQ_FOREACH(ifma, &((ifp)->if_multiaddrs), ifma_link) {
+		if (ifma->ifma_addr->sa_family == AF_INET) {
 			inm = (struct in_multi *)ifma->ifma_protospec;
 			if (inm->inm_addr.s_addr == ina.s_addr)
 				break;
@@ -390,7 +390,7 @@ inm_lookup_locked(struct ifnet *ifp, const struct bsd_in_addr ina)
  * The IF_ADDR_LOCK will be taken on ifp and released on return.
  */
 static __inline struct in_multi *
-inm_lookup(struct ifnet *ifp, const struct bsd_in_addr ina)
+inm_lookup(struct ifnet *ifp, const struct in_addr ina)
 {
 	struct in_multi *inm;
 
@@ -425,24 +425,24 @@ struct	ip_moptions;
 struct radix_node_head;
 
 int	imo_multi_filter(const struct ip_moptions *, const struct ifnet *,
-	    const struct bsd_sockaddr *, const struct bsd_sockaddr *);
+	    const struct sockaddr *, const struct sockaddr *);
 void	inm_commit(struct in_multi *);
 void	inm_clear_recorded(struct in_multi *);
 void	inm_print(const struct in_multi *);
-int	inm_record_source(struct in_multi *inm, const bsd_in_addr_t);
+int	inm_record_source(struct in_multi *inm, const in_addr_t);
 void	inm_release(struct in_multi *);
 void	inm_release_locked(struct in_multi *);
 struct	in_multi *
-	in_addmulti(struct bsd_in_addr *, struct ifnet *);
+	in_addmulti(struct in_addr *, struct ifnet *);
 void	in_delmulti(struct in_multi *);
-int	in_joingroup(struct ifnet *, const struct bsd_in_addr *,
+int	in_joingroup(struct ifnet *, const struct in_addr *,
 	    /*const*/ struct in_mfilter *, struct in_multi **);
-int	in_joingroup_locked(struct ifnet *, const struct bsd_in_addr *,
+int	in_joingroup_locked(struct ifnet *, const struct in_addr *,
 	    /*const*/ struct in_mfilter *, struct in_multi **);
 int	in_leavegroup(struct in_multi *, /*const*/ struct in_mfilter *);
 int	in_leavegroup_locked(struct in_multi *,
 	    /*const*/ struct in_mfilter *);
-int	in_control(struct bsd_socket *, u_long, caddr_t, struct ifnet *,
+int	in_control(struct socket *, u_long, caddr_t, struct ifnet *,
 	    struct thread *);
 void	in_rtqdrain(void);
 void	ip_input(struct mbuf *);
@@ -456,11 +456,11 @@ void	in_domifdetach(struct ifnet *, void *);
 /* XXX */
 void	 in_rtalloc_ign(struct route *ro, u_long ignflags, u_int fibnum);
 void	 in_rtalloc(struct route *ro, u_int fibnum);
-struct rtentry *in_rtalloc1(struct bsd_sockaddr *, int, u_long, u_int);
-void	 in_rtredirect(struct bsd_sockaddr *, struct bsd_sockaddr *,
-	    struct bsd_sockaddr *, int, struct bsd_sockaddr *, u_int);
-int	 in_rtrequest(int, struct bsd_sockaddr *,
-	    struct bsd_sockaddr *, struct bsd_sockaddr *, int, struct rtentry **, u_int);
+struct rtentry *in_rtalloc1(struct sockaddr *, int, u_long, u_int);
+void	 in_rtredirect(struct sockaddr *, struct sockaddr *,
+	    struct sockaddr *, int, struct sockaddr *, u_int);
+int	 in_rtrequest(int, struct sockaddr *,
+	    struct sockaddr *, struct sockaddr *, int, struct rtentry **, u_int);
 void	in_setmatchfunc(struct radix_node_head *, int);
 
 #if 0

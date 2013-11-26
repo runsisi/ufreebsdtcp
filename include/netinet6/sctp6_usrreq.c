@@ -30,12 +30,12 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/netinet6/sctp6_usrreq.c 252971 2013-07-07 16:51:17Z tuexen $");
 
 #include <netinet/sctp_os.h>
 #ifdef INET6
-#include <sys/proc.h>
+#include <sys/bsd_proc.h>
 #include <netinet/sctp_pcb.h>
 #include <netinet/sctp_header.h>
 #include <netinet/sctp_var.h>

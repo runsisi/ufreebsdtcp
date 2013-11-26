@@ -33,24 +33,24 @@
 #include "opt_inet.h"
 #include "opt_inet6.h"
 
-#include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/jail.h>
-#include <sys/kernel.h>
-#include <sys/malloc.h>
-#include <sys/mbuf.h>
-#include <sys/module.h>
-#include <sys/socket.h>
-#include <sys/sockio.h>
-#include <sys/errno.h>
-#include <sys/time.h>
-#include <sys/sysctl.h>
-#include <sys/syslog.h>
-#include <sys/priv.h>
-#include <sys/proc.h>
-#include <sys/protosw.h>
-#include <sys/conf.h>
-#include <machine/cpu.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_jail.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_malloc.h>
+#include <sys/bsd_mbuf.h>
+#include <sys/bsd_module.h>
+#include <sys/bsd_socket.h>
+#include <sys/bsd_sockio.h>
+#include <sys/bsd_errno.h>
+#include <sys/bsd_time.h>
+#include <sys/bsd_sysctl.h>
+#include <sys/bsd_syslog.h>
+#include <sys/bsd_priv.h>
+#include <sys/bsd_proc.h>
+#include <sys/bsd_protosw.h>
+#include <sys/bsd_conf.h>
+#include <machine/bsd_cpu.h>
 
 #include <net/if.h>
 #include <net/if_clone.h>
@@ -86,7 +86,7 @@
 #include <net/if_bridgevar.h>
 #include <net/if_gif.h>
 
-#include <security/mac/mac_framework.h>
+//#include <security/mac/mac_framework.h>
 
 #define GIFNAME		"gif"
 
@@ -160,11 +160,11 @@ gif_clone_create(ifc, unit, params)
 {
 	struct gif_softc *sc;
 
-	sc = bsd_malloc(sizeof(struct gif_softc), M_GIF, M_WAITOK | M_ZERO);
+	sc = malloc(sizeof(struct gif_softc), M_GIF, M_WAITOK | M_ZERO);
 	sc->gif_fibnum = curthread->td_proc->p_fibnum;
 	GIF2IFP(sc) = if_alloc(IFT_GIF);
 	if (GIF2IFP(sc) == NULL) {
-		bsd_free(sc, M_GIF);
+		free(sc, M_GIF);
 		return (ENOSPC);
 	}
 
@@ -188,7 +188,7 @@ gif_clone_create(ifc, unit, params)
 	GIF2IFP(sc)->if_output = gif_output;
 	GIF2IFP(sc)->if_snd.ifq_maxlen = ifqmaxlen;
 	if_attach(GIF2IFP(sc));
-	bpfattach(GIF2IFP(sc), DLT_NULL, sizeof(bsd_uint32_t));
+	bpfattach(GIF2IFP(sc), DLT_NULL, sizeof(u_int32_t));
 	if (ng_gif_attach_p != NULL)
 		(*ng_gif_attach_p)(GIF2IFP(sc));
 
@@ -234,7 +234,7 @@ gif_clone_destroy(ifp)
 
 	GIF_LOCK_DESTROY(sc);
 
-	bsd_free(sc, M_GIF);
+	free(sc, M_GIF);
 }
 
 static void
@@ -285,7 +285,7 @@ gif_encapcheck(m, off, proto, arg)
 	int proto;
 	void *arg;
 {
-	struct bsd_ip ip;
+	struct ip ip;
 	struct gif_softc *sc;
 
 	sc = (struct gif_softc *)arg;
@@ -369,14 +369,14 @@ int
 gif_output(ifp, m, dst, ro)
 	struct ifnet *ifp;
 	struct mbuf *m;
-	struct bsd_sockaddr *dst;
+	struct sockaddr *dst;
 	struct route *ro;
 {
 	struct gif_softc *sc = ifp->if_softc;
 	struct m_tag *mtag;
 	int error = 0;
 	int gif_called;
-	bsd_uint32_t af;
+	u_int32_t af;
 
 #ifdef MAC
 	error = mac_ifnet_check_transmit(ifp, m);
@@ -397,7 +397,7 @@ gif_output(ifp, m, dst, ro)
 	mtag = m_tag_locate(m, MTAG_GIF, MTAG_GIF_CALLED, NULL);
 	while (mtag != NULL) {
 		if (*(struct ifnet **)(mtag + 1) == ifp) {
-			bsd_log(LOG_NOTICE,
+			log(LOG_NOTICE,
 			    "gif_output: loop detected on %s\n",
 			    (*(struct ifnet **)(mtag + 1))->if_xname);
 			m_freem(m);
@@ -408,7 +408,7 @@ gif_output(ifp, m, dst, ro)
 		gif_called++;
 	}
 	if (gif_called > V_max_gif_nesting) {
-		bsd_log(LOG_NOTICE,
+		log(LOG_NOTICE,
 		    "gif_output: recursively called too many times(%d)\n",
 		    gif_called);
 		m_freem(m);
@@ -506,7 +506,7 @@ gif_input(m, af, ifp)
 #endif
 
 	if (bpf_peers_present(ifp->if_bpf)) {
-		bsd_uint32_t af1 = af;
+		u_int32_t af1 = af;
 		bpf_mtap2(ifp->if_bpf, &af1, sizeof(af1), m);
 	}
 
@@ -624,7 +624,7 @@ gif_ioctl(ifp, cmd, data)
 	struct ifreq     *ifr = (struct ifreq*)data;
 	int error = 0, size;
 	u_int	options;
-	struct bsd_sockaddr *dst, *src;
+	struct sockaddr *dst, *src;
 #ifdef	SIOCSIFMTU /* xxx */
 	u_long mtu;
 #endif
@@ -663,24 +663,24 @@ gif_ioctl(ifp, cmd, data)
 		switch (cmd) {
 #ifdef INET
 		case SIOCSIFPHYADDR:
-			src = (struct bsd_sockaddr *)
+			src = (struct sockaddr *)
 				&(((struct in_aliasreq *)data)->ifra_addr);
-			dst = (struct bsd_sockaddr *)
+			dst = (struct sockaddr *)
 				&(((struct in_aliasreq *)data)->ifra_dstaddr);
 			break;
 #endif
 #ifdef INET6
 		case SIOCSIFPHYADDR_IN6:
-			src = (struct bsd_sockaddr *)
+			src = (struct sockaddr *)
 				&(((struct in6_aliasreq *)data)->ifra_addr);
-			dst = (struct bsd_sockaddr *)
+			dst = (struct sockaddr *)
 				&(((struct in6_aliasreq *)data)->ifra_dstaddr);
 			break;
 #endif
 		case SIOCSLIFPHYADDR:
-			src = (struct bsd_sockaddr *)
+			src = (struct sockaddr *)
 				&(((struct if_laddrreq *)data)->addr);
-			dst = (struct bsd_sockaddr *)
+			dst = (struct sockaddr *)
 				&(((struct if_laddrreq *)data)->dstaddr);
 			break;
 		default:
@@ -695,7 +695,7 @@ gif_ioctl(ifp, cmd, data)
 		switch (src->sa_family) {
 #ifdef INET
 		case AF_INET:
-			if (src->sa_len != sizeof(struct bsd_sockaddr_in))
+			if (src->sa_len != sizeof(struct sockaddr_in))
 				return EINVAL;
 			break;
 #endif
@@ -711,7 +711,7 @@ gif_ioctl(ifp, cmd, data)
 		switch (dst->sa_family) {
 #ifdef INET
 		case AF_INET:
-			if (dst->sa_len != sizeof(struct bsd_sockaddr_in))
+			if (dst->sa_len != sizeof(struct sockaddr_in))
 				return EINVAL;
 			break;
 #endif
@@ -769,7 +769,7 @@ gif_ioctl(ifp, cmd, data)
 #endif /* INET */
 #ifdef INET6
 		case SIOCGIFPSRCADDR_IN6:
-			dst = (struct bsd_sockaddr *)
+			dst = (struct sockaddr *)
 				&(((struct in6_ifreq *)data)->ifr_addr);
 			size = sizeof(((struct in6_ifreq *)data)->ifr_addr);
 			break;
@@ -808,7 +808,7 @@ gif_ioctl(ifp, cmd, data)
 #endif /* INET */
 #ifdef INET6
 		case SIOCGIFPDSTADDR_IN6:
-			dst = (struct bsd_sockaddr *)
+			dst = (struct sockaddr *)
 				&(((struct in6_ifreq *)data)->ifr_addr);
 			size = sizeof(((struct in6_ifreq *)data)->ifr_addr);
 			break;
@@ -843,7 +843,7 @@ gif_ioctl(ifp, cmd, data)
 
 		/* copy src */
 		src = sc->gif_psrc;
-		dst = (struct bsd_sockaddr *)
+		dst = (struct sockaddr *)
 			&(((struct if_laddrreq *)data)->addr);
 		size = sizeof(((struct if_laddrreq *)data)->addr);
 		if (src->sa_len > size)
@@ -852,7 +852,7 @@ gif_ioctl(ifp, cmd, data)
 
 		/* copy dst */
 		src = sc->gif_pdst;
-		dst = (struct bsd_sockaddr *)
+		dst = (struct sockaddr *)
 			&(((struct if_laddrreq *)data)->dstaddr);
 		size = sizeof(((struct if_laddrreq *)data)->dstaddr);
 		if (src->sa_len > size)
@@ -900,12 +900,12 @@ gif_ioctl(ifp, cmd, data)
 int
 gif_set_tunnel(ifp, src, dst)
 	struct ifnet *ifp;
-	struct bsd_sockaddr *src;
-	struct bsd_sockaddr *dst;
+	struct sockaddr *src;
+	struct sockaddr *dst;
 {
 	struct gif_softc *sc = ifp->if_softc;
 	struct gif_softc *sc2;
-	struct bsd_sockaddr *osrc, *odst, *sa;
+	struct sockaddr *osrc, *odst, *sa;
 	int error = 0; 
 
 	mtx_lock(&gif_mtx);
@@ -952,12 +952,12 @@ gif_set_tunnel(ifp, src, dst)
 		}
 
 	osrc = sc->gif_psrc;
-	sa = (struct bsd_sockaddr *)bsd_malloc(src->sa_len, M_IFADDR, M_WAITOK);
+	sa = (struct sockaddr *)malloc(src->sa_len, M_IFADDR, M_WAITOK);
 	bcopy((caddr_t)src, (caddr_t)sa, src->sa_len);
 	sc->gif_psrc = sa;
 
 	odst = sc->gif_pdst;
-	sa = (struct bsd_sockaddr *)bsd_malloc(dst->sa_len, M_IFADDR, M_WAITOK);
+	sa = (struct sockaddr *)malloc(dst->sa_len, M_IFADDR, M_WAITOK);
 	bcopy((caddr_t)dst, (caddr_t)sa, dst->sa_len);
 	sc->gif_pdst = sa;
 
@@ -985,17 +985,17 @@ gif_set_tunnel(ifp, src, dst)
 	}
 	if (error) {
 		/* rollback */
-		bsd_free((caddr_t)sc->gif_psrc, M_IFADDR);
-		bsd_free((caddr_t)sc->gif_pdst, M_IFADDR);
+		free((caddr_t)sc->gif_psrc, M_IFADDR);
+		free((caddr_t)sc->gif_pdst, M_IFADDR);
 		sc->gif_psrc = osrc;
 		sc->gif_pdst = odst;
 		goto bad;
 	}
 
 	if (osrc)
-		bsd_free((caddr_t)osrc, M_IFADDR);
+		free((caddr_t)osrc, M_IFADDR);
 	if (odst)
-		bsd_free((caddr_t)odst, M_IFADDR);
+		free((caddr_t)odst, M_IFADDR);
 
  bad:
 	if (sc->gif_psrc && sc->gif_pdst)
@@ -1013,11 +1013,11 @@ gif_delete_tunnel(ifp)
 	struct gif_softc *sc = ifp->if_softc;
 
 	if (sc->gif_psrc) {
-		bsd_free((caddr_t)sc->gif_psrc, M_IFADDR);
+		free((caddr_t)sc->gif_psrc, M_IFADDR);
 		sc->gif_psrc = NULL;
 	}
 	if (sc->gif_pdst) {
-		bsd_free((caddr_t)sc->gif_pdst, M_IFADDR);
+		free((caddr_t)sc->gif_pdst, M_IFADDR);
 		sc->gif_pdst = NULL;
 	}
 	/* it is safe to detach from both */

@@ -27,22 +27,22 @@
  * SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/netinet/ip_ipsec.c 222845 2011-06-08 03:02:11Z bz $");
 
 #include "opt_ipsec.h"
 #include "opt_sctp.h"
 
-#include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/errno.h>
-#include <sys/kernel.h>
-#include <sys/malloc.h>
-#include <sys/mbuf.h>
-#include <sys/protosw.h>
-#include <sys/socket.h>
-#include <sys/socketvar.h>
-#include <sys/sysctl.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_errno.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_malloc.h>
+#include <sys/bsd_mbuf.h>
+#include <sys/bsd_protosw.h>
+#include <sys/bsd_socket.h>
+#include <sys/bsd_socketvar.h>
+#include <sys/bsd_sysctl.h>
 
 #include <net/if.h>
 #include <net/route.h>
@@ -60,7 +60,7 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/netinet/ip_ipsec.c 222845 2011-06-08 03:02
 #include <netinet/sctp_crc32.h>
 #endif
 
-#include <machine/in_cksum.h>
+#include <machine/bsd_in_cksum.h>
 
 #ifdef IPSEC
 #include <netipsec/ipsec.h>
@@ -68,7 +68,7 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/netinet/ip_ipsec.c 222845 2011-06-08 03:02
 #include <netipsec/key.h>
 #endif /*IPSEC*/
 
-extern	struct bsd_protosw bsd_inetsw[];
+extern	struct protosw inetsw[];
 
 #ifdef IPSEC
 #ifdef IPSEC_FILTERTUNNEL
@@ -170,7 +170,7 @@ ip_ipsec_input(struct mbuf *m)
 	 * note that we do not visit this with protocols with pcb layer
 	 * code - like udp/tcp/raw ip.
 	 */
-	if ((bsd_inetsw[ip_protox[ip->ip_p]].pr_flags & PR_LASTHDR) != 0) {
+	if ((inetsw[ip_protox[ip->ip_p]].pr_flags & PR_LASTHDR) != 0) {
 		/*
 		 * Check if the packet has already had IPsec processing
 		 * done.  If so, then just pass it along.  This tag gets

@@ -134,7 +134,7 @@ umtx_trylock(struct umtx *umtx, u_long id)
 }
 
 static __inline int
-umtx_timedlock(struct umtx *umtx, u_long id, const struct bsd_timespec *timeout)
+umtx_timedlock(struct umtx *umtx, u_long id, const struct timespec *timeout)
 {
 	if (atomic_cmpset_acq_long(&umtx->u_owner, UMTX_UNOWNED, id) == 0)
 		if (_umtx_op(umtx, UMTX_OP_LOCK, id, 0,
@@ -153,7 +153,7 @@ umtx_unlock(struct umtx *umtx, u_long id)
 }
 
 static __inline int
-umtx_wait(u_long *p, long val, const struct bsd_timespec *timeout)
+umtx_wait(u_long *p, long val, const struct timespec *timeout)
 {
 	if (_umtx_op(p, UMTX_OP_WAIT, val, 0,
 	    __DECONST(void *, timeout)) == -1)
@@ -197,15 +197,15 @@ struct umtx_key {
 	union {
 		struct {
 			struct vm_object *object;
-			bsd_uintptr_t	offset;
+			uintptr_t	offset;
 		} shared;
 		struct {
 			struct vmspace	*vs;
-			bsd_uintptr_t	addr;
+			uintptr_t	addr;
 		} private;
 		struct {
 			void		*a;
-			bsd_uintptr_t	b;
+			uintptr_t	b;
 		} both;
 	} info;
 };
@@ -224,7 +224,7 @@ umtx_key_match(const struct umtx_key *k1, const struct umtx_key *k2)
 	        k1->info.both.b == k2->info.both.b);
 }
 
-int umtx_copyin_timeout(const void *, struct bsd_timespec *);
+int umtx_copyin_timeout(const void *, struct timespec *);
 int umtx_key_get(void *, int, int, struct umtx_key *);
 void umtx_key_release(struct umtx_key *);
 struct umtx_q *umtxq_alloc(void);

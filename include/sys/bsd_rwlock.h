@@ -97,7 +97,7 @@
 
 /* Acquire a write lock. */
 #define	__rw_wlock(rw, tid, file, line) do {				\
-	bsd_uintptr_t _tid = (bsd_uintptr_t)(tid);				\
+	uintptr_t _tid = (uintptr_t)(tid);				\
 						                        \
 	if (!_rw_write_lock((rw), _tid))				\
 		_rw_wlock_hard((rw), _tid, (file), (line));		\
@@ -108,7 +108,7 @@
 
 /* Release a write lock. */
 #define	__rw_wunlock(rw, tid, file, line) do {				\
-	bsd_uintptr_t _tid = (bsd_uintptr_t)(tid);				\
+	uintptr_t _tid = (uintptr_t)(tid);				\
 									\
 	if ((rw)->rw_recurse)						\
 		(rw)->rw_recurse--;					\
@@ -122,7 +122,7 @@
  * be used instead.
  */
 
-#define	rw_init(rw, name)	//rw_init_flags((rw), (name), 0)
+#define	rw_init(rw, name)	rw_init_flags((rw), (name), 0)
 void	rw_init_flags(struct rwlock *rw, const char *name, int opts);
 void	rw_destroy(struct rwlock *rw);
 void	rw_sysinit(void *arg);
@@ -134,9 +134,9 @@ void	_rw_wunlock(struct rwlock *rw, const char *file, int line);
 void	_rw_rlock(struct rwlock *rw, const char *file, int line);
 int	_rw_try_rlock(struct rwlock *rw, const char *file, int line);
 void	_rw_runlock(struct rwlock *rw, const char *file, int line);
-void	_rw_wlock_hard(struct rwlock *rw, bsd_uintptr_t tid, const char *file,
+void	_rw_wlock_hard(struct rwlock *rw, uintptr_t tid, const char *file,
 	    int line);
-void	_rw_wunlock_hard(struct rwlock *rw, bsd_uintptr_t tid, const char *file,
+void	_rw_wunlock_hard(struct rwlock *rw, uintptr_t tid, const char *file,
 	    int line);
 int	_rw_try_upgrade(struct rwlock *rw, const char *file, int line);
 void	_rw_downgrade(struct rwlock *rw, const char *file, int line);
@@ -160,12 +160,12 @@ void	_rw_assert(struct rwlock *rw, int what, const char *file, int line);
 #define	rw_wunlock(rw)							\
 	__rw_wunlock((rw), curthread, LOCK_FILE, LOCK_LINE)
 #endif
-#define	rw_rlock(rw)		//_rw_rlock((rw), LOCK_FILE, LOCK_LINE)
-#define	rw_runlock(rw)		//_rw_runlock((rw), LOCK_FILE, LOCK_LINE)
-#define	rw_try_rlock(rw)	//_rw_try_rlock((rw), LOCK_FILE, LOCK_LINE)
-#define	rw_try_upgrade(rw)	//_rw_try_upgrade((rw), LOCK_FILE, LOCK_LINE)
-#define	rw_try_wlock(rw)	//_rw_try_wlock((rw), LOCK_FILE, LOCK_LINE)
-#define	rw_downgrade(rw)	//_rw_downgrade((rw), LOCK_FILE, LOCK_LINE)
+#define	rw_rlock(rw)		_rw_rlock((rw), LOCK_FILE, LOCK_LINE)
+#define	rw_runlock(rw)		_rw_runlock((rw), LOCK_FILE, LOCK_LINE)
+#define	rw_try_rlock(rw)	_rw_try_rlock((rw), LOCK_FILE, LOCK_LINE)
+#define	rw_try_upgrade(rw)	_rw_try_upgrade((rw), LOCK_FILE, LOCK_LINE)
+#define	rw_try_wlock(rw)	_rw_try_wlock((rw), LOCK_FILE, LOCK_LINE)
+#define	rw_downgrade(rw)	_rw_downgrade((rw), LOCK_FILE, LOCK_LINE)
 #define	rw_unlock(rw)	do {						\
 	if (rw_wowned(rw))						\
 		rw_wunlock(rw);						\

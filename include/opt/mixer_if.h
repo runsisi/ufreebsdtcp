@@ -67,9 +67,9 @@ static __inline int MIXER_SET(struct snd_mixer *m, unsigned dev, unsigned left,
 /** @brief Unique descriptor for the MIXER_SETRECSRC() method */
 extern struct kobjop_desc mixer_setrecsrc_desc;
 /** @brief A function implementing the MIXER_SETRECSRC() method */
-typedef bsd_uint32_t mixer_setrecsrc_t(struct snd_mixer *m, bsd_uint32_t src);
+typedef u_int32_t mixer_setrecsrc_t(struct snd_mixer *m, u_int32_t src);
 
-static __inline bsd_uint32_t MIXER_SETRECSRC(struct snd_mixer *m, bsd_uint32_t src)
+static __inline u_int32_t MIXER_SETRECSRC(struct snd_mixer *m, u_int32_t src)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)m)->ops,mixer_setrecsrc);

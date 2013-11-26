@@ -36,7 +36,7 @@
  */
 struct mtx {
 	struct lock_object	lock_object;	/* Common lock properties. */
-	volatile bsd_uintptr_t	mtx_lock;	/* Owner and flags. */
+	volatile uintptr_t	mtx_lock;	/* Owner and flags. */
 };
 
 #endif /* !_SYS__MUTEX_H_ */

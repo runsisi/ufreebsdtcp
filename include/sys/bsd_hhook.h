@@ -69,7 +69,7 @@ struct helper;
 struct osd;
 
 /* Signature for helper hook functions. */
-typedef int (*hhook_func_t)(bsd_int32_t hhook_type, bsd_int32_t hhook_id, void *udata,
+typedef int (*hhook_func_t)(int32_t hhook_type, int32_t hhook_id, void *udata,
     void *ctx_data, void *hdata, struct osd *hosd);
 
 /*
@@ -80,8 +80,8 @@ struct hookinfo {
 	hhook_func_t	hook_func;
 	struct helper	*hook_helper;
 	void		*hook_udata;
-	bsd_int32_t		hook_id;
-	bsd_int32_t		hook_type;
+	int32_t		hook_id;
+	int32_t		hook_type;
 };
 
 /*
@@ -89,44 +89,44 @@ struct hookinfo {
  * variable in order to make the HHOOKS_RUN_IF() macro low impact.
  */
 struct hhook_head {
-	BSD_STAILQ_HEAD(hhook_list, hhook)	hhh_hooks;
+	STAILQ_HEAD(hhook_list, hhook)	hhh_hooks;
 	struct rmlock			hhh_lock;
-	bsd_uintptr_t			hhh_vid;
-	bsd_int32_t				hhh_id;
-	bsd_int32_t				hhh_nhooks;
-	bsd_int32_t				hhh_type;
-	bsd_uint32_t			hhh_flags;
-	volatile bsd_uint32_t		hhh_refcount;
-	BSD_LIST_ENTRY(hhook_head)		hhh_next;
-	BSD_LIST_ENTRY(hhook_head)		hhh_vnext;
+	uintptr_t			hhh_vid;
+	int32_t				hhh_id;
+	int32_t				hhh_nhooks;
+	int32_t				hhh_type;
+	uint32_t			hhh_flags;
+	volatile uint32_t		hhh_refcount;
+	LIST_ENTRY(hhook_head)		hhh_next;
+	LIST_ENTRY(hhook_head)		hhh_vnext;
 };
 
 /* Public KPI functions. */
 void	hhook_run_hooks(struct hhook_head *hhh, void *ctx_data, struct osd *hosd);
 
 int	hhook_add_hook(struct hhook_head *hhh, struct hookinfo *hki,
-    bsd_uint32_t flags);
+    uint32_t flags);
 
-int	hhook_add_hook_lookup(struct hookinfo *hki, bsd_uint32_t flags);
+int	hhook_add_hook_lookup(struct hookinfo *hki, uint32_t flags);
 
 int	hhook_remove_hook(struct hhook_head *hhh, struct hookinfo *hki);
 
 int	hhook_remove_hook_lookup(struct hookinfo *hki);
 
-int	hhook_head_register(bsd_int32_t hhook_type, bsd_int32_t hhook_id,
-    struct hhook_head **hhh, bsd_uint32_t flags);
+int	hhook_head_register(int32_t hhook_type, int32_t hhook_id,
+    struct hhook_head **hhh, uint32_t flags);
 
 int	hhook_head_deregister(struct hhook_head *hhh);
 
-int	hhook_head_deregister_lookup(bsd_int32_t hhook_type, bsd_int32_t hhook_id);
+int	hhook_head_deregister_lookup(int32_t hhook_type, int32_t hhook_id);
 
-struct hhook_head * hhook_head_get(bsd_int32_t hhook_type, bsd_int32_t hhook_id);
+struct hhook_head * hhook_head_get(int32_t hhook_type, int32_t hhook_id);
 
 void	hhook_head_release(struct hhook_head *hhh);
 
-bsd_uint32_t hhook_head_is_virtualised(struct hhook_head *hhh);
+uint32_t hhook_head_is_virtualised(struct hhook_head *hhh);
 
-bsd_uint32_t hhook_head_is_virtualised_lookup(bsd_int32_t hook_type, bsd_int32_t hook_id);
+uint32_t hhook_head_is_virtualised_lookup(int32_t hook_type, int32_t hook_id);
 
 /*
  * A wrapper around hhook_run_hooks() that only calls the function if at least

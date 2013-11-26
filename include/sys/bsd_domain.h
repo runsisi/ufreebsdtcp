@@ -43,7 +43,7 @@
 struct	mbuf;
 struct	ifnet;
 
-struct bsd_domain {
+struct domain {
 	int	dom_family;		/* AF_xxx */
 	char	*dom_name;
 	void	(*dom_init)		/* initialize domain data structures */
@@ -54,8 +54,8 @@ struct bsd_domain {
 		(struct mbuf *, struct mbuf **);
 	void	(*dom_dispose)		/* dispose of internalized rights */
 		(struct mbuf *);
-	struct	bsd_protosw *dom_protosw, *dom_protoswNPROTOSW;
-	struct	bsd_domain *dom_next;
+	struct	protosw *dom_protosw, *dom_protoswNPROTOSW;
+	struct	domain *dom_next;
 	int	(*dom_rtattach)		/* initialize routing table */
 		(void **, int);
 	int	(*dom_rtdetach)		/* clean up routing table */
@@ -75,7 +75,7 @@ struct bsd_domain {
 
 #ifdef _KERNEL
 extern int	domain_init_status;
-extern struct	bsd_domain *domains;
+extern struct	domain *domains;
 void		domain_add(void *);
 void		domain_init(void *);
 #ifdef VIMAGE

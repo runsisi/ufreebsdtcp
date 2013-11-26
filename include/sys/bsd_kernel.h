@@ -55,7 +55,7 @@
 /* Global variables for the kernel. */
 
 /* 1.1 */
-extern char kernelname[BSD_MAXPATHLEN];
+extern char kernelname[MAXPATHLEN];
 
 extern int tick;			/* usec per tick (1000000 / hz) */
 extern int hz;				/* system clock's frequency */
@@ -63,9 +63,7 @@ extern int psratio;			/* ratio: prof / stat */
 extern int stathz;			/* statistics clock's frequency */
 extern int profhz;			/* profiling clock's frequency */
 extern int profprocs;			/* number of process's profiling */
-#if 0	// runsisi AT hust.edu.cn @2013/11/20
 extern volatile int ticks;
-#endif 	// ---------------------- @2013/11/20
 
 #endif /* _KERNEL */
 
@@ -333,7 +331,7 @@ struct tunable_ulong {
 extern void tunable_quad_init(void *);
 struct tunable_quad {
 	const char *path;
-	bsd_quad_t *var;
+	quad_t *var;
 };
 #define	TUNABLE_QUAD(path, var)					\
 	static struct tunable_quad __CONCAT(__tunable_quad_, __LINE__) = { \
@@ -366,25 +364,12 @@ struct tunable_str {
 	getenv_string((path), (var), (size))
 
 struct intr_config_hook {
-	BSD_TAILQ_ENTRY(intr_config_hook) ich_links;
+	TAILQ_ENTRY(intr_config_hook) ich_links;
 	void	(*ich_func)(void *arg);
 	void	*ich_arg;
 };
 
 int	config_intrhook_establish(struct intr_config_hook *hook);
 void	config_intrhook_disestablish(struct intr_config_hook *hook);
-
-// runsisi AT hust.edu.cn @2013/11/18
-char *  getenv(const char *name);
-void    freeenv(char *env);
-int bsd_setenv(const char *name, const char *value);
-int bsd_unsetenv(const char *name);
-int getenv_string(const char *name, char *data, int size);
-int getenv_int(const char *name, int *data);
-int getenv_uint(const char *name, unsigned int *data);
-int getenv_long(const char *name, long *data);
-int getenv_ulong(const char *name, unsigned long *data);
-int getenv_quad(const char *name, bsd_quad_t *data);
-// ---------------------- @2013/11/18
 
 #endif /* !_SYS_KERNEL_H_*/

@@ -35,21 +35,21 @@
  *	add "inuse/lock" bit (or ref. count) along with valid bit
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/netinet/if_ether.c 252555 2013-07-03 09:25:29Z np $");
 
 #include "opt_inet.h"
 
-#include <sys/param.h>
-#include <sys/kernel.h>
-#include <sys/queue.h>
-#include <sys/sysctl.h>
-#include <sys/systm.h>
-#include <sys/mbuf.h>
-#include <sys/malloc.h>
-#include <sys/proc.h>
-#include <sys/socket.h>
-#include <sys/syslog.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_queue.h>
+#include <sys/bsd_sysctl.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_mbuf.h>
+#include <sys/bsd_malloc.h>
+#include <sys/bsd_proc.h>
+#include <sys/bsd_socket.h>
+#include <sys/bsd_syslog.h>
 
 #include <net/if.h>
 #include <net/if_dl.h>
@@ -71,7 +71,7 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/netinet/if_ether.c 252555 2013-07-03 09:25
 #include <net/if_arc.h>
 #include <net/iso88025.h>
 
-#include <security/mac/mac_framework.h>
+//#include <security/mac/mac_framework.h>
 
 #define SIN(s) ((struct sockaddr_in *)s)
 #define SDL(s) ((struct sockaddr_dl *)s)
@@ -124,7 +124,7 @@ SYSCTL_VNET_INT(_net_link_ether_inet, OID_AUTO, maxhold, CTLFLAG_RW,
 
 static void	arp_init(void);
 void		arprequest(struct ifnet *,
-			struct bsd_in_addr *, struct bsd_in_addr *, u_char *);
+			struct in_addr *, struct in_addr *, u_char *);
 static void	arpintr(struct mbuf *);
 static void	arptimer(void *);
 #ifdef INET
@@ -148,7 +148,7 @@ void arp_ifscrub(struct ifnet *ifp, uint32_t addr);
 void
 arp_ifscrub(struct ifnet *ifp, uint32_t addr)
 {
-	struct bsd_sockaddr_in addr4;
+	struct sockaddr_in addr4;
 
 	bzero((void *)&addr4, sizeof(addr4));
 	addr4.sin_len    = sizeof(addr4);
@@ -156,7 +156,7 @@ arp_ifscrub(struct ifnet *ifp, uint32_t addr)
 	addr4.sin_addr.s_addr = addr;
 	IF_AFDATA_LOCK(ifp);
 	lla_lookup(LLTABLE(ifp), (LLE_DELETE | LLE_IFADDR),
-	    (struct bsd_sockaddr *)&addr4);
+	    (struct sockaddr *)&addr4);
 	IF_AFDATA_UNLOCK(ifp);
 }
 #endif
@@ -197,7 +197,7 @@ arptimer(void *arg)
 
 	/* Guard against race with other llentry_free(). */
 	if (lle->la_flags & LLE_LINKED) {
-		bsd_size_t pkts_dropped;
+		size_t pkts_dropped;
 
 		LLE_REMREF(lle);
 		pkts_dropped = llentry_free(lle);
@@ -219,12 +219,12 @@ arptimer(void *arg)
  *	- arp header source ethernet address
  */
 void
-arprequest(struct ifnet *ifp, struct bsd_in_addr *sip, struct bsd_in_addr  *tip,
+arprequest(struct ifnet *ifp, struct in_addr *sip, struct in_addr  *tip,
     u_char *enaddr)
 {
 	struct mbuf *m;
 	struct arphdr *ah;
-	struct bsd_sockaddr sa;
+	struct sockaddr sa;
 
 	if (sip == NULL) {
 		/* XXX don't believe this can happen (or explain why) */
@@ -251,7 +251,7 @@ arprequest(struct ifnet *ifp, struct bsd_in_addr *sip, struct bsd_in_addr  *tip,
 
 	if ((m = m_gethdr(M_DONTWAIT, MT_DATA)) == NULL)
 		return;
-	m->m_len = sizeof(*ah) + 2*sizeof(struct bsd_in_addr) +
+	m->m_len = sizeof(*ah) + 2*sizeof(struct in_addr) +
 		2*ifp->if_data.ifi_addrlen;
 	m->m_pkthdr.len = m->m_len;
 	MH_ALIGN(m, m->m_len);
@@ -262,7 +262,7 @@ arprequest(struct ifnet *ifp, struct bsd_in_addr *sip, struct bsd_in_addr  *tip,
 #endif
 	ah->ar_pro = htons(ETHERTYPE_IP);
 	ah->ar_hln = ifp->if_addrlen;		/* hardware address length */
-	ah->ar_pln = sizeof(struct bsd_in_addr);	/* protocol address length */
+	ah->ar_pln = sizeof(struct in_addr);	/* protocol address length */
 	ah->ar_op = htons(ARPOP_REQUEST);
 	bcopy((caddr_t)enaddr, (caddr_t)ar_sha(ah), ah->ar_hln);
 	bcopy((caddr_t)sip, (caddr_t)ar_spa(ah), ah->ar_pln);
@@ -290,7 +290,7 @@ arprequest(struct ifnet *ifp, struct bsd_in_addr *sip, struct bsd_in_addr  *tip,
  */
 int
 arpresolve(struct ifnet *ifp, struct rtentry *rt0, struct mbuf *m,
-	struct bsd_sockaddr *dst, u_char *desten, struct llentry **lle)
+	struct sockaddr *dst, u_char *desten, struct llentry **lle)
 {
 	struct llentry *la = 0;
 	u_int flags = 0;
@@ -325,7 +325,7 @@ retry:
 	}
 	if (la == NULL) {
 		if (flags & LLE_CREATE)
-			bsd_log(LOG_DEBUG,
+			log(LOG_DEBUG,
 			    "arpresolve: can't allocate llinfo for %s\n",
 			    inet_ntoa(SIN(dst)->sin_addr));
 		m_freem(m);
@@ -333,7 +333,7 @@ retry:
 	}
 
 	if ((la->la_flags & LLE_VALID) &&
-	    ((la->la_flags & LLE_STATIC) || la->la_expire > V_time_uptime)) {
+	    ((la->la_flags & LLE_STATIC) || la->la_expire > time_uptime)) {
 		bcopy(&la->ll_addr, desten, ifp->if_addrlen);
 		/*
 		 * If entry has an expiry time and it is approaching,
@@ -341,7 +341,7 @@ retry:
 		 * arpt_down interval.
 		 */
 		if (!(la->la_flags & LLE_STATIC) &&
-		    V_time_uptime + la->la_preempt > la->la_expire) {
+		    time_uptime + la->la_preempt > la->la_expire) {
 			arprequest(ifp, NULL,
 			    &SIN(dst)->sin_addr, IF_LLADDR(ifp));
 
@@ -354,14 +354,14 @@ retry:
 	}
 
 	if (la->la_flags & LLE_STATIC) {   /* should not happen! */
-		bsd_log(LOG_DEBUG, "arpresolve: ouch, empty static llinfo for %s\n",
+		log(LOG_DEBUG, "arpresolve: ouch, empty static llinfo for %s\n",
 		    inet_ntoa(SIN(dst)->sin_addr));
 		m_freem(m);
 		error = EINVAL;
 		goto done;
 	}
 
-	renew = (la->la_asked == 0 || la->la_expire != V_time_uptime);
+	renew = (la->la_asked == 0 || la->la_expire != time_uptime);
 	if ((renew || m != NULL) && (flags & LLE_EXCLUSIVE) == 0) {
 		flags |= LLE_EXCLUSIVE;
 		LLE_RUNLOCK(la);
@@ -413,7 +413,7 @@ retry:
 		int canceled;
 
 		LLE_ADDREF(la);
-		la->la_expire = V_time_uptime;
+		la->la_expire = time_uptime;
 		canceled = callout_reset(&la->la_timer, hz * V_arpt_down,
 		    arptimer, la);
 		if (canceled)
@@ -443,7 +443,7 @@ arpintr(struct mbuf *m)
 
 	if (m->m_len < sizeof(struct arphdr) &&
 	    ((m = m_pullup(m, sizeof(struct arphdr))) == NULL)) {
-		bsd_log(LOG_NOTICE, "arp: runt packet -- m_pullup failed\n");
+		log(LOG_NOTICE, "arp: runt packet -- m_pullup failed\n");
 		return;
 	}
 	ar = mtod(m, struct arphdr *);
@@ -453,7 +453,7 @@ arpintr(struct mbuf *m)
 	    ntohs(ar->ar_hrd) != ARPHRD_ARCNET &&
 	    ntohs(ar->ar_hrd) != ARPHRD_IEEE1394 &&
 	    ntohs(ar->ar_hrd) != ARPHRD_INFINIBAND) {
-		bsd_log(LOG_NOTICE, "arp: unknown hardware address format (0x%2D)"
+		log(LOG_NOTICE, "arp: unknown hardware address format (0x%2D)"
 		    " (from %*D to %*D)\n", (unsigned char *)&ar->ar_hrd, "",
 		    ETHER_ADDR_LEN, (u_char *)ar_sha(ar), ":",
 		    ETHER_ADDR_LEN, (u_char *)ar_tha(ar), ":");
@@ -463,7 +463,7 @@ arpintr(struct mbuf *m)
 
 	if (m->m_len < arphdr_len(ar)) {
 		if ((m = m_pullup(m, arphdr_len(ar))) == NULL) {
-			bsd_log(LOG_NOTICE, "arp: runt packet\n");
+			log(LOG_NOTICE, "arp: runt packet\n");
 			m_freem(m);
 			return;
 		}
@@ -522,15 +522,15 @@ in_arpinput(struct mbuf *m)
 	struct rtentry *rt;
 	struct ifaddr *ifa;
 	struct in_ifaddr *ia;
-	struct bsd_sockaddr sa;
-	struct bsd_in_addr isaddr, itaddr, myaddr;
-	bsd_uint8_t *enaddr = NULL;
+	struct sockaddr sa;
+	struct in_addr isaddr, itaddr, myaddr;
+	u_int8_t *enaddr = NULL;
 	int op, flags;
 	int req_len;
 	int bridged = 0, is_bridge = 0;
 	int carp_match = 0;
-	struct bsd_sockaddr_in sin;
-	sin.sin_len = sizeof(struct bsd_sockaddr_in);
+	struct sockaddr_in sin;
+	sin.sin_len = sizeof(struct sockaddr_in);
 	sin.sin_family = AF_INET;
 	sin.sin_addr.s_addr = 0;
 
@@ -539,9 +539,9 @@ in_arpinput(struct mbuf *m)
 	if (ifp->if_type == IFT_BRIDGE)
 		is_bridge = 1;
 
-	req_len = arphdr_len2(ifp->if_addrlen, sizeof(struct bsd_in_addr));
+	req_len = arphdr_len2(ifp->if_addrlen, sizeof(struct in_addr));
 	if (m->m_len < req_len && (m = m_pullup(m, req_len)) == NULL) {
-		bsd_log(LOG_NOTICE, "in_arp: runt packet -- m_pullup failed\n");
+		log(LOG_NOTICE, "in_arp: runt packet -- m_pullup failed\n");
 		return;
 	}
 
@@ -550,14 +550,14 @@ in_arpinput(struct mbuf *m)
 	 * ARP is only for IPv4 so we can reject packets with
 	 * a protocol length not equal to an IPv4 address.
 	 */
-	if (ah->ar_pln != sizeof(struct bsd_in_addr)) {
-		bsd_log(LOG_NOTICE, "in_arp: requested protocol length != %zu\n",
-		    sizeof(struct bsd_in_addr));
+	if (ah->ar_pln != sizeof(struct in_addr)) {
+		log(LOG_NOTICE, "in_arp: requested protocol length != %zu\n",
+		    sizeof(struct in_addr));
 		goto drop;
 	}
 
 	if (allow_multicast == 0 && ETHER_IS_MULTICAST(ar_sha(ah))) {
-		bsd_log(LOG_NOTICE, "arp: %*D is multicast\n",
+		log(LOG_NOTICE, "arp: %*D is multicast\n",
 		    ifp->if_addrlen, (u_char *)ar_sha(ah), ":");
 		goto drop;
 	}
@@ -654,13 +654,13 @@ in_arpinput(struct mbuf *m)
 	IN_IFADDR_RUNLOCK();
 match:
 	if (!enaddr)
-		enaddr = (bsd_uint8_t *)IF_LLADDR(ifp);
+		enaddr = (u_int8_t *)IF_LLADDR(ifp);
 	myaddr = ia->ia_addr.sin_addr;
 	ifa_free(&ia->ia_ifa);
 	if (!bcmp(ar_sha(ah), enaddr, ifp->if_addrlen))
 		goto drop;	/* it's from me, ignore it. */
 	if (!bcmp(ar_sha(ah), ifp->if_broadcastaddr, ifp->if_addrlen)) {
-		bsd_log(LOG_NOTICE,
+		log(LOG_NOTICE,
 		    "arp: link address is broadcast for IP address %s!\n",
 		    inet_ntoa(isaddr));
 		goto drop;
@@ -672,7 +672,7 @@ match:
 	 * potential misconfiguration.
 	 */
 	if (!bridged && isaddr.s_addr == myaddr.s_addr && myaddr.s_addr != 0) {
-		bsd_log(LOG_ERR,
+		log(LOG_ERR,
 		   "arp: %*D is using my IP address %s on %s!\n",
 		   ifp->if_addrlen, (u_char *)ar_sha(ah), ":",
 		   inet_ntoa(isaddr), ifp->if_xname);
@@ -684,19 +684,19 @@ match:
 		goto reply;
 
 	bzero(&sin, sizeof(sin));
-	sin.sin_len = sizeof(struct bsd_sockaddr_in);
+	sin.sin_len = sizeof(struct sockaddr_in);
 	sin.sin_family = AF_INET;
 	sin.sin_addr = isaddr;
 	flags = (itaddr.s_addr == myaddr.s_addr) ? LLE_CREATE : 0;
 	flags |= LLE_EXCLUSIVE;
 	IF_AFDATA_LOCK(ifp);
-	la = lla_lookup(LLTABLE(ifp), flags, (struct bsd_sockaddr *)&sin);
+	la = lla_lookup(LLTABLE(ifp), flags, (struct sockaddr *)&sin);
 	IF_AFDATA_UNLOCK(ifp);
 	if (la != NULL) {
 		/* the following is not an error when doing bridging */
 		if (!bridged && la->lle_tbl->llt_ifp != ifp && !carp_match) {
 			if (log_arp_wrong_iface)
-				bsd_log(LOG_WARNING, "arp: %s is on %s "
+				log(LOG_WARNING, "arp: %s is on %s "
 				    "but got reply from %*D on %s\n",
 				    inet_ntoa(isaddr),
 				    la->lle_tbl->llt_ifp->if_xname,
@@ -710,7 +710,7 @@ match:
 			if (la->la_flags & LLE_STATIC) {
 				LLE_WUNLOCK(la);
 				if (log_arp_permanent_modify)
-					bsd_log(LOG_ERR,
+					log(LOG_ERR,
 					    "arp: %*D attempts to modify "
 					    "permanent entry for %s on %s\n",
 					    ifp->if_addrlen,
@@ -719,7 +719,7 @@ match:
 				goto reply;
 			}
 			if (log_arp_movements) {
-				bsd_log(LOG_INFO, "arp: %s moved from %*D "
+				log(LOG_INFO, "arp: %s moved from %*D "
 				    "to %*D on %s\n",
 				    inet_ntoa(isaddr),
 				    ifp->if_addrlen,
@@ -731,7 +731,7 @@ match:
 
 		if (ifp->if_addrlen != ah->ar_hln) {
 			LLE_WUNLOCK(la);
-			bsd_log(LOG_WARNING, "arp from %*D: addr len: new %d, "
+			log(LOG_WARNING, "arp from %*D: addr len: new %d, "
 			    "i/f %d (ignored)\n", ifp->if_addrlen,
 			    (u_char *) ar_sha(ah), ":", ah->ar_hln,
 			    ifp->if_addrlen);
@@ -746,7 +746,7 @@ match:
 			int canceled;
 
 			LLE_ADDREF(la);
-			la->la_expire = V_time_uptime + V_arpt_keep;
+			la->la_expire = time_uptime + V_arpt_keep;
 			canceled = callout_reset(&la->la_timer,
 			    hz * V_arpt_keep, arptimer, la);
 			if (canceled)
@@ -791,7 +791,7 @@ reply:
 
 		sin.sin_addr = itaddr;
 		IF_AFDATA_LOCK(ifp);
-		lle = lla_lookup(LLTABLE(ifp), 0, (struct bsd_sockaddr *)&sin);
+		lle = lla_lookup(LLTABLE(ifp), 0, (struct sockaddr *)&sin);
 		IF_AFDATA_UNLOCK(ifp);
 
 		if ((lle != NULL) && (lle->la_flags & LLE_PUB)) {
@@ -808,7 +808,7 @@ reply:
 
 			sin.sin_addr = itaddr;
 			/* XXX MRT use table 0 for arp reply  */
-			rt = in_rtalloc1((struct bsd_sockaddr *)&sin, 0, 0UL, 0);
+			rt = in_rtalloc1((struct sockaddr *)&sin, 0, 0UL, 0);
 			if (!rt)
 				goto drop;
 
@@ -835,11 +835,11 @@ reply:
 			sin.sin_addr = isaddr;
 
 			/* XXX MRT use table 0 for arp checks */
-			rt = in_rtalloc1((struct bsd_sockaddr *)&sin, 0, 0UL, 0);
+			rt = in_rtalloc1((struct sockaddr *)&sin, 0, 0UL, 0);
 			if (!rt)
 				goto drop;
 			if (rt->rt_ifp != ifp) {
-				bsd_log(LOG_INFO, "arp_proxy: ignoring request"
+				log(LOG_INFO, "arp_proxy: ignoring request"
 				    " from %s via %s, expecting %s\n",
 				    inet_ntoa(isaddr), ifp->if_xname,
 				    rt->rt_ifp->if_xname);
@@ -900,10 +900,10 @@ arp_ifinit(struct ifnet *ifp, struct ifaddr *ifa)
 		 */
 		IF_AFDATA_LOCK(ifp);
 		lle = lla_lookup(LLTABLE(ifp), (LLE_CREATE | LLE_IFADDR | LLE_STATIC),
-				 (struct bsd_sockaddr *)IA_SIN(ifa));
+				 (struct sockaddr *)IA_SIN(ifa));
 		IF_AFDATA_UNLOCK(ifp);
 		if (lle == NULL)
-			bsd_log(LOG_INFO, "arp_ifinit: cannot create arp "
+			log(LOG_INFO, "arp_ifinit: cannot create arp "
 			    "entry for interface address\n");
 		else
 			LLE_RUNLOCK(lle);

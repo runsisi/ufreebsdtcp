@@ -117,17 +117,17 @@
  * ISO 802.5 physical header
  */
 struct iso88025_header {
-	bsd_uint8_t	ac;				    /* access control field */
-	bsd_uint8_t	fc;				    /* frame control field */
-	bsd_uint8_t	iso88025_dhost[ISO88025_ADDR_LEN];  /* destination address */
-	bsd_uint8_t	iso88025_shost[ISO88025_ADDR_LEN];  /* source address */
-	bsd_uint16_t	rcf;				    /* route control field */
-	bsd_uint16_t	rd[RIF_MAX_RD];			    /* routing designators */
+	u_int8_t	ac;				    /* access control field */
+	u_int8_t	fc;				    /* frame control field */
+	u_int8_t	iso88025_dhost[ISO88025_ADDR_LEN];  /* destination address */
+	u_int8_t	iso88025_shost[ISO88025_ADDR_LEN];  /* source address */
+	u_int16_t	rcf;				    /* route control field */
+	u_int16_t	rd[RIF_MAX_RD];			    /* routing designators */
 } __packed;
 
 struct iso88025_rif {
-	bsd_uint16_t	rcf;				    /* route control field */
-	bsd_uint16_t	rd[RIF_MAX_RD];			    /* routing designators */
+	u_int16_t	rcf;				    /* route control field */
+	u_int16_t	rd[RIF_MAX_RD];			    /* routing designators */
 } __packed;
 
 struct iso88025_sockaddr_data {
@@ -162,10 +162,10 @@ struct	iso88025_addr {
 #define	ISO88025_BPF_UNSUPPORTED	0
 #define	ISO88025_BPF_SUPPORTED		1
 
-void	iso88025_ifattach	(struct ifnet *, const bsd_uint8_t *, int);
+void	iso88025_ifattach	(struct ifnet *, const u_int8_t *, int);
 void	iso88025_ifdetach	(struct ifnet *, int);
 int	iso88025_ioctl		(struct ifnet *, u_long, caddr_t );
-int	iso88025_output		(struct ifnet *, struct mbuf *, struct bsd_sockaddr *,
+int	iso88025_output		(struct ifnet *, struct mbuf *, struct sockaddr *,
     				 struct route *);
 void	iso88025_input		(struct ifnet *, struct mbuf *);
 

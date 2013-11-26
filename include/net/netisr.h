@@ -133,13 +133,13 @@ struct sysctl_netisr_work {
 	u_int	snw_watermark;			/* nw_watermark */
 	u_int	_snw_ispare[3];
 
-	bsd_uint64_t	snw_dispatched;		/* nw_dispatched */
-	bsd_uint64_t	snw_hybrid_dispatched;	/* nw_hybrid_dispatched */
-	bsd_uint64_t	snw_qdrops;		/* nw_qdrops */
-	bsd_uint64_t	snw_queued;		/* nw_queued */
-	bsd_uint64_t	snw_handled;		/* nw_handled */
+	uint64_t	snw_dispatched;		/* nw_dispatched */
+	uint64_t	snw_hybrid_dispatched;	/* nw_hybrid_dispatched */
+	uint64_t	snw_qdrops;		/* nw_qdrops */
+	uint64_t	snw_queued;		/* nw_queued */
+	uint64_t	snw_handled;		/* nw_handled */
 
-	bsd_uint64_t	_snw_llspare[7];
+	uint64_t	_snw_llspare[7];
 };
 
 #ifdef _KERNEL
@@ -178,9 +178,9 @@ struct sysctl_netisr_work {
  */
 struct mbuf;
 typedef void		 netisr_handler_t(struct mbuf *m);
-typedef struct mbuf	*netisr_m2cpuid_t(struct mbuf *m, bsd_uintptr_t source,
+typedef struct mbuf	*netisr_m2cpuid_t(struct mbuf *m, uintptr_t source,
 			 u_int *cpuid);
-typedef	struct mbuf	*netisr_m2flow_t(struct mbuf *m, bsd_uintptr_t source);
+typedef	struct mbuf	*netisr_m2flow_t(struct mbuf *m, uintptr_t source);
 typedef void		 netisr_drainedcpu_t(u_int cpuid);
 
 #define	NETISR_CPUID_NONE	((u_int)-1)	/* No affinity returned. */
@@ -207,7 +207,7 @@ struct netisr_handler {
  */
 void	netisr_clearqdrops(const struct netisr_handler *nhp);
 void	netisr_getqdrops(const struct netisr_handler *nhp,
-	    bsd_uint64_t *qdropsp);
+	    u_int64_t *qdropsp);
 void	netisr_getqlimit(const struct netisr_handler *nhp, u_int *qlimitp);
 void	netisr_register(const struct netisr_handler *nhp);
 int	netisr_setqlimit(const struct netisr_handler *nhp, u_int qlimit);
@@ -219,9 +219,9 @@ void	netisr_unregister(const struct netisr_handler *nhp);
  * variant.
  */
 int	netisr_dispatch(u_int proto, struct mbuf *m);
-int	netisr_dispatch_src(u_int proto, bsd_uintptr_t source, struct mbuf *m);
+int	netisr_dispatch_src(u_int proto, uintptr_t source, struct mbuf *m);
 int	netisr_queue(u_int proto, struct mbuf *m);
-int	netisr_queue_src(u_int proto, bsd_uintptr_t source, struct mbuf *m);
+int	netisr_queue_src(u_int proto, uintptr_t source, struct mbuf *m);
 
 /*
  * Provide a default implementation of "map an ID to a CPU ID".

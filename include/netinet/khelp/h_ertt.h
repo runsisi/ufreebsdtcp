@@ -78,7 +78,7 @@ struct ertt {
 	/* RTT for a marked packet. */
 	int		markedpkt_rtt;
 	/* Flags to signal conditions between hook function calls. */
-	bsd_uint32_t	flags;
+	uint32_t	flags;
 };
 
 /* Flags for struct ertt. */

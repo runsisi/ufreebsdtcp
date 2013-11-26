@@ -34,17 +34,17 @@
  *	@(#)device_pager.c	8.1 (Berkeley) 6/11/93
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/vm/device_pager.c 240238 2012-09-08 16:40:18Z kib $");
 
-#include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/conf.h>
-#include <sys/lock.h>
-#include <sys/proc.h>
-#include <sys/mutex.h>
-#include <sys/mman.h>
-#include <sys/sx.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_conf.h>
+#include <sys/bsd_lock.h>
+#include <sys/bsd_proc.h>
+#include <sys/bsd_mutex.h>
+#include <sys/bsd_mman.h>
+#include <sys/bsd_sx.h>
 
 #include <vm/vm.h>
 #include <vm/vm_param.h>
@@ -55,7 +55,7 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/vm/device_pager.c 240238 2012-09-08 16:40:
 
 static void dev_pager_init(void);
 static vm_object_t dev_pager_alloc(void *, vm_ooffset_t, vm_prot_t,
-    vm_ooffset_t, struct bsd_ucred *);
+    vm_ooffset_t, struct ucred *);
 static void dev_pager_dealloc(vm_object_t);
 static int dev_pager_getpages(vm_object_t, vm_page_t *, int, int);
 static void dev_pager_putpages(vm_object_t, vm_page_t *, int, 
@@ -87,7 +87,7 @@ struct pagerops mgtdevicepagerops = {
 };
 
 static int old_dev_pager_ctor(void *handle, vm_ooffset_t size, vm_prot_t prot,
-    vm_ooffset_t foff, struct bsd_ucred *cred, u_short *color);
+    vm_ooffset_t foff, struct ucred *cred, u_short *color);
 static void old_dev_pager_dtor(void *handle);
 static int old_dev_pager_fault(vm_object_t object, vm_ooffset_t offset,
     int prot, vm_page_t *mres);
@@ -118,7 +118,7 @@ cdev_pager_lookup(void *handle)
 
 vm_object_t
 cdev_pager_allocate(void *handle, enum obj_type tp, struct cdev_pager_ops *ops,
-    vm_ooffset_t size, vm_prot_t prot, vm_ooffset_t foff, struct bsd_ucred *cred)
+    vm_ooffset_t size, vm_prot_t prot, vm_ooffset_t foff, struct ucred *cred)
 {
 	vm_object_t object, object1;
 	vm_pindex_t pindex;
@@ -193,7 +193,7 @@ cdev_pager_allocate(void *handle, enum obj_type tp, struct cdev_pager_ops *ops,
 
 static vm_object_t
 dev_pager_alloc(void *handle, vm_ooffset_t size, vm_prot_t prot,
-    vm_ooffset_t foff, struct bsd_ucred *cred)
+    vm_ooffset_t foff, struct ucred *cred)
 {
 
 	return (cdev_pager_allocate(handle, OBJT_DEVICE, &old_dev_pager_ops,
@@ -383,7 +383,7 @@ dev_pager_haspage(object, pindex, before, after)
 
 static int
 old_dev_pager_ctor(void *handle, vm_ooffset_t size, vm_prot_t prot,
-    vm_ooffset_t foff, struct bsd_ucred *cred, u_short *color)
+    vm_ooffset_t foff, struct ucred *cred, u_short *color)
 {
 	struct cdev *dev;
 	struct cdevsw *csw;

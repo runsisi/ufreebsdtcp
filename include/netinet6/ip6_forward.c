@@ -29,7 +29,7 @@
  *	$KAME: ip6_forward.c,v 1.69 2001/05/17 03:48:30 itojun Exp $
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/netinet6/ip6_forward.c 252692 2013-07-04 08:57:13Z ae $");
 
 #include "opt_inet.h"
@@ -38,17 +38,17 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/netinet6/ip6_forward.c 252692 2013-07-04 0
 #include "opt_ipsec.h"
 #include "opt_ipstealth.h"
 
-#include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/malloc.h>
-#include <sys/mbuf.h>
-#include <sys/domain.h>
-#include <sys/protosw.h>
-#include <sys/socket.h>
-#include <sys/errno.h>
-#include <sys/time.h>
-#include <sys/kernel.h>
-#include <sys/syslog.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_malloc.h>
+#include <sys/bsd_mbuf.h>
+#include <sys/bsd_domain.h>
+#include <sys/bsd_protosw.h>
+#include <sys/bsd_socket.h>
+#include <sys/bsd_errno.h>
+#include <sys/bsd_time.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_syslog.h>
 
 #include <net/if.h>
 #include <net/netisr.h>
@@ -93,14 +93,14 @@ void
 ip6_forward(struct mbuf *m, int srcrt)
 {
 	struct ip6_hdr *ip6 = mtod(m, struct ip6_hdr *);
-	struct bsd_sockaddr_in6 *dst = NULL;
+	struct sockaddr_in6 *dst = NULL;
 	struct rtentry *rt = NULL;
 	struct route_in6 rin6;
 	int error, type = 0, code = 0;
 	struct mbuf *mcopy = NULL;
 	struct ifnet *origifp;	/* maybe unnecessary */
-	bsd_uint32_t inzone, outzone;
-	struct bsd_in6_addr src_in6, dst_in6, odst;
+	u_int32_t inzone, outzone;
+	struct in6_addr src_in6, dst_in6, odst;
 #ifdef IPSEC
 	struct secpolicy *sp = NULL;
 	int ipsecrt = 0;
@@ -139,7 +139,7 @@ ip6_forward(struct mbuf *m, int srcrt)
 		/* XXX in6_ifstat_inc(rt->rt_ifp, ifs6_in_discard) */
 		if (V_ip6_log_time + V_ip6_log_interval < time_second) {
 			V_ip6_log_time = time_second;
-			bsd_log(LOG_DEBUG,
+			log(LOG_DEBUG,
 			    "cannot forward "
 			    "from %s to %s nxt %d received on %s\n",
 			    ip6_sprintf(ip6bufs, &ip6->ip6_src),
@@ -342,7 +342,7 @@ ip6_forward(struct mbuf *m, int srcrt)
 	}
 
 	/* adjust pointer */
-	dst = (struct bsd_sockaddr_in6 *)state.dst;
+	dst = (struct sockaddr_in6 *)state.dst;
 	rt = state.ro ? state.ro->ro_rt : NULL;
 	if (dst != NULL && rt != NULL)
 		ipsecrt = 1;
@@ -353,12 +353,12 @@ skip_ipsec:
 #endif
 again:
 	bzero(&rin6, sizeof(struct route_in6));
-	dst = (struct bsd_sockaddr_in6 *)&rin6.ro_dst;
-	dst->sin6_len = sizeof(struct bsd_sockaddr_in6);
+	dst = (struct sockaddr_in6 *)&rin6.ro_dst;
+	dst->sin6_len = sizeof(struct sockaddr_in6);
 	dst->sin6_family = AF_INET6;
 	dst->sin6_addr = ip6->ip6_dst;
 again2:
-	rin6.ro_rt = in6_rtalloc1((struct bsd_sockaddr *)dst, 0, 0, M_GETFIB(m));
+	rin6.ro_rt = in6_rtalloc1((struct sockaddr *)dst, 0, 0, M_GETFIB(m));
 	if (rin6.ro_rt != NULL)
 		RT_UNLOCK(rin6.ro_rt);
 	else {
@@ -407,7 +407,7 @@ skip_routing:
 
 		if (V_ip6_log_time + V_ip6_log_interval < time_second) {
 			V_ip6_log_time = time_second;
-			bsd_log(LOG_DEBUG,
+			log(LOG_DEBUG,
 			    "cannot forward "
 			    "src %s, dst %s, nxt %d, rcvif %s, outif %s\n",
 			    ip6_sprintf(ip6bufs, &ip6->ip6_src),
@@ -478,7 +478,7 @@ skip_routing:
 	}
 
 	if (rt->rt_flags & RTF_GATEWAY)
-		dst = (struct bsd_sockaddr_in6 *)rt->rt_gateway;
+		dst = (struct sockaddr_in6 *)rt->rt_gateway;
 
 	/*
 	 * If we are to forward the packet using the same interface
@@ -611,8 +611,8 @@ skip_routing:
 	/* Or forward to some other address? */
 	if ((m->m_flags & M_IP6_NEXTHOP) &&
 	    (fwd_tag = m_tag_find(m, PACKET_TAG_IPFORWARD, NULL)) != NULL) {
-		dst = (struct bsd_sockaddr_in6 *)&rin6.ro_dst;
-		bcopy((fwd_tag+1), dst, sizeof(struct bsd_sockaddr_in6));
+		dst = (struct sockaddr_in6 *)&rin6.ro_dst;
+		bcopy((fwd_tag+1), dst, sizeof(struct sockaddr_in6));
 		m->m_flags |= M_SKIP_FIREWALL;
 		m->m_flags &= ~M_IP6_NEXTHOP;
 		m_tag_delete(m, fwd_tag);

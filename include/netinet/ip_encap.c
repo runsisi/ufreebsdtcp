@@ -56,21 +56,21 @@
  */
 /* XXX is M_NETADDR correct? */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/netinet/ip_encap.c 201145 2009-12-28 22:56:30Z antoine $");
 
 #include "opt_mrouting.h"
 #include "opt_inet.h"
 #include "opt_inet6.h"
 
-#include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/socket.h>
-#include <sys/sockio.h>
-#include <sys/mbuf.h>
-#include <sys/errno.h>
-#include <sys/protosw.h>
-#include <sys/queue.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_socket.h>
+#include <sys/bsd_sockio.h>
+#include <sys/bsd_mbuf.h>
+#include <sys/bsd_errno.h>
+#include <sys/bsd_protosw.h>
+#include <sys/bsd_queue.h>
 
 #include <net/if.h>
 #include <net/route.h>
@@ -87,15 +87,15 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/netinet/ip_encap.c 201145 2009-12-28 22:56
 #include <netinet6/ip6protosw.h>
 #endif
 
-#include <machine/stdarg.h>
+#include <machine/bsd_stdarg.h>
 
-#include <sys/kernel.h>
-#include <sys/malloc.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_malloc.h>
 static MALLOC_DEFINE(M_NETADDR, "encap_export_host", "Export host address structure");
 
 static void encap_add(struct encaptab *);
-static int mask_match(const struct encaptab *, const struct bsd_sockaddr *,
-		const struct bsd_sockaddr *);
+static int mask_match(const struct encaptab *, const struct sockaddr *,
+		const struct sockaddr *);
 static void encap_fillarg(struct mbuf *, const struct encaptab *);
 
 /*
@@ -118,23 +118,23 @@ encap_init(void)
 void
 encap4_input(struct mbuf *m, int off)
 {
-	struct bsd_ip *ip;
+	struct ip *ip;
 	int proto;
-	struct bsd_sockaddr_in s, d;
-	const struct bsd_protosw *psw;
+	struct sockaddr_in s, d;
+	const struct protosw *psw;
 	struct encaptab *ep, *match;
 	int prio, matchprio;
 
-	bsd_ip = mtod(m, struct bsd_ip *);
+	ip = mtod(m, struct ip *);
 	proto = ip->ip_p;
 
 	bzero(&s, sizeof(s));
 	s.sin_family = AF_INET;
-	s.sin_len = sizeof(struct bsd_sockaddr_in);
+	s.sin_len = sizeof(struct sockaddr_in);
 	s.sin_addr = ip->ip_src;
 	bzero(&d, sizeof(d));
 	d.sin_family = AF_INET;
-	d.sin_len = sizeof(struct bsd_sockaddr_in);
+	d.sin_len = sizeof(struct sockaddr_in);
 	d.sin_addr = ip->ip_dst;
 
 	match = NULL;
@@ -152,8 +152,8 @@ encap4_input(struct mbuf *m, int off)
 			 * it's inbound traffic, we need to match in reverse
 			 * order
 			 */
-			prio = mask_match(ep, (struct bsd_sockaddr *)&d,
-			    (struct bsd_sockaddr *)&s);
+			prio = mask_match(ep, (struct sockaddr *)&d,
+			    (struct sockaddr *)&s);
 		}
 
 		/*
@@ -236,8 +236,8 @@ encap6_input(struct mbuf **mp, int *offp, int proto)
 			 * it's inbound traffic, we need to match in reverse
 			 * order
 			 */
-			prio = mask_match(ep, (struct bsd_sockaddr *)&d,
-			    (struct bsd_sockaddr *)&s);
+			prio = mask_match(ep, (struct sockaddr *)&d,
+			    (struct sockaddr *)&s);
 		}
 
 		/* see encap4_input() for issues here */
@@ -282,9 +282,9 @@ encap_add(struct encaptab *ep)
  * Return value will be necessary as input (cookie) for encap_detach().
  */
 const struct encaptab *
-encap_attach(int af, int proto, const struct bsd_sockaddr *sp,
-    const struct bsd_sockaddr *sm, const struct bsd_sockaddr *dp,
-    const struct bsd_sockaddr *dm, const struct bsd_protosw *psw, void *arg)
+encap_attach(int af, int proto, const struct sockaddr *sp,
+    const struct sockaddr *sm, const struct sockaddr *dp,
+    const struct sockaddr *dm, const struct protosw *psw, void *arg)
 {
 	struct encaptab *ep;
 
@@ -316,7 +316,7 @@ encap_attach(int af, int proto, const struct bsd_sockaddr *sp,
 		return (NULL);
 	}
 
-	ep = bsd_malloc(sizeof(*ep), M_NETADDR, M_NOWAIT);	/*XXX*/
+	ep = malloc(sizeof(*ep), M_NETADDR, M_NOWAIT);	/*XXX*/
 	if (ep == NULL) {
 		mtx_unlock(&encapmtx);
 		return (NULL);
@@ -340,7 +340,7 @@ encap_attach(int af, int proto, const struct bsd_sockaddr *sp,
 const struct encaptab *
 encap_attach_func(int af, int proto,
     int (*func)(const struct mbuf *, int, int, void *),
-    const struct bsd_protosw *psw, void *arg)
+    const struct protosw *psw, void *arg)
 {
 	struct encaptab *ep;
 
@@ -348,7 +348,7 @@ encap_attach_func(int af, int proto,
 	if (!func)
 		return (NULL);
 
-	ep = bsd_malloc(sizeof(*ep), M_NETADDR, M_NOWAIT);	/*XXX*/
+	ep = malloc(sizeof(*ep), M_NETADDR, M_NOWAIT);	/*XXX*/
 	if (ep == NULL)
 		return (NULL);
 	bzero(ep, sizeof(*ep));
@@ -376,7 +376,7 @@ encap_detach(const struct encaptab *cookie)
 		if (p == ep) {
 			LIST_REMOVE(p, chain);
 			mtx_unlock(&encapmtx);
-			bsd_free(p, M_NETADDR);	/*XXX*/
+			free(p, M_NETADDR);	/*XXX*/
 			return 0;
 		}
 	}
@@ -386,14 +386,14 @@ encap_detach(const struct encaptab *cookie)
 }
 
 static int
-mask_match(const struct encaptab *ep, const struct bsd_sockaddr *sp,
-    const struct bsd_sockaddr *dp)
+mask_match(const struct encaptab *ep, const struct sockaddr *sp,
+    const struct sockaddr *dp)
 {
-	struct bsd_sockaddr_storage s;
-	struct bsd_sockaddr_storage d;
+	struct sockaddr_storage s;
+	struct sockaddr_storage d;
 	int i;
-	const bsd_uint8_t *p, *q;
-	bsd_uint8_t *r;
+	const u_int8_t *p, *q;
+	u_int8_t *r;
 	int matchlen;
 
 	if (sp->sa_len > sizeof(s) || dp->sa_len > sizeof(d))
@@ -405,18 +405,18 @@ mask_match(const struct encaptab *ep, const struct bsd_sockaddr *sp,
 
 	matchlen = 0;
 
-	p = (const bsd_uint8_t *)sp;
-	q = (const bsd_uint8_t *)&ep->srcmask;
-	r = (bsd_uint8_t *)&s;
+	p = (const u_int8_t *)sp;
+	q = (const u_int8_t *)&ep->srcmask;
+	r = (u_int8_t *)&s;
 	for (i = 0 ; i < sp->sa_len; i++) {
 		r[i] = p[i] & q[i];
 		/* XXX estimate */
 		matchlen += (q[i] ? 8 : 0);
 	}
 
-	p = (const bsd_uint8_t *)dp;
-	q = (const bsd_uint8_t *)&ep->dstmask;
-	r = (bsd_uint8_t *)&d;
+	p = (const u_int8_t *)dp;
+	q = (const u_int8_t *)&ep->dstmask;
+	r = (u_int8_t *)&d;
 	for (i = 0 ; i < dp->sa_len; i++) {
 		r[i] = p[i] & q[i];
 		/* XXX rough estimate */

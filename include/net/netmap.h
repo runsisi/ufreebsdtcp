@@ -235,7 +235,7 @@ struct netmap_ring {
 #define	NR_FORWARD	0x0004		/* enable NS_FORWARD for ring */
 #define	NR_RX_TSTMP	0x0008		/* set rx timestamp in slots */
 
-	struct bsd_timeval	ts;		/* time of last *sync() */
+	struct timeval	ts;		/* time of last *sync() */
 
 	/* the slots follow. This struct has variable size */
 	struct netmap_slot slot[0];	/* array of slots. */

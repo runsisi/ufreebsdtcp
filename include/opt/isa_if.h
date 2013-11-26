@@ -17,10 +17,10 @@
 /** @brief Unique descriptor for the ISA_ADD_CONFIG() method */
 extern struct kobjop_desc isa_add_config_desc;
 /** @brief A function implementing the ISA_ADD_CONFIG() method */
-typedef int isa_add_config_t(bsd_device_t dev, bsd_device_t child, int priority,
+typedef int isa_add_config_t(device_t dev, device_t child, int priority,
                              struct isa_config *config);
 
-static __inline int ISA_ADD_CONFIG(bsd_device_t dev, bsd_device_t child, int priority,
+static __inline int ISA_ADD_CONFIG(device_t dev, device_t child, int priority,
                                    struct isa_config *config)
 {
 	kobjop_t _m;
@@ -31,10 +31,10 @@ static __inline int ISA_ADD_CONFIG(bsd_device_t dev, bsd_device_t child, int pri
 /** @brief Unique descriptor for the ISA_SET_CONFIG_CALLBACK() method */
 extern struct kobjop_desc isa_set_config_callback_desc;
 /** @brief A function implementing the ISA_SET_CONFIG_CALLBACK() method */
-typedef void isa_set_config_callback_t(bsd_device_t dev, bsd_device_t child,
+typedef void isa_set_config_callback_t(device_t dev, device_t child,
                                        isa_config_cb *fn, void *arg);
 
-static __inline void ISA_SET_CONFIG_CALLBACK(bsd_device_t dev, bsd_device_t child,
+static __inline void ISA_SET_CONFIG_CALLBACK(device_t dev, device_t child,
                                              isa_config_cb *fn, void *arg)
 {
 	kobjop_t _m;
@@ -45,10 +45,10 @@ static __inline void ISA_SET_CONFIG_CALLBACK(bsd_device_t dev, bsd_device_t chil
 /** @brief Unique descriptor for the ISA_PNP_PROBE() method */
 extern struct kobjop_desc isa_pnp_probe_desc;
 /** @brief A function implementing the ISA_PNP_PROBE() method */
-typedef int isa_pnp_probe_t(bsd_device_t dev, bsd_device_t child,
+typedef int isa_pnp_probe_t(device_t dev, device_t child,
                             struct isa_pnp_id *ids);
 
-static __inline int ISA_PNP_PROBE(bsd_device_t dev, bsd_device_t child,
+static __inline int ISA_PNP_PROBE(device_t dev, device_t child,
                                   struct isa_pnp_id *ids)
 {
 	kobjop_t _m;

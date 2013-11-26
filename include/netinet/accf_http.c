@@ -25,25 +25,25 @@
  * SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/netinet/accf_http.c 248085 2013-03-09 02:36:32Z marius $");
 
 #define ACCEPT_FILTER_MOD
 
-#include <sys/param.h>
-#include <sys/kernel.h>
-#include <sys/mbuf.h>
-#include <sys/module.h>
-#include <sys/signalvar.h>
-#include <sys/sysctl.h>
-#include <sys/socketvar.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_mbuf.h>
+#include <sys/bsd_module.h>
+#include <sys/bsd_signalvar.h>
+#include <sys/bsd_sysctl.h>
+#include <sys/bsd_socketvar.h>
 
 /* check for GET/HEAD */
-static int sohashttpget(struct bsd_socket *so, void *arg, int waitflag);
+static int sohashttpget(struct socket *so, void *arg, int waitflag);
 /* check for HTTP/1.0 or HTTP/1.1 */
-static int soparsehttpvers(struct bsd_socket *so, void *arg, int waitflag);
+static int soparsehttpvers(struct socket *so, void *arg, int waitflag);
 /* check for end of HTTP/1.x request */
-static int soishttpconnected(struct bsd_socket *so, void *arg, int waitflag);
+static int soishttpconnected(struct socket *so, void *arg, int waitflag);
 /* strcmp on an mbuf chain */
 static int mbufstrcmp(struct mbuf *m, struct mbuf *npkt, int offset, char *cmp);
 /* strncmp on an mbuf chain */
@@ -159,7 +159,7 @@ mbufstrncmp(struct mbuf *m, struct mbuf *npkt, int offset, int max, char *cmp)
 	} while(0)
 
 static int
-sohashttpget(struct bsd_socket *so, void *arg, int waitflag)
+sohashttpget(struct socket *so, void *arg, int waitflag)
 {
 
 	if ((so->so_rcv.sb_state & SBS_CANTRCVMORE) == 0 && !sbfull(&so->so_rcv)) {
@@ -206,7 +206,7 @@ fallout:
 }
 
 static int
-soparsehttpvers(struct bsd_socket *so, void *arg, int waitflag)
+soparsehttpvers(struct socket *so, void *arg, int waitflag)
 {
 	struct mbuf *m, *n;
 	int	i, cc, spaces, inspaces;
@@ -286,7 +286,7 @@ fallout:
 #define NCHRS 3
 
 static int
-soishttpconnected(struct bsd_socket *so, void *arg, int waitflag)
+soishttpconnected(struct socket *so, void *arg, int waitflag)
 {
 	char a, b, c;
 	struct mbuf *m, *n;

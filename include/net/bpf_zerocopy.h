@@ -47,7 +47,7 @@ int	bpf_zerocopy_canfreebuf(struct bpf_d *);
 int	bpf_zerocopy_canwritebuf(struct bpf_d *);
 void	bpf_zerocopy_free(struct bpf_d *d);
 int	bpf_zerocopy_ioctl_getzmax(struct thread *td, struct bpf_d *d,
-	    bsd_size_t *i);
+	    size_t *i);
 int	bpf_zerocopy_ioctl_rotzbuf(struct thread *td, struct bpf_d *d,
 	    struct bpf_zbuf *bz);
 int	bpf_zerocopy_ioctl_setzbuf(struct thread *td, struct bpf_d *d,

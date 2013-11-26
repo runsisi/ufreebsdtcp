@@ -149,21 +149,21 @@
  * The following must match the type definition of dtrace_probe.  It is
  * defined this way to avoid having to rely on CDDL code.
  */
-extern bsd_uint32_t lockstat_probemap[LS_NPROBES];
-typedef void (*lockstat_probe_func_t)(bsd_uint32_t, bsd_uintptr_t arg0, bsd_uintptr_t arg1,
-    bsd_uintptr_t arg2, bsd_uintptr_t arg3, bsd_uintptr_t arg4);
+extern uint32_t lockstat_probemap[LS_NPROBES];
+typedef void (*lockstat_probe_func_t)(uint32_t, uintptr_t arg0, uintptr_t arg1,
+    uintptr_t arg2, uintptr_t arg3, uintptr_t arg4);
 extern lockstat_probe_func_t lockstat_probe_func;
-extern bsd_uint64_t lockstat_nsecs(void);
+extern uint64_t lockstat_nsecs(void);
 
 #ifdef	KDTRACE_HOOKS
 /*
  * Macros to record lockstat probes.
  */
 #define	LOCKSTAT_RECORD4(probe, lp, arg1, arg2, arg3, arg4)  do {	\
-	bsd_uint32_t id;							\
+	uint32_t id;							\
 									\
 	if ((id = lockstat_probemap[(probe)])) 				\
-	    (*lockstat_probe_func)(id, (bsd_uintptr_t)(lp), (arg1),	(arg2),	\
+	    (*lockstat_probe_func)(id, (uintptr_t)(lp), (arg1),	(arg2),	\
 		(arg3), (arg4));					\
 } while (0)
 
@@ -183,19 +183,19 @@ extern bsd_uint64_t lockstat_nsecs(void);
 	LOCKSTAT_RECORD4(probe, lp, arg1, arg2, arg3, 0)
 
 #define	LOCKSTAT_PROFILE_OBTAIN_LOCK_SUCCESS(probe, lp, c, wt, f, l)  do {   \
-	bsd_uint32_t id;							     \
+	uint32_t id;							     \
 									     \
     	lock_profile_obtain_lock_success(&(lp)->lock_object, c, wt, f, l);   \
 	if ((id = lockstat_probemap[(probe)])) 			     	     \
-		(*lockstat_probe_func)(id, (bsd_uintptr_t)(lp), 0, 0, 0, 0);     \
+		(*lockstat_probe_func)(id, (uintptr_t)(lp), 0, 0, 0, 0);     \
 } while (0)
 
 #define	LOCKSTAT_PROFILE_RELEASE_LOCK(probe, lp)  do {			     \
-	bsd_uint32_t id;							     \
+	uint32_t id;							     \
 									     \
 	lock_profile_release_lock(&(lp)->lock_object);			     \
 	if ((id = lockstat_probemap[(probe)])) 			     	     \
-		(*lockstat_probe_func)(id, (bsd_uintptr_t)(lp), 0, 0, 0, 0);     \
+		(*lockstat_probe_func)(id, (uintptr_t)(lp), 0, 0, 0, 0);     \
 } while (0)
 
 #else	/* !KDTRACE_HOOKS */

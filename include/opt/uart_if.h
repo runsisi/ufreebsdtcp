@@ -65,10 +65,10 @@ static __inline int UART_GETSIG(struct uart_softc *this)
 /** @brief Unique descriptor for the UART_IOCTL() method */
 extern struct kobjop_desc uart_ioctl_desc;
 /** @brief A function implementing the UART_IOCTL() method */
-typedef int uart_ioctl_t(struct uart_softc *this, int request, bsd_intptr_t data);
+typedef int uart_ioctl_t(struct uart_softc *this, int request, intptr_t data);
 
 static __inline int UART_IOCTL(struct uart_softc *this, int request,
-                               bsd_intptr_t data)
+                               intptr_t data)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)this)->ops,uart_ioctl);

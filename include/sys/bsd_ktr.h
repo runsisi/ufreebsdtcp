@@ -101,7 +101,7 @@
 #include <sys/_bsd_cpuset.h>
 
 struct ktr_entry {
-	bsd_uint64_t ktr_timestamp;
+	u_int64_t ktr_timestamp;
 	int	ktr_cpu;
 	int	ktr_line;
 	const	char *ktr_file;

@@ -37,13 +37,7 @@
 #include <sys/_bsd_mutex.h>
 #include <sys/_bsd_sx.h>
 
-#if 0	// runsisi AT hust.edu.cn @2013/11/25
 #define	SB_MAX		(2*1024*1024)	/* default for max chars in sockbuf */
-#endif 	// ---------------------- @2013/11/25
-
-// runsisi AT hust.edu.cn @2013/11/25
-#define SB_MAX      (8*1024*1024)   /* default for max chars in sockbuf */
-// ---------------------- @2013/11/25
 
 /*
  * Constants for sb_flags field of struct sockbuf.
@@ -63,21 +57,9 @@
 #define	SBS_CANTRCVMORE		0x0020	/* can't receive more data from peer */
 #define	SBS_RCVATMARK		0x0040	/* at mark on input */
 
-// runsisi AT hust.edu.cn @2013/11/13
-#define SN_READ         0x01        /* asynchronous readable notification */
-#define SN_WRITE        0x02        /* asynchronous writable notification */
-#define SN_ACCEPT       0x04        /* listen sock can accept */
-#define SN_CONNECTED    0x08        /* active connect succeeded */
-#define SN_DISCONNECTED 0x10        /* tcp connection aborted/finished */
-#define SN_ERROR        0x20        /* something bad happened */
-
-#define SQT_RCV     0x01        /* dps queue type for socket receive */
-#define SQT_SND     0x02        /* dps queue type for socket send */
-// ---------------------- @2013/11/13
-
 struct mbuf;
-struct bsd_sockaddr;
-struct bsd_socket;
+struct sockaddr;
+struct socket;
 struct thread;
 
 struct	xsockbuf {
@@ -117,7 +99,7 @@ struct	sockbuf {
 	int	sb_lowat;	/* (c/d) low water mark */
 	int	sb_timeo;	/* (c/d) timeout for read/write */
 	short	sb_flags;	/* (c/d) flags, see below */
-	int	(*sb_upcall)(struct bsd_socket *, void *, int); /* (c/d) */
+	int	(*sb_upcall)(struct socket *, void *, int); /* (c/d) */
 	void	*sb_upcallarg;	/* (c/d) */
 };
 
@@ -128,21 +110,22 @@ struct	sockbuf {
  * buffer.
  */
 #define	SOCKBUF_MTX(_sb)		(&(_sb)->sb_mtx)
-#define	SOCKBUF_LOCK_INIT(_sb, _name)
-#define	SOCKBUF_LOCK_DESTROY(_sb)
-#define	SOCKBUF_LOCK(_sb)
-#define	SOCKBUF_OWNED(_sb)
-#define	SOCKBUF_UNLOCK(_sb)
-#define	SOCKBUF_LOCK_ASSERT(_sb)
-#define	SOCKBUF_UNLOCK_ASSERT(_sb)
+#define	SOCKBUF_LOCK_INIT(_sb, _name) \
+	mtx_init(SOCKBUF_MTX(_sb), _name, NULL, MTX_DEF)
+#define	SOCKBUF_LOCK_DESTROY(_sb)	mtx_destroy(SOCKBUF_MTX(_sb))
+#define	SOCKBUF_LOCK(_sb)		mtx_lock(SOCKBUF_MTX(_sb))
+#define	SOCKBUF_OWNED(_sb)		mtx_owned(SOCKBUF_MTX(_sb))
+#define	SOCKBUF_UNLOCK(_sb)		mtx_unlock(SOCKBUF_MTX(_sb))
+#define	SOCKBUF_LOCK_ASSERT(_sb)	mtx_assert(SOCKBUF_MTX(_sb), MA_OWNED)
+#define	SOCKBUF_UNLOCK_ASSERT(_sb)	mtx_assert(SOCKBUF_MTX(_sb), MA_NOTOWNED)
 
 void	sbappend(struct sockbuf *sb, struct mbuf *m);
 void	sbappend_locked(struct sockbuf *sb, struct mbuf *m);
 void	sbappendstream(struct sockbuf *sb, struct mbuf *m);
 void	sbappendstream_locked(struct sockbuf *sb, struct mbuf *m);
-int	sbappendaddr(struct sockbuf *sb, const struct bsd_sockaddr *asa,
+int	sbappendaddr(struct sockbuf *sb, const struct sockaddr *asa,
 	    struct mbuf *m0, struct mbuf *control);
-int	sbappendaddr_locked(struct sockbuf *sb, const struct bsd_sockaddr *asa,
+int	sbappendaddr_locked(struct sockbuf *sb, const struct sockaddr *asa,
 	    struct mbuf *m0, struct mbuf *control);
 int	sbappendcontrol(struct sockbuf *sb, struct mbuf *m0,
 	    struct mbuf *control);
@@ -154,19 +137,19 @@ void	sbcheck(struct sockbuf *sb);
 void	sbcompress(struct sockbuf *sb, struct mbuf *m, struct mbuf *n);
 struct mbuf *
 	sbcreatecontrol(caddr_t p, int size, int type, int level);
-void	sbdestroy(struct sockbuf *sb, struct bsd_socket *so);
+void	sbdestroy(struct sockbuf *sb, struct socket *so);
 void	sbdrop(struct sockbuf *sb, int len);
 void	sbdrop_locked(struct sockbuf *sb, int len);
 void	sbdroprecord(struct sockbuf *sb);
 void	sbdroprecord_locked(struct sockbuf *sb);
 void	sbflush(struct sockbuf *sb);
 void	sbflush_locked(struct sockbuf *sb);
-void	sbrelease(struct sockbuf *sb, struct bsd_socket *so);
-void	sbrelease_internal(struct sockbuf *sb, struct bsd_socket *so);
-void	sbrelease_locked(struct sockbuf *sb, struct bsd_socket *so);
-int	sbreserve(struct sockbuf *sb, u_long cc, struct bsd_socket *so,
+void	sbrelease(struct sockbuf *sb, struct socket *so);
+void	sbrelease_internal(struct sockbuf *sb, struct socket *so);
+void	sbrelease_locked(struct sockbuf *sb, struct socket *so);
+int	sbreserve(struct sockbuf *sb, u_long cc, struct socket *so,
 	    struct thread *td);
-int	sbreserve_locked(struct sockbuf *sb, u_long cc, struct bsd_socket *so,
+int	sbreserve_locked(struct sockbuf *sb, u_long cc, struct socket *so,
 	    struct thread *td);
 struct mbuf *
 	sbsndptr(struct sockbuf *sb, u_int off, u_int len, u_int *moff);
@@ -174,10 +157,6 @@ void	sbtoxsockbuf(struct sockbuf *sb, struct xsockbuf *xsb);
 int	sbwait(struct sockbuf *sb);
 int	sblock(struct sockbuf *sb, int flags);
 void	sbunlock(struct sockbuf *sb);
-// runsisi AT hust.edu.cn @2013/11/16
-int     soappendstreamtorcvq(struct bsd_socket *so, struct mbuf *m);
-int     soappendstreamtorcvq_locked(struct bsd_socket *so, struct mbuf *m);
-// ---------------------- @2013/11/16
 
 /*
  * How much space is there in a socket buffer (so->so_snd or so->so_rcv)?

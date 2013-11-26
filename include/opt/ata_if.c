@@ -10,25 +10,25 @@
  * See the source file for legal information
  */
 
-#include <sys/param.h>
-#include <sys/queue.h>
-#include <sys/kernel.h>
-#include <sys/kobj.h>
-#include <sys/bus.h>
-#include <sys/kernel.h>
-#include <sys/param.h>
-#include <sys/types.h>
-#include <sys/callout.h>
-#include <sys/sema.h>
-#include <sys/taskqueue.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_queue.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_kobj.h>
+#include <sys/bsd_bus.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_types.h>
+#include <sys/bsd_callout.h>
+#include <sys/bsd_sema.h>
+#include <sys/bsd_taskqueue.h>
 #include <vm/uma.h>
-#include <machine/bus.h>
-#include <sys/ata.h>
+#include <machine/bsd_bus.h>
+#include <sys/bsd_ata.h>
 #include <dev/ata/ata-all.h>
 #include "ata_if.h"
 
 
-static int ata_null_locking(bsd_device_t dev, int mode)
+static int ata_null_locking(device_t dev, int mode)
 {
     struct ata_channel *ch = device_get_softc(dev);
 
@@ -44,7 +44,7 @@ struct kobjop_desc ata_locking_desc = {
 };
 
 
-static int ata_null_setmode(bsd_device_t dev, int target, int mode)
+static int ata_null_setmode(device_t dev, int target, int mode)
 {
 
 	if (mode > ATA_PIO_MAX)
@@ -61,7 +61,7 @@ struct kobjop_desc ata_setmode_desc = {
 };
 
 
-static int ata_null_getrev(bsd_device_t dev, int target)
+static int ata_null_getrev(device_t dev, int target)
 {
 	return (0);
 }

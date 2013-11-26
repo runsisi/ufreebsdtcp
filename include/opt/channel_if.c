@@ -10,10 +10,10 @@
  * See the source file for legal information
  */
 
-#include <sys/param.h>
-#include <sys/queue.h>
-#include <sys/kernel.h>
-#include <sys/kobj.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_queue.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_kobj.h>
 #include <dev/sound/pcm/sound.h>
 #include "channel_if.h"
 
@@ -37,14 +37,14 @@
 		return 1;
 	}
 
-	static bsd_uint32_t
+	static u_int32_t
 	channel_nogetptr(kobj_t obj, void *data)
 	{
 		return 0;
 	}
 
 	static int
-	channel_nonotify(kobj_t obj, void *data, bsd_uint32_t changed)
+	channel_nonotify(kobj_t obj, void *data, u_int32_t changed)
 	{
 		return 0;
 	}
@@ -63,13 +63,13 @@
 	}
 
 	static int
-	channel_nosetfragments(kobj_t obj, void *data, bsd_uint32_t blocksize, bsd_uint32_t blockcount)
+	channel_nosetfragments(kobj_t obj, void *data, u_int32_t blocksize, u_int32_t blockcount)
 	{
 		return ENOTSUP;
 	}
 
 	static struct pcmchan_matrix *
-	channel_nogetmatrix(kobj_t obj, void *data, bsd_uint32_t format)
+	channel_nogetmatrix(kobj_t obj, void *data, u_int32_t format)
 	{
 		format = feeder_matrix_default_format(format);
 		return (feeder_matrix_format_map(format));

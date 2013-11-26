@@ -52,10 +52,10 @@
 #define _NETINET_CC_H_
 
 /* XXX: TCP_CA_NAME_MAX define lives in tcp.h for compat reasons. */
-#include <netinet/bsd_tcp.h>
+#include <netinet/tcp.h>
 
 /* Global CC vars. */
-extern BSD_STAILQ_HEAD(cc_head, cc_algo) cc_list;
+extern STAILQ_HEAD(cc_head, cc_algo) cc_list;
 extern const int tcprexmtthresh;
 extern struct cc_algo newreno_cc_algo;
 
@@ -79,7 +79,7 @@ struct cc_var {
 	void		*cc_data; /* Per-connection private CC algorithm data. */
 	int		bytes_this_ack; /* # bytes acked by the current ACK. */
 	tcp_seq		curack; /* Most recent ACK. */
-	bsd_uint32_t	flags; /* Flags for cc_var (see below) */
+	uint32_t	flags; /* Flags for cc_var (see below) */
 	int		type; /* Indicates which ptr is valid in ccvc. */
 	union ccv_container {
 		struct tcpcb		*tcp;
@@ -114,7 +114,7 @@ struct cc_var {
  * congestion control algorithm.
  */
 struct cc_algo {
-	char	name[BSD_TCP_CA_NAME_MAX];
+	char	name[TCP_CA_NAME_MAX];
 
 	/* Init global module state on kldload. */
 	int	(*mod_init)(void);
@@ -132,10 +132,10 @@ struct cc_algo {
 	void	(*conn_init)(struct cc_var *ccv);
 
 	/* Called on receipt of an ack. */
-	void	(*ack_received)(struct cc_var *ccv, bsd_uint16_t type);
+	void	(*ack_received)(struct cc_var *ccv, uint16_t type);
 
 	/* Called on detection of a congestion signal. */
-	void	(*cong_signal)(struct cc_var *ccv, bsd_uint32_t type);
+	void	(*cong_signal)(struct cc_var *ccv, uint32_t type);
 
 	/* Called after exiting congestion recovery. */
 	void	(*post_recovery)(struct cc_var *ccv);
@@ -143,7 +143,7 @@ struct cc_algo {
 	/* Called when data transfer resumes after an idle period. */
 	void	(*after_idle)(struct cc_var *ccv);
 
-	BSD_STAILQ_ENTRY (cc_algo) entries;
+	STAILQ_ENTRY (cc_algo) entries;
 };
 
 /* Macro to obtain the CC algo's struct ptr. */
@@ -156,12 +156,12 @@ struct cc_algo {
 #define	CC_DEFAULT()	V_default_cc_ptr
 
 extern struct rwlock cc_list_lock;
-#define	CC_LIST_LOCK_INIT()
-#define	CC_LIST_LOCK_DESTROY()
-#define	CC_LIST_RLOCK()
-#define	CC_LIST_RUNLOCK()
-#define	CC_LIST_WLOCK()
-#define	CC_LIST_WUNLOCK()
-#define	CC_LIST_LOCK_ASSERT()
+#define	CC_LIST_LOCK_INIT()	rw_init(&cc_list_lock, "cc_list")
+#define	CC_LIST_LOCK_DESTROY()	rw_destroy(&cc_list_lock)
+#define	CC_LIST_RLOCK()		rw_rlock(&cc_list_lock)
+#define	CC_LIST_RUNLOCK()	rw_runlock(&cc_list_lock)
+#define	CC_LIST_WLOCK()		rw_wlock(&cc_list_lock)
+#define	CC_LIST_WUNLOCK()	rw_wunlock(&cc_list_lock)
+#define	CC_LIST_LOCK_ASSERT()	rw_assert(&cc_list_lock, RA_LOCKED)
 
 #endif /* _NETINET_CC_H_ */

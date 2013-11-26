@@ -64,8 +64,8 @@
 
 /* IP_FW3 header/opcodes */
 typedef struct _ip_fw3_opheader {
-	bsd_uint16_t opcode;	/* Operation opcode */
-	bsd_uint16_t reserved[3];	/* Align to 64-bit boundary */
+	uint16_t opcode;	/* Operation opcode */
+	uint16_t reserved[3];	/* Align to 64-bit boundary */
 } ip_fw3_opheader;
 
 
@@ -266,14 +266,14 @@ enum ipfw_opcodes {		/* arguments (4 byte each)	*/
  *
  */
 typedef struct	_ipfw_insn {	/* template for instructions */
-	bsd_uint8_t 	opcode;
-	bsd_uint8_t	len;	/* number of 32-bit words */
+	u_int8_t 	opcode;
+	u_int8_t	len;	/* number of 32-bit words */
 #define	F_NOT		0x80
 #define	F_OR		0x40
 #define	F_LEN_MASK	0x3f
 #define	F_LEN(cmd)	((cmd)->len & F_LEN_MASK)
 
-	bsd_uint16_t	arg1;
+	u_int16_t	arg1;
 } ipfw_insn;
 
 /*
@@ -287,7 +287,7 @@ typedef struct	_ipfw_insn {	/* template for instructions */
  */
 typedef struct	_ipfw_insn_u16 {
 	ipfw_insn o;
-	bsd_uint16_t ports[2];	/* there may be more */
+	u_int16_t ports[2];	/* there may be more */
 } ipfw_insn_u16;
 
 /*
@@ -296,7 +296,7 @@ typedef struct	_ipfw_insn_u16 {
  */
 typedef struct	_ipfw_insn_u32 {
 	ipfw_insn o;
-	bsd_uint32_t d[1];	/* one or more */
+	u_int32_t d[1];	/* one or more */
 } ipfw_insn_u32;
 
 /*
@@ -304,8 +304,8 @@ typedef struct	_ipfw_insn_u32 {
  */
 typedef struct	_ipfw_insn_ip {
 	ipfw_insn o;
-	struct bsd_in_addr	addr;
-	struct bsd_in_addr	mask;
+	struct in_addr	addr;
+	struct in_addr	mask;
 } ipfw_insn_ip;
 
 /*
@@ -313,7 +313,7 @@ typedef struct	_ipfw_insn_ip {
  */
 typedef struct  _ipfw_insn_sa {
 	ipfw_insn o;
-	struct bsd_sockaddr_in sa;
+	struct sockaddr_in sa;
 } ipfw_insn_sa;
 
 /*
@@ -321,7 +321,7 @@ typedef struct  _ipfw_insn_sa {
  */
 typedef struct _ipfw_insn_sa6 {
 	ipfw_insn o;
-	struct bsd_sockaddr_in6 sa;
+	struct sockaddr_in6 sa;
 } ipfw_insn_sa6;
 
 /*
@@ -339,7 +339,7 @@ typedef struct	_ipfw_insn_mac {
 typedef struct	_ipfw_insn_if {
 	ipfw_insn o;
 	union {
-		struct bsd_in_addr ip;
+		struct in_addr ip;
 		int glob;
 	} p;
 	char name[IFNAMSIZ];
@@ -350,7 +350,7 @@ typedef struct	_ipfw_insn_if {
  */
 typedef struct _ipfw_insn_altq {
 	ipfw_insn	o;
-	bsd_uint32_t	qid;
+	u_int32_t	qid;
 } ipfw_insn_altq;
 
 /*
@@ -358,14 +358,14 @@ typedef struct _ipfw_insn_altq {
  */
 typedef struct	_ipfw_insn_limit {
 	ipfw_insn o;
-	bsd_uint8_t _pad;
-	bsd_uint8_t limit_mask;	/* combination of DYN_* below	*/
+	u_int8_t _pad;
+	u_int8_t limit_mask;	/* combination of DYN_* below	*/
 #define	DYN_SRC_ADDR	0x1
 #define	DYN_SRC_PORT	0x2
 #define	DYN_DST_ADDR	0x4
 #define	DYN_DST_PORT	0x8
 
-	bsd_uint16_t conn_limit;
+	u_int16_t conn_limit;
 } ipfw_insn_limit;
 
 /*
@@ -373,8 +373,8 @@ typedef struct	_ipfw_insn_limit {
  */
 typedef struct  _ipfw_insn_log {
         ipfw_insn o;
-	bsd_uint32_t max_log;	/* how many do we log -- 0 = all */
-	bsd_uint32_t log_left;	/* how many left to log 	*/
+	u_int32_t max_log;	/* how many do we log -- 0 = all */
+	u_int32_t log_left;	/* how many left to log 	*/
 } ipfw_insn_log;
 
 /*
@@ -385,7 +385,7 @@ typedef struct  _ipfw_insn_log {
 /* Server pool support (LSNAT). */
 struct cfg_spool {
 	LIST_ENTRY(cfg_spool)   _next;          /* chain of spool instances */
-	struct bsd_in_addr          addr;
+	struct in_addr          addr;
 	u_short                 port;
 };
 #endif
@@ -399,10 +399,10 @@ struct cfg_spool {
 /* Nat redirect configuration. */
 struct cfg_redir {
 	LIST_ENTRY(cfg_redir)   _next;          /* chain of redir instances */
-	bsd_uint16_t               mode;           /* type of redirect mode */
-	struct bsd_in_addr	        laddr;          /* local ip address */
-	struct bsd_in_addr	        paddr;          /* public ip address */
-	struct bsd_in_addr	        raddr;          /* remote ip address */
+	u_int16_t               mode;           /* type of redirect mode */
+	struct in_addr	        laddr;          /* local ip address */
+	struct in_addr	        paddr;          /* public ip address */
+	struct in_addr	        raddr;          /* remote ip address */
 	u_short                 lport;          /* local port */
 	u_short                 pport;          /* public port */
 	u_short                 rport;          /* remote port  */
@@ -411,7 +411,7 @@ struct cfg_redir {
 	int                     proto;          /* protocol: tcp/udp */
 	struct alias_link       **alink;	
 	/* num of entry in spool chain */
-	bsd_uint16_t               spool_cnt;      
+	u_int16_t               spool_cnt;      
 	/* chain of spool instances */
 	LIST_HEAD(spool_chain, cfg_spool) spool_chain;
 };
@@ -423,7 +423,7 @@ struct cfg_nat {
 	/* chain of nat instances */
 	LIST_ENTRY(cfg_nat)     _next;
 	int                     id;                     /* nat id */
-	struct bsd_in_addr          ip;                     /* nat ip address */
+	struct in_addr          ip;                     /* nat ip address */
 	char                    if_name[IF_NAMESIZE];   /* interface name */
 	int                     mode;                   /* aliasing mode */
 	struct libalias	        *lib;                   /* libalias instance */
@@ -454,14 +454,14 @@ typedef struct	_ipfw_insn_nat {
 /* Structure for ipv6 */
 typedef struct _ipfw_insn_ip6 {
        ipfw_insn o;
-       struct bsd_in6_addr addr6;
-       struct bsd_in6_addr mask6;
+       struct in6_addr addr6;
+       struct in6_addr mask6;
 } ipfw_insn_ip6;
 
 /* Used to support icmp6 types */
 typedef struct _ipfw_insn_icmp6 {
        ipfw_insn o;
-       bsd_uint32_t d[7]; /* XXX This number si related to the netinet/icmp6.h
+       uint32_t d[7]; /* XXX This number si related to the netinet/icmp6.h
                        *     define ICMP6_MAXTYPE
                        *     as follows: n = ICMP6_MAXTYPE/32 + 1
                         *     Actually is 203 
@@ -500,18 +500,18 @@ struct ip_fw {
 	struct ip_fw	*next_rule;	/* ptr to next [skipto] rule	*/
 	/* 'next_rule' is used to pass up 'set_disable' status		*/
 
-	bsd_uint16_t	act_ofs;	/* offset of action in 32-bit units */
-	bsd_uint16_t	cmd_len;	/* # of 32-bit words in cmd	*/
-	bsd_uint16_t	rulenum;	/* rule number			*/
-	bsd_uint8_t	set;		/* rule set (0..31)		*/
+	uint16_t	act_ofs;	/* offset of action in 32-bit units */
+	uint16_t	cmd_len;	/* # of 32-bit words in cmd	*/
+	uint16_t	rulenum;	/* rule number			*/
+	uint8_t	set;		/* rule set (0..31)		*/
 #define	RESVD_SET	31	/* set for default and persistent rules */
-	bsd_uint8_t		_pad;		/* padding			*/
-	bsd_uint32_t	id;		/* rule id */
+	uint8_t		_pad;		/* padding			*/
+	uint32_t	id;		/* rule id */
 
 	/* These fields are present in all rules.			*/
-	bsd_uint64_t	pcnt;		/* Packet counter		*/
-	bsd_uint64_t	bcnt;		/* Byte counter			*/
-	bsd_uint32_t	timestamp;	/* tv_sec of last match		*/
+	uint64_t	pcnt;		/* Packet counter		*/
+	uint64_t	bcnt;		/* Byte counter			*/
+	uint32_t	timestamp;	/* tv_sec of last match		*/
 
 	ipfw_insn	cmd[1];		/* storage for commands		*/
 };
@@ -531,18 +531,18 @@ struct ip_fw {
  * _flags is used in the kernel to store tcp flags for dynamic rules.
  */
 struct ipfw_flow_id {
-	bsd_uint32_t	dst_ip;
-	bsd_uint32_t	src_ip;
-	bsd_uint16_t	dst_port;
-	bsd_uint16_t	src_port;
-	bsd_uint8_t		fib;
-	bsd_uint8_t		proto;
-	bsd_uint8_t		_flags;	/* protocol-specific flags */
-	bsd_uint8_t		addr_type; /* 4=ip4, 6=ip6, 1=ether ? */
-	struct bsd_in6_addr dst_ip6;
-	struct bsd_in6_addr src_ip6;
-	bsd_uint32_t	flow_id6;
-	bsd_uint32_t	extra; /* queue/pipe or frag_id */
+	uint32_t	dst_ip;
+	uint32_t	src_ip;
+	uint16_t	dst_port;
+	uint16_t	src_port;
+	uint8_t		fib;
+	uint8_t		proto;
+	uint8_t		_flags;	/* protocol-specific flags */
+	uint8_t		addr_type; /* 4=ip4, 6=ip6, 1=ether ? */
+	struct in6_addr dst_ip6;
+	struct in6_addr src_ip6;
+	uint32_t	flow_id6;
+	uint32_t	extra; /* queue/pipe or frag_id */
 };
 #endif
 
@@ -559,19 +559,19 @@ struct _ipfw_dyn_rule {
 	/* 'rule' is used to pass up the rule number (from the parent)	*/
 
 	ipfw_dyn_rule *parent;		/* pointer to parent rule	*/
-	bsd_uint64_t	pcnt;		/* packet match counter		*/
-	bsd_uint64_t	bcnt;		/* byte match counter		*/
+	u_int64_t	pcnt;		/* packet match counter		*/
+	u_int64_t	bcnt;		/* byte match counter		*/
 	struct ipfw_flow_id id;		/* (masked) flow id		*/
-	bsd_uint32_t	expire;		/* expire time			*/
-	bsd_uint32_t	bucket;		/* which bucket in hash table	*/
-	bsd_uint32_t	state;		/* state of this rule (typically a
+	u_int32_t	expire;		/* expire time			*/
+	u_int32_t	bucket;		/* which bucket in hash table	*/
+	u_int32_t	state;		/* state of this rule (typically a
 					 * combination of TCP flags)
 					 */
-	bsd_uint32_t	ack_fwd;	/* most recent ACKs in forward	*/
-	bsd_uint32_t	ack_rev;	/* and reverse directions (used	*/
+	u_int32_t	ack_fwd;	/* most recent ACKs in forward	*/
+	u_int32_t	ack_rev;	/* and reverse directions (used	*/
 					/* to generate keepalives)	*/
-	bsd_uint16_t	dyn_type;	/* rule type			*/
-	bsd_uint16_t	count;		/* refcount			*/
+	u_int16_t	dyn_type;	/* rule type			*/
+	u_int16_t	count;		/* refcount			*/
 };
 
 /*
@@ -603,38 +603,38 @@ struct _ipfw_dyn_rule {
 #define	IPFW_TABLE_MAXTYPE	2	/* Maximum valid number */
 
 typedef struct	_ipfw_table_entry {
-	bsd_in_addr_t	addr;		/* network address		*/
-	bsd_uint32_t	value;		/* value			*/
-	bsd_uint16_t	tbl;		/* table number			*/
-	bsd_uint8_t	masklen;	/* mask length			*/
+	in_addr_t	addr;		/* network address		*/
+	u_int32_t	value;		/* value			*/
+	u_int16_t	tbl;		/* table number			*/
+	u_int8_t	masklen;	/* mask length			*/
 } ipfw_table_entry;
 
 typedef struct	_ipfw_table_xentry {
-	bsd_uint16_t	len;		/* Total entry length		*/
-	bsd_uint8_t		type;		/* entry type			*/
-	bsd_uint8_t		masklen;	/* mask length			*/
-	bsd_uint16_t	tbl;		/* table number			*/
-	bsd_uint32_t	value;		/* value			*/
+	uint16_t	len;		/* Total entry length		*/
+	uint8_t		type;		/* entry type			*/
+	uint8_t		masklen;	/* mask length			*/
+	uint16_t	tbl;		/* table number			*/
+	uint32_t	value;		/* value			*/
 	union {
 		/* Longest field needs to be aligned by 4-byte boundary	*/
-		struct bsd_in6_addr	addr6;	/* IPv6 address 		*/
+		struct in6_addr	addr6;	/* IPv6 address 		*/
 		char	iface[IF_NAMESIZE];	/* interface name	*/
 	} k;
 } ipfw_table_xentry;
 
 typedef struct	_ipfw_table {
-	bsd_uint32_t	size;		/* size of entries in bytes	*/
-	bsd_uint32_t	cnt;		/* # of entries			*/
-	bsd_uint16_t	tbl;		/* table number			*/
+	u_int32_t	size;		/* size of entries in bytes	*/
+	u_int32_t	cnt;		/* # of entries			*/
+	u_int16_t	tbl;		/* table number			*/
 	ipfw_table_entry ent[0];	/* entries			*/
 } ipfw_table;
 
 typedef struct	_ipfw_xtable {
 	ip_fw3_opheader	opheader;	/* eXtended tables are controlled via IP_FW3 */
-	bsd_uint32_t	size;		/* size of entries in bytes	*/
-	bsd_uint32_t	cnt;		/* # of entries			*/
-	bsd_uint16_t	tbl;		/* table number			*/
-	bsd_uint8_t		type;		/* table type			*/
+	uint32_t	size;		/* size of entries in bytes	*/
+	uint32_t	cnt;		/* # of entries			*/
+	uint16_t	tbl;		/* table number			*/
+	uint8_t		type;		/* table type			*/
 	ipfw_table_xentry xent[0];	/* entries			*/
 } ipfw_xtable;
 

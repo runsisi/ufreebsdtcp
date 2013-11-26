@@ -39,7 +39,7 @@
 
 
 struct thread;
-struct bsd_socket;
+struct socket;
 
 /*
  * Argument structure for sosetopt et seq.  This is in the KERNEL
@@ -47,26 +47,26 @@ struct bsd_socket;
  */
 enum sopt_dir { SOPT_GET, SOPT_SET };
 
-struct	bsd_sockopt {
+struct	sockopt {
 	enum	sopt_dir sopt_dir; /* is this a get or a set? */
 	int	sopt_level;	/* second arg of [gs]etsockopt */
 	int	sopt_name;	/* third arg of [gs]etsockopt */
 	void   *sopt_val;	/* fourth arg of [gs]etsockopt */
-	bsd_size_t	sopt_valsize;	/* (almost) fifth arg of [gs]etsockopt */
+	size_t	sopt_valsize;	/* (almost) fifth arg of [gs]etsockopt */
 	struct	thread *sopt_td; /* calling thread or null if kernel */
 };
 
-int	bsd_sosetopt(struct bsd_socket *so, struct bsd_sockopt *sopt);
-int	bsd_sogetopt(struct bsd_socket *so, struct bsd_sockopt *sopt);
-int	sooptcopyin(struct bsd_sockopt *sopt, void *buf, bsd_size_t len, bsd_size_t minlen);
-int	sooptcopyout(struct bsd_sockopt *sopt, const void *buf, bsd_size_t len);
+int	sosetopt(struct socket *so, struct sockopt *sopt);
+int	sogetopt(struct socket *so, struct sockopt *sopt);
+int	sooptcopyin(struct sockopt *sopt, void *buf, size_t len, size_t minlen);
+int	sooptcopyout(struct sockopt *sopt, const void *buf, size_t len);
 /* XXX; prepare mbuf for (__FreeBSD__ < 3) routines. */
-int	soopt_getm(struct bsd_sockopt *sopt, struct mbuf **mp);
-int	soopt_mcopyin(struct bsd_sockopt *sopt, struct mbuf *m);
-int	soopt_mcopyout(struct bsd_sockopt *sopt, struct mbuf *m);
-int	do_getopt_accept_filter(struct bsd_socket *so, struct bsd_sockopt *sopt);
-int	do_setopt_accept_filter(struct bsd_socket *so, struct bsd_sockopt *sopt);
-int	so_setsockopt(struct bsd_socket *so, int level, int optname,
-	    void *optval, bsd_size_t optlen);
+int	soopt_getm(struct sockopt *sopt, struct mbuf **mp);
+int	soopt_mcopyin(struct sockopt *sopt, struct mbuf *m);
+int	soopt_mcopyout(struct sockopt *sopt, struct mbuf *m);
+int	do_getopt_accept_filter(struct socket *so, struct sockopt *sopt);
+int	do_setopt_accept_filter(struct socket *so, struct sockopt *sopt);
+int	so_setsockopt(struct socket *so, int level, int optname,
+	    void *optval, size_t optlen);
 
 #endif /* _SYS_SOCKOPT_H_ */

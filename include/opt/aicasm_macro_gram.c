@@ -92,7 +92,7 @@ static int yygrowstack();
  * $FreeBSD: release/9.2.0/sys/dev/aic7xxx/aicasm/aicasm_macro_gram.y 224046 2011-07-15 00:36:47Z emaste $
  */
 
-#include <sys/types.h>
+#include <sys/bsd_types.h>
 
 #include <inttypes.h>
 #include <regex.h>
@@ -100,7 +100,7 @@ static int yygrowstack();
 #include <stdlib.h>
 #include <string.h>
 #include <sysexits.h>
-#include <sys/queue.h>
+#include <sys/bsd_queue.h>
 
 #include "aicasm.h"
 #include "aicasm_symbol.h"
@@ -260,14 +260,14 @@ static int yygrowstack()
     else if ((newsize *= 2) > YYMAXDEPTH)
         newsize = YYMAXDEPTH;
     i = yyssp - yyss;
-    newss = yyss ? (short *)bsd_realloc(yyss, newsize * sizeof *newss) :
-      (short *)bsd_malloc(newsize * sizeof *newss);
+    newss = yyss ? (short *)realloc(yyss, newsize * sizeof *newss) :
+      (short *)malloc(newsize * sizeof *newss);
     if (newss == NULL)
         return -1;
     yyss = newss;
     yyssp = newss + i;
-    newvs = yyvs ? (YYSTYPE *)bsd_realloc(yyvs, newsize * sizeof *newvs) :
-      (YYSTYPE *)bsd_malloc(newsize * sizeof *newvs);
+    newvs = yyvs ? (YYSTYPE *)realloc(yyvs, newsize * sizeof *newvs) :
+      (YYSTYPE *)malloc(newsize * sizeof *newvs);
     if (newvs == NULL)
         return -1;
     yyvs = newvs;

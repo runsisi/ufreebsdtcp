@@ -64,19 +64,19 @@ struct cdev {
 #define SI_DUMPDEV	0x0080	/* is kernel dumpdev */
 #define SI_CANDELETE	0x0100	/* can do BIO_DELETE */
 #define SI_CLONELIST	0x0200	/* on a clone list */
-	struct bsd_timespec	si_atime;
-	struct bsd_timespec	si_ctime;
-	struct bsd_timespec	si_mtime;
-	bsd_uid_t		si_uid;
-	bsd_gid_t		si_gid;
-	bsd_mode_t		si_mode;
-	struct bsd_ucred	*si_cred;	/* cached clone-time credential */
+	struct timespec	si_atime;
+	struct timespec	si_ctime;
+	struct timespec	si_mtime;
+	uid_t		si_uid;
+	gid_t		si_gid;
+	mode_t		si_mode;
+	struct ucred	*si_cred;	/* cached clone-time credential */
 	int		si_drv0;
 	int		si_refcount;
-	BSD_LIST_ENTRY(cdev)	si_list;
-	BSD_LIST_ENTRY(cdev)	si_clone;
-	BSD_LIST_HEAD(, cdev)	si_children;
-	BSD_LIST_ENTRY(cdev)	si_siblings;
+	LIST_ENTRY(cdev)	si_list;
+	LIST_ENTRY(cdev)	si_clone;
+	LIST_HEAD(, cdev)	si_children;
+	LIST_ENTRY(cdev)	si_siblings;
 	struct cdev *si_parent;
 	char		*si_name;
 	void		*si_drv1, *si_drv2;
@@ -87,7 +87,7 @@ struct cdev {
 	union {
 		struct snapdata *__sid_snapdata;
 	} __si_u;
-	char		__si_namebuf[BSD_SPECNAMELEN + 1];
+	char		__si_namebuf[SPECNAMELEN + 1];
 };
 
 #define si_snapdata	__si_u.__sid_snapdata
@@ -136,18 +136,18 @@ typedef int d_read_t(struct cdev *dev, struct uio *uio, int ioflag);
 typedef int d_write_t(struct cdev *dev, struct uio *uio, int ioflag);
 typedef int d_poll_t(struct cdev *dev, int events, struct thread *td);
 typedef int d_kqfilter_t(struct cdev *dev, struct knote *kn);
-typedef int d_mmap_t(struct cdev *dev, bsd_vm_ooffset_t offset, bsd_vm_paddr_t *paddr,
-		     int nprot, bsd_vm_memattr_t *memattr);
-typedef int d_mmap_single_t(struct cdev *cdev, bsd_vm_ooffset_t *offset,
-        bsd_vm_size_t size, struct vm_object **object, int nprot);
+typedef int d_mmap_t(struct cdev *dev, vm_ooffset_t offset, vm_paddr_t *paddr,
+		     int nprot, vm_memattr_t *memattr);
+typedef int d_mmap_single_t(struct cdev *cdev, vm_ooffset_t *offset,
+    vm_size_t size, struct vm_object **object, int nprot);
 typedef void d_purge_t(struct cdev *dev);
 
 typedef int dumper_t(
 	void *_priv,		/* Private to the driver. */
 	void *_virtual,		/* Virtual (mapped) address. */
-	bsd_vm_offset_t _physical,	/* Physical address of virtual. */
-	bsd_off_t _offset,		/* Byte-offset to write at. */
-	bsd_size_t _length);	/* Number of bytes to dump. */
+	vm_offset_t _physical,	/* Physical address of virtual. */
+	off_t _offset,		/* Byte-offset to write at. */
+	size_t _length);	/* Number of bytes to dump. */
 
 #endif /* _KERNEL */
 
@@ -208,15 +208,15 @@ struct cdevsw {
 	d_purge_t		*d_purge;
 	d_mmap_single_t		*d_mmap_single;
 
-	bsd_int32_t			d_spare0[3];
+	int32_t			d_spare0[3];
 	void			*d_spare1[3];
 
 	/* These fields should not be messed with by drivers */
-	BSD_LIST_HEAD(, cdev)	d_devs;
+	LIST_HEAD(, cdev)	d_devs;
 	int			d_spare2;
 	union {
 		struct cdevsw		*gianttrick;
-		BSD_SLIST_ENTRY(cdevsw)	postfree_list;
+		SLIST_ENTRY(cdevsw)	postfree_list;
 	} __d_giant;
 };
 #define	d_gianttrick		__d_giant.gianttrick
@@ -260,10 +260,10 @@ void	dev_refl(struct cdev *dev);
 void	dev_rel(struct cdev *dev);
 void	dev_strategy(struct cdev *dev, struct buf *bp);
 void	dev_strategy_csw(struct cdev *dev, struct cdevsw *csw, struct buf *bp);
-struct cdev *make_dev(struct cdevsw *_devsw, int _unit, bsd_uid_t _uid, bsd_gid_t _gid,
+struct cdev *make_dev(struct cdevsw *_devsw, int _unit, uid_t _uid, gid_t _gid,
 		int _perms, const char *_fmt, ...) __printflike(6, 7);
 struct cdev *make_dev_cred(struct cdevsw *_devsw, int _unit,
-		struct bsd_ucred *_cr, bsd_uid_t _uid, bsd_gid_t _gid, int _perms,
+		struct ucred *_cr, uid_t _uid, gid_t _gid, int _perms,
 		const char *_fmt, ...) __printflike(7, 8);
 #define	MAKEDEV_REF		0x01
 #define	MAKEDEV_WHTOUT		0x02
@@ -273,10 +273,10 @@ struct cdev *make_dev_cred(struct cdevsw *_devsw, int _unit,
 #define	MAKEDEV_CHECKNAME	0x20
 struct cdev *make_dev_credf(int _flags,
 		struct cdevsw *_devsw, int _unit,
-		struct bsd_ucred *_cr, bsd_uid_t _uid, bsd_gid_t _gid, int _mode,
+		struct ucred *_cr, uid_t _uid, gid_t _gid, int _mode,
 		const char *_fmt, ...) __printflike(8, 9);
 int	make_dev_p(int _flags, struct cdev **_cdev, struct cdevsw *_devsw,
-		struct bsd_ucred *_cr, bsd_uid_t _uid, bsd_gid_t _gid, int _mode,
+		struct ucred *_cr, uid_t _uid, gid_t _gid, int _mode,
 		const char *_fmt, ...) __printflike(8, 9);
 struct cdev *make_dev_alias(struct cdev *_pdev, const char *_fmt, ...)
 		__printflike(2, 3);
@@ -303,8 +303,8 @@ int	devfs_set_cdevpriv(void *priv, cdevpriv_dtr_t dtr);
 void	devfs_clear_cdevpriv(void);
 void	devfs_fpdrop(struct file *fp);	/* XXX This is not public KPI */
 
-bsd_ino_t	devfs_alloc_cdp_inode(void);
-void	devfs_free_cdp_inode(bsd_ino_t ino);
+ino_t	devfs_alloc_cdp_inode(void);
+void	devfs_free_cdp_inode(ino_t ino);
 
 #define		UID_ROOT	0
 #define		UID_BIN		3
@@ -320,7 +320,7 @@ void	devfs_free_cdp_inode(bsd_ino_t ino);
 #define		GID_DIALER	68
 #define		GID_NOBODY	65534
 
-typedef void (*dev_clone_fn)(void *arg, struct bsd_ucred *cred, char *name,
+typedef void (*dev_clone_fn)(void *arg, struct ucred *cred, char *name,
 	    int namelen, struct cdev **result);
 
 int dev_stdclone(char *_name, char **_namep, const char *_stem, int *_unit);
@@ -333,14 +333,14 @@ struct dumperinfo {
 	void    *priv;		/* Private parts. */
 	u_int   blocksize;	/* Size of block in bytes. */
 	u_int	maxiosize;	/* Max size allowed for an individual I/O */
-	bsd_off_t   mediaoffset;	/* Initial offset in bytes. */
-	bsd_off_t   mediasize;	/* Space available in bytes. */
+	off_t   mediaoffset;	/* Initial offset in bytes. */
+	off_t   mediasize;	/* Space available in bytes. */
 };
 
 int set_dumper(struct dumperinfo *);
-int dump_write(struct dumperinfo *, void *, bsd_vm_offset_t, bsd_off_t, bsd_size_t);
+int dump_write(struct dumperinfo *, void *, vm_offset_t, off_t, size_t);
 void dumpsys(struct dumperinfo *);
-int doadump(bsd_boolean_t);
+int doadump(boolean_t);
 extern int dumping;		/* system is dumping */
 
 #endif /* _KERNEL */

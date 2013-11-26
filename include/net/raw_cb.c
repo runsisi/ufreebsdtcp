@@ -31,17 +31,17 @@
  * $FreeBSD: release/9.2.0/sys/net/raw_cb.c 248085 2013-03-09 02:36:32Z marius $
  */
 
-#include <sys/param.h>
-#include <sys/domain.h>
-#include <sys/lock.h>
-#include <sys/kernel.h>
-#include <sys/malloc.h>
-#include <sys/mutex.h>
-#include <sys/protosw.h>
-#include <sys/socket.h>
-#include <sys/socketvar.h>
-#include <sys/sysctl.h>
-#include <sys/systm.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_domain.h>
+#include <sys/bsd_lock.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_malloc.h>
+#include <sys/bsd_mutex.h>
+#include <sys/bsd_protosw.h>
+#include <sys/bsd_socket.h>
+#include <sys/bsd_socketvar.h>
+#include <sys/bsd_sysctl.h>
+#include <sys/bsd_systm.h>
 
 #include <net/if.h>
 #include <net/raw_cb.h>
@@ -75,7 +75,7 @@ SYSCTL_ULONG(_net_raw, OID_AUTO, recvspace, CTLFLAG_RW, &raw_recvspace, 0,
  * socket.
  */
 int
-raw_attach(struct bsd_socket *so, int proto)
+raw_attach(struct socket *so, int proto)
 {
 	struct rawcb *rp = sotorawcb(so);
 	int error;
@@ -106,7 +106,7 @@ raw_attach(struct bsd_socket *so, int proto)
 void
 raw_detach(struct rawcb *rp)
 {
-	struct bsd_socket *so = rp->rcb_socket;
+	struct socket *so = rp->rcb_socket;
 
 	KASSERT(so->so_pcb == rp, ("raw_detach: so_pcb != rp"));
 
@@ -114,5 +114,5 @@ raw_detach(struct rawcb *rp)
 	mtx_lock(&rawcb_mtx);
 	LIST_REMOVE(rp, list);
 	mtx_unlock(&rawcb_mtx);
-	bsd_free((caddr_t)(rp), M_PCB);
+	free((caddr_t)(rp), M_PCB);
 }

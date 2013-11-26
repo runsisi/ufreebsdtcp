@@ -33,26 +33,26 @@ POSSIBILITY OF SUCH DAMAGE.
 #include "opt_inet.h"
 #include "opt_inet6.h"
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/net/flowtable.c 248085 2013-03-09 02:36:32Z marius $");
 
-#include <sys/param.h>  
-#include <sys/types.h>
-#include <sys/bitstring.h>
-#include <sys/condvar.h>
-#include <sys/callout.h>
-#include <sys/kernel.h>  
-#include <sys/kthread.h>
-#include <sys/limits.h>
-#include <sys/malloc.h>
-#include <sys/mbuf.h>
-#include <sys/proc.h>
-#include <sys/sbuf.h>
-#include <sys/sched.h>
-#include <sys/smp.h>
-#include <sys/socket.h>
-#include <sys/syslog.h>
-#include <sys/sysctl.h>
+#include <sys/bsd_param.h>  
+#include <sys/bsd_types.h>
+#include <sys/bsd_bitstring.h>
+#include <sys/bsd_condvar.h>
+#include <sys/bsd_callout.h>
+#include <sys/bsd_kernel.h>  
+#include <sys/bsd_kthread.h>
+#include <sys/bsd_limits.h>
+#include <sys/bsd_malloc.h>
+#include <sys/bsd_mbuf.h>
+#include <sys/bsd_proc.h>
+#include <sys/bsd_sbuf.h>
+#include <sys/bsd_sched.h>
+#include <sys/bsd_smp.h>
+#include <sys/bsd_socket.h>
+#include <sys/bsd_syslog.h>
+#include <sys/bsd_sysctl.h>
 
 #include <net/if.h>
 #include <net/if_llatbl.h>
@@ -74,39 +74,39 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/net/flowtable.c 248085 2013-03-09 02:36:32
 #include <netinet/sctp.h>
 
 #include <libkern/jenkins.h>
-#include <ddb/ddb.h>
+//#include <ddb/ddb.h>
 
 struct ipv4_tuple {
-	bsd_uint16_t 	ip_sport;	/* source port */
-	bsd_uint16_t 	ip_dport;	/* destination port */
-	bsd_in_addr_t 	ip_saddr;	/* source address */
-	bsd_in_addr_t 	ip_daddr;	/* destination address */
+	uint16_t 	ip_sport;	/* source port */
+	uint16_t 	ip_dport;	/* destination port */
+	in_addr_t 	ip_saddr;	/* source address */
+	in_addr_t 	ip_daddr;	/* destination address */
 };
 
 union ipv4_flow {
 	struct ipv4_tuple ipf_ipt;
-	bsd_uint32_t 	ipf_key[3];
+	uint32_t 	ipf_key[3];
 };
 
 struct ipv6_tuple {
-	bsd_uint16_t 	ip_sport;	/* source port */
-	bsd_uint16_t 	ip_dport;	/* destination port */
-	struct bsd_in6_addr	ip_saddr;	/* source address */
-	struct bsd_in6_addr	ip_daddr;	/* destination address */
+	uint16_t 	ip_sport;	/* source port */
+	uint16_t 	ip_dport;	/* destination port */
+	struct in6_addr	ip_saddr;	/* source address */
+	struct in6_addr	ip_daddr;	/* destination address */
 };
 
 union ipv6_flow {
 	struct ipv6_tuple ipf_ipt;
-	bsd_uint32_t 	ipf_key[9];
+	uint32_t 	ipf_key[9];
 };
 
 struct flentry {
-	volatile bsd_uint32_t	f_fhash;	/* hash flowing forward */
-	bsd_uint16_t		f_flags;	/* flow flags */
-	bsd_uint8_t			f_pad;		
-	bsd_uint8_t			f_proto;	/* protocol */
-	bsd_uint32_t		f_fibnum;	/* fib index */
-	bsd_uint32_t		f_uptime;	/* uptime at last access */
+	volatile uint32_t	f_fhash;	/* hash flowing forward */
+	uint16_t		f_flags;	/* flow flags */
+	uint8_t			f_pad;		
+	uint8_t			f_proto;	/* protocol */
+	uint32_t		f_fibnum;	/* fib index */
+	uint32_t		f_uptime;	/* uptime at last access */
 	struct flentry		*f_next;	/* pointer to collision entry */
 	volatile struct rtentry *f_rt;		/* rtentry for flow */
 	volatile struct llentry *f_lle;		/* llentry for flow */
@@ -138,8 +138,8 @@ struct flentry_v6 {
 #define	TCP_IDLE		SECS_PER_DAY
 
 
-typedef	void fl_lock_t(struct flowtable *, bsd_uint32_t);
-typedef void fl_rtalloc_t(struct route *, bsd_uint32_t, u_int);
+typedef	void fl_lock_t(struct flowtable *, uint32_t);
+typedef void fl_rtalloc_t(struct route *, uint32_t, u_int);
 
 union flentryp {
 	struct flentry		**global;
@@ -147,21 +147,21 @@ union flentryp {
 };
 
 struct flowtable_stats {
-	bsd_uint64_t	ft_collisions;
-	bsd_uint64_t	ft_allocated;
-	bsd_uint64_t	ft_misses;
-	bsd_uint64_t	ft_max_depth;
-	bsd_uint64_t	ft_free_checks;
-	bsd_uint64_t	ft_frees;
-	bsd_uint64_t	ft_hits;
-	bsd_uint64_t	ft_lookups;
+	uint64_t	ft_collisions;
+	uint64_t	ft_allocated;
+	uint64_t	ft_misses;
+	uint64_t	ft_max_depth;
+	uint64_t	ft_free_checks;
+	uint64_t	ft_frees;
+	uint64_t	ft_hits;
+	uint64_t	ft_lookups;
 } __aligned(CACHE_LINE_SIZE);
 
 struct flowtable {
 	struct	flowtable_stats ft_stats[MAXCPU];
 	int 		ft_size;
 	int 		ft_lock_count;
-	bsd_uint32_t	ft_flags;
+	uint32_t	ft_flags;
 	char		*ft_name;
 	fl_lock_t	*ft_lock;
 	fl_lock_t 	*ft_unlock;
@@ -175,17 +175,17 @@ struct flowtable {
 	bitstr_t	*ft_tmpmask;
 	struct flowtable *ft_next;
 
-	bsd_uint32_t	ft_count __aligned(CACHE_LINE_SIZE);
-	bsd_uint32_t	ft_udp_idle __aligned(CACHE_LINE_SIZE);
-	bsd_uint32_t	ft_fin_wait_idle;
-	bsd_uint32_t	ft_syn_idle;
-	bsd_uint32_t	ft_tcp_idle;
-	bsd_boolean_t	ft_full;
+	uint32_t	ft_count __aligned(CACHE_LINE_SIZE);
+	uint32_t	ft_udp_idle __aligned(CACHE_LINE_SIZE);
+	uint32_t	ft_fin_wait_idle;
+	uint32_t	ft_syn_idle;
+	uint32_t	ft_tcp_idle;
+	boolean_t	ft_full;
 } __aligned(CACHE_LINE_SIZE);
 
 static struct proc *flowcleanerproc;
 static VNET_DEFINE(struct flowtable *, flow_list_head);
-static VNET_DEFINE(bsd_uint32_t, flow_hashjitter);
+static VNET_DEFINE(uint32_t, flow_hashjitter);
 static VNET_DEFINE(uma_zone_t, flow_ipv4_zone);
 static VNET_DEFINE(uma_zone_t, flow_ipv6_zone);
 
@@ -198,8 +198,8 @@ static VNET_DEFINE(uma_zone_t, flow_ipv6_zone);
 static struct cv 	flowclean_f_cv;
 static struct cv 	flowclean_c_cv;
 static struct mtx	flowclean_lock;
-static bsd_uint32_t		flowclean_cycles;
-static bsd_uint32_t		flowclean_freq;
+static uint32_t		flowclean_cycles;
+static uint32_t		flowclean_freq;
 
 #ifdef FLOWTABLE_DEBUG
 #define FLDPRINTF(ft, flags, fmt, ...) 		\
@@ -374,7 +374,7 @@ SYSCTL_VNET_PROC(_net_inet_flowtable, OID_AUTO, stats, CTLTYPE_STRING|CTLFLAG_RD
 
 #ifndef RADIX_MPATH
 static void
-rtalloc_ign_wrapper(struct route *ro, bsd_uint32_t hash, u_int fibnum)
+rtalloc_ign_wrapper(struct route *ro, uint32_t hash, u_int fibnum)
 {
 
 	rtalloc_ign_fib(ro, 0, fibnum);
@@ -382,7 +382,7 @@ rtalloc_ign_wrapper(struct route *ro, bsd_uint32_t hash, u_int fibnum)
 #endif
 
 static void
-flowtable_global_lock(struct flowtable *table, bsd_uint32_t hash)
+flowtable_global_lock(struct flowtable *table, uint32_t hash)
 {	
 	int lock_index = (hash)&(table->ft_lock_count - 1);
 
@@ -390,7 +390,7 @@ flowtable_global_lock(struct flowtable *table, bsd_uint32_t hash)
 }
 
 static void
-flowtable_global_unlock(struct flowtable *table, bsd_uint32_t hash)
+flowtable_global_unlock(struct flowtable *table, uint32_t hash)
 {	
 	int lock_index = (hash)&(table->ft_lock_count - 1);
 
@@ -398,14 +398,14 @@ flowtable_global_unlock(struct flowtable *table, bsd_uint32_t hash)
 }
 
 static void
-flowtable_pcpu_lock(struct flowtable *table, bsd_uint32_t hash)
+flowtable_pcpu_lock(struct flowtable *table, uint32_t hash)
 {
 
 	critical_enter();
 }
 
 static void
-flowtable_pcpu_unlock(struct flowtable *table, bsd_uint32_t hash)
+flowtable_pcpu_unlock(struct flowtable *table, uint32_t hash)
 {
 
 	critical_exit();
@@ -427,7 +427,7 @@ flow_invalidate(struct flentry *fle)
 }
 
 static __inline int
-proto_to_flags(bsd_uint8_t proto)
+proto_to_flags(uint8_t proto)
 {
 	int flag;
 
@@ -475,8 +475,8 @@ flags_to_proto(int flags)
 #ifdef INET
 #ifdef FLOWTABLE_DEBUG
 static void
-ipv4_flow_print_tuple(int flags, int proto, struct bsd_sockaddr_in *ssin,
-    struct bsd_sockaddr_in *dsin)
+ipv4_flow_print_tuple(int flags, int proto, struct sockaddr_in *ssin,
+    struct sockaddr_in *dsin)
 {
 	char saddr[4*sizeof "123"], daddr[4*sizeof "123"];
 
@@ -496,15 +496,15 @@ ipv4_flow_print_tuple(int flags, int proto, struct bsd_sockaddr_in *ssin,
 
 static int
 ipv4_mbuf_demarshal(struct flowtable *ft, struct mbuf *m,
-    struct bsd_sockaddr_in *ssin, struct bsd_sockaddr_in *dsin, bsd_uint16_t *flags)
+    struct sockaddr_in *ssin, struct sockaddr_in *dsin, uint16_t *flags)
 {
 	struct ip *ip;
-	bsd_uint8_t proto;
+	uint8_t proto;
 	int iphlen;
 	struct tcphdr *th;
 	struct udphdr *uh;
 	struct sctphdr *sh;
-	bsd_uint16_t sport, dport;
+	uint16_t sport, dport;
 
 	proto = sport = dport = 0;
 	ip = mtod(m, struct ip *);
@@ -558,13 +558,13 @@ skipports:
 	return (0);
 }
 
-static bsd_uint32_t
+static uint32_t
 ipv4_flow_lookup_hash_internal(
-	struct bsd_sockaddr_in *ssin, struct bsd_sockaddr_in *dsin, 
-	    bsd_uint32_t *key, bsd_uint16_t flags)
+	struct sockaddr_in *ssin, struct sockaddr_in *dsin, 
+	    uint32_t *key, uint16_t flags)
 {
-	bsd_uint16_t sport, dport;
-	bsd_uint8_t proto;
+	uint16_t sport, dport;
+	uint8_t proto;
 	int offset = 0;
 
 	if ((V_flowtable_enable == 0) || (V_flowtable_ready == 0))
@@ -580,8 +580,8 @@ ipv4_flow_lookup_hash_internal(
 		dport = dsin->sin_port;
 	}
 	if (flags & FL_HASH_ALL) {
-		((bsd_uint16_t *)key)[0] = sport;
-		((bsd_uint16_t *)key)[1] = dport; 
+		((uint16_t *)key)[0] = sport;
+		((uint16_t *)key)[1] = dport; 
 	} else
 		offset = V_flow_hashjitter + proto;
 
@@ -591,12 +591,12 @@ ipv4_flow_lookup_hash_internal(
 static struct flentry *
 flowtable_lookup_mbuf4(struct flowtable *ft, struct mbuf *m)
 {
-	struct bsd_sockaddr_storage ssa, dsa;
-	bsd_uint16_t flags;
-	struct bsd_sockaddr_in *dsin, *ssin;
+	struct sockaddr_storage ssa, dsa;
+	uint16_t flags;
+	struct sockaddr_in *dsin, *ssin;
 
-	dsin = (struct bsd_sockaddr_in *)&dsa;
-	ssin = (struct bsd_sockaddr_in *)&ssa;
+	dsin = (struct sockaddr_in *)&dsa;
+	ssin = (struct sockaddr_in *)&ssa;
 	bzero(dsin, sizeof(*dsin));
 	bzero(ssin, sizeof(*ssin));
 	flags = ft->ft_flags;
@@ -609,10 +609,10 @@ flowtable_lookup_mbuf4(struct flowtable *ft, struct mbuf *m)
 void
 flow_to_route(struct flentry *fle, struct route *ro)
 {
-	bsd_uint32_t *hashkey = NULL;
-	struct bsd_sockaddr_in *sin;
+	uint32_t *hashkey = NULL;
+	struct sockaddr_in *sin;
 
-	sin = (struct bsd_sockaddr_in *)&ro->ro_dst;
+	sin = (struct sockaddr_in *)&ro->ro_dst;
 	sin->sin_family = AF_INET;
 	sin->sin_len = sizeof(*sin);
 	hashkey = ((struct flentry_v4 *)fle)->fl_flow.ipf_key;
@@ -645,12 +645,12 @@ do {									\
 
 static int
 ipv6_mbuf_demarshal(struct flowtable *ft, struct mbuf *m,
-    struct sockaddr_in6 *ssin6, struct sockaddr_in6 *dsin6, bsd_uint16_t *flags)
+    struct sockaddr_in6 *ssin6, struct sockaddr_in6 *dsin6, uint16_t *flags)
 {
 	struct ip6_hdr *ip6;
-	bsd_uint8_t proto;
+	uint8_t proto;
 	int hlen;
-	bsd_uint16_t src_port, dst_port;
+	uint16_t src_port, dst_port;
 	u_short offset;
 	void *ulp;
 
@@ -738,12 +738,12 @@ skipports:
 	dsin6->sin6_family = AF_INET6;
 	dsin6->sin6_len = sizeof(*dsin6);
 	dsin6->sin6_port = dst_port;
-	memcpy(&dsin6->sin6_addr, &ip6->ip6_dst, sizeof(struct bsd_in6_addr));
+	memcpy(&dsin6->sin6_addr, &ip6->ip6_dst, sizeof(struct in6_addr));
 
 	ssin6->sin6_family = AF_INET6;
 	ssin6->sin6_len = sizeof(*ssin6);
 	ssin6->sin6_port = src_port;
-	memcpy(&ssin6->sin6_addr, &ip6->ip6_src, sizeof(struct bsd_in6_addr));
+	memcpy(&ssin6->sin6_addr, &ip6->ip6_src, sizeof(struct in6_addr));
 	*flags |= proto_to_flags(proto);
 
 	return (0);
@@ -762,13 +762,13 @@ do {				\
 	key[8] = 0;		\
 } while (0)
 	
-static bsd_uint32_t
+static uint32_t
 ipv6_flow_lookup_hash_internal(
 	struct sockaddr_in6 *ssin6, struct sockaddr_in6 *dsin6, 
-	    bsd_uint32_t *key, bsd_uint16_t flags)
+	    uint32_t *key, uint16_t flags)
 {
-	bsd_uint16_t sport, dport;
-	bsd_uint8_t proto;
+	uint16_t sport, dport;
+	uint8_t proto;
 	int offset = 0;
 
 	if ((V_flowtable_enable == 0) || (V_flowtable_ready == 0))
@@ -778,16 +778,16 @@ ipv6_flow_lookup_hash_internal(
 	zero_key(key);
 	sport = dport = 0;
 	if (dsin6 != NULL) {
-		memcpy(&key[1], &dsin6->sin6_addr, sizeof(struct bsd_in6_addr));
+		memcpy(&key[1], &dsin6->sin6_addr, sizeof(struct in6_addr));
 		dport = dsin6->sin6_port;
 	}
 	if ((ssin6 != NULL) && (flags & FL_HASH_ALL)) {
-		memcpy(&key[5], &ssin6->sin6_addr, sizeof(struct bsd_in6_addr));
+		memcpy(&key[5], &ssin6->sin6_addr, sizeof(struct in6_addr));
 		sport = ssin6->sin6_port;
 	}
 	if (flags & FL_HASH_ALL) {
-		((bsd_uint16_t *)key)[0] = sport;
-		((bsd_uint16_t *)key)[1] = dport; 
+		((uint16_t *)key)[0] = sport;
+		((uint16_t *)key)[1] = dport; 
 	} else
 		offset = V_flow_hashjitter + proto;
 
@@ -797,9 +797,9 @@ ipv6_flow_lookup_hash_internal(
 static struct flentry *
 flowtable_lookup_mbuf6(struct flowtable *ft, struct mbuf *m)
 {
-	struct bsd_sockaddr_storage ssa, dsa;
+	struct sockaddr_storage ssa, dsa;
 	struct sockaddr_in6 *dsin6, *ssin6;	
-	bsd_uint16_t flags;
+	uint16_t flags;
 
 	dsin6 = (struct sockaddr_in6 *)&dsa;
 	ssin6 = (struct sockaddr_in6 *)&ssa;
@@ -816,7 +816,7 @@ flowtable_lookup_mbuf6(struct flowtable *ft, struct mbuf *m)
 void
 flow_to_route_in6(struct flentry *fle, struct route_in6 *ro)
 {
-	bsd_uint32_t *hashkey = NULL;
+	uint32_t *hashkey = NULL;
 	struct sockaddr_in6 *sin6;
 
 	sin6 = (struct sockaddr_in6 *)&ro->ro_dst;
@@ -824,7 +824,7 @@ flow_to_route_in6(struct flentry *fle, struct route_in6 *ro)
 	sin6->sin6_family = AF_INET6;
 	sin6->sin6_len = sizeof(*sin6);
 	hashkey = ((struct flentry_v6 *)fle)->fl_flow.ipf_key;
-	memcpy(&sin6->sin6_addr, &hashkey[5], sizeof (struct bsd_in6_addr));
+	memcpy(&sin6->sin6_addr, &hashkey[5], sizeof (struct in6_addr));
 	ro->ro_rt = __DEVOLATILE(struct rtentry *, fle->f_rt);
 	ro->ro_lle = __DEVOLATILE(struct llentry *, fle->f_lle);
 	ro->ro_flags |= RT_NORTREF;
@@ -845,7 +845,7 @@ flowtable_mask(struct flowtable *ft)
 }
 
 static struct flentry **
-flowtable_entry(struct flowtable *ft, bsd_uint32_t hash)
+flowtable_entry(struct flowtable *ft, uint32_t hash)
 {
 	struct flentry **fle;
 	int index = (hash % ft->ft_size);
@@ -864,7 +864,7 @@ flowtable_entry(struct flowtable *ft, bsd_uint32_t hash)
 static int
 flow_stale(struct flowtable *ft, struct flentry *fle)
 {
-	bsd_time_t idle_time;
+	time_t idle_time;
 
 	if ((fle->f_fhash == 0)
 	    || ((fle->f_rt->rt_flags & RTF_HOST) &&
@@ -874,7 +874,7 @@ flow_stale(struct flowtable *ft, struct flentry *fle)
 	    || !RT_LINK_IS_UP(fle->f_rt->rt_ifp))
 		return (1);
 
-	idle_time = V_time_uptime - fle->f_uptime;
+	idle_time = time_uptime - fle->f_uptime;
 
 	if ((fle->f_flags & FL_STALE) ||
 	    ((fle->f_flags & (TH_SYN|TH_ACK|TH_FIN)) == 0
@@ -893,9 +893,9 @@ flow_stale(struct flowtable *ft, struct flentry *fle)
 }
 
 static void
-flowtable_set_hashkey(struct flentry *fle, bsd_uint32_t *key)
+flowtable_set_hashkey(struct flentry *fle, uint32_t *key)
 {
-	bsd_uint32_t *hashkey;
+	uint32_t *hashkey;
 	int i, nwords;
 
 	if (fle->f_flags & FL_IPV6) {
@@ -938,8 +938,8 @@ flow_free(struct flentry *fle, struct flowtable *ft)
 static int
 flow_full(struct flowtable *ft)
 {
-	bsd_boolean_t full;
-	bsd_uint32_t count;
+	boolean_t full;
+	uint32_t count;
 	
 	full = ft->ft_full;
 	count = ft->ft_count;
@@ -966,14 +966,14 @@ flow_full(struct flowtable *ft)
 }
 
 static int
-flowtable_insert(struct flowtable *ft, bsd_uint32_t hash, bsd_uint32_t *key,
-    bsd_uint32_t fibnum, struct route *ro, bsd_uint16_t flags)
+flowtable_insert(struct flowtable *ft, uint32_t hash, uint32_t *key,
+    uint32_t fibnum, struct route *ro, uint16_t flags)
 {
 	struct flentry *fle, *fletail, *newfle, **flep;
 	struct flowtable_stats *fs = &ft->ft_stats[curcpu];
 	int depth;
 	bitstr_t *mask;
-	bsd_uint8_t proto;
+	uint8_t proto;
 
 	newfle = flow_alloc(ft);
 	if (newfle == NULL)
@@ -1034,25 +1034,25 @@ skip:
 	fle->f_lle = ro->ro_lle;
 	fle->f_fhash = hash;
 	fle->f_fibnum = fibnum;
-	fle->f_uptime = V_time_uptime;
+	fle->f_uptime = time_uptime;
 	FL_ENTRY_UNLOCK(ft, hash);
 	return (0);
 }
 
 int
 kern_flowtable_insert(struct flowtable *ft,
-    struct bsd_sockaddr_storage *ssa, struct bsd_sockaddr_storage *dsa,
-    struct route *ro, bsd_uint32_t fibnum, int flags)
+    struct sockaddr_storage *ssa, struct sockaddr_storage *dsa,
+    struct route *ro, uint32_t fibnum, int flags)
 {
-	bsd_uint32_t key[9], hash;
+	uint32_t key[9], hash;
 
 	flags = (ft->ft_flags | flags | FL_OVERWRITE);
 	hash = 0;
 
 #ifdef INET
 	if (ssa->ss_family == AF_INET) 
-		hash = ipv4_flow_lookup_hash_internal((struct bsd_sockaddr_in *)ssa,
-		    (struct bsd_sockaddr_in *)dsa, key, flags);
+		hash = ipv4_flow_lookup_hash_internal((struct sockaddr_in *)ssa,
+		    (struct sockaddr_in *)dsa, key, flags);
 #endif
 #ifdef INET6
 	if (ssa->ss_family == AF_INET6) 
@@ -1069,9 +1069,9 @@ kern_flowtable_insert(struct flowtable *ft,
 }
 
 static int
-flowtable_key_equal(struct flentry *fle, bsd_uint32_t *key)
+flowtable_key_equal(struct flentry *fle, uint32_t *key)
 {
-	bsd_uint32_t *hashkey;
+	uint32_t *hashkey;
 	int i, nwords;
 
 	if (fle->f_flags & FL_IPV6) {
@@ -1110,13 +1110,13 @@ flowtable_lookup_mbuf(struct flowtable *ft, struct mbuf *m, int af)
 }
 	
 struct flentry *
-flowtable_lookup(struct flowtable *ft, struct bsd_sockaddr_storage *ssa,
-    struct bsd_sockaddr_storage *dsa, bsd_uint32_t fibnum, int flags)
+flowtable_lookup(struct flowtable *ft, struct sockaddr_storage *ssa,
+    struct sockaddr_storage *dsa, uint32_t fibnum, int flags)
 {
-	bsd_uint32_t key[9], hash;
+	uint32_t key[9], hash;
 	struct flentry *fle;
 	struct flowtable_stats *fs = &ft->ft_stats[curcpu];
-	bsd_uint8_t proto = 0;
+	uint8_t proto = 0;
 	int error = 0;
 	struct rtentry *rt;
 	struct llentry *lle;
@@ -1131,10 +1131,10 @@ flowtable_lookup(struct flowtable *ft, struct bsd_sockaddr_storage *ssa,
 	proto = flags_to_proto(flags);
 #ifdef INET
 	if (ssa->ss_family == AF_INET) {
-		struct bsd_sockaddr_in *ssin, *dsin;
+		struct sockaddr_in *ssin, *dsin;
 
 		ro = &sro;
-		memcpy(&ro->ro_dst, dsa, sizeof(struct bsd_sockaddr_in));
+		memcpy(&ro->ro_dst, dsa, sizeof(struct sockaddr_in));
 		/*
 		 * The harvested source and destination addresses
 		 * may contain port information if the packet is 
@@ -1142,9 +1142,9 @@ flowtable_lookup(struct flowtable *ft, struct bsd_sockaddr_storage *ssa,
 		 * port field must be cleared before performing 
 		 * a route lookup.
 		 */
-		((struct bsd_sockaddr_in *)&ro->ro_dst)->sin_port = 0;
-		dsin = (struct bsd_sockaddr_in *)dsa;
-		ssin = (struct bsd_sockaddr_in *)ssa;
+		((struct sockaddr_in *)&ro->ro_dst)->sin_port = 0;
+		dsin = (struct sockaddr_in *)dsa;
+		ssin = (struct sockaddr_in *)ssa;
 		if ((dsin->sin_addr.s_addr == ssin->sin_addr.s_addr) ||
 		    (ntohl(dsin->sin_addr.s_addr) >> IN_CLASSA_NSHIFT) == IN_LOOPBACKNET ||
 		    (ntohl(ssin->sin_addr.s_addr) >> IN_CLASSA_NSHIFT) == IN_LOOPBACKNET)
@@ -1196,7 +1196,7 @@ keycheck:
 	    && (rt->rt_ifp != NULL)
 	    && (lle->la_flags & LLE_VALID)) {
 		fs->ft_hits++;
-		fle->f_uptime = V_time_uptime;
+		fle->f_uptime = time_uptime;
 		fle->f_flags |= flags;
 		FL_ENTRY_UNLOCK(ft, hash);
 		return (fle);
@@ -1233,7 +1233,7 @@ uncached:
 		error = ENETUNREACH;
 	else {
 		struct llentry *lle = NULL;
-		struct bsd_sockaddr_storage *l3addr;
+		struct sockaddr_storage *l3addr;
 		struct rtentry *rt = ro->ro_rt;
 		struct ifnet *ifp = rt->rt_ifp;
 
@@ -1254,19 +1254,19 @@ uncached:
 			}
 
 			if (rt->rt_flags & RTF_GATEWAY)
-				l3addr = (struct bsd_sockaddr_storage *)rt->rt_gateway;
+				l3addr = (struct sockaddr_storage *)rt->rt_gateway;
 			
 			else
-				l3addr = (struct bsd_sockaddr_storage *)&ro->ro_dst;
+				l3addr = (struct sockaddr_storage *)&ro->ro_dst;
 			lle = llentry_alloc(ifp, LLTABLE6(ifp), l3addr);
 		}
 #endif	
 #ifdef INET
 		if (ssa->ss_family == AF_INET) {
 			if (rt->rt_flags & RTF_GATEWAY)
-				l3addr = (struct bsd_sockaddr_storage *)rt->rt_gateway;
+				l3addr = (struct sockaddr_storage *)rt->rt_gateway;
 			else
-				l3addr = (struct bsd_sockaddr_storage *)&ro->ro_dst;
+				l3addr = (struct sockaddr_storage *)&ro->ro_dst;
 			lle = llentry_alloc(ifp, LLTABLE(ifp), l3addr);	
 		}
 			
@@ -1307,7 +1307,7 @@ flowtable_alloc(char *name, int nentry, int flags)
 
 	KASSERT(nentry > 0, ("nentry must be > 0, is %d\n", nentry));
 
-	ft = bsd_malloc(sizeof(struct flowtable),
+	ft = malloc(sizeof(struct flowtable),
 	    M_RTABLE, M_WAITOK | M_ZERO);
 
 	ft->ft_name = name;
@@ -1324,7 +1324,7 @@ flowtable_alloc(char *name, int nentry, int flags)
 
 		for (i = 0; i <= mp_maxid; i++) {
 			ft->ft_table.pcpu[i] =
-			    bsd_malloc(nentry*sizeof(struct flentry *),
+			    malloc(nentry*sizeof(struct flentry *),
 				M_RTABLE, M_WAITOK | M_ZERO);
 			ft->ft_masks[i] = bit_alloc(nentry);
 		}
@@ -1335,9 +1335,9 @@ flowtable_alloc(char *name, int nentry, int flags)
 		ft->ft_lock = flowtable_global_lock;
 		ft->ft_unlock = flowtable_global_unlock;
 		ft->ft_table.global =
-			    bsd_malloc(nentry*sizeof(struct flentry *),
+			    malloc(nentry*sizeof(struct flentry *),
 				M_RTABLE, M_WAITOK | M_ZERO);
-		ft->ft_locks = bsd_malloc(ft->ft_lock_count*sizeof(struct mtx),
+		ft->ft_locks = malloc(ft->ft_lock_count*sizeof(struct mtx),
 				M_RTABLE, M_WAITOK | M_ZERO);
 		for (i = 0; i < ft->ft_lock_count; i++)
 			mtx_init(&ft->ft_locks[i], "flow", NULL, MTX_DEF|MTX_DUPOK);
@@ -1418,7 +1418,7 @@ flowtable_free_stale(struct flowtable *ft, struct rtentry *rt)
 	bit_ffs(tmpmask, ft->ft_size, &curbit);
 	while (curbit != -1) {
 		if (curbit >= ft->ft_size || curbit < -1) {
-			bsd_log(LOG_ALERT,
+			log(LOG_ALERT,
 			    "warning: bad curbit value %d \n",
 			    curbit);
 			break;
@@ -1431,7 +1431,7 @@ flowtable_free_stale(struct flowtable *ft, struct rtentry *rt)
 		fs->ft_free_checks++;
 #ifdef DIAGNOSTIC
 		if (fle == NULL && curbit > 0) {
-			bsd_log(LOG_ALERT,
+			log(LOG_ALERT,
 			    "warning bit=%d set, but no fle found\n",
 			    curbit);
 		}
@@ -1489,7 +1489,7 @@ flowtable_free_stale(struct flowtable *ft, struct rtentry *rt)
 		fle_free(fle, ft);
 	}
 	if (V_flowtable_debug && count)
-		bsd_log(LOG_DEBUG, "freed %d flow entries\n", count);
+		log(LOG_DEBUG, "freed %d flow entries\n", count);
 }
 
 void
@@ -1556,7 +1556,7 @@ flowtable_cleaner(void)
 	struct thread *td;
 
 	if (bootverbose)
-		bsd_log(LOG_INFO, "flowtable cleaner started\n");
+		log(LOG_INFO, "flowtable cleaner started\n");
 	td = curthread;
 	while (1) {
 		VNET_LIST_RLOCK();
@@ -1585,7 +1585,7 @@ flowtable_cleaner(void)
 static void
 flowtable_flush(void *unused __unused)
 {
-	bsd_uint64_t start;
+	uint64_t start;
 
 	mtx_lock(&flowclean_lock);
 	start = flowclean_cycles;
@@ -1649,10 +1649,10 @@ VNET_SYSUNINIT(flowtable_uninit, SI_SUB_KTHREAD_INIT, SI_ORDER_ANY,
 #endif
 
 #ifdef DDB
-static bsd_uint32_t *
+static uint32_t *
 flowtable_get_hashkey(struct flentry *fle)
 {
-	bsd_uint32_t *hashkey;
+	uint32_t *hashkey;
 
 	if (fle->f_flags & FL_IPV6)
 		hashkey = ((struct flentry_v4 *)fle)->fl_flow.ipf_key;
@@ -1676,7 +1676,7 @@ flowtable_mask_pcpu(struct flowtable *ft, int cpuid)
 }
 
 static struct flentry **
-flowtable_entry_pcpu(struct flowtable *ft, bsd_uint32_t hash, int cpuid)
+flowtable_entry_pcpu(struct flowtable *ft, uint32_t hash, int cpuid)
 {
 	struct flentry **fle;
 	int index = (hash % ft->ft_size);
@@ -1695,13 +1695,13 @@ flow_show(struct flowtable *ft, struct flentry *fle)
 {
 	int idle_time;
 	int rt_valid, ifp_valid;
-	bsd_uint16_t sport, dport;
-	bsd_uint32_t *hashkey;
+	uint16_t sport, dport;
+	uint32_t *hashkey;
 	char saddr[4*sizeof "123"], daddr[4*sizeof "123"];
 	volatile struct rtentry *rt;
 	struct ifnet *ifp = NULL;
 
-	idle_time = (int)(V_time_uptime - fle->f_uptime);
+	idle_time = (int)(time_uptime - fle->f_uptime);
 	rt = fle->f_rt;
 	rt_valid = rt != NULL;
 	if (rt_valid) 
@@ -1714,8 +1714,8 @@ flow_show(struct flowtable *ft, struct flentry *fle)
 	inet_ntoa_r(*(struct in_addr *) &hashkey[2], daddr);
 	if (ft->ft_flags & FL_HASH_ALL) {
 		inet_ntoa_r(*(struct in_addr *) &hashkey[1], saddr);		
-		sport = ntohs(((bsd_uint16_t *)hashkey)[0]);
-		dport = ntohs(((bsd_uint16_t *)hashkey)[1]);
+		sport = ntohs(((uint16_t *)hashkey)[0]);
+		dport = ntohs(((uint16_t *)hashkey)[1]);
 		db_printf("%s:%d->%s:%d",
 		    saddr, sport, daddr,
 		    dport);

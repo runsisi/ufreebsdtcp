@@ -33,20 +33,20 @@
  *	Superpage reservation management module
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/vm/vm_reserv.c 234771 2012-04-28 20:34:14Z alc $");
 
 #include "opt_vm.h"
 
-#include <sys/param.h>
-#include <sys/kernel.h>
-#include <sys/lock.h>
-#include <sys/malloc.h>
-#include <sys/mutex.h>
-#include <sys/queue.h>
-#include <sys/sbuf.h>
-#include <sys/sysctl.h>
-#include <sys/systm.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_lock.h>
+#include <sys/bsd_malloc.h>
+#include <sys/bsd_mutex.h>
+#include <sys/bsd_queue.h>
+#include <sys/bsd_sbuf.h>
+#include <sys/bsd_sysctl.h>
+#include <sys/bsd_systm.h>
 
 #include <vm/vm.h>
 #include <vm/vm_param.h>
@@ -719,7 +719,7 @@ vm_reserv_startup(vm_offset_t *vaddr, vm_paddr_t end, vm_paddr_t high_water)
 	 * next available virtual address is returned by reference.
 	 */
 	new_end = end - round_page(size);
-	vm_reserv_array = (void *)(bsd_uintptr_t)pmap_map(vaddr, new_end, end,
+	vm_reserv_array = (void *)(uintptr_t)pmap_map(vaddr, new_end, end,
 	    VM_PROT_READ | VM_PROT_WRITE);
 	bzero(vm_reserv_array, size);
 

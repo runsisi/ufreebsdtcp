@@ -41,7 +41,7 @@
  * optimize cases when CPU_SETSIZE fits into single machine word.
  */
 #define	__cpuset_mask(n)				\
-	((long)1 << ((_NCPUWORDS == 1) ? (__bsd_size_t)(n) : ((n) % _NCPUBITS)))
+	((long)1 << ((_NCPUWORDS == 1) ? (__size_t)(n) : ((n) % _NCPUBITS)))
 #define	__cpuset_word(n)	((_NCPUWORDS == 1) ? 0 : ((n) / _NCPUBITS))
 
 #define	CPU_CLR(n, p)	((p)->__bits[__cpuset_word(n)] &= ~__cpuset_mask(n))
@@ -138,7 +138,7 @@
 #define	CPU_SET_ATOMIC(n, p)						\
 	atomic_set_long(&(p)->__bits[__cpuset_word(n)], __cpuset_mask(n))
 
-/* Convenience functions catering special cases. */
+/* Convenience functions catering special cases. */ 
 #define	CPU_OR_ATOMIC(d, s) do {			\
 	__size_t __i;					\
 	for (__i = 0; __i < _NCPUWORDS; __i++)		\
@@ -176,7 +176,7 @@
 #define	CPUSET_DEFAULT	0
 
 #ifdef _KERNEL
-BSD_LIST_HEAD(setlist, cpuset);
+LIST_HEAD(setlist, cpuset);
 
 /*
  * cpusets encapsulate cpu binding information for one or more threads.
@@ -193,10 +193,10 @@ struct cpuset {
 	cpuset_t		cs_mask;	/* bitmask of valid cpus. */
 	volatile u_int		cs_ref;		/* (a) Reference count. */
 	int			cs_flags;	/* (s) Flags from below. */
-	bsd_cpusetid_t		cs_id;		/* (s) Id or INVALID. */
+	cpusetid_t		cs_id;		/* (s) Id or INVALID. */
 	struct cpuset		*cs_parent;	/* (s) Pointer to our parent. */
-	BSD_LIST_ENTRY(cpuset)	cs_link;	/* (c) All identified sets. */
-	BSD_LIST_ENTRY(cpuset)	cs_siblings;	/* (c) Sibling set link. */
+	LIST_ENTRY(cpuset)	cs_link;	/* (c) All identified sets. */
+	LIST_ENTRY(cpuset)	cs_siblings;	/* (c) Sibling set link. */
 	struct setlist		cs_children;	/* (c) List of children. */
 };
 
@@ -210,7 +210,7 @@ struct proc;
 struct cpuset *cpuset_thread0(void);
 struct cpuset *cpuset_ref(struct cpuset *);
 void	cpuset_rel(struct cpuset *);
-int	cpuset_setthread(bsd_lwpid_t id, cpuset_t *);
+int	cpuset_setthread(lwpid_t id, cpuset_t *);
 int	cpuset_create_root(struct prison *, struct cpuset **);
 int	cpuset_setproc_update_set(struct proc *, struct cpuset *);
 int	cpusetobj_ffs(const cpuset_t *);
@@ -219,11 +219,11 @@ int	cpusetobj_strscan(cpuset_t *, const char *);
 
 #else
 __BEGIN_DECLS
-int	cpuset(bsd_cpusetid_t *);
-int	cpuset_setid(cpuwhich_t, bsd_id_t, bsd_cpusetid_t);
-int	cpuset_getid(cpulevel_t, cpuwhich_t, bsd_id_t, bsd_cpusetid_t *);
-int	cpuset_getaffinity(cpulevel_t, cpuwhich_t, bsd_id_t, bsd_size_t, cpuset_t *);
-int	cpuset_setaffinity(cpulevel_t, cpuwhich_t, bsd_id_t, bsd_size_t, const cpuset_t *);
+int	cpuset(cpusetid_t *);
+int	cpuset_setid(cpuwhich_t, id_t, cpusetid_t);
+int	cpuset_getid(cpulevel_t, cpuwhich_t, id_t, cpusetid_t *);
+int	cpuset_getaffinity(cpulevel_t, cpuwhich_t, id_t, size_t, cpuset_t *);
+int	cpuset_setaffinity(cpulevel_t, cpuwhich_t, id_t, size_t, const cpuset_t *);
 __END_DECLS
 #endif
 #endif /* !_SYS_CPUSET_H_ */

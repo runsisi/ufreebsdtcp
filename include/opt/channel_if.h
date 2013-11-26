@@ -68,9 +68,9 @@ static __inline int CHANNEL_RESETDONE(kobj_t obj, void *data)
 /** @brief Unique descriptor for the CHANNEL_SETFORMAT() method */
 extern struct kobjop_desc channel_setformat_desc;
 /** @brief A function implementing the CHANNEL_SETFORMAT() method */
-typedef int channel_setformat_t(kobj_t obj, void *data, bsd_uint32_t format);
+typedef int channel_setformat_t(kobj_t obj, void *data, u_int32_t format);
 
-static __inline int CHANNEL_SETFORMAT(kobj_t obj, void *data, bsd_uint32_t format)
+static __inline int CHANNEL_SETFORMAT(kobj_t obj, void *data, u_int32_t format)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)obj)->ops,channel_setformat);
@@ -80,10 +80,10 @@ static __inline int CHANNEL_SETFORMAT(kobj_t obj, void *data, bsd_uint32_t forma
 /** @brief Unique descriptor for the CHANNEL_SETSPEED() method */
 extern struct kobjop_desc channel_setspeed_desc;
 /** @brief A function implementing the CHANNEL_SETSPEED() method */
-typedef bsd_uint32_t channel_setspeed_t(kobj_t obj, void *data, bsd_uint32_t speed);
+typedef u_int32_t channel_setspeed_t(kobj_t obj, void *data, u_int32_t speed);
 
-static __inline bsd_uint32_t CHANNEL_SETSPEED(kobj_t obj, void *data,
-                                           bsd_uint32_t speed)
+static __inline u_int32_t CHANNEL_SETSPEED(kobj_t obj, void *data,
+                                           u_int32_t speed)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)obj)->ops,channel_setspeed);
@@ -93,11 +93,11 @@ static __inline bsd_uint32_t CHANNEL_SETSPEED(kobj_t obj, void *data,
 /** @brief Unique descriptor for the CHANNEL_SETBLOCKSIZE() method */
 extern struct kobjop_desc channel_setblocksize_desc;
 /** @brief A function implementing the CHANNEL_SETBLOCKSIZE() method */
-typedef bsd_uint32_t channel_setblocksize_t(kobj_t obj, void *data,
-                                         bsd_uint32_t blocksize);
+typedef u_int32_t channel_setblocksize_t(kobj_t obj, void *data,
+                                         u_int32_t blocksize);
 
-static __inline bsd_uint32_t CHANNEL_SETBLOCKSIZE(kobj_t obj, void *data,
-                                               bsd_uint32_t blocksize)
+static __inline u_int32_t CHANNEL_SETBLOCKSIZE(kobj_t obj, void *data,
+                                               u_int32_t blocksize)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)obj)->ops,channel_setblocksize);
@@ -107,12 +107,12 @@ static __inline bsd_uint32_t CHANNEL_SETBLOCKSIZE(kobj_t obj, void *data,
 /** @brief Unique descriptor for the CHANNEL_SETFRAGMENTS() method */
 extern struct kobjop_desc channel_setfragments_desc;
 /** @brief A function implementing the CHANNEL_SETFRAGMENTS() method */
-typedef int channel_setfragments_t(kobj_t obj, void *data, bsd_uint32_t blocksize,
-                                   bsd_uint32_t blockcount);
+typedef int channel_setfragments_t(kobj_t obj, void *data, u_int32_t blocksize,
+                                   u_int32_t blockcount);
 
 static __inline int CHANNEL_SETFRAGMENTS(kobj_t obj, void *data,
-                                         bsd_uint32_t blocksize,
-                                         bsd_uint32_t blockcount)
+                                         u_int32_t blocksize,
+                                         u_int32_t blockcount)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)obj)->ops,channel_setfragments);
@@ -134,9 +134,9 @@ static __inline int CHANNEL_TRIGGER(kobj_t obj, void *data, int go)
 /** @brief Unique descriptor for the CHANNEL_GETPTR() method */
 extern struct kobjop_desc channel_getptr_desc;
 /** @brief A function implementing the CHANNEL_GETPTR() method */
-typedef bsd_uint32_t channel_getptr_t(kobj_t obj, void *data);
+typedef u_int32_t channel_getptr_t(kobj_t obj, void *data);
 
-static __inline bsd_uint32_t CHANNEL_GETPTR(kobj_t obj, void *data)
+static __inline u_int32_t CHANNEL_GETPTR(kobj_t obj, void *data)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)obj)->ops,channel_getptr);
@@ -158,9 +158,9 @@ static __inline struct pcmchan_caps* CHANNEL_GETCAPS(kobj_t obj, void *data)
 /** @brief Unique descriptor for the CHANNEL_NOTIFY() method */
 extern struct kobjop_desc channel_notify_desc;
 /** @brief A function implementing the CHANNEL_NOTIFY() method */
-typedef int channel_notify_t(kobj_t obj, void *data, bsd_uint32_t changed);
+typedef int channel_notify_t(kobj_t obj, void *data, u_int32_t changed);
 
-static __inline int CHANNEL_NOTIFY(kobj_t obj, void *data, bsd_uint32_t changed)
+static __inline int CHANNEL_NOTIFY(kobj_t obj, void *data, u_int32_t changed)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)obj)->ops,channel_notify);
@@ -234,11 +234,11 @@ static __inline int CHANNEL_GETRATES(kobj_t obj, void *data, int **rates)
 extern struct kobjop_desc channel_getmatrix_desc;
 /** @brief A function implementing the CHANNEL_GETMATRIX() method */
 typedef struct pcmchan_matrix * channel_getmatrix_t(kobj_t obj, void *data,
-                                                    bsd_uint32_t format);
+                                                    u_int32_t format);
 
 static __inline struct pcmchan_matrix * CHANNEL_GETMATRIX(kobj_t obj,
                                                           void *data,
-                                                          bsd_uint32_t format)
+                                                          u_int32_t format)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)obj)->ops,channel_getmatrix);

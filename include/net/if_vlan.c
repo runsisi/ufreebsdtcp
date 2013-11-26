@@ -38,25 +38,25 @@
  * use by the real outgoing interface, and ask it to send them.
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/net/if_vlan.c 252828 2013-07-05 19:36:34Z andre $");
 
 #include "opt_inet.h"
 #include "opt_vlan.h"
 
-#include <sys/param.h>
-#include <sys/kernel.h>
-#include <sys/lock.h>
-#include <sys/malloc.h>
-#include <sys/mbuf.h>
-#include <sys/module.h>
-#include <sys/rwlock.h>
-#include <sys/queue.h>
-#include <sys/socket.h>
-#include <sys/sockio.h>
-#include <sys/sysctl.h>
-#include <sys/systm.h>
-#include <sys/sx.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_lock.h>
+#include <sys/bsd_malloc.h>
+#include <sys/bsd_mbuf.h>
+#include <sys/bsd_module.h>
+#include <sys/bsd_rwlock.h>
+#include <sys/bsd_queue.h>
+#include <sys/bsd_socket.h>
+#include <sys/bsd_sockio.h>
+#include <sys/bsd_sysctl.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_sx.h>
 
 #include <net/bpf.h>
 #include <net/ethernet.h>
@@ -89,8 +89,8 @@ struct ifvlantrunk {
 	struct	ifvlan	*vlans[VLAN_ARRAY_SIZE]; /* static table */
 #else
 	struct	ifvlanhead *hash;	/* dynamic hash-list table */
-	bsd_uint16_t	hmask;
-	bsd_uint16_t	hwidth;
+	uint16_t	hmask;
+	uint16_t	hwidth;
 #endif
 	int		refcnt;
 };
@@ -111,8 +111,8 @@ struct	ifvlan {
 		int	ifvm_encaplen;	/* encapsulation length */
 		int	ifvm_mtufudge;	/* MTU fudged by this much */
 		int	ifvm_mintu;	/* min transmission unit */
-		bsd_uint16_t ifvm_proto;	/* encapsulation ethertype */
-		bsd_uint16_t ifvm_tag;	/* tag to apply on packets leaving if */
+		uint16_t ifvm_proto;	/* encapsulation ethertype */
+		uint16_t ifvm_tag;	/* tag to apply on packets leaving if */
 	}	ifv_mib;
 	SLIST_HEAD(, vlan_mc_entry) vlan_mc_listhead;
 #ifndef VLAN_ARRAY
@@ -184,7 +184,7 @@ static	int vlan_inshash(struct ifvlantrunk *trunk, struct ifvlan *ifv);
 static	int vlan_remhash(struct ifvlantrunk *trunk, struct ifvlan *ifv);
 static	void vlan_growhash(struct ifvlantrunk *trunk, int howmuch);
 static __inline struct ifvlan * vlan_gethash(struct ifvlantrunk *trunk,
-	bsd_uint16_t tag);
+	uint16_t tag);
 #endif
 static	void trunk_destroy(struct ifvlantrunk *trunk);
 
@@ -199,7 +199,7 @@ static	int vlan_setmulti(struct ifnet *ifp);
 static	int vlan_transmit(struct ifnet *ifp, struct mbuf *m);
 static	void vlan_unconfig(struct ifnet *ifp);
 static	void vlan_unconfig_locked(struct ifnet *ifp, int departing);
-static	int vlan_config(struct ifvlan *ifv, struct ifnet *p, bsd_uint16_t tag);
+static	int vlan_config(struct ifvlan *ifv, struct ifnet *p, uint16_t tag);
 static	void vlan_link_state(struct ifnet *ifp);
 static	void vlan_capabilities(struct ifvlan *ifv);
 static	void vlan_trunk_capabilities(struct ifnet *ifp);
@@ -207,7 +207,7 @@ static	void vlan_trunk_capabilities(struct ifnet *ifp);
 static	struct ifnet *vlan_clone_match_ethertag(struct if_clone *,
     const char *, int *);
 static	int vlan_clone_match(struct if_clone *, const char *);
-static	int vlan_clone_create(struct if_clone *, char *, bsd_size_t, caddr_t);
+static	int vlan_clone_create(struct if_clone *, char *, size_t, caddr_t);
 static	int vlan_clone_destroy(struct if_clone *, struct ifnet *);
 
 static	void vlan_ifdetach(void *arg, struct ifnet *ifp);
@@ -241,7 +241,7 @@ vlan_inithash(struct ifvlantrunk *trunk)
 	trunk->hwidth = VLAN_DEF_HWIDTH;
 	n = 1 << trunk->hwidth;
 	trunk->hmask = n - 1;
-	trunk->hash = bsd_malloc(sizeof(struct ifvlanhead) * n, M_VLAN, M_WAITOK);
+	trunk->hash = malloc(sizeof(struct ifvlanhead) * n, M_VLAN, M_WAITOK);
 	for (i = 0; i < n; i++)
 		LIST_INIT(&trunk->hash[i]);
 }
@@ -257,7 +257,7 @@ vlan_freehash(struct ifvlantrunk *trunk)
 		KASSERT(LIST_EMPTY(&trunk->hash[i]),
 		    ("%s: hash table not empty", __func__));
 #endif
-	bsd_free(trunk->hash, M_VLAN);
+	free(trunk->hash, M_VLAN);
 	trunk->hash = NULL;
 	trunk->hwidth = trunk->hmask = 0;
 }
@@ -343,7 +343,7 @@ vlan_growhash(struct ifvlantrunk *trunk, int howmuch)
 		return;
 
 	/* M_NOWAIT because we're called with trunk mutex held */
-	hash2 = bsd_malloc(sizeof(struct ifvlanhead) * n2, M_VLAN, M_NOWAIT);
+	hash2 = malloc(sizeof(struct ifvlanhead) * n2, M_VLAN, M_NOWAIT);
 	if (hash2 == NULL) {
 		printf("%s: out of memory -- hash size not changed\n",
 		    __func__);
@@ -357,7 +357,7 @@ vlan_growhash(struct ifvlantrunk *trunk, int howmuch)
 			j = HASH(ifv->ifv_tag, n2 - 1);
 			LIST_INSERT_HEAD(&hash2[j], ifv, ifv_list);
 		}
-	bsd_free(trunk->hash, M_VLAN);
+	free(trunk->hash, M_VLAN);
 	trunk->hash = hash2;
 	trunk->hwidth = hwidth2;
 	trunk->hmask = n2 - 1;
@@ -368,7 +368,7 @@ vlan_growhash(struct ifvlantrunk *trunk, int howmuch)
 }
 
 static __inline struct ifvlan *
-vlan_gethash(struct ifvlantrunk *trunk, bsd_uint16_t tag)
+vlan_gethash(struct ifvlantrunk *trunk, uint16_t tag)
 {
 	struct ifvlan *ifv;
 
@@ -399,7 +399,7 @@ vlan_dumphash(struct ifvlantrunk *trunk)
 #else
 
 static __inline struct ifvlan *
-vlan_gethash(struct ifvlantrunk *trunk, bsd_uint16_t tag)
+vlan_gethash(struct ifvlantrunk *trunk, uint16_t tag)
 {
 
 	return trunk->vlans[tag];
@@ -449,7 +449,7 @@ trunk_destroy(struct ifvlantrunk *trunk)
 	trunk->parent->if_vlantrunk = NULL;
 	TRUNK_UNLOCK(trunk);
 	TRUNK_LOCK_DESTROY(trunk);
-	bsd_free(trunk, M_VLAN);
+	free(trunk, M_VLAN);
 }
 
 /*
@@ -482,24 +482,24 @@ vlan_setmulti(struct ifnet *ifp)
 
 	/* First, remove any existing filter entries. */
 	while ((mc = SLIST_FIRST(&sc->vlan_mc_listhead)) != NULL) {
-		error = if_delmulti(ifp_p, (struct bsd_sockaddr *)&mc->mc_addr);
+		error = if_delmulti(ifp_p, (struct sockaddr *)&mc->mc_addr);
 		if (error)
 			return (error);
 		SLIST_REMOVE_HEAD(&sc->vlan_mc_listhead, mc_entries);
-		bsd_free(mc, M_VLAN);
+		free(mc, M_VLAN);
 	}
 
 	/* Now program new ones. */
 	TAILQ_FOREACH(ifma, &ifp->if_multiaddrs, ifma_link) {
 		if (ifma->ifma_addr->sa_family != AF_LINK)
 			continue;
-		mc = bsd_malloc(sizeof(struct vlan_mc_entry), M_VLAN, M_NOWAIT);
+		mc = malloc(sizeof(struct vlan_mc_entry), M_VLAN, M_NOWAIT);
 		if (mc == NULL)
 			return (ENOMEM);
 		bcopy(ifma->ifma_addr, &mc->mc_addr, ifma->ifma_addr->sa_len);
 		mc->mc_addr.sdl_index = ifp_p->if_index;
 		SLIST_INSERT_HEAD(&sc->vlan_mc_listhead, mc, mc_entries);
-		error = if_addmulti(ifp_p, (struct bsd_sockaddr *)&mc->mc_addr,
+		error = if_addmulti(ifp_p, (struct sockaddr *)&mc->mc_addr,
 		    &rifma);
 		if (error)
 			return (error);
@@ -626,7 +626,7 @@ vlan_trunkdev(struct ifnet *ifp)
  * Return the 16bit vlan tag for this interface.
  */
 static int
-vlan_tag(struct ifnet *ifp, bsd_uint16_t *tagp)
+vlan_tag(struct ifnet *ifp, uint16_t *tagp)
 {
 	struct ifvlan *ifv;
 
@@ -672,7 +672,7 @@ vlan_setcookie(struct ifnet *ifp, void *cookie)
  * Return the vlan device present at the specific tag.
  */
 static struct ifnet *
-vlan_devat(struct ifnet *ifp, bsd_uint16_t tag)
+vlan_devat(struct ifnet *ifp, uint16_t tag)
 {
 	struct ifvlantrunk *trunk;
 	struct ifvlan *ifv;
@@ -848,7 +848,7 @@ vlan_clone_match(struct if_clone *ifc, const char *name)
 }
 
 static int
-vlan_clone_create(struct if_clone *ifc, char *name, bsd_size_t len, caddr_t params)
+vlan_clone_create(struct if_clone *ifc, char *name, size_t len, caddr_t params)
 {
 	char *dp;
 	int wildcard;
@@ -927,11 +927,11 @@ vlan_clone_create(struct if_clone *ifc, char *name, bsd_size_t len, caddr_t para
 		}
 	}
 
-	ifv = bsd_malloc(sizeof(struct ifvlan), M_VLAN, M_WAITOK | M_ZERO);
+	ifv = malloc(sizeof(struct ifvlan), M_VLAN, M_WAITOK | M_ZERO);
 	ifp = ifv->ifv_ifp = if_alloc(IFT_ETHER);
 	if (ifp == NULL) {
 		ifc_free_unit(ifc, unit);
-		bsd_free(ifv, M_VLAN);
+		free(ifv, M_VLAN);
 		return (ENOSPC);
 	}
 	SLIST_INIT(&ifv->vlan_mc_listhead);
@@ -941,7 +941,7 @@ vlan_clone_create(struct if_clone *ifc, char *name, bsd_size_t len, caddr_t para
 	 * Set the name manually rather than using if_initname because
 	 * we don't conform to the default naming convention for interfaces.
 	 */
-	bsd_strlcpy(ifp->if_xname, name, IFNAMSIZ);
+	strlcpy(ifp->if_xname, name, IFNAMSIZ);
 	ifp->if_dname = ifc->ifc_name;
 	ifp->if_dunit = unit;
 	/* NB: flags are not set here */
@@ -975,7 +975,7 @@ vlan_clone_create(struct if_clone *ifc, char *name, bsd_size_t len, caddr_t para
 			vlan_unconfig(ifp);
 			if_free_type(ifp, IFT_ETHER);
 			ifc_free_unit(ifc, unit);
-			bsd_free(ifv, M_VLAN);
+			free(ifv, M_VLAN);
 
 			return (error);
 		}
@@ -996,7 +996,7 @@ vlan_clone_destroy(struct if_clone *ifc, struct ifnet *ifp)
 	ether_ifdetach(ifp);	/* first, remove it from system-wide lists */
 	vlan_unconfig(ifp);	/* now it can be unconfigured and freed */
 	if_free_type(ifp, IFT_ETHER);
-	bsd_free(ifv, M_VLAN);
+	free(ifv, M_VLAN);
 	ifc_free_unit(ifc, unit);
 
 	return (0);
@@ -1111,7 +1111,7 @@ vlan_input(struct ifnet *ifp, struct mbuf *m)
 {
 	struct ifvlantrunk *trunk = ifp->if_vlantrunk;
 	struct ifvlan *ifv;
-	bsd_uint16_t tag;
+	uint16_t tag;
 
 	KASSERT(trunk != NULL, ("%s: no trunk", __func__));
 
@@ -1178,7 +1178,7 @@ vlan_input(struct ifnet *ifp, struct mbuf *m)
 }
 
 static int
-vlan_config(struct ifvlan *ifv, struct ifnet *p, bsd_uint16_t tag)
+vlan_config(struct ifvlan *ifv, struct ifnet *p, uint16_t tag)
 {
 	struct ifvlantrunk *trunk;
 	struct ifnet *ifp;
@@ -1196,14 +1196,14 @@ vlan_config(struct ifvlan *ifv, struct ifnet *p, bsd_uint16_t tag)
 		return (EBUSY);
 
 	if (p->if_vlantrunk == NULL) {
-		trunk = bsd_malloc(sizeof(struct ifvlantrunk),
+		trunk = malloc(sizeof(struct ifvlantrunk),
 		    M_VLAN, M_WAITOK | M_ZERO);
 		vlan_inithash(trunk);
 		VLAN_LOCK();
 		if (p->if_vlantrunk != NULL) {
 			/* A race that that is very unlikely to be hit. */
 			vlan_freehash(trunk);
-			bsd_free(trunk, M_VLAN);
+			free(trunk, M_VLAN);
 			goto exists;
 		}
 		TRUNK_LOCK_INIT(trunk);
@@ -1346,14 +1346,14 @@ vlan_unconfig_locked(struct ifnet *ifp, int departing)
 			 */
 			if (!departing) {
 				error = if_delmulti(parent,
-				    (struct bsd_sockaddr *)&mc->mc_addr);
+				    (struct sockaddr *)&mc->mc_addr);
 				if (error)
 					if_printf(ifp,
 		    "Failed to delete multicast address from parent: %d\n",
 					    error);
 			}
 			SLIST_REMOVE_HEAD(&ifv->vlan_mc_listhead, mc_entries);
-			bsd_free(mc, M_VLAN);
+			free(mc, M_VLAN);
 		}
 
 		vlan_setflags(ifp, 0); /* clear special flags on parent */
@@ -1573,9 +1573,9 @@ vlan_ioctl(struct ifnet *ifp, u_long cmd, caddr_t data)
 		break;
 	case SIOCGIFADDR:
                 {
-			struct bsd_sockaddr *sa;
+			struct sockaddr *sa;
 
-			sa = (struct bsd_sockaddr *)&ifr->ifr_data;
+			sa = (struct sockaddr *)&ifr->ifr_data;
 			bcopy(IF_LLADDR(ifp), sa->sa_data, ifp->if_addrlen);
                 }
 		break;
@@ -1670,7 +1670,7 @@ vlan_ioctl(struct ifnet *ifp, u_long cmd, caddr_t data)
 		bzero(&vlr, sizeof(vlr));
 		VLAN_LOCK();
 		if (TRUNK(ifv) != NULL) {
-			bsd_strlcpy(vlr.vlr_parent, PARENT(ifv)->if_xname,
+			strlcpy(vlr.vlr_parent, PARENT(ifv)->if_xname,
 			    sizeof(vlr.vlr_parent));
 			vlr.vlr_tag = ifv->ifv_tag;
 		}

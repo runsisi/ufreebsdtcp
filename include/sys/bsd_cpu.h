@@ -40,18 +40,18 @@
 
 static __inline struct pcpu *cpu_get_pcpu(device_t dev)
 {
-	bsd_uintptr_t v = 0;
+	uintptr_t v = 0;
 	BUS_READ_IVAR(device_get_parent(dev), dev, CPU_IVAR_PCPU, &v);
 	return ((struct pcpu *)v);
 }
 
-static __inline bsd_int32_t cpu_get_nominal_mhz(device_t dev)
+static __inline int32_t cpu_get_nominal_mhz(device_t dev)
 {
-	bsd_uintptr_t v = 0;
+	uintptr_t v = 0;
 	if (BUS_READ_IVAR(device_get_parent(dev), dev,
 	    CPU_IVAR_NOMINAL_MHZ, &v) != 0)
 		return (-1);
-	return ((bsd_int32_t)v);
+	return ((int32_t)v);
 }
 
 /*
@@ -168,6 +168,6 @@ EVENTHANDLER_DECLARE(cpufreq_levels_changed, cpufreq_levels_notify_fn);
  */
 
 /* Estimate the current clock rate for the given CPU id. */
-int	cpu_est_clockrate(int cpu_id, bsd_uint64_t *rate);
+int	cpu_est_clockrate(int cpu_id, uint64_t *rate);
 
 #endif /* !_SYS_CPU_H_ */

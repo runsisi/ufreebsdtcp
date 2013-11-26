@@ -29,20 +29,20 @@
  * SUCH DAMAGE.
  */
 
-#include <sys/param.h>
-#include <sys/kernel.h>
-#include <sys/errno.h>
-#include <sys/lock.h>
-#include <sys/malloc.h>
-#include <sys/rmlock.h>
-#include <sys/socket.h>
-#include <sys/socketvar.h>
-#include <sys/systm.h>
-#include <sys/condvar.h>
-#include <sys/lock.h>
-#include <sys/mutex.h>
-#include <sys/proc.h>
-#include <sys/queue.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_errno.h>
+#include <sys/bsd_lock.h>
+#include <sys/bsd_malloc.h>
+#include <sys/bsd_rmlock.h>
+#include <sys/bsd_socket.h>
+#include <sys/bsd_socketvar.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_condvar.h>
+#include <sys/bsd_lock.h>
+#include <sys/bsd_mutex.h>
+#include <sys/bsd_proc.h>
+#include <sys/bsd_queue.h>
 
 #include <net/if.h>
 #include <net/pfil.h>
@@ -130,9 +130,9 @@ pfil_head_unregister(struct pfil_head *ph)
 	LIST_REMOVE(ph, ph_list);
 	PFIL_LIST_UNLOCK();
 	TAILQ_FOREACH_SAFE(pfh, &ph->ph_in, pfil_link, pfnext)
-		bsd_free(pfh, M_IFADDR);
+		free(pfh, M_IFADDR);
 	TAILQ_FOREACH_SAFE(pfh, &ph->ph_out, pfil_link, pfnext)
-		bsd_free(pfh, M_IFADDR);
+		free(pfh, M_IFADDR);
 	PFIL_LOCK_DESTROY(ph);
 	return (0);
 }
@@ -170,7 +170,7 @@ pfil_add_hook(int (*func)(void *, struct mbuf **, struct ifnet *, int,
 	int err;
 
 	if (flags & PFIL_IN) {
-		pfh1 = (struct packet_filter_hook *)bsd_malloc(sizeof(*pfh1), 
+		pfh1 = (struct packet_filter_hook *)malloc(sizeof(*pfh1), 
 		    M_IFADDR, (flags & PFIL_WAITOK) ? M_WAITOK : M_NOWAIT);
 		if (pfh1 == NULL) {
 			err = ENOMEM;
@@ -178,7 +178,7 @@ pfil_add_hook(int (*func)(void *, struct mbuf **, struct ifnet *, int,
 		}
 	}
 	if (flags & PFIL_OUT) {
-		pfh2 = (struct packet_filter_hook *)bsd_malloc(sizeof(*pfh1),
+		pfh2 = (struct packet_filter_hook *)malloc(sizeof(*pfh1),
 		    M_IFADDR, (flags & PFIL_WAITOK) ? M_WAITOK : M_NOWAIT);
 		if (pfh2 == NULL) {
 			err = ENOMEM;
@@ -211,9 +211,9 @@ locked_error:
 	PFIL_WUNLOCK(ph);
 error:
 	if (pfh1 != NULL)
-		bsd_free(pfh1, M_IFADDR);
+		free(pfh1, M_IFADDR);
 	if (pfh2 != NULL)
-		bsd_free(pfh2, M_IFADDR);
+		free(pfh2, M_IFADDR);
 	return (err);
 }
 
@@ -280,7 +280,7 @@ pfil_list_remove(pfil_list_t *list,
 	TAILQ_FOREACH(pfh, list, pfil_link)
 		if (pfh->pfil_func == func && pfh->pfil_arg == arg) {
 			TAILQ_REMOVE(list, pfh, pfil_link);
-			bsd_free(pfh, M_IFADDR);
+			free(pfh, M_IFADDR);
 			return (0);
 		}
 	return (ENOENT);

@@ -42,7 +42,7 @@
  * Modified by Pavlin Radoslavov, USC/ISI, May 1998, October 2000.
  */
 
-#include <sys/types.h>
+#include <sys/bsd_types.h>
 
 #ifndef _PIM_VT
 #ifndef BYTE_ORDER
@@ -58,7 +58,7 @@
  */
 struct pim {
 #ifdef _PIM_VT
-	bsd_uint8_t		pim_vt;		/* PIM version and message type	*/
+	uint8_t		pim_vt;		/* PIM version and message type	*/
 #else /* ! _PIM_VT   */
 #if BYTE_ORDER == BIG_ENDIAN
 	u_int		pim_vers:4,	/* PIM protocol version		*/
@@ -69,8 +69,8 @@ struct pim {
 			pim_vers:4;	/* PIM protocol version		*/
 #endif
 #endif /* ! _PIM_VT  */
-	bsd_uint8_t		pim_reserved;	/* Reserved			*/
-	bsd_uint16_t	pim_cksum;	/* IP-style checksum		*/
+	uint8_t		pim_reserved;	/* Reserved			*/
+	uint16_t	pim_cksum;	/* IP-style checksum		*/
 };
 /* KAME-related name backward compatibility */
 #define pim_ver pim_vers

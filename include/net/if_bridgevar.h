@@ -74,9 +74,9 @@
  * Data structure and control definitions for bridge interfaces.
  */
 
-#include <sys/callout.h>
-#include <sys/queue.h>
-#include <sys/condvar.h>
+#include <sys/bsd_callout.h>
+#include <sys/bsd_queue.h>
+#include <sys/bsd_condvar.h>
 
 /*
  * Commands used in the SIOCSDRVSPEC ioctl.  Note the lookup of the
@@ -121,18 +121,18 @@
  */
 struct ifbreq {
 	char		ifbr_ifsname[IFNAMSIZ];	/* member if name */
-	bsd_uint32_t	ifbr_ifsflags;		/* member if flags */
-	bsd_uint32_t	ifbr_stpflags;		/* member if STP flags */
-	bsd_uint32_t	ifbr_path_cost;		/* member if STP cost */
-	bsd_uint8_t		ifbr_portno;		/* member if port number */
-	bsd_uint8_t		ifbr_priority;		/* member if STP priority */
-	bsd_uint8_t		ifbr_proto;		/* member if STP protocol */
-	bsd_uint8_t		ifbr_role;		/* member if STP role */
-	bsd_uint8_t		ifbr_state;		/* member if STP state */
-	bsd_uint32_t	ifbr_addrcnt;		/* member if addr number */
-	bsd_uint32_t	ifbr_addrmax;		/* member if addr max */
-	bsd_uint32_t	ifbr_addrexceeded;	/* member if addr violations */
-	bsd_uint8_t		pad[32];
+	uint32_t	ifbr_ifsflags;		/* member if flags */
+	uint32_t	ifbr_stpflags;		/* member if STP flags */
+	uint32_t	ifbr_path_cost;		/* member if STP cost */
+	uint8_t		ifbr_portno;		/* member if port number */
+	uint8_t		ifbr_priority;		/* member if STP priority */
+	uint8_t		ifbr_proto;		/* member if STP protocol */
+	uint8_t		ifbr_role;		/* member if STP role */
+	uint8_t		ifbr_state;		/* member if STP state */
+	uint32_t	ifbr_addrcnt;		/* member if addr number */
+	uint32_t	ifbr_addrmax;		/* member if addr max */
+	uint32_t	ifbr_addrexceeded;	/* member if addr violations */
+	uint8_t		pad[32];
 };
 
 /* BRDGGIFFLAGS, BRDGSIFFLAGS */
@@ -164,7 +164,7 @@ struct ifbreq {
  * Interface list structure.
  */
 struct ifbifconf {
-	bsd_uint32_t	ifbic_len;	/* buffer size */
+	uint32_t	ifbic_len;	/* buffer size */
 	union {
 		caddr_t	ifbicu_buf;
 		struct ifbreq *ifbicu_req;
@@ -179,9 +179,9 @@ struct ifbifconf {
 struct ifbareq {
 	char		ifba_ifsname[IFNAMSIZ];	/* member if name */
 	unsigned long	ifba_expire;		/* address expire time */
-	bsd_uint8_t		ifba_flags;		/* address flags */
-	bsd_uint8_t		ifba_dst[ETHER_ADDR_LEN];/* destination address */
-	bsd_uint16_t	ifba_vlan;		/* vlan id */
+	uint8_t		ifba_flags;		/* address flags */
+	uint8_t		ifba_dst[ETHER_ADDR_LEN];/* destination address */
+	uint16_t	ifba_vlan;		/* vlan id */
 };
 
 #define	IFBAF_TYPEMASK	0x03	/* address type mask */
@@ -195,7 +195,7 @@ struct ifbareq {
  * Address list structure.
  */
 struct ifbaconf {
-	bsd_uint32_t	ifbac_len;	/* buffer size */
+	uint32_t	ifbac_len;	/* buffer size */
 	union {
 		caddr_t ifbacu_buf;
 		struct ifbareq *ifbacu_req;
@@ -209,9 +209,9 @@ struct ifbaconf {
  */
 struct ifbrparam {
 	union {
-		bsd_uint32_t ifbrpu_int32;
-		bsd_uint16_t ifbrpu_int16;
-		bsd_uint8_t ifbrpu_int8;
+		uint32_t ifbrpu_int32;
+		uint16_t ifbrpu_int16;
+		uint8_t ifbrpu_int8;
 	} ifbrp_ifbrpu;
 };
 #define	ifbrp_csize	ifbrp_ifbrpu.ifbrpu_int32	/* cache size */
@@ -228,37 +228,37 @@ struct ifbrparam {
  * Bridge current operational parameters structure.
  */
 struct ifbropreq {
-	bsd_uint8_t		ifbop_holdcount;
-	bsd_uint8_t		ifbop_maxage;
-	bsd_uint8_t		ifbop_hellotime;
-	bsd_uint8_t		ifbop_fwddelay;
-	bsd_uint8_t		ifbop_protocol;
-	bsd_uint16_t	ifbop_priority;
-	bsd_uint16_t	ifbop_root_port;
-	bsd_uint32_t	ifbop_root_path_cost;
-	bsd_uint64_t	ifbop_bridgeid;
-	bsd_uint64_t	ifbop_designated_root;
-	bsd_uint64_t	ifbop_designated_bridge;
-	struct bsd_timeval	ifbop_last_tc_time;
+	uint8_t		ifbop_holdcount;
+	uint8_t		ifbop_maxage;
+	uint8_t		ifbop_hellotime;
+	uint8_t		ifbop_fwddelay;
+	uint8_t		ifbop_protocol;
+	uint16_t	ifbop_priority;
+	uint16_t	ifbop_root_port;
+	uint32_t	ifbop_root_path_cost;
+	uint64_t	ifbop_bridgeid;
+	uint64_t	ifbop_designated_root;
+	uint64_t	ifbop_designated_bridge;
+	struct timeval	ifbop_last_tc_time;
 };
 
 /*
  * Bridge member operational STP params structure.
  */
 struct ifbpstpreq {
-	bsd_uint8_t		ifbp_portno;		/* bp STP port number */
-	bsd_uint32_t	ifbp_fwd_trans;		/* bp STP fwd transitions */
-	bsd_uint32_t	ifbp_design_cost;	/* bp STP designated cost */
-	bsd_uint32_t	ifbp_design_port;	/* bp STP designated port */
-	bsd_uint64_t	ifbp_design_bridge;	/* bp STP designated bridge */
-	bsd_uint64_t	ifbp_design_root;	/* bp STP designated root */
+	uint8_t		ifbp_portno;		/* bp STP port number */
+	uint32_t	ifbp_fwd_trans;		/* bp STP fwd transitions */
+	uint32_t	ifbp_design_cost;	/* bp STP designated cost */
+	uint32_t	ifbp_design_port;	/* bp STP designated port */
+	uint64_t	ifbp_design_bridge;	/* bp STP designated bridge */
+	uint64_t	ifbp_design_root;	/* bp STP designated root */
 };
 
 /*
  * Bridge STP ports list structure.
  */
 struct ifbpstpconf {
-	bsd_uint32_t	ifbpstp_len;	/* buffer size */
+	uint32_t	ifbpstp_len;	/* buffer size */
 	union {
 		caddr_t	ifbpstpu_buf;
 		struct ifbpstpreq *ifbpstpu_req;
@@ -322,7 +322,7 @@ struct ifbpstpconf {
 
 extern	struct mbuf *(*bridge_input_p)(struct ifnet *, struct mbuf *);
 extern	int (*bridge_output_p)(struct ifnet *, struct mbuf *,
-		struct bsd_sockaddr *, struct rtentry *);
+		struct sockaddr *, struct rtentry *);
 extern	void (*bridge_dn_p)(struct mbuf *, struct ifnet *);
 
 #endif /* _KERNEL */

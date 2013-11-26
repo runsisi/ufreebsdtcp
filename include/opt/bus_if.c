@@ -10,18 +10,18 @@
  * See the source file for legal information
  */
 
-#include <sys/param.h>
-#include <sys/queue.h>
-#include <sys/kernel.h>
-#include <sys/kobj.h>
-#include <sys/types.h>
-#include <sys/systm.h>
-#include <sys/bus.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_queue.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_kobj.h>
+#include <sys/bsd_types.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_bus.h>
 #include "bus_if.h"
 
 
 static struct resource *
-null_alloc_resource(bsd_device_t dev, bsd_device_t child,
+null_alloc_resource(device_t dev, device_t child,
     int type, int *rid, u_long start, u_long end,
     u_long count, u_int flags)
 {
@@ -29,7 +29,7 @@ null_alloc_resource(bsd_device_t dev, bsd_device_t child,
 }
 
 static int
-null_remap_intr(bsd_device_t bus, bsd_device_t dev, u_int irq)
+null_remap_intr(device_t bus, device_t dev, u_int irq)
 {
 
 	if (dev != NULL)
@@ -37,8 +37,8 @@ null_remap_intr(bsd_device_t bus, bsd_device_t dev, u_int irq)
 	return (ENXIO);
 }
 
-static bsd_device_t
-null_add_child(bsd_device_t bus, int order, const char *name,
+static device_t
+null_add_child(device_t bus, int order, const char *name,
     int unit)
 {
 

@@ -35,14 +35,14 @@
 
 #include <sys/_bsd_types.h>
 
-#ifndef _BSD_SIZE_T_DECLARED
-typedef	__bsd_size_t	bsd_size_t;
-#define	_BSD_SIZE_T_DECLARED
+#ifndef _SIZE_T_DECLARED
+typedef	__size_t	size_t;
+#define	_SIZE_T_DECLARED
 #endif
 
-struct bsd_iovec {
+struct iovec {
 	void	*iov_base;	/* Base address. */
-	bsd_size_t	 iov_len;	/* Length. */
+	size_t	 iov_len;	/* Length. */
 };
 
 #endif /* !_SYS__IOVEC_H_ */

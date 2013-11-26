@@ -31,17 +31,17 @@
 #include "opt_inet6.h"
 #include "opt_enc.h"
 
-#include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/kernel.h>
-#include <sys/malloc.h>
-#include <sys/mbuf.h>
-#include <sys/module.h>
-#include <machine/bus.h>
-#include <sys/rman.h>
-#include <sys/socket.h>
-#include <sys/sockio.h>
-#include <sys/sysctl.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_malloc.h>
+#include <sys/bsd_mbuf.h>
+#include <sys/bsd_module.h>
+#include <machine/bsd_bus.h>
+#include <sys/bsd_rman.h>
+#include <sys/bsd_socket.h>
+#include <sys/bsd_sockio.h>
+#include <sys/bsd_sysctl.h>
 
 #include <net/if.h>
 #include <net/if_clone.h>
@@ -74,9 +74,9 @@
 #define M_AUTH_AH	0x2000	/* header was authenticated (AH) */
 
 struct enchdr {
-	bsd_uint32_t af;
-	bsd_uint32_t spi;
-	bsd_uint32_t flags;
+	u_int32_t af;
+	u_int32_t spi;
+	u_int32_t flags;
 };
 
 struct ifnet	*encif;
@@ -88,7 +88,7 @@ struct enc_softc {
 
 static int	enc_ioctl(struct ifnet *, u_long, caddr_t);
 static int	enc_output(struct ifnet *ifp, struct mbuf *m,
-		    struct bsd_sockaddr *dst, struct route *ro);
+		    struct sockaddr *dst, struct route *ro);
 static int	enc_clone_create(struct if_clone *, int, caddr_t);
 static void	enc_clone_destroy(struct ifnet *);
 
@@ -136,10 +136,10 @@ enc_clone_create(struct if_clone *ifc, int unit, caddr_t params)
 	struct ifnet *ifp;
 	struct enc_softc *sc;
 
-	sc = bsd_malloc(sizeof(*sc), M_DEVBUF, M_WAITOK|M_ZERO);
+	sc = malloc(sizeof(*sc), M_DEVBUF, M_WAITOK|M_ZERO);
 	ifp = sc->sc_ifp = if_alloc(IFT_ENC);
 	if (ifp == NULL) {
-		bsd_free(sc, M_DEVBUF);
+		free(sc, M_DEVBUF);
 		return (ENOSPC);
 	}
 
@@ -187,7 +187,7 @@ static moduledata_t enc_mod = {
 DECLARE_MODULE(if_enc, enc_mod, SI_SUB_PROTO_IFATTACHDOMAIN, SI_ORDER_ANY);
 
 static int
-enc_output(struct ifnet *ifp, struct mbuf *m, struct bsd_sockaddr *dst,
+enc_output(struct ifnet *ifp, struct mbuf *m, struct sockaddr *dst,
     struct route *ro)
 {
 	m_freem(m);
@@ -227,7 +227,7 @@ int
 ipsec_filter(struct mbuf **mp, int dir, int flags)
 {
 	int error, i;
-	struct bsd_ip *ip;
+	struct ip *ip;
 
 	KASSERT(encif != NULL, ("%s: encif is null", __func__));
 	KASSERT(flags & (ENC_IN|ENC_OUT),
@@ -266,7 +266,7 @@ ipsec_filter(struct mbuf **mp, int dir, int flags)
 	}
 
 	error = 0;
-	bsd_ip = mtod(*mp, struct bsd_ip *);
+	ip = mtod(*mp, struct ip *);
 	switch (ip->ip_v) {
 #ifdef INET
 		case 4:
@@ -284,7 +284,7 @@ ipsec_filter(struct mbuf **mp, int dir, int flags)
 				break;
 
 			/* restore byte ordering */
-			bsd_ip = mtod(*mp, struct bsd_ip *);
+			ip = mtod(*mp, struct ip *);
 			ip->ip_len = htons(ip->ip_len);
 			ip->ip_off = htons(ip->ip_off);
 			break;

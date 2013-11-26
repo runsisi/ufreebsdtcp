@@ -43,11 +43,11 @@ typedef struct __ucontext {
 	 * support them both at the same time.
 	 * note: the union is not defined, though.
 	 */
-	bsd_sigset_t	uc_sigmask;
+	sigset_t	uc_sigmask;
 	mcontext_t	uc_mcontext;
 
 	struct __ucontext *uc_link;
-//	bsd_stack_t		uc_stack;
+	stack_t		uc_stack;
 	int		uc_flags;
 #define	UCF_SWAPPED	0x00000001	/* Used by swapcontext(3). */
 	int		__spare__[4];
@@ -56,10 +56,10 @@ typedef struct __ucontext {
 #if defined(_KERNEL) && defined(COMPAT_FREEBSD4)
 #if defined(__i386__)
 struct ucontext4 {
-	bsd_sigset_t	uc_sigmask;
+	sigset_t	uc_sigmask;
 	struct mcontext4 uc_mcontext;
 	struct ucontext4 *uc_link;
-	bsd_stack_t		uc_stack;
+	stack_t		uc_stack;
 	int		__spare__[8];
 };
 #else	/* __i386__ */

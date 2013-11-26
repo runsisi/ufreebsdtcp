@@ -60,29 +60,29 @@
  *	@(#)in_pcb.c	8.2 (Berkeley) 1/4/94
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/netinet6/in6_src.c 250044 2013-04-29 10:52:45Z ae $");
 
 #include "opt_inet.h"
 #include "opt_inet6.h"
 #include "opt_mpath.h"
 
-#include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/lock.h>
-#include <sys/malloc.h>
-#include <sys/mbuf.h>
-#include <sys/priv.h>
-#include <sys/protosw.h>
-#include <sys/socket.h>
-#include <sys/socketvar.h>
-#include <sys/sockio.h>
-#include <sys/sysctl.h>
-#include <sys/errno.h>
-#include <sys/time.h>
-#include <sys/jail.h>
-#include <sys/kernel.h>
-#include <sys/sx.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_lock.h>
+#include <sys/bsd_malloc.h>
+#include <sys/bsd_mbuf.h>
+#include <sys/bsd_priv.h>
+#include <sys/bsd_protosw.h>
+#include <sys/bsd_socket.h>
+#include <sys/bsd_socketvar.h>
+#include <sys/bsd_sockio.h>
+#include <sys/bsd_sysctl.h>
+#include <sys/bsd_errno.h>
+#include <sys/bsd_time.h>
+#include <sys/bsd_jail.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_sx.h>
 
 #include <net/if.h>
 #include <net/if_dl.h>
@@ -127,14 +127,14 @@ static VNET_DEFINE(struct in6_addrpolicy, defaultaddrpolicy);
 
 VNET_DEFINE(int, ip6_prefer_tempaddr) = 0;
 
-static int selectroute(struct bsd_sockaddr_in6 *, struct ip6_pktopts *,
+static int selectroute(struct sockaddr_in6 *, struct ip6_pktopts *,
 	struct ip6_moptions *, struct route_in6 *, struct ifnet **,
 	struct rtentry **, int, u_int);
-static int in6_selectif(struct bsd_sockaddr_in6 *, struct ip6_pktopts *,
+static int in6_selectif(struct sockaddr_in6 *, struct ip6_pktopts *,
 	struct ip6_moptions *, struct route_in6 *ro, struct ifnet **,
 	struct ifnet *, u_int);
 
-static struct in6_addrpolicy *lookup_addrsel_policy(struct bsd_sockaddr_in6 *);
+static struct in6_addrpolicy *lookup_addrsel_policy(struct sockaddr_in6 *);
 
 static void init_policy_queue(void);
 static int add_addrsel_policyent(struct in6_addrpolicy *);
@@ -142,7 +142,7 @@ static int delete_addrsel_policyent(struct in6_addrpolicy *);
 static int walk_addrsel_policy(int (*)(struct in6_addrpolicy *, void *),
 				    void *);
 static int dump_addrsel_policyent(struct in6_addrpolicy *, void *);
-static struct in6_addrpolicy *match_addrsel_policy(struct bsd_sockaddr_in6 *);
+static struct in6_addrpolicy *match_addrsel_policy(struct sockaddr_in6 *);
 
 /*
  * Return an IPv6 address, which is the most appropriate for a given
@@ -173,17 +173,17 @@ static struct in6_addrpolicy *match_addrsel_policy(struct bsd_sockaddr_in6 *);
 } while(0)
 
 int
-in6_selectsrc(struct bsd_sockaddr_in6 *dstsock, struct ip6_pktopts *opts,
-    struct inpcb *inp, struct route_in6 *ro, struct bsd_ucred *cred,
-    struct ifnet **ifpp, struct bsd_in6_addr *srcp)
+in6_selectsrc(struct sockaddr_in6 *dstsock, struct ip6_pktopts *opts,
+    struct inpcb *inp, struct route_in6 *ro, struct ucred *cred,
+    struct ifnet **ifpp, struct in6_addr *srcp)
 {
-	struct bsd_in6_addr dst, tmp;
+	struct in6_addr dst, tmp;
 	struct ifnet *ifp = NULL, *oifp = NULL;
 	struct in6_ifaddr *ia = NULL, *ia_best = NULL;
 	struct in6_pktinfo *pi = NULL;
 	int dst_scope = -1, best_scope = -1, best_matchlen = -1;
 	struct in6_addrpolicy *dst_policy = NULL, *best_policy = NULL;
-	bsd_uint32_t odstzone;
+	u_int32_t odstzone;
 	int prefer_tempaddr;
 	int error, rule;
 	struct ip6_moptions *mopts;
@@ -219,7 +219,7 @@ in6_selectsrc(struct bsd_sockaddr_in6 *dstsock, struct ip6_pktopts *opts,
 	 */
 	if (opts && (pi = opts->ip6po_pktinfo) &&
 	    !IN6_IS_ADDR_UNSPECIFIED(&pi->ipi6_addr)) {
-		struct bsd_sockaddr_in6 srcsock;
+		struct sockaddr_in6 srcsock;
 		struct in6_ifaddr *ia6;
 
 		/* get the outgoing interface */
@@ -250,7 +250,7 @@ in6_selectsrc(struct bsd_sockaddr_in6 *dstsock, struct ip6_pktopts *opts,
 			return (error);
 
 		ia6 = (struct in6_ifaddr *)ifa_ifwithaddr(
-		    (struct bsd_sockaddr *)&srcsock);
+		    (struct sockaddr *)&srcsock);
 		if (ia6 == NULL ||
 		    (ia6->ia6_flags & (IN6_IFF_ANYCAST | IN6_IFF_NOTREADY))) {
 			if (ia6 != NULL)
@@ -306,8 +306,8 @@ in6_selectsrc(struct bsd_sockaddr_in6 *dstsock, struct ip6_pktopts *opts,
 	TAILQ_FOREACH(ia, &V_in6_ifaddrhead, ia_link) {
 		int new_scope = -1, new_matchlen = -1;
 		struct in6_addrpolicy *new_policy = NULL;
-		bsd_uint32_t srczone, osrczone, dstzone;
-		struct bsd_in6_addr src;
+		u_int32_t srczone, osrczone, dstzone;
+		struct in6_addr src;
 		struct ifnet *ifp1 = ia->ia_ifp;
 
 		/*
@@ -526,16 +526,16 @@ in6_selectsrc(struct bsd_sockaddr_in6 *dstsock, struct ip6_pktopts *opts,
  * clone - meaningful only for bsdi and freebsd
  */
 static int
-selectroute(struct bsd_sockaddr_in6 *dstsock, struct ip6_pktopts *opts,
+selectroute(struct sockaddr_in6 *dstsock, struct ip6_pktopts *opts,
     struct ip6_moptions *mopts, struct route_in6 *ro,
     struct ifnet **retifp, struct rtentry **retrt, int norouteok, u_int fibnum)
 {
 	int error = 0;
 	struct ifnet *ifp = NULL;
 	struct rtentry *rt = NULL;
-	struct bsd_sockaddr_in6 *sin6_next;
+	struct sockaddr_in6 *sin6_next;
 	struct in6_pktinfo *pi = NULL;
-	struct bsd_in6_addr *dst = &dstsock->sin6_addr;
+	struct in6_addr *dst = &dstsock->sin6_addr;
 #if 0
 	char ip6buf[INET6_ADDRSTRLEN];
 
@@ -619,7 +619,7 @@ selectroute(struct bsd_sockaddr_in6 *dstsock, struct ip6_pktopts *opts,
 		rt = ron->ro_rt;
 		ifp = rt->rt_ifp;
 		IF_AFDATA_RLOCK(ifp);
-		la = lla_lookup(LLTABLE6(ifp), 0, (struct bsd_sockaddr *)&sin6_next->sin6_addr);
+		la = lla_lookup(LLTABLE6(ifp), 0, (struct sockaddr *)&sin6_next->sin6_addr);
 		IF_AFDATA_RUNLOCK(ifp);
 		if (la != NULL) 
 			LLE_RUNLOCK(la);
@@ -669,18 +669,18 @@ selectroute(struct bsd_sockaddr_in6 *dstsock, struct ip6_pktopts *opts,
 	if (ro) {
 		if (ro->ro_rt &&
 		    (!(ro->ro_rt->rt_flags & RTF_UP) ||
-		     ((struct bsd_sockaddr *)(&ro->ro_dst))->sa_family != AF_INET6 ||
+		     ((struct sockaddr *)(&ro->ro_dst))->sa_family != AF_INET6 ||
 		     !IN6_ARE_ADDR_EQUAL(&satosin6(&ro->ro_dst)->sin6_addr,
 		     dst))) {
 			RTFREE(ro->ro_rt);
 			ro->ro_rt = (struct rtentry *)NULL;
 		}
 		if (ro->ro_rt == (struct rtentry *)NULL) {
-			struct bsd_sockaddr_in6 *sa6;
+			struct sockaddr_in6 *sa6;
 
 			/* No route yet, so try to acquire one */
-			bzero(&ro->ro_dst, sizeof(struct bsd_sockaddr_in6));
-			sa6 = (struct bsd_sockaddr_in6 *)&ro->ro_dst;
+			bzero(&ro->ro_dst, sizeof(struct sockaddr_in6));
+			sa6 = (struct sockaddr_in6 *)&ro->ro_dst;
 			*sa6 = *dstsock;
 			sa6->sin6_scope_id = 0;
 
@@ -688,7 +688,7 @@ selectroute(struct bsd_sockaddr_in6 *dstsock, struct ip6_pktopts *opts,
 				rtalloc_mpath_fib((struct route *)ro,
 				    ntohl(sa6->sin6_addr.s6_addr32[3]), fibnum);
 #else			
-				ro->ro_rt = in6_rtalloc1((struct bsd_sockaddr *)
+				ro->ro_rt = in6_rtalloc1((struct sockaddr *)
 				    &ro->ro_dst, 0, 0UL, fibnum);
 				if (ro->ro_rt)
 					RT_UNLOCK(ro->ro_rt);
@@ -769,7 +769,7 @@ selectroute(struct bsd_sockaddr_in6 *dstsock, struct ip6_pktopts *opts,
 }
 
 static int
-in6_selectif(struct bsd_sockaddr_in6 *dstsock, struct ip6_pktopts *opts,
+in6_selectif(struct sockaddr_in6 *dstsock, struct ip6_pktopts *opts,
     struct ip6_moptions *mopts, struct route_in6 *ro, struct ifnet **retifp,
     struct ifnet *oifp, u_int fibnum)
 {
@@ -833,7 +833,7 @@ in6_selectif(struct bsd_sockaddr_in6 *dstsock, struct ip6_pktopts *opts,
  * in6_selectroute_fib() function is only there for backward compat on stable.
  */
 int
-in6_selectroute(struct bsd_sockaddr_in6 *dstsock, struct ip6_pktopts *opts,
+in6_selectroute(struct sockaddr_in6 *dstsock, struct ip6_pktopts *opts,
     struct ip6_moptions *mopts, struct route_in6 *ro,
     struct ifnet **retifp, struct rtentry **retrt)
 {
@@ -844,7 +844,7 @@ in6_selectroute(struct bsd_sockaddr_in6 *dstsock, struct ip6_pktopts *opts,
 
 #ifndef BURN_BRIDGES
 int
-in6_selectroute_fib(struct bsd_sockaddr_in6 *dstsock, struct ip6_pktopts *opts,
+in6_selectroute_fib(struct sockaddr_in6 *dstsock, struct ip6_pktopts *opts,
     struct ip6_moptions *mopts, struct route_in6 *ro,
     struct ifnet **retifp, struct rtentry **retrt, u_int fibnum)
 {
@@ -875,7 +875,7 @@ in6_selecthlim(struct inpcb *in6p, struct ifnet *ifp)
 
 		bzero(&ro6, sizeof(ro6));
 		ro6.ro_dst.sin6_family = AF_INET6;
-		ro6.ro_dst.sin6_len = sizeof(struct bsd_sockaddr_in6);
+		ro6.ro_dst.sin6_len = sizeof(struct sockaddr_in6);
 		ro6.ro_dst.sin6_addr = in6p->in6p_faddr;
 		in6_rtalloc(&ro6, in6p->inp_inc.inc_fibnum);
 		if (ro6.ro_rt) {
@@ -893,10 +893,10 @@ in6_selecthlim(struct inpcb *in6p, struct ifnet *ifp)
  * share this function by all *bsd*...
  */
 int
-in6_pcbsetport(struct bsd_in6_addr *laddr, struct inpcb *inp, struct bsd_ucred *cred)
+in6_pcbsetport(struct in6_addr *laddr, struct inpcb *inp, struct ucred *cred)
 {
-	struct bsd_socket *so = inp->inp_socket;
-	bsd_uint16_t lport = 0;
+	struct socket *so = inp->inp_socket;
+	u_int16_t lport = 0;
 	int error, lookupflags = 0;
 #ifdef INVARIANTS
 	struct inpcbinfo *pcbinfo = inp->inp_pcbinfo;
@@ -922,7 +922,7 @@ in6_pcbsetport(struct bsd_in6_addr *laddr, struct inpcb *inp, struct bsd_ucred *
 
 	inp->inp_lport = lport;
 	if (in_pcbinshash(inp) != 0) {
-		inp->in6p_laddr = bsd_in6addr_any;
+		inp->in6p_laddr = in6addr_any;
 		inp->inp_lport = 0;
 		return (EAGAIN);
 	}
@@ -948,7 +948,7 @@ addrsel_policy_init(void)
 }
 
 static struct in6_addrpolicy *
-lookup_addrsel_policy(struct bsd_sockaddr_in6 *key)
+lookup_addrsel_policy(struct sockaddr_in6 *key)
 {
 	struct in6_addrpolicy *match = NULL;
 
@@ -1051,7 +1051,7 @@ add_addrsel_policyent(struct in6_addrpolicy *newpolicy)
 {
 	struct addrsel_policyent *new, *pol;
 
-	new = bsd_malloc(sizeof(*new), M_IFADDR,
+	new = malloc(sizeof(*new), M_IFADDR,
 	       M_WAITOK);
 	ADDRSEL_XLOCK();
 	ADDRSEL_LOCK();
@@ -1064,7 +1064,7 @@ add_addrsel_policyent(struct in6_addrpolicy *newpolicy)
 				       &pol->ape_policy.addrmask.sin6_addr)) {
 			ADDRSEL_UNLOCK();
 			ADDRSEL_XUNLOCK();
-			bsd_free(new, M_IFADDR);
+			free(new, M_IFADDR);
 			return (EEXIST);	/* or override it? */
 		}
 	}
@@ -1107,7 +1107,7 @@ delete_addrsel_policyent(struct in6_addrpolicy *key)
 	TAILQ_REMOVE(&V_addrsel_policytab, pol, ape_entry);
 	ADDRSEL_UNLOCK();
 	ADDRSEL_XUNLOCK();
-	bsd_free(pol, M_IFADDR);
+	free(pol, M_IFADDR);
 
 	return (0);
 }
@@ -1142,7 +1142,7 @@ dump_addrsel_policyent(struct in6_addrpolicy *pol, void *arg)
 }
 
 static struct in6_addrpolicy *
-match_addrsel_policy(struct bsd_sockaddr_in6 *key)
+match_addrsel_policy(struct sockaddr_in6 *key)
 {
 	struct addrsel_policyent *pent;
 	struct in6_addrpolicy *bestpol = NULL, *pol;

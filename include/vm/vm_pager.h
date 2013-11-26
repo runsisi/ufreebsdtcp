@@ -42,13 +42,13 @@
 #ifndef	_VM_PAGER_
 #define	_VM_PAGER_
 
-#include <sys/queue.h>
+#include <sys/bsd_queue.h>
 
 TAILQ_HEAD(pagerlst, vm_object);
 
 typedef void pgo_init_t(void);
 typedef vm_object_t pgo_alloc_t(void *, vm_ooffset_t, vm_prot_t, vm_ooffset_t,
-    struct bsd_ucred *);
+    struct ucred *);
 typedef void pgo_dealloc_t(vm_object_t);
 typedef int pgo_getpages_t(vm_object_t, vm_page_t *, int, int);
 typedef void pgo_putpages_t(vm_object_t, vm_page_t *, int, int, int *);
@@ -100,7 +100,7 @@ extern struct pagerops *pagertab[];
 extern struct mtx pbuf_mtx;
 
 vm_object_t vm_pager_allocate(objtype_t, void *, vm_ooffset_t, vm_prot_t,
-    vm_ooffset_t, struct bsd_ucred *);
+    vm_ooffset_t, struct ucred *);
 void vm_pager_bufferinit(void);
 void vm_pager_deallocate(vm_object_t);
 static __inline int vm_pager_get_pages(vm_object_t, vm_page_t *, int, int);
@@ -197,13 +197,13 @@ struct cdev_pager_ops {
 	int (*cdev_pg_fault)(vm_object_t vm_obj, vm_ooffset_t offset,
 	    int prot, vm_page_t *mres);
 	int (*cdev_pg_ctor)(void *handle, vm_ooffset_t size, vm_prot_t prot,
-	    vm_ooffset_t foff, struct bsd_ucred *cred, u_short *color);
+	    vm_ooffset_t foff, struct ucred *cred, u_short *color);
 	void (*cdev_pg_dtor)(void *handle);
 };
 
 vm_object_t cdev_pager_allocate(void *handle, enum obj_type tp,
     struct cdev_pager_ops *ops, vm_ooffset_t size, vm_prot_t prot,
-    vm_ooffset_t foff, struct bsd_ucred *cred);
+    vm_ooffset_t foff, struct ucred *cred);
 vm_object_t cdev_pager_lookup(void *handle);
 void cdev_pager_free_page(vm_object_t object, vm_page_t m);
 

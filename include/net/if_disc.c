@@ -35,14 +35,14 @@
  * (Based on the loopback.)
  */
 
-#include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/kernel.h>
-#include <sys/malloc.h>
-#include <sys/module.h>
-#include <sys/mbuf.h>
-#include <sys/socket.h>
-#include <sys/sockio.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_malloc.h>
+#include <sys/bsd_module.h>
+#include <sys/bsd_mbuf.h>
+#include <sys/bsd_socket.h>
+#include <sys/bsd_sockio.h>
 
 #include <net/if.h>
 #include <net/if_clone.h>
@@ -66,7 +66,7 @@ struct disc_softc {
 };
 
 static int	discoutput(struct ifnet *, struct mbuf *,
-		    struct bsd_sockaddr *, struct route *);
+		    struct sockaddr *, struct route *);
 static void	discrtrequest(int, struct rtentry *, struct rt_addrinfo *);
 static int	discioctl(struct ifnet *, u_long, caddr_t);
 static int	disc_clone_create(struct if_clone *, int, caddr_t);
@@ -82,10 +82,10 @@ disc_clone_create(struct if_clone *ifc, int unit, caddr_t params)
 	struct ifnet		*ifp;
 	struct disc_softc	*sc;
 
-	sc = bsd_malloc(sizeof(struct disc_softc), M_DISC, M_WAITOK | M_ZERO);
+	sc = malloc(sizeof(struct disc_softc), M_DISC, M_WAITOK | M_ZERO);
 	ifp = sc->sc_ifp = if_alloc(IFT_LOOP);
 	if (ifp == NULL) {
-		bsd_free(sc, M_DISC);
+		free(sc, M_DISC);
 		return (ENOSPC);
 	}
 
@@ -110,7 +110,7 @@ disc_clone_create(struct if_clone *ifc, int unit, caddr_t params)
 	ifp->if_addrlen = 0;
 	ifp->if_snd.ifq_maxlen = 20;
 	if_attach(ifp);
-	bpfattach(ifp, DLT_NULL, sizeof(bsd_uint32_t));
+	bpfattach(ifp, DLT_NULL, sizeof(u_int32_t));
 
 	return (0);
 }
@@ -126,7 +126,7 @@ disc_clone_destroy(struct ifnet *ifp)
 	if_detach(ifp);
 	if_free(ifp);
 
-	bsd_free(sc, M_DISC);
+	free(sc, M_DISC);
 }
 
 static int
@@ -155,10 +155,10 @@ static moduledata_t disc_mod = {
 DECLARE_MODULE(if_disc, disc_mod, SI_SUB_PSEUDO, SI_ORDER_ANY);
 
 static int
-discoutput(struct ifnet *ifp, struct mbuf *m, struct bsd_sockaddr *dst,
+discoutput(struct ifnet *ifp, struct mbuf *m, struct sockaddr *dst,
     struct route *ro)
 {
-	bsd_uint32_t af;
+	u_int32_t af;
 
 	M_ASSERTPKTHDR(m);
 

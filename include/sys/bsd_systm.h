@@ -35,8 +35,8 @@
  * $FreeBSD: release/9.2.0/sys/sys/systm.h 251897 2013-06-18 05:21:40Z scottl $
  */
 
-#ifndef _BSD_SYS_SYSTM_H_
-#define	_BSD_SYS_SYSTM_H_
+#ifndef _SYS_SYSTM_H_
+#define	_SYS_SYSTM_H_
 
 #include <machine/bsd_atomic.h>
 #include <machine/bsd_cpufunc.h>
@@ -149,19 +149,17 @@ struct lock_object;
 struct malloc_type;
 struct mtx;
 struct proc;
-struct bsd_socket;
+struct socket;
 struct thread;
 struct tty;
-struct bsd_ucred;
+struct ucred;
 struct uio;
 struct _jmp_buf;
 struct trapframe;
 
-#if 0 // runsisi AT hust.edu.cn @2013/10/18
 int	setjmp(struct _jmp_buf *) __returns_twice;
 void	longjmp(struct _jmp_buf *, int) __dead2;
-#endif // -------
-int	dumpstatus(bsd_vm_offset_t addr, bsd_off_t count);
+int	dumpstatus(vm_offset_t addr, off_t count);
 int	nullop(void);
 int	eopnotsupp(void);
 int	ureadc(int, struct uio *);
@@ -178,29 +176,25 @@ void	g_waitidle(void);
 void	panic(const char *, ...) __dead2 __printflike(1, 2);
 
 void	cpu_boot(int);
-void	cpu_flush_dcache(void *, bsd_size_t);
+void	cpu_flush_dcache(void *, size_t);
 void	cpu_rootconf(void);
 void	critical_enter(void);
 void	critical_exit(void);
 void	init_param1(void);
 void	init_param2(long physpages);
-void	init_static_kenv(char *, bsd_size_t);
+void	init_static_kenv(char *, size_t);
 void	tablefull(const char *);
-
-#if 0 // runsisi AT hust.edu.cn @2013/10/18
 int	kvprintf(char const *, void (*)(int, void*), void *, int,
-        __va_list) __printflike(1, 0);
-#endif
-void	bsd_log(int, const char *, ...) __printflike(2, 3);
-#if 0
+	    __va_list) __printflike(1, 0);
+void	log(int, const char *, ...) __printflike(2, 3);
 void	log_console(struct uio *);
 int	printf(const char *, ...) __printflike(1, 2);
-int	snprintf(char *, bsd_size_t, const char *, ...) __printflike(3, 4);
+int	snprintf(char *, size_t, const char *, ...) __printflike(3, 4);
 int	sprintf(char *buf, const char *, ...) __printflike(2, 3);
 int	uprintf(const char *, ...) __printflike(1, 2);
 int	vprintf(const char *, __va_list) __printflike(1, 0);
-int	vsnprintf(char *, bsd_size_t, const char *, __va_list) __printflike(3, 0);
-int	vsnrprintf(char *, bsd_size_t, int, const char *, __va_list) __printflike(4, 0);
+int	vsnprintf(char *, size_t, const char *, __va_list) __printflike(3, 0);
+int	vsnrprintf(char *, size_t, int, const char *, __va_list) __printflike(4, 0);
 int	vsprintf(char *buf, const char *, __va_list) __printflike(2, 0);
 int	ttyprintf(struct tty *, const char *, ...) __printflike(2, 3);
 int	sscanf(const char *, char const *, ...) __nonnull(1) __nonnull(2);
@@ -211,7 +205,6 @@ quad_t	strtoq(const char *, char **, int) __nonnull(1);
 u_quad_t strtouq(const char *, char **, int) __nonnull(1);
 void	tprintf(struct proc *p, int pri, const char *, ...) __printflike(3, 4);
 void	hexdump(const void *ptr, int length, const char *hdr, int flags);
-#endif // -------
 #define	HD_COLUMN_MASK	0xff
 #define	HD_DELIM_MASK	0xff00
 #define	HD_OMIT_COUNT	(1 << 16)
@@ -219,22 +212,27 @@ void	hexdump(const void *ptr, int length, const char *hdr, int flags);
 #define	HD_OMIT_CHARS	(1 << 18)
 
 #define ovbcopy(f, t, l) bcopy((f), (t), (l))
-#if 0 // runsisi AT hust.edu.cn @2013/10/18
-void	bcopy(const void *from, void *to, bsd_size_t len) __nonnull(1) __nonnull(2);
-void	bzero(void *buf, bsd_size_t len) __nonnull(1);
+void	bcopy(const void *from, void *to, size_t len) __nonnull(1) __nonnull(2);
+void	bzero(void *buf, size_t len) __nonnull(1);
 
-void	*memcpy(void *to, const void *from, bsd_size_t len) __nonnull(1) __nonnull(2);
-void	*memmove(void *dest, const void *src, bsd_size_t n) __nonnull(1) __nonnull(2);
-#endif
+void	*memcpy(void *to, const void *from, size_t len) __nonnull(1) __nonnull(2);
+void	*memmove(void *dest, const void *src, size_t n) __nonnull(1) __nonnull(2);
 
-int	copystr(const void * kfaddr, void * kdaddr, bsd_size_t len, bsd_size_t * lencopied);
-int	bsd_copyinstr(const void * udaddr, void * kaddr, bsd_size_t len, bsd_size_t * lencopied);
-int	copyin(const void * udaddr, void * kaddr, bsd_size_t len);
-int	copyin_nofault(const void * udaddr, void * kaddr, bsd_size_t len);
-int	copyout(const void * kaddr, void * udaddr, bsd_size_t len);
-int	copyout_nofault(const void * kaddr, void * udaddr, bsd_size_t len);
+int	copystr(const void * __restrict kfaddr, void * __restrict kdaddr,
+	    size_t len, size_t * __restrict lencopied)
+	    __nonnull(1) __nonnull(2);
+int	copyinstr(const void * __restrict udaddr, void * __restrict kaddr,
+	    size_t len, size_t * __restrict lencopied)
+	    __nonnull(1) __nonnull(2);
+int	copyin(const void * __restrict udaddr, void * __restrict kaddr,
+	    size_t len) __nonnull(1) __nonnull(2);
+int	copyin_nofault(const void * __restrict udaddr, void * __restrict kaddr,
+	    size_t len) __nonnull(1) __nonnull(2);
+int	copyout(const void * __restrict kaddr, void * __restrict udaddr,
+	    size_t len) __nonnull(1) __nonnull(2);
+int	copyout_nofault(const void * __restrict kaddr, void * __restrict udaddr,
+	    size_t len) __nonnull(1) __nonnull(2);
 
-#if 0
 int	fubyte(const void *base);
 long	fuword(const void *base);
 int	fuword16(void *base);
@@ -245,22 +243,22 @@ int	suword(void *base, long word);
 int	suword16(void *base, int word);
 int	suword32(void *base, int32_t word);
 int	suword64(void *base, int64_t word);
-bsd_uint32_t casuword32(volatile bsd_uint32_t *base, bsd_uint32_t oldval, bsd_uint32_t newval);
+uint32_t casuword32(volatile uint32_t *base, uint32_t oldval, uint32_t newval);
 u_long	 casuword(volatile u_long *p, u_long oldval, u_long newval);
 
 void	realitexpire(void *);
 
 int	sysbeep(int hertz, int period);
 
-void	hardclock(int usermode, bsd_uintfptr_t pc);
+void	hardclock(int usermode, uintfptr_t pc);
 void	hardclock_cnt(int cnt, int usermode);
 void	hardclock_cpu(int usermode);
 void	hardclock_sync(int cpu);
 void	softclock(void *);
 void	statclock(int usermode);
 void	statclock_cnt(int cnt, int usermode);
-void	profclock(int usermode, bsd_uintfptr_t pc);
-void	profclock_cnt(int cnt, int usermode, bsd_uintfptr_t pc);
+void	profclock(int usermode, uintfptr_t pc);
+void	profclock_cnt(int cnt, int usermode, uintfptr_t pc);
 
 int	hardclockintr(void);
 
@@ -273,9 +271,9 @@ void	cpu_activeclock(void);
 extern int	cpu_can_deep_sleep;
 extern int	cpu_disable_deep_sleep;
 
-int	cr_cansee(struct bsd_ucred *u1, struct bsd_ucred *u2);
-int	cr_canseesocket(struct bsd_ucred *cred, struct bsd_socket *so);
-int	cr_canseeinpcb(struct bsd_ucred *cred, struct inpcb *inp);
+int	cr_cansee(struct ucred *u1, struct ucred *u2);
+int	cr_canseesocket(struct ucred *cred, struct socket *so);
+int	cr_canseeinpcb(struct ucred *cred, struct inpcb *inp);
 
 char	*getenv(const char *name);
 void	freeenv(char *env);
@@ -288,15 +286,12 @@ int	getenv_quad(const char *name, quad_t *data);
 int	setenv(const char *name, const char *value);
 int	unsetenv(const char *name);
 int	testenv(const char *name);
-#endif // -------
 
-typedef bsd_uint64_t (cpu_tick_f)(void);
-#if 0 // runsisi AT hust.edu.cn @2013/10/18
-void set_cputicker(cpu_tick_f *func, bsd_uint64_t freq, unsigned var);
+typedef uint64_t (cpu_tick_f)(void);
+void set_cputicker(cpu_tick_f *func, uint64_t freq, unsigned var);
 extern cpu_tick_f *cpu_ticks;
-bsd_uint64_t cpu_tickrate(void);
-bsd_uint64_t cputick2usec(bsd_uint64_t tick);
-#endif // -------
+uint64_t cpu_tickrate(void);
+uint64_t cputick2usec(uint64_t tick);
 
 #ifdef APM_FIXUP_CALLTODO
 struct timeval;
@@ -305,7 +300,6 @@ void	adjust_timeout_calltodo(struct timeval *time_change);
 
 #include <sys/bsd_libkern.h>
 
-#if 0 // runsisi AT hust.edu.cn @2013/10/18
 /* Initialize the world */
 void	consinit(void);
 void	cpu_initclocks(void);
@@ -316,7 +310,6 @@ void	usrinfoinit(void);
 /* Finalize the world */
 void	kern_reboot(int) __dead2;
 void	shutdown_nice(int);
-#endif // -------
 
 /* Timeouts */
 typedef void timeout_t(void *);	/* timeout function type */
@@ -331,43 +324,44 @@ void	kern_timeout_callwheel_init(void);
 
 /* Stubs for obsolete functions that used to be for interrupt management */
 static __inline void		spl0(void)		{ return; }
-static __inline bsd_intrmask_t	splbio(void)		{ return 0; }
-static __inline bsd_intrmask_t	splcam(void)		{ return 0; }
-static __inline bsd_intrmask_t	splclock(void)		{ return 0; }
-static __inline bsd_intrmask_t	splhigh(void)		{ return 0; }
-static __inline bsd_intrmask_t	splimp(void)		{ return 0; }
-static __inline bsd_intrmask_t	splnet(void)		{ return 0; }
-static __inline bsd_intrmask_t	splsoftcam(void)	{ return 0; }
-static __inline bsd_intrmask_t	splsoftclock(void)	{ return 0; }
-static __inline bsd_intrmask_t	splsofttty(void)	{ return 0; }
-static __inline bsd_intrmask_t	splsoftvm(void)		{ return 0; }
-static __inline bsd_intrmask_t	splsofttq(void)		{ return 0; }
-static __inline bsd_intrmask_t	splstatclock(void)	{ return 0; }
-static __inline bsd_intrmask_t	spltty(void)		{ return 0; }
-static __inline bsd_intrmask_t	splvm(void)		{ return 0; }
-static __inline void		splx(bsd_intrmask_t ipl __bsd_unused)	{ return; }
+static __inline intrmask_t	splbio(void)		{ return 0; }
+static __inline intrmask_t	splcam(void)		{ return 0; }
+static __inline intrmask_t	splclock(void)		{ return 0; }
+static __inline intrmask_t	splhigh(void)		{ return 0; }
+static __inline intrmask_t	splimp(void)		{ return 0; }
+static __inline intrmask_t	splnet(void)		{ return 0; }
+static __inline intrmask_t	splsoftcam(void)	{ return 0; }
+static __inline intrmask_t	splsoftclock(void)	{ return 0; }
+static __inline intrmask_t	splsofttty(void)	{ return 0; }
+static __inline intrmask_t	splsoftvm(void)		{ return 0; }
+static __inline intrmask_t	splsofttq(void)		{ return 0; }
+static __inline intrmask_t	splstatclock(void)	{ return 0; }
+static __inline intrmask_t	spltty(void)		{ return 0; }
+static __inline intrmask_t	splvm(void)		{ return 0; }
+static __inline void		splx(intrmask_t ipl __unused)	{ return; }
 
 /*
  * Common `proc' functions are declared here so that proc.h can be included
  * less often.
  */
 int	_sleep(void *chan, struct lock_object *lock, int pri, const char *wmesg,
-	    int timo);
+	    int timo) __nonnull(1);
 #define	msleep(chan, mtx, pri, wmesg, timo)				\
 	_sleep((chan), &(mtx)->lock_object, (pri), (wmesg), (timo))
-int	msleep_spin(void *chan, struct mtx *mtx, const char *wmesg, int timo);
-//int	pause(const char *wmesg, int timo);
+int	msleep_spin(void *chan, struct mtx *mtx, const char *wmesg, int timo)
+	    __nonnull(1);
+int	pause(const char *wmesg, int timo);
 #define	tsleep(chan, pri, wmesg, timo)					\
 	_sleep((chan), NULL, (pri), (wmesg), (timo))
-void	wakeup(void *chan);
-void	wakeup_one(void *chan);
+void	wakeup(void *chan) __nonnull(1);
+void	wakeup_one(void *chan) __nonnull(1);
 
 /*
  * Common `struct cdev *' stuff are declared here to avoid #include poisoning
  */
 
 struct cdev;
-bsd_dev_t dev2udev(struct cdev *x);
+dev_t dev2udev(struct cdev *x);
 const char *devtoname(struct cdev *cdev);
 
 int poll_no_poll(int events);
@@ -401,8 +395,8 @@ void free_unr(struct unrhdr *uh, u_int item);
  * Population count algorithm using SWAR approach
  * - "SIMD Within A Register".
  */
-static __inline bsd_uint32_t
-bitcount32(bsd_uint32_t x)
+static __inline uint32_t
+bitcount32(uint32_t x)
 {
 
 	x = (x & 0x55555555) + ((x & 0xaaaaaaaa) >> 1);
@@ -413,8 +407,8 @@ bitcount32(bsd_uint32_t x)
 	return (x);
 }
 
-static __inline bsd_uint16_t
-bitcount16(bsd_uint32_t x)
+static __inline uint16_t
+bitcount16(uint32_t x)
 {
 
 	x = (x & 0x5555) + ((x & 0xaaaa) >> 1);

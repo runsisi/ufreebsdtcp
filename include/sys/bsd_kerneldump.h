@@ -63,9 +63,9 @@ struct kerneldumpheader {
 #define	TEXTDUMPMAGIC		"FreeBSD Text Dump"
 #define	KERNELDUMPMAGIC_CLEARED	"Cleared Kernel Dump"
 	char		architecture[12];
-	bsd_uint32_t	version;
+	uint32_t	version;
 #define	KERNELDUMPVERSION	1
-	bsd_uint32_t	architectureversion;
+	uint32_t	architectureversion;
 #define	KERNELDUMP_ALPHA_VERSION	1
 #define	KERNELDUMP_AMD64_VERSION	2
 #define	KERNELDUMP_ARM_VERSION		1
@@ -75,25 +75,25 @@ struct kerneldumpheader {
 #define	KERNELDUMP_POWERPC_VERSION	1
 #define	KERNELDUMP_SPARC64_VERSION	1
 #define	KERNELDUMP_TEXT_VERSION		1
-	bsd_uint64_t	dumplength;		/* excl headers */
-	bsd_uint64_t	dumptime;
-	bsd_uint32_t	blocksize;
+	uint64_t	dumplength;		/* excl headers */
+	uint64_t	dumptime;
+	uint32_t	blocksize;
 	char		hostname[64];
 	char		versionstring[192];
 	char		panicstring[192];
-	bsd_uint32_t	parity;
+	uint32_t	parity;
 };
 
 /*
  * Parity calculation is endian insensitive.
  */
-static __inline bsd_uint32_t
+static __inline u_int32_t
 kerneldump_parity(struct kerneldumpheader *kdhp)
 {
-	bsd_uint32_t *up, parity;
+	uint32_t *up, parity;
 	u_int i;
 
-	up = (bsd_uint32_t *)kdhp;
+	up = (uint32_t *)kdhp;
 	parity = 0;
 	for (i = 0; i < sizeof *kdhp; i += sizeof *up)
 		parity ^= *up++;
@@ -101,8 +101,8 @@ kerneldump_parity(struct kerneldumpheader *kdhp)
 }
 
 #ifdef _KERNEL
-void mkdumpheader(struct kerneldumpheader *kdh, char *magic, bsd_uint32_t archver,
-    bsd_uint64_t dumplen, bsd_uint32_t blksz);
+void mkdumpheader(struct kerneldumpheader *kdh, char *magic, uint32_t archver,
+    uint64_t dumplen, uint32_t blksz);
 #endif
 
 #endif /* _SYS_KERNELDUMP_H */

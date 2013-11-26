@@ -66,37 +66,37 @@
  *	@(#)vm_swap.c	8.5 (Berkeley) 2/17/94
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/vm/swap_pager.c 253257 2013-07-12 10:02:47Z kib $");
 
 #include "opt_swap.h"
 #include "opt_vm.h"
 
-#include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/conf.h>
-#include <sys/kernel.h>
-#include <sys/priv.h>
-#include <sys/proc.h>
-#include <sys/bio.h>
-#include <sys/buf.h>
-#include <sys/disk.h>
-#include <sys/fcntl.h>
-#include <sys/mount.h>
-#include <sys/namei.h>
-#include <sys/vnode.h>
-#include <sys/malloc.h>
-#include <sys/racct.h>
-#include <sys/resource.h>
-#include <sys/resourcevar.h>
-#include <sys/sysctl.h>
-#include <sys/sysproto.h>
-#include <sys/blist.h>
-#include <sys/lock.h>
-#include <sys/sx.h>
-#include <sys/vmmeter.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_conf.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_priv.h>
+#include <sys/bsd_proc.h>
+#include <sys/bsd_bio.h>
+#include <sys/bsd_buf.h>
+#include <sys/bsd_disk.h>
+#include <sys/bsd_fcntl.h>
+#include <sys/bsd_mount.h>
+#include <sys/bsd_namei.h>
+#include <sys/bsd_vnode.h>
+#include <sys/bsd_malloc.h>
+#include <sys/bsd_racct.h>
+#include <sys/bsd_resource.h>
+#include <sys/bsd_resourcevar.h>
+#include <sys/bsd_sysctl.h>
+#include <sys/bsd_sysproto.h>
+#include <sys/bsd_blist.h>
+#include <sys/bsd_lock.h>
+#include <sys/bsd_sx.h>
+#include <sys/bsd_vmmeter.h>
 
-#include <security/mac/mac_framework.h>
+//#include <security/mac/mac_framework.h>
 
 #include <vm/vm.h>
 #include <vm/pmap.h>
@@ -177,7 +177,7 @@ swap_reserve(vm_ooffset_t incr)
 }
 
 int
-swap_reserve_by_cred(vm_ooffset_t incr, struct bsd_ucred *cred)
+swap_reserve_by_cred(vm_ooffset_t incr, struct ucred *cred)
 {
 	vm_ooffset_t r, s;
 	int res, error;
@@ -273,7 +273,7 @@ swap_reserve_force(vm_ooffset_t incr)
 void
 swap_release(vm_ooffset_t decr)
 {
-	struct bsd_ucred *cred;
+	struct ucred *cred;
 
 	PROC_LOCK(curproc);
 	cred = curthread->td_ucred;
@@ -282,7 +282,7 @@ swap_release(vm_ooffset_t decr)
 }
 
 void
-swap_release_by_cred(vm_ooffset_t decr, struct bsd_ucred *cred)
+swap_release_by_cred(vm_ooffset_t decr, struct ucred *cred)
 {
  	struct uidinfo *uip;
 	
@@ -352,7 +352,7 @@ static struct vm_object	swap_zone_obj;
  */
 static vm_object_t
 		swap_pager_alloc(void *handle, vm_ooffset_t size,
-		    vm_prot_t prot, vm_ooffset_t offset, struct bsd_ucred *);
+		    vm_prot_t prot, vm_ooffset_t offset, struct ucred *);
 static void	swap_pager_dealloc(vm_object_t object);
 static int	swap_pager_getpages(vm_object_t, vm_page_t *, int, int);
 static void	swap_pager_putpages(vm_object_t, vm_page_t *, int, boolean_t, int *);
@@ -390,7 +390,7 @@ static void	swp_sizecheck(void);
 static void	swp_pager_async_iodone(struct buf *bp);
 static int	swapongeom(struct thread *, struct vnode *);
 static int	swaponvp(struct thread *, struct vnode *, u_long);
-static int	swapoff_one(struct swdevt *sp, struct bsd_ucred *cred);
+static int	swapoff_one(struct swdevt *sp, struct ucred *cred);
 
 /*
  * Swap bitmap functions
@@ -459,7 +459,7 @@ swp_pager_hash(vm_object_t object, vm_pindex_t index)
 	struct swblock *swap;
 
 	index &= ~(vm_pindex_t)SWAP_META_MASK;
-	pswap = &swhash[(index ^ (int)(bsd_intptr_t)object) & swhash_mask];
+	pswap = &swhash[(index ^ (int)(intptr_t)object) & swhash_mask];
 	while ((swap = *pswap) != NULL) {
 		if (swap->swb_object == object &&
 		    swap->swb_index == index
@@ -596,7 +596,7 @@ swap_pager_swap_init(void)
  */
 static vm_object_t
 swap_pager_alloc(void *handle, vm_ooffset_t size, vm_prot_t prot,
-    vm_ooffset_t offset, struct bsd_ucred *cred)
+    vm_ooffset_t offset, struct ucred *cred)
 {
 	vm_object_t object;
 	vm_pindex_t pindex;
@@ -2285,7 +2285,7 @@ done:
 }
 
 static int
-swapoff_one(struct swdevt *sp, struct bsd_ucred *cred)
+swapoff_one(struct swdevt *sp, struct ucred *cred)
 {
 	u_long nblks, dvbase;
 #ifdef MAC

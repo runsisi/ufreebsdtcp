@@ -30,8 +30,8 @@
  * $FreeBSD: release/9.2.0/sys/sys/pcpu.h 224221 2011-07-19 16:50:55Z attilio $
  */
 
-#ifndef _BSD_SYS_PCPU_H_
-#define	_BSD_SYS_PCPU_H_
+#ifndef _SYS_PCPU_H_
+#define	_SYS_PCPU_H_
 
 #ifdef LOCORE
 #error "no assembler-serviceable parts inside"
@@ -51,21 +51,21 @@
 /*
  * Define a set for pcpu data.
  */
-extern bsd_uintptr_t *__start_set_pcpu;
+extern uintptr_t *__start_set_pcpu;
 __GLOBL(__start_set_pcpu);
-extern bsd_uintptr_t *__stop_set_pcpu;
+extern uintptr_t *__stop_set_pcpu;
 __GLOBL(__stop_set_pcpu);
 
 /*
  * Array of dynamic pcpu base offsets.  Indexed by id.
  */
-extern bsd_uintptr_t dpcpu_off[];
+extern uintptr_t dpcpu_off[];
 
 /*
  * Convenience defines.
  */
-#define	DPCPU_START		((bsd_uintptr_t)&__start_set_pcpu)
-#define	DPCPU_STOP		((bsd_uintptr_t)&__stop_set_pcpu)
+#define	DPCPU_START		((uintptr_t)&__start_set_pcpu)
+#define	DPCPU_STOP		((uintptr_t)&__stop_set_pcpu)
 #define	DPCPU_BYTES		(DPCPU_STOP - DPCPU_START)
 #define	DPCPU_MODMIN		2048
 #define	DPCPU_SIZE		roundup2(DPCPU_BYTES, PAGE_SIZE)
@@ -82,7 +82,7 @@ extern bsd_uintptr_t dpcpu_off[];
  * Accessors with a given base.
  */
 #define	_DPCPU_PTR(b, n)						\
-    (__typeof(DPCPU_NAME(n))*)((b) + (bsd_uintptr_t)&DPCPU_NAME(n))
+    (__typeof(DPCPU_NAME(n))*)((b) + (uintptr_t)&DPCPU_NAME(n))
 #define	_DPCPU_GET(b, n)	(*_DPCPU_PTR(b, n))
 #define	_DPCPU_SET(b, n, v)	(*_DPCPU_PTR(b, n) = v)
 
@@ -137,7 +137,7 @@ extern bsd_uintptr_t dpcpu_off[];
 
 #endif /* _KERNEL */
 
-/*
+/* 
  * XXXUPS remove as soon as we have per cpu variable
  * linker sets and can define rm_queue in _rm_lock.h
  */
@@ -158,13 +158,13 @@ struct pcpu {
 	struct thread	*pc_fpcurthread;	/* Fp state owner */
 	struct thread	*pc_deadthread;		/* Zombie thread or NULL */
 	struct pcb	*pc_curpcb;		/* Current pcb */
-	bsd_uint64_t	pc_switchtime;		/* cpu_ticks() at last csw */
+	uint64_t	pc_switchtime;		/* cpu_ticks() at last csw */
 	int		pc_switchticks;		/* `ticks' at last csw */
 	u_int		pc_cpuid;		/* This cpu number */
-	BSD_STAILQ_ENTRY(pcpu) pc_allcpu;
+	STAILQ_ENTRY(pcpu) pc_allcpu;
 	struct lock_list_entry *pc_spinlocks;
 	struct vmmeter	pc_cnt;			/* VM stats counters */
-	//long		pc_cp_time[BSD_CPUSTATES];	/* statclock ticks */
+	long		pc_cp_time[CPUSTATES];	/* statclock ticks */
 	struct device	*pc_device;
 	void		*pc_netisr;		/* netisr SWI cookie */
 	int		pc_dnweight;		/* vm_page_dontneed() */
@@ -178,7 +178,7 @@ struct pcpu {
 	 */
 	struct rm_queue	pc_rm_queue;
 
-	bsd_uintptr_t	pc_dynamic;		/* Dynamic per-cpu data area */
+	uintptr_t	pc_dynamic;		/* Dynamic per-cpu data area */
 
 	/*
 	 * Keep MD fields last, so that CPU-specific variations on a
@@ -191,11 +191,11 @@ struct pcpu {
 	 * if only to make kernel debugging easier.
 	 */
 	PCPU_MD_FIELDS;
-} __aligned(BSD_CACHE_LINE_SIZE);
+} __aligned(CACHE_LINE_SIZE);
 
 #ifdef _KERNEL
 
-BSD_STAILQ_HEAD(cpuhead, pcpu);
+STAILQ_HEAD(cpuhead, pcpu);
 
 extern struct cpuhead cpuhead;
 extern struct pcpu *cpuid_to_pcpu[];
@@ -213,7 +213,7 @@ extern struct pcpu *cpuid_to_pcpu[];
  * db_show_mdpcpu() is responsible for handling machine dependent
  * fields for the DDB 'show pcpu' command.
  */
-void	cpu_pcpu_init(struct pcpu *pcpu, int cpuid, bsd_size_t size);
+void	cpu_pcpu_init(struct pcpu *pcpu, int cpuid, size_t size);
 void	db_show_mdpcpu(struct pcpu *pcpu);
 
 void	*dpcpu_alloc(int size);
@@ -222,7 +222,7 @@ void	dpcpu_free(void *s, int size);
 void	dpcpu_init(void *dpcpu, int cpuid);
 void	pcpu_destroy(struct pcpu *pcpu);
 struct	pcpu *pcpu_find(u_int cpuid);
-void	pcpu_init(struct pcpu *pcpu, int cpuid, bsd_size_t size);
+void	pcpu_init(struct pcpu *pcpu, int cpuid, size_t size);
 
 #endif /* _KERNEL */
 

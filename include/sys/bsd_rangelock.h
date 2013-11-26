@@ -53,7 +53,7 @@ struct rl_q_entry;
  * to the preceding requests conflicting with it.
  */
 struct rangelock {
-	BSD_TAILQ_HEAD(, rl_q_entry) rl_waiters;
+	TAILQ_HEAD(, rl_q_entry) rl_waiters;
 	struct rl_q_entry	*rl_currdep;
 };
 
@@ -66,10 +66,10 @@ void	 rangelock_destroy(struct rangelock *lock);
 void	 rangelock_unlock(struct rangelock *lock, void *cookie,
 	    struct mtx *ilk);
 void	*rangelock_unlock_range(struct rangelock *lock, void *cookie,
-	    bsd_off_t start, bsd_off_t end, struct mtx *ilk);
-void	*rangelock_rlock(struct rangelock *lock, bsd_off_t start, bsd_off_t end,
+	    off_t start, off_t end, struct mtx *ilk);
+void	*rangelock_rlock(struct rangelock *lock, off_t start, off_t end,
 	    struct mtx *ilk);
-void	*rangelock_wlock(struct rangelock *lock, bsd_off_t start, bsd_off_t end,
+void	*rangelock_wlock(struct rangelock *lock, off_t start, off_t end,
 	    struct mtx *ilk);
 void	 rlqentry_free(struct rl_q_entry *rlqe);
 

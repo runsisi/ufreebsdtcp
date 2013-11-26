@@ -39,24 +39,24 @@ struct encaptab {
 	LIST_ENTRY(encaptab) chain;
 	int af;
 	int proto;			/* -1: don't care, I'll check myself */
-	struct bsd_sockaddr_storage src;	/* my addr */
-	struct bsd_sockaddr_storage srcmask;
-	struct bsd_sockaddr_storage dst;	/* remote addr */
-	struct bsd_sockaddr_storage dstmask;
+	struct sockaddr_storage src;	/* my addr */
+	struct sockaddr_storage srcmask;
+	struct sockaddr_storage dst;	/* remote addr */
+	struct sockaddr_storage dstmask;
 	int (*func)(const struct mbuf *, int, int, void *);
-	const struct bsd_protosw *psw;	/* only pr_input will be used */
+	const struct protosw *psw;	/* only pr_input will be used */
 	void *arg;			/* passed via m->m_pkthdr.aux */
 };
 
 void	encap_init(void);
 void	encap4_input(struct mbuf *, int);
 int	encap6_input(struct mbuf **, int *, int);
-const struct encaptab *encap_attach(int, int, const struct bsd_sockaddr *,
-	const struct bsd_sockaddr *, const struct bsd_sockaddr *,
-	const struct bsd_sockaddr *, const struct bsd_protosw *, void *);
+const struct encaptab *encap_attach(int, int, const struct sockaddr *,
+	const struct sockaddr *, const struct sockaddr *,
+	const struct sockaddr *, const struct protosw *, void *);
 const struct encaptab *encap_attach_func(int, int,
 	int (*)(const struct mbuf *, int, int, void *),
-	const struct bsd_protosw *, void *);
+	const struct protosw *, void *);
 int	encap_detach(const struct encaptab *);
 void	*encap_getarg(struct mbuf *);
 #endif

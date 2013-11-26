@@ -24,14 +24,14 @@
  * SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/vm/redzone.c 248085 2013-03-09 02:36:32Z marius $");
 
-#include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/kernel.h>
-#include <sys/stack.h>
-#include <sys/sysctl.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_stack.h>
+#include <sys/bsd_sysctl.h>
 
 #include <vm/redzone.h>
 

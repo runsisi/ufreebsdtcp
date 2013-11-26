@@ -130,14 +130,14 @@ typedef struct vm_reserv *vm_reserv_t;
  * for use by machine-dependant code (mainly for MMU support)
  */
 struct kva_md_info {
-    bsd_vm_offset_t	buffer_sva;
-    bsd_vm_offset_t	buffer_eva;
-    bsd_vm_offset_t	clean_sva;
-    bsd_vm_offset_t	clean_eva;
-	bsd_vm_offset_t	pager_sva;
-	bsd_vm_offset_t	pager_eva;
-	bsd_vm_offset_t	bio_transient_sva;
-	bsd_vm_offset_t	bio_transient_eva;
+	vm_offset_t	buffer_sva;
+	vm_offset_t	buffer_eva;
+	vm_offset_t	clean_sva;
+	vm_offset_t	clean_eva;
+	vm_offset_t	pager_sva;
+	vm_offset_t	pager_eva;
+	vm_offset_t	bio_transient_sva;
+	vm_offset_t	bio_transient_eva;
 };
 
 extern struct kva_md_info	kmi;
@@ -145,12 +145,12 @@ extern void vm_ksubmap_init(struct kva_md_info *);
 
 extern int old_mlock;
 
-struct bsd_ucred;
-int swap_reserve(bsd_vm_ooffset_t incr);
-int swap_reserve_by_cred(bsd_vm_ooffset_t incr, struct bsd_ucred *cred);
-void swap_reserve_force(bsd_vm_ooffset_t incr);
-void swap_release(bsd_vm_ooffset_t decr);
-void swap_release_by_cred(bsd_vm_ooffset_t decr, struct bsd_ucred *cred);
+struct ucred;
+int swap_reserve(vm_ooffset_t incr);
+int swap_reserve_by_cred(vm_ooffset_t incr, struct ucred *cred);
+void swap_reserve_force(vm_ooffset_t incr);
+void swap_release(vm_ooffset_t decr);
+void swap_release_by_cred(vm_ooffset_t decr, struct ucred *cred);
 
 #endif				/* VM_H */
 

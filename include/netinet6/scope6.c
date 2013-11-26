@@ -29,16 +29,16 @@
  *	$KAME: scope6.c,v 1.10 2000/07/24 13:29:31 itojun Exp $
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/netinet6/scope6.c 243382 2012-11-22 00:22:54Z ae $");
 
-#include <sys/param.h>
-#include <sys/malloc.h>
-#include <sys/mbuf.h>
-#include <sys/socket.h>
-#include <sys/systm.h>
-#include <sys/queue.h>
-#include <sys/syslog.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_malloc.h>
+#include <sys/bsd_mbuf.h>
+#include <sys/bsd_socket.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_queue.h>
+#include <sys/bsd_syslog.h>
 
 #include <net/if.h>
 #include <net/vnet.h>
@@ -89,7 +89,7 @@ scope6_ifattach(struct ifnet *ifp)
 {
 	struct scope6_id *sid;
 
-	sid = (struct scope6_id *)bsd_malloc(sizeof(*sid), M_IFADDR, M_WAITOK);
+	sid = (struct scope6_id *)malloc(sizeof(*sid), M_IFADDR, M_WAITOK);
 	bzero(sid, sizeof(*sid));
 
 	/*
@@ -111,7 +111,7 @@ void
 scope6_ifdetach(struct scope6_id *sid)
 {
 
-	bsd_free(sid, M_IFADDR);
+	free(sid, M_IFADDR);
 }
 
 int
@@ -201,7 +201,7 @@ scope6_get(struct ifnet *ifp, struct scope6_id *idlist)
  * Get a scope of the address. Node-local, link-local, site-local or global.
  */
 int
-in6_addrscope(struct bsd_in6_addr *addr)
+in6_addrscope(struct in6_addr *addr)
 {
 	int scope;
 
@@ -249,7 +249,7 @@ in6_addrscope(struct bsd_in6_addr *addr)
 	 * Regard loopback and unspecified addresses as global, since
 	 * they have no ambiguity.
 	 */
-	if (bcmp(&bsd_in6addr_loopback, addr, sizeof(*addr) - 1) == 0) {
+	if (bcmp(&in6addr_loopback, addr, sizeof(*addr) - 1) == 0) {
 		if (addr->s6_addr[15] == 1) /* loopback */
 			return IPV6_ADDR_SCOPE_LINKLOCAL;
 		if (addr->s6_addr[15] == 0) /* unspecified */
@@ -297,10 +297,10 @@ scope6_get_default(struct scope6_id *idlist)
 	return (0);
 }
 
-bsd_uint32_t
-scope6_addr2default(struct bsd_in6_addr *addr)
+u_int32_t
+scope6_addr2default(struct in6_addr *addr)
 {
-	bsd_uint32_t id;
+	u_int32_t id;
 
 	/*
 	 * special case: The loopback address should be considered as
@@ -328,10 +328,10 @@ scope6_addr2default(struct bsd_in6_addr *addr)
  * address.
  */
 int
-sa6_embedscope(struct bsd_sockaddr_in6 *sin6, int defaultok)
+sa6_embedscope(struct sockaddr_in6 *sin6, int defaultok)
 {
 	struct ifnet *ifp;
-	bsd_uint32_t zoneid;
+	u_int32_t zoneid;
 
 	if ((zoneid = sin6->sin6_scope_id) == 0 && defaultok)
 		zoneid = scope6_addr2default(&sin6->sin6_addr);
@@ -364,13 +364,13 @@ sa6_embedscope(struct bsd_sockaddr_in6 *sin6, int defaultok)
  * generate standard sockaddr_in6 from embedded form.
  */
 int
-sa6_recoverscope(struct bsd_sockaddr_in6 *sin6)
+sa6_recoverscope(struct sockaddr_in6 *sin6)
 {
 	char ip6buf[INET6_ADDRSTRLEN];
-	bsd_uint32_t zoneid;
+	u_int32_t zoneid;
 
 	if (sin6->sin6_scope_id != 0) {
-		bsd_log(LOG_NOTICE,
+		log(LOG_NOTICE,
 		    "sa6_recoverscope: assumption failure (non 0 ID): %s%%%d\n",
 		    ip6_sprintf(ip6buf, &sin6->sin6_addr), sin6->sin6_scope_id);
 		/* XXX: proceed anyway... */
@@ -403,10 +403,10 @@ sa6_recoverscope(struct bsd_sockaddr_in6 *sin6)
  * ret_id - unnecessary?
  */
 int
-in6_setscope(struct bsd_in6_addr *in6, struct ifnet *ifp, bsd_uint32_t *ret_id)
+in6_setscope(struct in6_addr *in6, struct ifnet *ifp, u_int32_t *ret_id)
 {
 	int scope;
-	bsd_uint32_t zoneid = 0;
+	u_int32_t zoneid = 0;
 	struct scope6_id *sid;
 
 	IF_AFDATA_RLOCK(ifp);
@@ -474,7 +474,7 @@ in6_setscope(struct bsd_in6_addr *in6, struct ifnet *ifp, bsd_uint32_t *ret_id)
  * is intact; return non 0 if the address is modified.
  */
 int
-in6_clearscope(struct bsd_in6_addr *in6)
+in6_clearscope(struct in6_addr *in6)
 {
 	int modified = 0;
 
@@ -490,8 +490,8 @@ in6_clearscope(struct bsd_in6_addr *in6)
 /*
  * Return the scope identifier or zero.
  */
-bsd_uint16_t
-in6_getscope(struct bsd_in6_addr *in6)
+uint16_t
+in6_getscope(struct in6_addr *in6)
 {
 
 	if (IN6_IS_SCOPE_LINKLOCAL(in6) || IN6_IS_ADDR_MC_INTFACELOCAL(in6))

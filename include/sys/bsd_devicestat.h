@@ -140,27 +140,27 @@ struct devstat {
 	int			allocated;	     /* Allocated entry */
 	u_int			start_count;	     /* started ops */
 	u_int			end_count;	     /* completed ops */
-	struct bsd_bintime		busy_from;	     /*
+	struct bintime		busy_from;	     /*
 						      * busy time unaccounted
 						      * for since this time
 						      */
 	STAILQ_ENTRY(devstat) 	dev_links;
-	bsd_uint32_t		device_number;	     /*
+	u_int32_t		device_number;	     /*
 						      * Devstat device
 						      * number.
 						      */
 	char			device_name[DEVSTAT_NAME_LEN];
 	int			unit_number;
-	bsd_uint64_t		bytes[DEVSTAT_N_TRANS_FLAGS];
-	bsd_uint64_t		operations[DEVSTAT_N_TRANS_FLAGS];
-	struct bsd_bintime		duration[DEVSTAT_N_TRANS_FLAGS];
-	struct bsd_bintime		busy_time;
-	struct bsd_bintime          creation_time;       /* 
+	u_int64_t		bytes[DEVSTAT_N_TRANS_FLAGS];
+	u_int64_t		operations[DEVSTAT_N_TRANS_FLAGS];
+	struct bintime		duration[DEVSTAT_N_TRANS_FLAGS];
+	struct bintime		busy_time;
+	struct bintime          creation_time;       /* 
 						      * Time the device was
 						      * created.
 						      */
-	bsd_uint32_t		block_size;	     /* Block size, bytes */
-	bsd_uint64_t		tag_types[3];	     /*
+	u_int32_t		block_size;	     /* Block size, bytes */
+	u_int64_t		tag_types[3];	     /*
 						      * The number of
 						      * simple, ordered, 
 						      * and head of queue 
@@ -186,18 +186,18 @@ STAILQ_HEAD(devstatlist, devstat);
 struct bio;
 
 struct devstat *devstat_new_entry(const void *dev_name, int unit_number,
-				  bsd_uint32_t block_size,
+				  u_int32_t block_size,
 				  devstat_support_flags flags,
 				  devstat_type_flags device_type,
 				  devstat_priority priority);
 
 void devstat_remove_entry(struct devstat *ds);
-void devstat_start_transaction(struct devstat *ds, struct bsd_bintime *now);
+void devstat_start_transaction(struct devstat *ds, struct bintime *now);
 void devstat_start_transaction_bio(struct devstat *ds, struct bio *bp);
-void devstat_end_transaction(struct devstat *ds, bsd_uint32_t bytes, 
+void devstat_end_transaction(struct devstat *ds, u_int32_t bytes, 
 			     devstat_tag_type tag_type,
 			     devstat_trans_flags flags,
-			     struct bsd_bintime *now, struct bsd_bintime *then);
+			     struct bintime *now, struct bintime *then);
 void devstat_end_transaction_bio(struct devstat *ds, struct bio *bp);
 #endif
 

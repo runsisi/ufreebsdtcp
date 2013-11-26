@@ -1,1 +1,1 @@
-//#define HWPMC_HOOKS 1
+#define HWPMC_HOOKS 1

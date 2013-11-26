@@ -81,7 +81,7 @@ typedef struct busdma_bufalloc *busdma_bufalloc_t;
 busdma_bufalloc_t busdma_bufalloc_create(const char *name,
     bus_size_t minimum_alignment,
     uma_alloc uma_alloc_func, uma_free uma_free_func,
-    bsd_uint32_t uma_zcreate_flags);
+    u_int32_t uma_zcreate_flags);
 
 /*
  * Destroy an allocator created by busdma_bufalloc_create().
@@ -111,8 +111,8 @@ struct busdma_bufzone * busdma_bufalloc_findzone(busdma_bufalloc_t ba,
  * you can probably use these when you need uncacheable buffers.
  */
 void * busdma_bufalloc_alloc_uncacheable(uma_zone_t zone, int size, 
-    bsd_uint8_t *pflag, int wait);
-void  busdma_bufalloc_free_uncacheable(void *item, int size, bsd_uint8_t pflag);
+    u_int8_t *pflag, int wait);
+void  busdma_bufalloc_free_uncacheable(void *item, int size, u_int8_t pflag);
 
 #endif	/* _MACHINE_BUSDMA_BUFALLOC_H_ */
 

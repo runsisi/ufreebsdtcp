@@ -17,10 +17,10 @@
 /** @brief Unique descriptor for the PPBUS_IO() method */
 extern struct kobjop_desc ppbus_io_desc;
 /** @brief A function implementing the PPBUS_IO() method */
-typedef u_char ppbus_io_t(bsd_device_t dev, int opcode, u_char *addr, int cnt,
+typedef u_char ppbus_io_t(device_t dev, int opcode, u_char *addr, int cnt,
                           u_char byte);
 
-static __inline u_char PPBUS_IO(bsd_device_t dev, int opcode, u_char *addr, int cnt,
+static __inline u_char PPBUS_IO(device_t dev, int opcode, u_char *addr, int cnt,
                                 u_char byte)
 {
 	kobjop_t _m;
@@ -31,10 +31,10 @@ static __inline u_char PPBUS_IO(bsd_device_t dev, int opcode, u_char *addr, int 
 /** @brief Unique descriptor for the PPBUS_EXEC_MICROSEQ() method */
 extern struct kobjop_desc ppbus_exec_microseq_desc;
 /** @brief A function implementing the PPBUS_EXEC_MICROSEQ() method */
-typedef int ppbus_exec_microseq_t(bsd_device_t dev,
+typedef int ppbus_exec_microseq_t(device_t dev,
                                   struct ppb_microseq **ppb_microseq);
 
-static __inline int PPBUS_EXEC_MICROSEQ(bsd_device_t dev,
+static __inline int PPBUS_EXEC_MICROSEQ(device_t dev,
                                         struct ppb_microseq **ppb_microseq)
 {
 	kobjop_t _m;
@@ -45,9 +45,9 @@ static __inline int PPBUS_EXEC_MICROSEQ(bsd_device_t dev,
 /** @brief Unique descriptor for the PPBUS_RESET_EPP() method */
 extern struct kobjop_desc ppbus_reset_epp_desc;
 /** @brief A function implementing the PPBUS_RESET_EPP() method */
-typedef int ppbus_reset_epp_t(bsd_device_t dev);
+typedef int ppbus_reset_epp_t(device_t dev);
 
-static __inline int PPBUS_RESET_EPP(bsd_device_t dev)
+static __inline int PPBUS_RESET_EPP(device_t dev)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,ppbus_reset_epp);
@@ -57,9 +57,9 @@ static __inline int PPBUS_RESET_EPP(bsd_device_t dev)
 /** @brief Unique descriptor for the PPBUS_SETMODE() method */
 extern struct kobjop_desc ppbus_setmode_desc;
 /** @brief A function implementing the PPBUS_SETMODE() method */
-typedef int ppbus_setmode_t(bsd_device_t dev, int mode);
+typedef int ppbus_setmode_t(device_t dev, int mode);
 
-static __inline int PPBUS_SETMODE(bsd_device_t dev, int mode)
+static __inline int PPBUS_SETMODE(device_t dev, int mode)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,ppbus_setmode);
@@ -69,9 +69,9 @@ static __inline int PPBUS_SETMODE(bsd_device_t dev, int mode)
 /** @brief Unique descriptor for the PPBUS_ECP_SYNC() method */
 extern struct kobjop_desc ppbus_ecp_sync_desc;
 /** @brief A function implementing the PPBUS_ECP_SYNC() method */
-typedef int ppbus_ecp_sync_t(bsd_device_t dev);
+typedef int ppbus_ecp_sync_t(device_t dev);
 
-static __inline int PPBUS_ECP_SYNC(bsd_device_t dev)
+static __inline int PPBUS_ECP_SYNC(device_t dev)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,ppbus_ecp_sync);
@@ -81,9 +81,9 @@ static __inline int PPBUS_ECP_SYNC(bsd_device_t dev)
 /** @brief Unique descriptor for the PPBUS_READ() method */
 extern struct kobjop_desc ppbus_read_desc;
 /** @brief A function implementing the PPBUS_READ() method */
-typedef int ppbus_read_t(bsd_device_t dev, char *buf, int len, int how);
+typedef int ppbus_read_t(device_t dev, char *buf, int len, int how);
 
-static __inline int PPBUS_READ(bsd_device_t dev, char *buf, int len, int how)
+static __inline int PPBUS_READ(device_t dev, char *buf, int len, int how)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,ppbus_read);
@@ -93,9 +93,9 @@ static __inline int PPBUS_READ(bsd_device_t dev, char *buf, int len, int how)
 /** @brief Unique descriptor for the PPBUS_WRITE() method */
 extern struct kobjop_desc ppbus_write_desc;
 /** @brief A function implementing the PPBUS_WRITE() method */
-typedef int ppbus_write_t(bsd_device_t dev, char *buf, int len, int how);
+typedef int ppbus_write_t(device_t dev, char *buf, int len, int how);
 
-static __inline int PPBUS_WRITE(bsd_device_t dev, char *buf, int len, int how)
+static __inline int PPBUS_WRITE(device_t dev, char *buf, int len, int how)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,ppbus_write);

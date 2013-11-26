@@ -42,19 +42,19 @@
 #include "opt_inet6.h"
 #include "opt_ipx.h"
 
-#include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/kernel.h>
-#include <sys/module.h>
-#include <sys/malloc.h>
-#include <sys/mbuf.h>
-#include <sys/protosw.h>
-#include <sys/socket.h>
-#include <sys/sockio.h>
-#include <sys/errno.h>
-#include <sys/syslog.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_module.h>
+#include <sys/bsd_malloc.h>
+#include <sys/bsd_mbuf.h>
+#include <sys/bsd_protosw.h>
+#include <sys/bsd_socket.h>
+#include <sys/bsd_sockio.h>
+#include <sys/bsd_errno.h>
+#include <sys/bsd_syslog.h>
 
-#include <machine/cpu.h>
+#include <machine/bsd_cpu.h>
 
 #include <net/if.h>
 #include <net/netisr.h>
@@ -84,10 +84,10 @@
 #define ARCNET_ALLOW_BROKEN_ARP
 
 static struct mbuf *arc_defrag(struct ifnet *, struct mbuf *);
-static int arc_resolvemulti(struct ifnet *, struct bsd_sockaddr **,
-			    struct bsd_sockaddr *);
+static int arc_resolvemulti(struct ifnet *, struct sockaddr **,
+			    struct sockaddr *);
 
-bsd_uint8_t  arcbroadcastaddr = 0;
+u_int8_t  arcbroadcastaddr = 0;
 
 #define ARC_LLADDR(ifp)	(*(u_int8_t *)IF_LLADDR(ifp))
 
@@ -101,12 +101,12 @@ bsd_uint8_t  arcbroadcastaddr = 0;
  * Assumes that ifp is actually pointer to arccom structure.
  */
 int
-arc_output(struct ifnet *ifp, struct mbuf *m, struct bsd_sockaddr *dst,
+arc_output(struct ifnet *ifp, struct mbuf *m, struct sockaddr *dst,
     struct route *ro)
 {
 	struct arc_header	*ah;
 	int			error;
-	bsd_uint8_t		atype, adst;
+	u_int8_t		atype, adst;
 	int			loop_copy = 0;
 	int			isphds;
 #if defined(INET) || defined(INET6)
@@ -488,7 +488,7 @@ outofseq:
 	if (m)
 		m_freem(m);
 
-	bsd_log(LOG_INFO,"%s: got out of seq. packet: %s\n",
+	log(LOG_INFO,"%s: got out of seq. packet: %s\n",
 	    ifp->if_xname, s);
 
 	return NULL;
@@ -502,7 +502,7 @@ outofseq:
  * Easiest is to assume that everybody else uses that, too.
  */
 int
-arc_isphds(bsd_uint8_t type)
+arc_isphds(u_int8_t type)
 {
 	return (type != ARCTYPE_IP_OLD &&
 		type != ARCTYPE_ARP_OLD &&
@@ -519,7 +519,7 @@ arc_input(struct ifnet *ifp, struct mbuf *m)
 {
 	struct arc_header *ah;
 	int isr;
-	bsd_uint8_t atype;
+	u_int8_t atype;
 
 	if ((ifp->if_flags & IFF_UP) == 0) {
 		m_freem(m);
@@ -616,7 +616,7 @@ arc_input(struct ifnet *ifp, struct mbuf *m)
  * Register (new) link level address.
  */
 void
-arc_storelladdr(struct ifnet *ifp, bsd_uint8_t lla)
+arc_storelladdr(struct ifnet *ifp, u_int8_t lla)
 {
 	ARC_LLADDR(ifp) = lla;
 }
@@ -625,7 +625,7 @@ arc_storelladdr(struct ifnet *ifp, bsd_uint8_t lla)
  * Perform common duties while attaching to interface list
  */
 void
-arc_ifattach(struct ifnet *ifp, bsd_uint8_t lla)
+arc_ifattach(struct ifnet *ifp, u_int8_t lla)
 {
 	struct ifaddr *ifa;
 	struct sockaddr_dl *sdl;
@@ -655,7 +655,7 @@ arc_ifattach(struct ifnet *ifp, bsd_uint8_t lla)
 	ac->ac_seqid = (time_second) & 0xFFFF; /* try to make seqid unique */
 	if (lla == 0) {
 		/* XXX this message isn't entirely clear, to me -- cgd */
-		bsd_log(LOG_ERR,"%s: link address 0 reserved for broadcasts.  Please change it and ifconfig %s down up\n",
+		log(LOG_ERR,"%s: link address 0 reserved for broadcasts.  Please change it and ifconfig %s down up\n",
 		   ifp->if_xname, ifp->if_xname);
 	}
 	arc_storelladdr(ifp, lla);
@@ -717,10 +717,10 @@ arc_ioctl(struct ifnet *ifp, u_long command, caddr_t data)
 
 	case SIOCGIFADDR:
 		{
-			struct bsd_sockaddr *sa;
+			struct sockaddr *sa;
 
-			sa = (struct bsd_sockaddr *) &ifr->ifr_data;
-			*(bsd_uint8_t *)sa->sa_data = ARC_LLADDR(ifp);
+			sa = (struct sockaddr *) &ifr->ifr_data;
+			*(u_int8_t *)sa->sa_data = ARC_LLADDR(ifp);
 		}
 		break;
 
@@ -760,12 +760,12 @@ arc_ioctl(struct ifnet *ifp, u_long command, caddr_t data)
 
 /* based on ether_resolvemulti() */
 int
-arc_resolvemulti(struct ifnet *ifp, struct bsd_sockaddr **llsa,
-    struct bsd_sockaddr *sa)
+arc_resolvemulti(struct ifnet *ifp, struct sockaddr **llsa,
+    struct sockaddr *sa)
 {
 	struct sockaddr_dl *sdl;
 #ifdef INET
-	struct bsd_sockaddr_in *sin;
+	struct sockaddr_in *sin;
 #endif
 #ifdef INET6
 	struct sockaddr_in6 *sin6;
@@ -783,10 +783,10 @@ arc_resolvemulti(struct ifnet *ifp, struct bsd_sockaddr **llsa,
 		return 0;
 #ifdef INET
 	case AF_INET:
-		sin = (struct bsd_sockaddr_in *)sa;
+		sin = (struct sockaddr_in *)sa;
 		if (!IN_MULTICAST(ntohl(sin->sin_addr.s_addr)))
 			return EADDRNOTAVAIL;
-		sdl = bsd_malloc(sizeof *sdl, M_IFMADDR,
+		sdl = malloc(sizeof *sdl, M_IFMADDR,
 		       M_NOWAIT | M_ZERO);
 		if (sdl == NULL)
 			return ENOMEM;
@@ -796,7 +796,7 @@ arc_resolvemulti(struct ifnet *ifp, struct bsd_sockaddr **llsa,
 		sdl->sdl_type = IFT_ARCNET;
 		sdl->sdl_alen = ARC_ADDR_LEN;
 		*LLADDR(sdl) = 0;
-		*llsa = (struct bsd_sockaddr *)sdl;
+		*llsa = (struct sockaddr *)sdl;
 		return 0;
 #endif
 #ifdef INET6
@@ -814,7 +814,7 @@ arc_resolvemulti(struct ifnet *ifp, struct bsd_sockaddr **llsa,
 		}
 		if (!IN6_IS_ADDR_MULTICAST(&sin6->sin6_addr))
 			return EADDRNOTAVAIL;
-		sdl = bsd_malloc(sizeof *sdl, M_IFMADDR,
+		sdl = malloc(sizeof *sdl, M_IFMADDR,
 		       M_NOWAIT | M_ZERO);
 		if (sdl == NULL)
 			return ENOMEM;
@@ -824,7 +824,7 @@ arc_resolvemulti(struct ifnet *ifp, struct bsd_sockaddr **llsa,
 		sdl->sdl_type = IFT_ARCNET;
 		sdl->sdl_alen = ARC_ADDR_LEN;
 		*LLADDR(sdl) = 0;
-		*llsa = (struct bsd_sockaddr *)sdl;
+		*llsa = (struct sockaddr *)sdl;
 		return 0;
 #endif
 
@@ -844,7 +844,7 @@ arc_alloc(u_char type, struct ifnet *ifp)
 {
 	struct arccom	*ac;
 	
-	ac = bsd_malloc(sizeof(struct arccom), M_ARCCOM, M_WAITOK | M_ZERO);
+	ac = malloc(sizeof(struct arccom), M_ARCCOM, M_WAITOK | M_ZERO);
 	ac->ac_ifp = ifp;
 
 	return (ac);
@@ -854,7 +854,7 @@ static void
 arc_free(void *com, u_char type)
 {
 
-	bsd_free(com, M_ARCCOM);
+	free(com, M_ARCCOM);
 }
 
 static int

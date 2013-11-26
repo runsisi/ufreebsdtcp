@@ -50,22 +50,22 @@
  *	greatly re-simplify the vnode_pager.
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/vm/vnode_pager.c 251897 2013-06-18 05:21:40Z scottl $");
 
-#include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/proc.h>
-#include <sys/vnode.h>
-#include <sys/mount.h>
-#include <sys/bio.h>
-#include <sys/buf.h>
-#include <sys/vmmeter.h>
-#include <sys/limits.h>
-#include <sys/conf.h>
-#include <sys/sf_buf.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_proc.h>
+#include <sys/bsd_vnode.h>
+#include <sys/bsd_mount.h>
+#include <sys/bsd_bio.h>
+#include <sys/bsd_buf.h>
+#include <sys/bsd_vmmeter.h>
+#include <sys/bsd_limits.h>
+#include <sys/bsd_conf.h>
+#include <sys/bsd_sf_buf.h>
 
-#include <machine/atomic.h>
+#include <machine/bsd_atomic.h>
 
 #include <vm/vm.h>
 #include <vm/vm_param.h>
@@ -85,7 +85,7 @@ static int vnode_pager_getpages(vm_object_t, vm_page_t *, int, int);
 static void vnode_pager_putpages(vm_object_t, vm_page_t *, int, boolean_t, int *);
 static boolean_t vnode_pager_haspage(vm_object_t, vm_pindex_t, int *, int *);
 static vm_object_t vnode_pager_alloc(void *, vm_ooffset_t, vm_prot_t,
-    vm_ooffset_t, struct bsd_ucred *cred);
+    vm_ooffset_t, struct ucred *cred);
 
 struct pagerops vnodepagerops = {
 	.pgo_alloc =	vnode_pager_alloc,
@@ -187,7 +187,7 @@ vnode_destroy_vobject(struct vnode *vp)
  */
 vm_object_t
 vnode_pager_alloc(void *handle, vm_ooffset_t size, vm_prot_t prot,
-    vm_ooffset_t offset, struct bsd_ucred *cred)
+    vm_ooffset_t offset, struct ucred *cred)
 {
 	vm_object_t object;
 	struct vnode *vp;
@@ -594,7 +594,7 @@ vnode_pager_input_old(object, m)
 	vm_page_t m;
 {
 	struct uio auio;
-	struct bsd_iovec aiov;
+	struct iovec aiov;
 	int error;
 	int size;
 	struct sf_buf *sf;
@@ -1091,7 +1091,7 @@ vnode_pager_generic_putpages(struct vnode *vp, vm_page_t *ma, int bytecount,
 	int maxsize, ncount;
 	vm_ooffset_t poffset;
 	struct uio auio;
-	struct bsd_iovec aiov;
+	struct iovec aiov;
 	int error;
 	int ioflags;
 	int ppscheck = 0;
@@ -1104,7 +1104,7 @@ vnode_pager_generic_putpages(struct vnode *vp, vm_page_t *ma, int bytecount,
 	for (i = 0; i < count; i++)
 		rtvals[i] = VM_PAGER_ERROR;
 
-	if ((bsd_int64_t)ma[0]->pindex < 0) {
+	if ((int64_t)ma[0]->pindex < 0) {
 		printf("vnode_pager_putpages: attempt to write meta-data!!! -- 0x%lx(%lx)\n",
 		    (long)ma[0]->pindex, (u_long)ma[0]->dirty);
 		rtvals[0] = VM_PAGER_BAD;

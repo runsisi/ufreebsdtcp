@@ -36,13 +36,13 @@
 
 #include <sys/_bsd_types.h>
 
-#ifndef _BSD_TIME_T_DECLARED
-typedef	__bsd_time_t	bsd_time_t;
-#define	_BSD_TIME_T_DECLARED
+#ifndef _TIME_T_DECLARED
+typedef	__time_t	time_t;
+#define	_TIME_T_DECLARED
 #endif
 
-struct bsd_timespec {
-	bsd_time_t	tv_sec;		/* seconds */
+struct timespec {
+	time_t	tv_sec;		/* seconds */
 	long	tv_nsec;	/* and nanoseconds */
 };
 

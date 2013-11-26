@@ -111,41 +111,41 @@
  *	field is encapsulated in vm_page_clear_dirty_mask().
  */
 
-BSD_TAILQ_HEAD(pglist, vm_page);
+TAILQ_HEAD(pglist, vm_page);
 
-#if BSD_PAGE_SIZE == 4096
+#if PAGE_SIZE == 4096
 #define VM_PAGE_BITS_ALL 0xffu
-typedef bsd_uint8_t vm_page_bits_t;
-#elif BSD_PAGE_SIZE == 8192
+typedef uint8_t vm_page_bits_t;
+#elif PAGE_SIZE == 8192
 #define VM_PAGE_BITS_ALL 0xffffu
-typedef bsd_uint16_t vm_page_bits_t;
-#elif BSD_PAGE_SIZE == 16384
+typedef uint16_t vm_page_bits_t;
+#elif PAGE_SIZE == 16384
 #define VM_PAGE_BITS_ALL 0xffffffffu
-typedef bsd_uint32_t vm_page_bits_t;
-#elif BSD_PAGE_SIZE == 32768
+typedef uint32_t vm_page_bits_t;
+#elif PAGE_SIZE == 32768
 #define VM_PAGE_BITS_ALL 0xfffffffffffffffflu
-typedef bsd_uint64_t vm_page_bits_t;
+typedef uint64_t vm_page_bits_t;
 #endif
 
 struct vm_page {
-	BSD_TAILQ_ENTRY(vm_page) pageq;	/* queue info for FIFO queue or free list (Q) */
-	BSD_TAILQ_ENTRY(vm_page) listq;	/* pages in same object (O) 	*/
+	TAILQ_ENTRY(vm_page) pageq;	/* queue info for FIFO queue or free list (Q) */
+	TAILQ_ENTRY(vm_page) listq;	/* pages in same object (O) 	*/
 	struct vm_page *left;		/* splay tree link (O)		*/
 	struct vm_page *right;		/* splay tree link (O)		*/
 
 	vm_object_t object;		/* which object am I in (O,P)*/
-	bsd_vm_pindex_t pindex;		/* offset into object (O,P) */
-	bsd_vm_paddr_t phys_addr;		/* physical address of page */
+	vm_pindex_t pindex;		/* offset into object (O,P) */
+	vm_paddr_t phys_addr;		/* physical address of page */
 	struct md_page md;		/* machine dependant stuff */
-	bsd_uint8_t	queue;			/* page queue index (P,Q) */
-	bsd_int8_t segind;
+	uint8_t	queue;			/* page queue index (P,Q) */
+	int8_t segind;
 	short hold_count;		/* page hold count (P) */
-	bsd_uint8_t	order;			/* index of the buddy queue */
-	bsd_uint8_t pool;
+	uint8_t	order;			/* index of the buddy queue */
+	uint8_t pool;
 	u_short cow;			/* page cow mapping count (P) */
 	u_int wire_count;		/* wired down maps refs (P) */
-	bsd_uint8_t aflags;			/* access is atomic */
-	bsd_uint8_t flags;			/* see below, often immutable after alloc */
+	uint8_t aflags;			/* access is atomic */
+	uint8_t flags;			/* see below, often immutable after alloc */
 	u_short oflags;			/* page flags (O) */
 	u_char	act_count;		/* page usage count (O) */
 	u_char	busy;			/* page busy count (O) */
@@ -190,8 +190,8 @@ extern struct vpgqueues vm_page_queues[PQ_COUNT];
 
 struct vpglocks {
 	struct mtx	data;
-	char		pad[BSD_CACHE_LINE_SIZE - sizeof(struct mtx)];
-} __aligned(BSD_CACHE_LINE_SIZE);
+	char		pad[CACHE_LINE_SIZE - sizeof(struct mtx)];
+} __aligned(CACHE_LINE_SIZE);
 
 extern struct vpglocks vm_page_queue_free_lock;
 extern struct vpglocks pa_lock[];
@@ -311,7 +311,7 @@ extern struct vpglocks pa_lock[];
 struct vnode;
 extern int vm_page_zero_count;
 
-extern bsd_vm_page_t vm_page_array;		/* First resident page in table */
+extern vm_page_t vm_page_array;		/* First resident page in table */
 extern long vm_page_array_size;		/* number of vm_page_t's */
 extern long first_page;			/* first physical page number */
 
@@ -319,9 +319,9 @@ extern long first_page;			/* first physical page number */
 
 #define VM_PAGE_TO_PHYS(entry)	((entry)->phys_addr)
 
-bsd_vm_page_t vm_phys_paddr_to_vm_page(bsd_vm_paddr_t pa);
+vm_page_t vm_phys_paddr_to_vm_page(vm_paddr_t pa);
 
-bsd_vm_page_t PHYS_TO_VM_PAGE(bsd_vm_paddr_t pa);
+vm_page_t PHYS_TO_VM_PAGE(vm_paddr_t pa);
 
 extern struct vpglocks vm_page_queue_lock;
 
@@ -348,73 +348,73 @@ extern struct vpglocks vm_page_queue_lock;
 #define	VM_ALLOC_COUNT_SHIFT	16
 #define	VM_ALLOC_COUNT(count)	((count) << VM_ALLOC_COUNT_SHIFT)
 
-void vm_page_aflag_set(bsd_vm_page_t m, bsd_uint8_t bits);
-void vm_page_aflag_clear(bsd_vm_page_t m, bsd_uint8_t bits);
-void vm_page_busy(bsd_vm_page_t m);
-void vm_page_flash(bsd_vm_page_t m);
-void vm_page_io_start(bsd_vm_page_t m);
-void vm_page_io_finish(bsd_vm_page_t m);
-void vm_page_hold(bsd_vm_page_t mem);
-void vm_page_unhold(bsd_vm_page_t mem);
-void vm_page_free(bsd_vm_page_t m);
-void vm_page_free_zero(bsd_vm_page_t m);
-void vm_page_dirty(bsd_vm_page_t m);
-void vm_page_wakeup(bsd_vm_page_t m);
+void vm_page_aflag_set(vm_page_t m, uint8_t bits);
+void vm_page_aflag_clear(vm_page_t m, uint8_t bits);
+void vm_page_busy(vm_page_t m);
+void vm_page_flash(vm_page_t m);
+void vm_page_io_start(vm_page_t m);
+void vm_page_io_finish(vm_page_t m);
+void vm_page_hold(vm_page_t mem);
+void vm_page_unhold(vm_page_t mem);
+void vm_page_free(vm_page_t m);
+void vm_page_free_zero(vm_page_t m);
+void vm_page_dirty(vm_page_t m);
+void vm_page_wakeup(vm_page_t m);
 
-void vm_pageq_remove(bsd_vm_page_t m);
+void vm_pageq_remove(vm_page_t m);
 
-void vm_page_activate (bsd_vm_page_t);
-bsd_vm_page_t vm_page_alloc (vm_object_t, bsd_vm_pindex_t, int);
-bsd_vm_page_t vm_page_alloc_freelist(int, int);
-struct vnode *vm_page_alloc_init(bsd_vm_page_t);
-bsd_vm_page_t vm_page_grab (vm_object_t, bsd_vm_pindex_t, int);
-void vm_page_cache(bsd_vm_page_t);
-void vm_page_cache_free(vm_object_t, bsd_vm_pindex_t, bsd_vm_pindex_t);
-void vm_page_cache_remove(bsd_vm_page_t);
-void vm_page_cache_transfer(vm_object_t, bsd_vm_pindex_t, vm_object_t);
-int vm_page_try_to_cache (bsd_vm_page_t);
-int vm_page_try_to_free (bsd_vm_page_t);
-void vm_page_dontneed(bsd_vm_page_t);
-void vm_page_deactivate (bsd_vm_page_t);
-bsd_vm_page_t vm_page_find_least(vm_object_t, bsd_vm_pindex_t);
-bsd_vm_page_t vm_page_getfake(bsd_vm_paddr_t paddr, bsd_vm_memattr_t memattr);
-void vm_page_initfake(bsd_vm_page_t m, bsd_vm_paddr_t paddr, bsd_vm_memattr_t memattr);
-void vm_page_insert (bsd_vm_page_t, vm_object_t, bsd_vm_pindex_t);
-bsd_boolean_t vm_page_is_cached(vm_object_t object, bsd_vm_pindex_t pindex);
-bsd_vm_page_t vm_page_lookup (vm_object_t, bsd_vm_pindex_t);
-bsd_vm_page_t vm_page_next(bsd_vm_page_t m);
-int vm_page_pa_tryrelock(pmap_t, bsd_vm_paddr_t, bsd_vm_paddr_t *);
-bsd_vm_page_t vm_page_prev(bsd_vm_page_t m);
-void vm_page_putfake(bsd_vm_page_t m);
-void vm_page_readahead_finish(bsd_vm_page_t m);
-void vm_page_reference(bsd_vm_page_t m);
-void vm_page_remove (bsd_vm_page_t);
-void vm_page_rename (bsd_vm_page_t, vm_object_t, bsd_vm_pindex_t);
-void vm_page_requeue(bsd_vm_page_t m);
-void vm_page_set_valid(bsd_vm_page_t m, int base, int size);
-void vm_page_sleep(bsd_vm_page_t m, const char *msg);
-bsd_vm_page_t vm_page_splay(bsd_vm_pindex_t, bsd_vm_page_t);
-bsd_vm_offset_t vm_page_startup(bsd_vm_offset_t vaddr);
-void vm_page_unhold_pages(bsd_vm_page_t *ma, int count);
-void vm_page_unwire (bsd_vm_page_t, int);
-void vm_page_updatefake(bsd_vm_page_t m, bsd_vm_paddr_t paddr, bsd_vm_memattr_t memattr);
-void vm_page_wire (bsd_vm_page_t);
-void vm_page_set_validclean (bsd_vm_page_t, int, int);
-void vm_page_clear_dirty (bsd_vm_page_t, int, int);
-void vm_page_set_invalid (bsd_vm_page_t, int, int);
-int vm_page_is_valid (bsd_vm_page_t, int, int);
-void vm_page_test_dirty (bsd_vm_page_t);
+void vm_page_activate (vm_page_t);
+vm_page_t vm_page_alloc (vm_object_t, vm_pindex_t, int);
+vm_page_t vm_page_alloc_freelist(int, int);
+struct vnode *vm_page_alloc_init(vm_page_t);
+vm_page_t vm_page_grab (vm_object_t, vm_pindex_t, int);
+void vm_page_cache(vm_page_t);
+void vm_page_cache_free(vm_object_t, vm_pindex_t, vm_pindex_t);
+void vm_page_cache_remove(vm_page_t);
+void vm_page_cache_transfer(vm_object_t, vm_pindex_t, vm_object_t);
+int vm_page_try_to_cache (vm_page_t);
+int vm_page_try_to_free (vm_page_t);
+void vm_page_dontneed(vm_page_t);
+void vm_page_deactivate (vm_page_t);
+vm_page_t vm_page_find_least(vm_object_t, vm_pindex_t);
+vm_page_t vm_page_getfake(vm_paddr_t paddr, vm_memattr_t memattr);
+void vm_page_initfake(vm_page_t m, vm_paddr_t paddr, vm_memattr_t memattr);
+void vm_page_insert (vm_page_t, vm_object_t, vm_pindex_t);
+boolean_t vm_page_is_cached(vm_object_t object, vm_pindex_t pindex);
+vm_page_t vm_page_lookup (vm_object_t, vm_pindex_t);
+vm_page_t vm_page_next(vm_page_t m);
+int vm_page_pa_tryrelock(pmap_t, vm_paddr_t, vm_paddr_t *);
+vm_page_t vm_page_prev(vm_page_t m);
+void vm_page_putfake(vm_page_t m);
+void vm_page_readahead_finish(vm_page_t m);
+void vm_page_reference(vm_page_t m);
+void vm_page_remove (vm_page_t);
+void vm_page_rename (vm_page_t, vm_object_t, vm_pindex_t);
+void vm_page_requeue(vm_page_t m);
+void vm_page_set_valid(vm_page_t m, int base, int size);
+void vm_page_sleep(vm_page_t m, const char *msg);
+vm_page_t vm_page_splay(vm_pindex_t, vm_page_t);
+vm_offset_t vm_page_startup(vm_offset_t vaddr);
+void vm_page_unhold_pages(vm_page_t *ma, int count);
+void vm_page_unwire (vm_page_t, int);
+void vm_page_updatefake(vm_page_t m, vm_paddr_t paddr, vm_memattr_t memattr);
+void vm_page_wire (vm_page_t);
+void vm_page_set_validclean (vm_page_t, int, int);
+void vm_page_clear_dirty (vm_page_t, int, int);
+void vm_page_set_invalid (vm_page_t, int, int);
+int vm_page_is_valid (vm_page_t, int, int);
+void vm_page_test_dirty (vm_page_t);
 vm_page_bits_t vm_page_bits(int base, int size);
-void vm_page_zero_invalid(bsd_vm_page_t m, bsd_boolean_t setvalid);
-void vm_page_free_toq(bsd_vm_page_t m);
+void vm_page_zero_invalid(vm_page_t m, boolean_t setvalid);
+void vm_page_free_toq(vm_page_t m);
 void vm_page_zero_idle_wakeup(void);
-void vm_page_cowfault (bsd_vm_page_t);
-int vm_page_cowsetup(bsd_vm_page_t);
-void vm_page_cowclear (bsd_vm_page_t);
+void vm_page_cowfault (vm_page_t);
+int vm_page_cowsetup(vm_page_t);
+void vm_page_cowclear (vm_page_t);
 
-void vm_page_lock_KBI(bsd_vm_page_t m, const char *file, int line);
-void vm_page_unlock_KBI(bsd_vm_page_t m, const char *file, int line);
-int vm_page_trylock_KBI(bsd_vm_page_t m, const char *file, int line);
+void vm_page_lock_KBI(vm_page_t m, const char *file, int line);
+void vm_page_unlock_KBI(vm_page_t m, const char *file, int line);
+int vm_page_trylock_KBI(vm_page_t m, const char *file, int line);
 #if defined(INVARIANTS) || defined(INVARIANT_SUPPORT)
 void vm_page_lock_assert_KBI(vm_page_t m, int a, const char *file, int line);
 #endif
@@ -437,7 +437,7 @@ void vm_page_object_lock_assert(vm_page_t m);
  *	The object containing the given page must be locked.
  */
 static __inline int
-vm_page_sleep_if_busy(bsd_vm_page_t m, int also_m_busy, const char *msg)
+vm_page_sleep_if_busy(vm_page_t m, int also_m_busy, const char *msg)
 {
 
 	if ((m->oflags & VPO_BUSY) || (also_m_busy && m->busy)) {
@@ -453,7 +453,7 @@ vm_page_sleep_if_busy(bsd_vm_page_t m, int also_m_busy, const char *msg)
  *	Set page to not be dirty.  Note: does not clear pmap modify bits
  */
 static __inline void
-vm_page_undirty(bsd_vm_page_t m)
+vm_page_undirty(vm_page_t m)
 {
 
 	VM_PAGE_OBJECT_LOCK_ASSERT(m);

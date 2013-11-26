@@ -321,7 +321,7 @@ int _bus_dmamap_load_buffer(bus_dma_tag_t dmat, bus_dmamap_t map,
 			    int flags, bus_dma_segment_t *segs, int *segp);
 
 int _bus_dmamap_load_phys(bus_dma_tag_t dmat, bus_dmamap_t map,
-			  bsd_vm_paddr_t paddr, bus_size_t buflen,
+			  vm_paddr_t paddr, bus_size_t buflen,
 			  int flags, bus_dma_segment_t *segs, int *segp);
 
 bus_dma_segment_t *_bus_dmamap_complete(bus_dma_tag_t dmat,

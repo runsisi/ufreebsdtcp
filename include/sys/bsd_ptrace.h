@@ -76,13 +76,13 @@
 #define	PT_VM_ENTRY	41	/* Get VM map (entry) */
 
 #define PT_FIRSTMACH    64	/* for machine-specific requests */
-#include <machine/ptrace.h>	/* machine-specific requests, if any */
+#include <machine/bsd_ptrace.h>	/* machine-specific requests, if any */
 
 struct ptrace_io_desc {
 	int	piod_op;	/* I/O operation */
 	void	*piod_offs;	/* child offset */
 	void	*piod_addr;	/* parent offset */
-	bsd_size_t	piod_len;	/* request length */
+	size_t	piod_len;	/* request length */
 };
 
 /*
@@ -95,7 +95,7 @@ struct ptrace_io_desc {
 
 /* Argument structure for PT_LWPINFO. */
 struct ptrace_lwpinfo {
-	bsd_lwpid_t	pl_lwpid;	/* LWP described. */
+	lwpid_t	pl_lwpid;	/* LWP described. */
 	int	pl_event;	/* Event that stopped the LWP. */
 #define	PL_EVENT_NONE	0
 #define	PL_EVENT_SIGNAL	1
@@ -108,9 +108,9 @@ struct ptrace_lwpinfo {
 #define	PL_FLAG_SI	0x20	/* siginfo is valid */
 #define	PL_FLAG_FORKED	0x40	/* new child */
 #define	PL_FLAG_CHILD	0x80	/* I am from child */
-	bsd_sigset_t	pl_sigmask;	/* LWP signal mask */
-	bsd_sigset_t	pl_siglist;	/* LWP pending signal */
-	struct __bsd_siginfo pl_siginfo;	/* siginfo for signal */
+	sigset_t	pl_sigmask;	/* LWP signal mask */
+	sigset_t	pl_siglist;	/* LWP pending signal */
+	struct __siginfo pl_siginfo;	/* siginfo for signal */
 	char		pl_tdname[MAXCOMLEN + 1]; /* LWP name */
 	int		pl_child_pid;	/* New child pid */
 };
@@ -125,7 +125,7 @@ struct ptrace_vm_entry {
 	u_int		pve_prot;	/* Protection of memory range. */
 	u_int		pve_pathlen;	/* Size of path. */
 	long		pve_fileid;	/* File ID. */
-	bsd_uint32_t	pve_fsid;	/* File system ID. */
+	uint32_t	pve_fsid;	/* File system ID. */
 	char		*pve_path;	/* Path name of object. */
 };
 
@@ -177,10 +177,10 @@ int	proc_write_dbregs32(struct thread *_td, struct dbreg32 *_dbreg32);
 #endif
 #else /* !_KERNEL */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 
 __BEGIN_DECLS
-int	ptrace(int _request, bsd_pid_t _pid, caddr_t _addr, int _data);
+int	ptrace(int _request, pid_t _pid, caddr_t _addr, int _data);
 __END_DECLS
 
 #endif /* !_KERNEL */

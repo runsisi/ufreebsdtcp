@@ -29,19 +29,19 @@
  *	@(#)vm_meter.c	8.4 (Berkeley) 1/4/94
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/vm/vm_meter.c 219968 2011-03-24 18:40:11Z jhb $");
 
-#include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/kernel.h>
-#include <sys/lock.h>
-#include <sys/mutex.h>
-#include <sys/proc.h>
-#include <sys/resource.h>
-#include <sys/sx.h>
-#include <sys/vmmeter.h>
-#include <sys/smp.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_lock.h>
+#include <sys/bsd_mutex.h>
+#include <sys/bsd_proc.h>
+#include <sys/bsd_resource.h>
+#include <sys/bsd_sx.h>
+#include <sys/bsd_vmmeter.h>
+#include <sys/bsd_smp.h>
 
 #include <vm/vm.h>
 #include <vm/vm_page.h>
@@ -50,7 +50,7 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/vm/vm_meter.c 219968 2011-03-24 18:40:11Z 
 #include <vm/pmap.h>
 #include <vm/vm_map.h>
 #include <vm/vm_object.h>
-#include <sys/sysctl.h>
+#include <sys/bsd_sysctl.h>
 
 struct vmmeter cnt;
 

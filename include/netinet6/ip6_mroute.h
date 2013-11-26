@@ -79,7 +79,7 @@ typedef u_short mifi_t;		/* type of a mif index */
 #define	IF_SETSIZE	256
 #endif
 
-typedef	bsd_uint32_t	if_mask;
+typedef	u_int32_t	if_mask;
 #define	NIFBITS	(sizeof(if_mask) * NBBY)	/* bits per mask */
 
 #ifndef howmany
@@ -111,8 +111,8 @@ struct mif6ctl {
  * Argument structure for MRT6_ADD_MFC and MRT6_DEL_MFC
  */
 struct mf6cctl {
-	struct bsd_sockaddr_in6 mf6cc_origin;	/* IPv6 origin of mcasts */
-	struct bsd_sockaddr_in6 mf6cc_mcastgrp; /* multicast group associated */
+	struct sockaddr_in6 mf6cc_origin;	/* IPv6 origin of mcasts */
+	struct sockaddr_in6 mf6cc_mcastgrp; /* multicast group associated */
 	mifi_t		mf6cc_parent;	/* incoming ifindex */
 	struct if_set	mf6cc_ifset;	/* set of forwarding ifs */
 };
@@ -121,19 +121,19 @@ struct mf6cctl {
  * The kernel's multicast routing statistics.
  */
 struct mrt6stat {
-	bsd_uquad_t mrt6s_mfc_lookups;	/* # forw. cache hash table hits   */
-	bsd_uquad_t mrt6s_mfc_misses;	/* # forw. cache hash table misses */
-	bsd_uquad_t mrt6s_upcalls;		/* # calls to multicast routing daemon */
-	bsd_uquad_t mrt6s_no_route;	/* no route for packet's origin    */
-	bsd_uquad_t mrt6s_bad_tunnel;	/* malformed tunnel options        */
-	bsd_uquad_t mrt6s_cant_tunnel;	/* no room for tunnel options      */
-	bsd_uquad_t mrt6s_wrong_if;	/* arrived on wrong interface	   */
-	bsd_uquad_t mrt6s_upq_ovflw;	/* upcall Q overflow		   */
-	bsd_uquad_t mrt6s_cache_cleanups;	/* # entries with no upcalls	   */
-	bsd_uquad_t mrt6s_drop_sel;	/* pkts dropped selectively        */
-	bsd_uquad_t mrt6s_q_overflow;	/* pkts dropped - Q overflow       */
-	bsd_uquad_t mrt6s_pkt2large;	/* pkts dropped - size > BKT SIZE  */
-	bsd_uquad_t mrt6s_upq_sockfull;	/* upcalls dropped - socket full   */
+	u_quad_t mrt6s_mfc_lookups;	/* # forw. cache hash table hits   */
+	u_quad_t mrt6s_mfc_misses;	/* # forw. cache hash table misses */
+	u_quad_t mrt6s_upcalls;		/* # calls to multicast routing daemon */
+	u_quad_t mrt6s_no_route;	/* no route for packet's origin    */
+	u_quad_t mrt6s_bad_tunnel;	/* malformed tunnel options        */
+	u_quad_t mrt6s_cant_tunnel;	/* no room for tunnel options      */
+	u_quad_t mrt6s_wrong_if;	/* arrived on wrong interface	   */
+	u_quad_t mrt6s_upq_ovflw;	/* upcall Q overflow		   */
+	u_quad_t mrt6s_cache_cleanups;	/* # entries with no upcalls	   */
+	u_quad_t mrt6s_drop_sel;	/* pkts dropped selectively        */
+	u_quad_t mrt6s_q_overflow;	/* pkts dropped - Q overflow       */
+	u_quad_t mrt6s_pkt2large;	/* pkts dropped - size > BKT SIZE  */
+	u_quad_t mrt6s_upq_sockfull;	/* upcalls dropped - socket full   */
 };
 
 #ifdef MRT6_OINIT
@@ -153,7 +153,7 @@ struct omrt6msg {
 	u_char	    im6_mbz;			/* must be zero		    */
 	u_char	    im6_mif;			/* mif rec'd on		    */
 	u_char	    unused2;
-	struct bsd_in6_addr  im6_src, im6_dst;
+	struct in6_addr  im6_src, im6_dst;
 };
 #endif
 
@@ -171,9 +171,9 @@ struct mrt6msg {
 #define MRT6MSG_WHOLEPKT	3		/* used for user level encap*/
 	u_char	    im6_mbz;			/* must be zero		    */
 	u_char	    im6_msgtype;		/* what type of message	    */
-	bsd_uint16_t   im6_mif;			/* mif rec'd on		    */
-	bsd_uint32_t   im6_pad;			/* padding for 64bit arch   */
-	struct bsd_in6_addr  im6_src, im6_dst;
+	u_int16_t   im6_mif;			/* mif rec'd on		    */
+	u_int32_t   im6_pad;			/* padding for 64bit arch   */
+	struct in6_addr  im6_src, im6_dst;
 };
 
 /*
@@ -181,11 +181,11 @@ struct mrt6msg {
  * packet counts
  */
 struct sioc_sg_req6 {
-	struct bsd_sockaddr_in6 src;
-	struct bsd_sockaddr_in6 grp;
-	bsd_uquad_t pktcnt;
-	bsd_uquad_t bytecnt;
-	bsd_uquad_t wrong_if;
+	struct sockaddr_in6 src;
+	struct sockaddr_in6 grp;
+	u_quad_t pktcnt;
+	u_quad_t bytecnt;
+	u_quad_t wrong_if;
 };
 
 /*
@@ -193,10 +193,10 @@ struct sioc_sg_req6 {
  */
 struct sioc_mif_req6 {
 	mifi_t mifi;		/* mif number				*/
-	bsd_uquad_t icount;	/* Input packet count on mif		*/
-	bsd_uquad_t ocount;	/* Output packet count on mif		*/
-	bsd_uquad_t ibytes;	/* Input byte count on mif		*/
-	bsd_uquad_t obytes;	/* Output byte count on mif		*/
+	u_quad_t icount;	/* Input packet count on mif		*/
+	u_quad_t ocount;	/* Output packet count on mif		*/
+	u_quad_t ibytes;	/* Input byte count on mif		*/
+	u_quad_t obytes;	/* Output byte count on mif		*/
 };
 
 #if defined(_KERNEL) || defined(KERNEL)
@@ -206,15 +206,15 @@ struct sioc_mif_req6 {
 struct mif6 {
         u_char		m6_flags;	/* MIFF_ flags defined above         */
 	u_int		m6_rate_limit;	/* max rate			     */
-	struct bsd_in6_addr	m6_lcl_addr;	/* local interface address           */
+	struct in6_addr	m6_lcl_addr;	/* local interface address           */
 	struct ifnet    *m6_ifp;	/* pointer to interface              */
-	bsd_uquad_t	m6_pkt_in;	/* # pkts in on interface            */
-	bsd_uquad_t	m6_pkt_out;	/* # pkts out on interface           */
-	bsd_uquad_t	m6_bytes_in;	/* # bytes in on interface	     */
-	bsd_uquad_t	m6_bytes_out;	/* # bytes out on interface	     */
+	u_quad_t	m6_pkt_in;	/* # pkts in on interface            */
+	u_quad_t	m6_pkt_out;	/* # pkts out on interface           */
+	u_quad_t	m6_bytes_in;	/* # bytes in on interface	     */
+	u_quad_t	m6_bytes_out;	/* # bytes out on interface	     */
 #ifdef notyet
 	u_int		m6_rsvp_on;	/* RSVP listening on this vif */
-	struct bsd_socket   *m6_rsvpd;	/* RSVP daemon socket */
+	struct socket   *m6_rsvpd;	/* RSVP daemon socket */
 #endif
 };
 
@@ -222,16 +222,16 @@ struct mif6 {
  * The kernel's multicast forwarding cache entry structure
  */
 struct mf6c {
-	struct bsd_sockaddr_in6  mf6c_origin;	/* IPv6 origin of mcasts     */
-	struct bsd_sockaddr_in6  mf6c_mcastgrp;	/* multicast group associated*/
+	struct sockaddr_in6  mf6c_origin;	/* IPv6 origin of mcasts     */
+	struct sockaddr_in6  mf6c_mcastgrp;	/* multicast group associated*/
 	mifi_t		 mf6c_parent;		/* incoming IF               */
 	struct if_set	 mf6c_ifset;		/* set of outgoing IFs */
 
-	bsd_uquad_t	mf6c_pkt_cnt;		/* pkt count for src-grp     */
-	bsd_uquad_t	mf6c_byte_cnt;		/* byte count for src-grp    */
-	bsd_uquad_t	mf6c_wrong_if;		/* wrong if for src-grp	     */
+	u_quad_t	mf6c_pkt_cnt;		/* pkt count for src-grp     */
+	u_quad_t	mf6c_byte_cnt;		/* byte count for src-grp    */
+	u_quad_t	mf6c_wrong_if;		/* wrong if for src-grp	     */
 	int		mf6c_expire;		/* time to clean entry up    */
-	struct bsd_timeval  mf6c_last_assert;	/* last time I sent an assert*/
+	struct timeval  mf6c_last_assert;	/* last time I sent an assert*/
 	struct rtdetq  *mf6c_stall;		/* pkts waiting for route */
 	struct mf6c    *mf6c_next;		/* hash table linkage */
 };
@@ -246,7 +246,7 @@ struct rtdetq {		/* XXX: rtdetq is also defined in ip_mroute.h */
     struct mbuf		*m;		/* A copy of the packet		    */
     struct ifnet	*ifp;		/* Interface pkt came in on	    */
 #ifdef UPCALL_TIMING
-    struct bsd_timeval	t;		/* Timestamp */
+    struct timeval	t;		/* Timestamp */
 #endif /* UPCALL_TIMING */
     struct rtdetq	*next;
 };
@@ -261,8 +261,8 @@ struct rtdetq {		/* XXX: rtdetq is also defined in ip_mroute.h */
 
 #define MAX_UPQ6	4		/* max. no of pkts in upcall Q */
 
-extern int	(*ip6_mrouter_set)(struct bsd_socket *so, struct bsd_sockopt *sopt);
-extern int	(*ip6_mrouter_get)(struct bsd_socket *so, struct bsd_sockopt *sopt);
+extern int	(*ip6_mrouter_set)(struct socket *so, struct sockopt *sopt);
+extern int	(*ip6_mrouter_get)(struct socket *so, struct sockopt *sopt);
 extern int	(*ip6_mrouter_done)(void);
 extern int	(*mrt6_ioctl)(u_long, caddr_t);
 #endif /* _KERNEL */

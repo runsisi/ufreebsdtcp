@@ -17,11 +17,11 @@
 /** @brief Unique descriptor for the SYNTH_KILLNOTE() method */
 extern struct kobjop_desc synth_killnote_desc;
 /** @brief A function implementing the SYNTH_KILLNOTE() method */
-typedef int synth_killnote_t(void /* X */ *_kobj, bsd_uint8_t _chan, bsd_uint8_t _note,
-                             bsd_uint8_t _vel);
+typedef int synth_killnote_t(void /* X */ *_kobj, uint8_t _chan, uint8_t _note,
+                             uint8_t _vel);
 
-static __inline int SYNTH_KILLNOTE(void /* X */ *_kobj, bsd_uint8_t _chan,
-                                   bsd_uint8_t _note, bsd_uint8_t _vel)
+static __inline int SYNTH_KILLNOTE(void /* X */ *_kobj, uint8_t _chan,
+                                   uint8_t _note, uint8_t _vel)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)_kobj)->ops,synth_killnote);
@@ -31,11 +31,11 @@ static __inline int SYNTH_KILLNOTE(void /* X */ *_kobj, bsd_uint8_t _chan,
 /** @brief Unique descriptor for the SYNTH_STARTNOTE() method */
 extern struct kobjop_desc synth_startnote_desc;
 /** @brief A function implementing the SYNTH_STARTNOTE() method */
-typedef int synth_startnote_t(void /* X */ *_kobj, bsd_uint8_t _voice,
-                              bsd_uint8_t _note, bsd_uint8_t _parm);
+typedef int synth_startnote_t(void /* X */ *_kobj, uint8_t _voice,
+                              uint8_t _note, uint8_t _parm);
 
-static __inline int SYNTH_STARTNOTE(void /* X */ *_kobj, bsd_uint8_t _voice,
-                                    bsd_uint8_t _note, bsd_uint8_t _parm)
+static __inline int SYNTH_STARTNOTE(void /* X */ *_kobj, uint8_t _voice,
+                                    uint8_t _note, uint8_t _parm)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)_kobj)->ops,synth_startnote);
@@ -45,11 +45,11 @@ static __inline int SYNTH_STARTNOTE(void /* X */ *_kobj, bsd_uint8_t _voice,
 /** @brief Unique descriptor for the SYNTH_SETINSTR() method */
 extern struct kobjop_desc synth_setinstr_desc;
 /** @brief A function implementing the SYNTH_SETINSTR() method */
-typedef int synth_setinstr_t(void /* X */ *_kobj, bsd_uint8_t _chn,
-                             bsd_uint16_t _patchno);
+typedef int synth_setinstr_t(void /* X */ *_kobj, uint8_t _chn,
+                             uint16_t _patchno);
 
-static __inline int SYNTH_SETINSTR(void /* X */ *_kobj, bsd_uint8_t _chn,
-                                   bsd_uint16_t _patchno)
+static __inline int SYNTH_SETINSTR(void /* X */ *_kobj, uint8_t _chn,
+                                   uint16_t _patchno)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)_kobj)->ops,synth_setinstr);
@@ -59,9 +59,9 @@ static __inline int SYNTH_SETINSTR(void /* X */ *_kobj, bsd_uint8_t _chn,
 /** @brief Unique descriptor for the SYNTH_HWCONTROL() method */
 extern struct kobjop_desc synth_hwcontrol_desc;
 /** @brief A function implementing the SYNTH_HWCONTROL() method */
-typedef int synth_hwcontrol_t(void /* X */ *_kobj, bsd_uint8_t *_event);
+typedef int synth_hwcontrol_t(void /* X */ *_kobj, uint8_t *_event);
 
-static __inline int SYNTH_HWCONTROL(void /* X */ *_kobj, bsd_uint8_t *_event)
+static __inline int SYNTH_HWCONTROL(void /* X */ *_kobj, uint8_t *_event)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)_kobj)->ops,synth_hwcontrol);
@@ -71,10 +71,10 @@ static __inline int SYNTH_HWCONTROL(void /* X */ *_kobj, bsd_uint8_t *_event)
 /** @brief Unique descriptor for the SYNTH_AFTERTOUCH() method */
 extern struct kobjop_desc synth_aftertouch_desc;
 /** @brief A function implementing the SYNTH_AFTERTOUCH() method */
-typedef int synth_aftertouch_t(void /* X */ *_kobj, bsd_uint8_t _x1, bsd_uint8_t _x2);
+typedef int synth_aftertouch_t(void /* X */ *_kobj, uint8_t _x1, uint8_t _x2);
 
-static __inline int SYNTH_AFTERTOUCH(void /* X */ *_kobj, bsd_uint8_t _x1,
-                                     bsd_uint8_t _x2)
+static __inline int SYNTH_AFTERTOUCH(void /* X */ *_kobj, uint8_t _x1,
+                                     uint8_t _x2)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)_kobj)->ops,synth_aftertouch);
@@ -84,9 +84,9 @@ static __inline int SYNTH_AFTERTOUCH(void /* X */ *_kobj, bsd_uint8_t _x1,
 /** @brief Unique descriptor for the SYNTH_PANNING() method */
 extern struct kobjop_desc synth_panning_desc;
 /** @brief A function implementing the SYNTH_PANNING() method */
-typedef int synth_panning_t(void /* X */ *_kobj, bsd_uint8_t _x1, bsd_uint8_t _x2);
+typedef int synth_panning_t(void /* X */ *_kobj, uint8_t _x1, uint8_t _x2);
 
-static __inline int SYNTH_PANNING(void /* X */ *_kobj, bsd_uint8_t _x1, bsd_uint8_t _x2)
+static __inline int SYNTH_PANNING(void /* X */ *_kobj, uint8_t _x1, uint8_t _x2)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)_kobj)->ops,synth_panning);
@@ -96,11 +96,11 @@ static __inline int SYNTH_PANNING(void /* X */ *_kobj, bsd_uint8_t _x1, bsd_uint
 /** @brief Unique descriptor for the SYNTH_CONTROLLER() method */
 extern struct kobjop_desc synth_controller_desc;
 /** @brief A function implementing the SYNTH_CONTROLLER() method */
-typedef int synth_controller_t(void /* X */ *_kobj, bsd_uint8_t _x1, bsd_uint8_t _x2,
-                               bsd_uint16_t _x3);
+typedef int synth_controller_t(void /* X */ *_kobj, uint8_t _x1, uint8_t _x2,
+                               uint16_t _x3);
 
-static __inline int SYNTH_CONTROLLER(void /* X */ *_kobj, bsd_uint8_t _x1,
-                                     bsd_uint8_t _x2, bsd_uint16_t _x3)
+static __inline int SYNTH_CONTROLLER(void /* X */ *_kobj, uint8_t _x1,
+                                     uint8_t _x2, uint16_t _x3)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)_kobj)->ops,synth_controller);
@@ -110,9 +110,9 @@ static __inline int SYNTH_CONTROLLER(void /* X */ *_kobj, bsd_uint8_t _x1,
 /** @brief Unique descriptor for the SYNTH_VOLUMEMETHOD() method */
 extern struct kobjop_desc synth_volumemethod_desc;
 /** @brief A function implementing the SYNTH_VOLUMEMETHOD() method */
-typedef int synth_volumemethod_t(void /* X */ *_kobj, bsd_uint8_t _x1);
+typedef int synth_volumemethod_t(void /* X */ *_kobj, uint8_t _x1);
 
-static __inline int SYNTH_VOLUMEMETHOD(void /* X */ *_kobj, bsd_uint8_t _x1)
+static __inline int SYNTH_VOLUMEMETHOD(void /* X */ *_kobj, uint8_t _x1)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)_kobj)->ops,synth_volumemethod);
@@ -122,10 +122,10 @@ static __inline int SYNTH_VOLUMEMETHOD(void /* X */ *_kobj, bsd_uint8_t _x1)
 /** @brief Unique descriptor for the SYNTH_BENDER() method */
 extern struct kobjop_desc synth_bender_desc;
 /** @brief A function implementing the SYNTH_BENDER() method */
-typedef int synth_bender_t(void /* X */ *_kobj, bsd_uint8_t _voice, bsd_uint16_t _bend);
+typedef int synth_bender_t(void /* X */ *_kobj, uint8_t _voice, uint16_t _bend);
 
-static __inline int SYNTH_BENDER(void /* X */ *_kobj, bsd_uint8_t _voice,
-                                 bsd_uint16_t _bend)
+static __inline int SYNTH_BENDER(void /* X */ *_kobj, uint8_t _voice,
+                                 uint16_t _bend)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)_kobj)->ops,synth_bender);
@@ -135,11 +135,11 @@ static __inline int SYNTH_BENDER(void /* X */ *_kobj, bsd_uint8_t _voice,
 /** @brief Unique descriptor for the SYNTH_SETUPVOICE() method */
 extern struct kobjop_desc synth_setupvoice_desc;
 /** @brief A function implementing the SYNTH_SETUPVOICE() method */
-typedef int synth_setupvoice_t(void /* X */ *_kobj, bsd_uint8_t _voice,
-                               bsd_uint8_t _chn);
+typedef int synth_setupvoice_t(void /* X */ *_kobj, uint8_t _voice,
+                               uint8_t _chn);
 
-static __inline int SYNTH_SETUPVOICE(void /* X */ *_kobj, bsd_uint8_t _voice,
-                                     bsd_uint8_t _chn)
+static __inline int SYNTH_SETUPVOICE(void /* X */ *_kobj, uint8_t _voice,
+                                     uint8_t _chn)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)_kobj)->ops,synth_setupvoice);
@@ -149,10 +149,10 @@ static __inline int SYNTH_SETUPVOICE(void /* X */ *_kobj, bsd_uint8_t _voice,
 /** @brief Unique descriptor for the SYNTH_SENDSYSEX() method */
 extern struct kobjop_desc synth_sendsysex_desc;
 /** @brief A function implementing the SYNTH_SENDSYSEX() method */
-typedef int synth_sendsysex_t(void /* X */ *_kobj, void *_buf, bsd_size_t _len);
+typedef int synth_sendsysex_t(void /* X */ *_kobj, void *_buf, size_t _len);
 
 static __inline int SYNTH_SENDSYSEX(void /* X */ *_kobj, void *_buf,
-                                    bsd_size_t _len)
+                                    size_t _len)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)_kobj)->ops,synth_sendsysex);
@@ -162,11 +162,11 @@ static __inline int SYNTH_SENDSYSEX(void /* X */ *_kobj, void *_buf,
 /** @brief Unique descriptor for the SYNTH_ALLOCVOICE() method */
 extern struct kobjop_desc synth_allocvoice_desc;
 /** @brief A function implementing the SYNTH_ALLOCVOICE() method */
-typedef int synth_allocvoice_t(void /* X */ *_kobj, bsd_uint8_t _chn, bsd_uint8_t _note,
+typedef int synth_allocvoice_t(void /* X */ *_kobj, uint8_t _chn, uint8_t _note,
                                void *_x);
 
-static __inline int SYNTH_ALLOCVOICE(void /* X */ *_kobj, bsd_uint8_t _chn,
-                                     bsd_uint8_t _note, void *_x)
+static __inline int SYNTH_ALLOCVOICE(void /* X */ *_kobj, uint8_t _chn,
+                                     uint8_t _note, void *_x)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)_kobj)->ops,synth_allocvoice);
@@ -176,10 +176,10 @@ static __inline int SYNTH_ALLOCVOICE(void /* X */ *_kobj, bsd_uint8_t _chn,
 /** @brief Unique descriptor for the SYNTH_WRITERAW() method */
 extern struct kobjop_desc synth_writeraw_desc;
 /** @brief A function implementing the SYNTH_WRITERAW() method */
-typedef int synth_writeraw_t(void /* X */ *_kobjt, bsd_uint8_t *_buf, bsd_size_t _len);
+typedef int synth_writeraw_t(void /* X */ *_kobjt, uint8_t *_buf, size_t _len);
 
-static __inline int SYNTH_WRITERAW(void /* X */ *_kobjt, bsd_uint8_t *_buf,
-                                   bsd_size_t _len)
+static __inline int SYNTH_WRITERAW(void /* X */ *_kobjt, uint8_t *_buf,
+                                   size_t _len)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)_kobjt)->ops,synth_writeraw);
@@ -261,10 +261,10 @@ static __inline int SYNTH_INSYNC(void /* X */ *_kobjt)
 /** @brief Unique descriptor for the SYNTH_ALLOC() method */
 extern struct kobjop_desc synth_alloc_desc;
 /** @brief A function implementing the SYNTH_ALLOC() method */
-typedef int synth_alloc_t(void /* x */ *_kbojt, bsd_uint8_t _chn, bsd_uint8_t _note);
+typedef int synth_alloc_t(void /* x */ *_kbojt, uint8_t _chn, uint8_t _note);
 
-static __inline int SYNTH_ALLOC(void /* x */ *_kbojt, bsd_uint8_t _chn,
-                                bsd_uint8_t _note)
+static __inline int SYNTH_ALLOC(void /* x */ *_kbojt, uint8_t _chn,
+                                uint8_t _note)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)_kbojt)->ops,synth_alloc);

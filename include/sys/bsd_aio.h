@@ -65,9 +65,9 @@ struct __aiocb_private {
  */
 typedef struct aiocb {
 	int	aio_fildes;		/* File descriptor */
-	bsd_off_t	aio_offset;		/* File offset for I/O */
+	off_t	aio_offset;		/* File offset for I/O */
 	volatile void *aio_buf;         /* I/O buffer in process space */
-	bsd_size_t	aio_nbytes;		/* Number of bytes for I/O */
+	size_t	aio_nbytes;		/* Number of bytes for I/O */
 	int	__spare__[2];
 	void	*__spare2__;
 	int	aio_lio_opcode;		/* LIO opcode */
@@ -134,10 +134,10 @@ __END_DECLS
 #else
 
 /* Forward declarations for prototypes below. */
-struct bsd_socket;
+struct socket;
 struct sockbuf;
 
-extern void (*aio_swake)(struct bsd_socket *, struct sockbuf *);
+extern void (*aio_swake)(struct socket *, struct sockbuf *);
 
 #endif
 

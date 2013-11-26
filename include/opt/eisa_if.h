@@ -17,9 +17,9 @@
 /** @brief Unique descriptor for the EISA_ADD_INTR() method */
 extern struct kobjop_desc eisa_add_intr_desc;
 /** @brief A function implementing the EISA_ADD_INTR() method */
-typedef int eisa_add_intr_t(bsd_device_t dev, bsd_device_t child, int irq, int trigger);
+typedef int eisa_add_intr_t(device_t dev, device_t child, int irq, int trigger);
 
-static __inline int EISA_ADD_INTR(bsd_device_t dev, bsd_device_t child, int irq,
+static __inline int EISA_ADD_INTR(device_t dev, device_t child, int irq,
                                   int trigger)
 {
 	kobjop_t _m;
@@ -30,10 +30,10 @@ static __inline int EISA_ADD_INTR(bsd_device_t dev, bsd_device_t child, int irq,
 /** @brief Unique descriptor for the EISA_ADD_IOSPACE() method */
 extern struct kobjop_desc eisa_add_iospace_desc;
 /** @brief A function implementing the EISA_ADD_IOSPACE() method */
-typedef int eisa_add_iospace_t(bsd_device_t dev, bsd_device_t child, u_long iobase,
+typedef int eisa_add_iospace_t(device_t dev, device_t child, u_long iobase,
                                u_long iosize, int flags);
 
-static __inline int EISA_ADD_IOSPACE(bsd_device_t dev, bsd_device_t child,
+static __inline int EISA_ADD_IOSPACE(device_t dev, device_t child,
                                      u_long iobase, u_long iosize, int flags)
 {
 	kobjop_t _m;
@@ -44,10 +44,10 @@ static __inline int EISA_ADD_IOSPACE(bsd_device_t dev, bsd_device_t child,
 /** @brief Unique descriptor for the EISA_ADD_MSPACE() method */
 extern struct kobjop_desc eisa_add_mspace_desc;
 /** @brief A function implementing the EISA_ADD_MSPACE() method */
-typedef int eisa_add_mspace_t(bsd_device_t dev, bsd_device_t child, u_long mbase,
+typedef int eisa_add_mspace_t(device_t dev, device_t child, u_long mbase,
                               u_long msize, int flags);
 
-static __inline int EISA_ADD_MSPACE(bsd_device_t dev, bsd_device_t child, u_long mbase,
+static __inline int EISA_ADD_MSPACE(device_t dev, device_t child, u_long mbase,
                                     u_long msize, int flags)
 {
 	kobjop_t _m;

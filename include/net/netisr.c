@@ -28,7 +28,7 @@
  * SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/net/netisr.c 248085 2013-03-09 02:36:32Z marius $");
 
 /*
@@ -66,25 +66,25 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/net/netisr.c 248085 2013-03-09 02:36:32Z m
 #include "opt_ddb.h"
 #include "opt_device_polling.h"
 
-#include <sys/param.h>
-#include <sys/bus.h>
-#include <sys/kernel.h>
-#include <sys/kthread.h>
-#include <sys/interrupt.h>
-#include <sys/lock.h>
-#include <sys/mbuf.h>
-#include <sys/mutex.h>
-#include <sys/pcpu.h>
-#include <sys/proc.h>
-#include <sys/rmlock.h>
-#include <sys/sched.h>
-#include <sys/smp.h>
-#include <sys/socket.h>
-#include <sys/sysctl.h>
-#include <sys/systm.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_bus.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_kthread.h>
+#include <sys/bsd_interrupt.h>
+#include <sys/bsd_lock.h>
+#include <sys/bsd_mbuf.h>
+#include <sys/bsd_mutex.h>
+#include <sys/bsd_pcpu.h>
+#include <sys/bsd_proc.h>
+#include <sys/bsd_rmlock.h>
+#include <sys/bsd_sched.h>
+#include <sys/bsd_smp.h>
+#include <sys/bsd_socket.h>
+#include <sys/bsd_sysctl.h>
+#include <sys/bsd_systm.h>
 
 #ifdef DDB
-#include <ddb/ddb.h>
+//#include <ddb/ddb.h>
 #endif
 
 #define	_WANT_NETISR_INTERNAL	/* Enable definitions from netisr_internal.h */
@@ -501,7 +501,7 @@ netisr_clearqdrops(const struct netisr_handler *nhp)
  * Query current drop counters across all workstreams for a protocol.
  */
 void
-netisr_getqdrops(const struct netisr_handler *nhp, bsd_uint64_t *qdropp)
+netisr_getqdrops(const struct netisr_handler *nhp, u_int64_t *qdropp)
 {
 	struct netisr_work *npwp;
 	struct rm_priotracker tracker;
@@ -682,7 +682,7 @@ netisr_get_dispatch(struct netisr_proto *npp)
  */
 static struct mbuf *
 netisr_select_cpuid(struct netisr_proto *npp, u_int dispatch_policy,
-    bsd_uintptr_t source, struct mbuf *m, u_int *cpuidp)
+    uintptr_t source, struct mbuf *m, u_int *cpuidp)
 {
 	struct ifnet *ifp;
 	u_int policy;
@@ -931,7 +931,7 @@ netisr_queue_internal(u_int proto, struct mbuf *m, u_int cpuid)
 }
 
 int
-netisr_queue_src(u_int proto, bsd_uintptr_t source, struct mbuf *m)
+netisr_queue_src(u_int proto, uintptr_t source, struct mbuf *m)
 {
 #ifdef NETISR_LOCKING
 	struct rm_priotracker tracker;
@@ -974,7 +974,7 @@ netisr_queue(u_int proto, struct mbuf *m)
  * calling context.
  */
 int
-netisr_dispatch_src(u_int proto, bsd_uintptr_t source, struct mbuf *m)
+netisr_dispatch_src(u_int proto, uintptr_t source, struct mbuf *m)
 {
 #ifdef NETISR_LOCKING
 	struct rm_priotracker tracker;
@@ -1249,7 +1249,7 @@ sysctl_netisr_proto(SYSCTL_HANDLER_ARGS)
 
 	if (req->newptr != NULL)
 		return (EINVAL);
-	snp_array = bsd_malloc(sizeof(*snp_array) * NETISR_MAXPROT, M_TEMP,
+	snp_array = malloc(sizeof(*snp_array) * NETISR_MAXPROT, M_TEMP,
 	    M_ZERO | M_WAITOK);
 	counter = 0;
 	NETISR_RLOCK(&tracker);
@@ -1259,7 +1259,7 @@ sysctl_netisr_proto(SYSCTL_HANDLER_ARGS)
 			continue;
 		snpp = &snp_array[counter];
 		snpp->snp_version = sizeof(*snpp);
-		bsd_strlcpy(snpp->snp_name, npp->np_name, NETISR_NAMEMAXLEN);
+		strlcpy(snpp->snp_name, npp->np_name, NETISR_NAMEMAXLEN);
 		snpp->snp_proto = proto;
 		snpp->snp_qlimit = npp->np_qlimit;
 		snpp->snp_policy = npp->np_policy;
@@ -1276,7 +1276,7 @@ sysctl_netisr_proto(SYSCTL_HANDLER_ARGS)
 	KASSERT(counter <= NETISR_MAXPROT,
 	    ("sysctl_netisr_proto: counter too big (%d)", counter));
 	error = SYSCTL_OUT(req, snp_array, sizeof(*snp_array) * counter);
-	bsd_free(snp_array, M_TEMP);
+	free(snp_array, M_TEMP);
 	return (error);
 }
 
@@ -1299,7 +1299,7 @@ sysctl_netisr_workstream(SYSCTL_HANDLER_ARGS)
 
 	if (req->newptr != NULL)
 		return (EINVAL);
-	snws_array = bsd_malloc(sizeof(*snws_array) * MAXCPU, M_TEMP,
+	snws_array = malloc(sizeof(*snws_array) * MAXCPU, M_TEMP,
 	    M_ZERO | M_WAITOK);
 	counter = 0;
 	NETISR_RLOCK(&tracker);
@@ -1327,7 +1327,7 @@ sysctl_netisr_workstream(SYSCTL_HANDLER_ARGS)
 	KASSERT(counter <= MAXCPU,
 	    ("sysctl_netisr_workstream: counter too big (%d)", counter));
 	error = SYSCTL_OUT(req, snws_array, sizeof(*snws_array) * counter);
-	bsd_free(snws_array, M_TEMP);
+	free(snws_array, M_TEMP);
 	return (error);
 }
 
@@ -1353,7 +1353,7 @@ sysctl_netisr_work(SYSCTL_HANDLER_ARGS)
 
 	if (req->newptr != NULL)
 		return (EINVAL);
-	snw_array = bsd_malloc(sizeof(*snw_array) * MAXCPU * NETISR_MAXPROT,
+	snw_array = malloc(sizeof(*snw_array) * MAXCPU * NETISR_MAXPROT,
 	    M_TEMP, M_ZERO | M_WAITOK);
 	counter = 0;
 	NETISR_RLOCK(&tracker);
@@ -1387,7 +1387,7 @@ sysctl_netisr_work(SYSCTL_HANDLER_ARGS)
 	    ("sysctl_netisr_work: counter too big (%d)", counter));
 	NETISR_RUNLOCK(&tracker);
 	error = SYSCTL_OUT(req, snw_array, sizeof(*snw_array) * counter);
-	bsd_free(snw_array, M_TEMP);
+	free(snw_array, M_TEMP);
 	return (error);
 }
 

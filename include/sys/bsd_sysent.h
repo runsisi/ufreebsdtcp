@@ -42,14 +42,14 @@ struct ksiginfo;
 typedef	int	sy_call_t(struct thread *, void *);
 
 /* Used by the machine dependent syscall() code. */
-typedef	void (*systrace_probe_func_t)(bsd_uint32_t, int, struct sysent *, void *,
+typedef	void (*systrace_probe_func_t)(u_int32_t, int, struct sysent *, void *,
     int);
 
 /*
  * Used by loaded syscalls to convert arguments to a DTrace array
  * of 64-bit arguments.
  */
-typedef	void (*systrace_args_func_t)(int, void *, bsd_uint64_t *, int *);
+typedef	void (*systrace_args_func_t)(int, void *, u_int64_t *, int *);
 
 extern systrace_probe_func_t	systrace_probe_func;
 
@@ -59,10 +59,10 @@ struct sysent {			/* system call table */
 	au_event_t sy_auevent;	/* audit event associated with syscall */
 	systrace_args_func_t sy_systrace_args_func;
 				/* optional argument conversion function. */
-	bsd_uint32_t sy_entry;	/* DTrace entry ID for systrace. */
-	bsd_uint32_t sy_return;	/* DTrace return ID for systrace. */
-	bsd_uint32_t sy_flags;	/* General flags for system calls. */
-	bsd_uint32_t sy_thrcnt;
+	u_int32_t sy_entry;	/* DTrace entry ID for systrace. */
+	u_int32_t sy_return;	/* DTrace return ID for systrace. */
+	u_int32_t sy_flags;	/* General flags for system calls. */
+	u_int32_t sy_thrcnt;
 };
 
 /*
@@ -92,7 +92,7 @@ struct sysentvec {
 	int 		*sv_errtbl;	/* errno translation table */
 	int		(*sv_transtrap)(int, int);
 					/* translate trap-to-signal mapping */
-	int		(*sv_fixup)(bsd_register_t **, struct image_params *);
+	int		(*sv_fixup)(register_t **, struct image_params *);
 					/* stack fixup function */
 	void		(*sv_sendsig)(void (*)(int), struct ksiginfo *, struct __sigset *);
 			    		/* send signal */
@@ -101,17 +101,17 @@ struct sysentvec {
 	void		(*sv_prepsyscall)(struct trapframe *, int *, u_int *,
 			    caddr_t *);
 	char		*sv_name;	/* name of binary type */
-	int		(*sv_coredump)(struct thread *, struct vnode *, bsd_off_t, int);
+	int		(*sv_coredump)(struct thread *, struct vnode *, off_t, int);
 					/* function to dump core, or NULL */
 	int		(*sv_imgact_try)(struct image_params *);
 	int		sv_minsigstksz;	/* minimum signal stack size */
 	int		sv_pagesize;	/* pagesize */
-	bsd_vm_offset_t	sv_minuser;	/* VM_MIN_ADDRESS */
-	bsd_vm_offset_t	sv_maxuser;	/* VM_MAXUSER_ADDRESS */
-	bsd_vm_offset_t	sv_usrstack;	/* USRSTACK */
-	bsd_vm_offset_t	sv_psstrings;	/* PS_STRINGS */
+	vm_offset_t	sv_minuser;	/* VM_MIN_ADDRESS */
+	vm_offset_t	sv_maxuser;	/* VM_MAXUSER_ADDRESS */
+	vm_offset_t	sv_usrstack;	/* USRSTACK */
+	vm_offset_t	sv_psstrings;	/* PS_STRINGS */
 	int		sv_stackprot;	/* vm protection for stack */
-	bsd_register_t	*(*sv_copyout_strings)(struct image_params *);
+	register_t	*(*sv_copyout_strings)(struct image_params *);
 	void		(*sv_setregs)(struct thread *, struct image_params *,
 			    u_long);
 	void		(*sv_fixlimit)(struct rlimit *, int);
@@ -121,13 +121,13 @@ struct sysentvec {
 	int		(*sv_fetch_syscall_args)(struct thread *, struct
 			    syscall_args *);
 	const char	**sv_syscallnames;
-	bsd_vm_offset_t	sv_shared_page_base;
-	bsd_vm_offset_t	sv_shared_page_len;
-	bsd_vm_offset_t	sv_sigcode_base;
-	bsd_vm_offset_t	sv_timekeep_base;
+	vm_offset_t	sv_shared_page_base;
+	vm_offset_t	sv_shared_page_len;
+	vm_offset_t	sv_sigcode_base;
+	vm_offset_t	sv_timekeep_base;
 	int		sv_timekeep_off;
 	int		sv_timekeep_curr;
-	bsd_uint32_t	sv_timekeep_gen;
+	uint32_t	sv_timekeep_gen;
 	void		*sv_shared_page_obj;
 	void		(*sv_schedtail)(struct thread *);
 };

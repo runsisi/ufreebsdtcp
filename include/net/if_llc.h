@@ -44,53 +44,53 @@
  */
 
 struct llc {
-	bsd_uint8_t llc_dsap;
-	bsd_uint8_t llc_ssap;
+	u_int8_t llc_dsap;
+	u_int8_t llc_ssap;
 	union {
 	    struct {
-		bsd_uint8_t control;
-		bsd_uint8_t format_id;
-		bsd_uint8_t class;
-		bsd_uint8_t window_x2;
+		u_int8_t control;
+		u_int8_t format_id;
+		u_int8_t class;
+		u_int8_t window_x2;
 	    } __packed type_u;
 	    struct {
-		bsd_uint8_t num_snd_x2;
-		bsd_uint8_t num_rcv_x2;
+		u_int8_t num_snd_x2;
+		u_int8_t num_rcv_x2;
 	    } __packed type_i;
 	    struct {
-		bsd_uint8_t control;
-		bsd_uint8_t num_rcv_x2;
+		u_int8_t control;
+		u_int8_t num_rcv_x2;
 	    } __packed type_s;
 	    struct {
-	        bsd_uint8_t control;
+	        u_int8_t control;
 		/*
 		 * We cannot put the following fields in a structure because
 		 * the structure rounding might cause padding.
 		 */
-		bsd_uint8_t frmr_rej_pdu0;
-		bsd_uint8_t frmr_rej_pdu1;
-		bsd_uint8_t frmr_control;
-		bsd_uint8_t frmr_control_ext;
-		bsd_uint8_t frmr_cause;
+		u_int8_t frmr_rej_pdu0;
+		u_int8_t frmr_rej_pdu1;
+		u_int8_t frmr_control;
+		u_int8_t frmr_control_ext;
+		u_int8_t frmr_cause;
 	    } __packed type_frmr;
 	    struct {
-		bsd_uint8_t  control;
-		bsd_uint8_t  org_code[3];
+		u_int8_t  control;
+		u_int8_t  org_code[3];
 		u_int16_t ether_type;
 	    } __packed type_snap;
 	    struct {
-		bsd_uint8_t control;
-		bsd_uint8_t control_ext;
+		u_int8_t control;
+		u_int8_t control_ext;
 	    } __packed type_raw;
 	} __packed llc_un;
 } __packed;
 
 struct frmrinfo {
-	bsd_uint8_t frmr_rej_pdu0;
-	bsd_uint8_t frmr_rej_pdu1;
-	bsd_uint8_t frmr_control;
-	bsd_uint8_t frmr_control_ext;
-	bsd_uint8_t frmr_cause;
+	u_int8_t frmr_rej_pdu0;
+	u_int8_t frmr_rej_pdu1;
+	u_int8_t frmr_control;
+	u_int8_t frmr_control_ext;
+	u_int8_t frmr_cause;
 } __packed;
 
 #define	llc_control		llc_un.type_u.control

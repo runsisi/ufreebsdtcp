@@ -25,7 +25,7 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/vm/memguard.c 248085 2013-03-09 02:36:32Z marius $");
 
 /*
@@ -39,15 +39,15 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/vm/memguard.c 248085 2013-03-09 02:36:32Z 
 
 #include "opt_vm.h"
 
-#include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/kernel.h>
-#include <sys/types.h>
-#include <sys/queue.h>
-#include <sys/lock.h>
-#include <sys/mutex.h>
-#include <sys/malloc.h>
-#include <sys/sysctl.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_types.h>
+#include <sys/bsd_queue.h>
+#include <sys/bsd_lock.h>
+#include <sys/bsd_mutex.h>
+#include <sys/bsd_malloc.h>
+#include <sys/bsd_sysctl.h>
 
 #include <vm/vm.h>
 #include <vm/uma.h>
@@ -80,7 +80,7 @@ memguard_sysctl_desc(SYSCTL_HANDLER_ARGS)
 	char desc[sizeof(vm_memguard_desc)];
 	int error;
 
-	bsd_strlcpy(desc, vm_memguard_desc, sizeof(desc));
+	strlcpy(desc, vm_memguard_desc, sizeof(desc));
 	error = sysctl_handle_string(oidp, desc, sizeof(desc), req);
 	if (error != 0 || req->newptr == NULL)
 		return (error);
@@ -90,7 +90,7 @@ memguard_sysctl_desc(SYSCTL_HANDLER_ARGS)
 	 * If mtp is NULL, it will be initialized in memguard_cmp().
 	 */
 	vm_memguard_mtype = malloc_desc2type(desc);
-	bsd_strlcpy(vm_memguard_desc, desc, sizeof(vm_memguard_desc));
+	strlcpy(vm_memguard_desc, desc, sizeof(vm_memguard_desc));
 	mtx_unlock(&malloc_mtx);
 	return (error);
 }

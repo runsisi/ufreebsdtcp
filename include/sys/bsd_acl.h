@@ -44,13 +44,13 @@
  * POSIX.1e and NFSv4 ACL types and related constants.
  */
 
-typedef bsd_uint32_t	acl_tag_t;
-typedef bsd_uint32_t	acl_perm_t;
-typedef bsd_uint16_t	acl_entry_type_t;
-typedef bsd_uint16_t	acl_flag_t;
+typedef uint32_t	acl_tag_t;
+typedef uint32_t	acl_perm_t;
+typedef uint16_t	acl_entry_type_t;
+typedef uint16_t	acl_flag_t;
 typedef int		acl_type_t;
 typedef int		*acl_permset_t;
-typedef bsd_uint16_t	*acl_flagset_t;
+typedef uint16_t	*acl_flagset_t;
 
 /*
  * With 254 entries, "struct acl_t_struct" is exactly one 4kB page big.
@@ -81,11 +81,11 @@ typedef bsd_uint16_t	*acl_flagset_t;
  * storage of POSIX.1e ACLs.
  */
 typedef int	oldacl_tag_t;
-typedef bsd_mode_t	oldacl_perm_t;
+typedef mode_t	oldacl_perm_t;
 
 struct oldacl_entry {
 	oldacl_tag_t	ae_tag;
-	bsd_uid_t		ae_id;
+	uid_t		ae_id;
 	oldacl_perm_t	ae_perm;
 };
 typedef struct oldacl_entry	*oldacl_entry_t;
@@ -100,7 +100,7 @@ struct oldacl {
  */
 struct acl_entry {
 	acl_tag_t		ae_tag;
-	bsd_uid_t			ae_id;
+	uid_t			ae_id;
 	acl_perm_t		ae_perm;
 	/* NFSv4 entry type, "allow" or "deny".  Unused in POSIX.1e ACLs. */
 	acl_entry_type_t	ae_entry_type;
@@ -283,28 +283,28 @@ typedef void *acl_t;
  * Filesystem-independent code to move back and forth between POSIX mode and
  * POSIX.1e ACL representations.
  */
-acl_perm_t		acl_posix1e_mode_to_perm(acl_tag_t tag, bsd_mode_t mode);
-struct acl_entry	acl_posix1e_mode_to_entry(acl_tag_t tag, bsd_uid_t uid,
-			    bsd_gid_t gid, bsd_mode_t mode);
-bsd_mode_t			acl_posix1e_perms_to_mode(
+acl_perm_t		acl_posix1e_mode_to_perm(acl_tag_t tag, mode_t mode);
+struct acl_entry	acl_posix1e_mode_to_entry(acl_tag_t tag, uid_t uid,
+			    gid_t gid, mode_t mode);
+mode_t			acl_posix1e_perms_to_mode(
 			    struct acl_entry *acl_user_obj_entry,
 			    struct acl_entry *acl_group_obj_entry,
 			    struct acl_entry *acl_other_entry);
-bsd_mode_t			acl_posix1e_acl_to_mode(struct acl *acl);
-bsd_mode_t			acl_posix1e_newfilemode(bsd_mode_t cmode,
+mode_t			acl_posix1e_acl_to_mode(struct acl *acl);
+mode_t			acl_posix1e_newfilemode(mode_t cmode,
 			    struct acl *dacl);
 struct acl		*acl_alloc(int flags);
 void			acl_free(struct acl *aclp);
 
 void			acl_nfs4_sync_acl_from_mode(struct acl *aclp,
-			    bsd_mode_t mode, int file_owner_id);
-void			acl_nfs4_sync_mode_from_acl(bsd_mode_t *mode,
+			    mode_t mode, int file_owner_id);
+void			acl_nfs4_sync_mode_from_acl(mode_t *mode,
 			    const struct acl *aclp);
 int			acl_nfs4_is_trivial(const struct acl *aclp,
 			    int file_owner_id);
 void			acl_nfs4_compute_inherited_acl(
 			    const struct acl *parent_aclp,
-			    struct acl *child_aclp, bsd_mode_t mode,
+			    struct acl *child_aclp, mode_t mode,
 			    int file_owner_id, int is_directory);
 int			acl_copy_oldacl_into_acl(const struct oldacl *source,
 			    struct acl *dest);

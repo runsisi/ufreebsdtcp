@@ -30,8 +30,8 @@
  * $FreeBSD: release/9.2.0/sys/sys/unistd.h 233060 2012-03-17 01:19:36Z kib $
  */
 
-#ifndef _BSD_SYS_UNISTD_H_
-#define	_BSD_SYS_UNISTD_H_
+#ifndef _SYS_UNISTD_H_
+#define	_SYS_UNISTD_H_
 
 #include <sys/bsd_cdefs.h>
 

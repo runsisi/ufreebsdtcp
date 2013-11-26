@@ -29,23 +29,23 @@
  * SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/netinet/in_gif.c 223637 2011-06-28 11:57:25Z bz $");
 
 #include "opt_mrouting.h"
 #include "opt_inet.h"
 #include "opt_inet6.h"
 
-#include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/socket.h>
-#include <sys/sockio.h>
-#include <sys/mbuf.h>
-#include <sys/errno.h>
-#include <sys/kernel.h>
-#include <sys/sysctl.h>
-#include <sys/protosw.h>
-#include <sys/malloc.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_socket.h>
+#include <sys/bsd_sockio.h>
+#include <sys/bsd_mbuf.h>
+#include <sys/bsd_errno.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_sysctl.h>
+#include <sys/bsd_protosw.h>
+#include <sys/bsd_malloc.h>
 
 #include <net/if.h>
 #include <net/route.h>
@@ -70,11 +70,11 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/netinet/in_gif.c 223637 2011-06-28 11:57:2
 
 #include <net/if_gif.h>	
 
-static int gif_validate4(const struct bsd_ip *, struct gif_softc *,
+static int gif_validate4(const struct ip *, struct gif_softc *,
 	struct ifnet *);
 
-extern  struct bsd_domain inetdomain;
-struct bsd_protosw in_gif_protosw = {
+extern  struct domain inetdomain;
+struct protosw in_gif_protosw = {
 	.pr_type =		SOCK_RAW,
 	.pr_domain =		&inetdomain,
 	.pr_protocol =		0/* IPPROTO_IPV[46] */,
@@ -94,13 +94,13 @@ int
 in_gif_output(struct ifnet *ifp, int family, struct mbuf *m)
 {
 	struct gif_softc *sc = ifp->if_softc;
-	struct bsd_sockaddr_in *dst = (struct bsd_sockaddr_in *)&sc->gif_ro.ro_dst;
-	struct bsd_sockaddr_in *sin_src = (struct bsd_sockaddr_in *)sc->gif_psrc;
-	struct bsd_sockaddr_in *sin_dst = (struct bsd_sockaddr_in *)sc->gif_pdst;
-	struct bsd_ip iphdr;	/* capsule IP header, host byte ordered */
+	struct sockaddr_in *dst = (struct sockaddr_in *)&sc->gif_ro.ro_dst;
+	struct sockaddr_in *sin_src = (struct sockaddr_in *)sc->gif_psrc;
+	struct sockaddr_in *sin_dst = (struct sockaddr_in *)sc->gif_pdst;
+	struct ip iphdr;	/* capsule IP header, host byte ordered */
 	struct etherip_header eiphdr;
 	int error, len, proto;
-	bsd_uint8_t tos;
+	u_int8_t tos;
 
 	GIF_LOCK_ASSERT(sc);
 
@@ -115,7 +115,7 @@ in_gif_output(struct ifnet *ifp, int family, struct mbuf *m)
 #ifdef INET
 	case AF_INET:
 	    {
-		struct bsd_ip *ip;
+		struct ip *ip;
 
 		proto = IPPROTO_IPV4;
 		if (m->m_len < sizeof(*ip)) {
@@ -123,7 +123,7 @@ in_gif_output(struct ifnet *ifp, int family, struct mbuf *m)
 			if (!m)
 				return ENOBUFS;
 		}
-		bsd_ip = mtod(m, struct bsd_ip *);
+		ip = mtod(m, struct ip *);
 		tos = ip->ip_tos;
 		break;
 	    }
@@ -192,12 +192,12 @@ in_gif_output(struct ifnet *ifp, int family, struct mbuf *m)
 	iphdr.ip_p = proto;
 	/* version will be set in ip_output() */
 	iphdr.ip_ttl = V_ip_gif_ttl;
-	iphdr.ip_len = m->m_pkthdr.len + sizeof(struct bsd_ip);
+	iphdr.ip_len = m->m_pkthdr.len + sizeof(struct ip);
 	ip_ecn_ingress((ifp->if_flags & IFF_LINK1) ? ECN_ALLOWED : ECN_NOCARE,
 		       &iphdr.ip_tos, &tos);
 
 	/* prepend new IP header */
-	len = sizeof(struct bsd_ip);
+	len = sizeof(struct ip);
 #ifndef __NO_STRICT_ALIGNMENT
 	if (family == AF_LINK)
 		len += ETHERIP_ALIGN;
@@ -218,7 +218,7 @@ in_gif_output(struct ifnet *ifp, int family, struct mbuf *m)
 		m->m_len -= ETHERIP_ALIGN;
 	}
 #endif
-	bcopy(&iphdr, mtod(m, struct bsd_ip *), sizeof(struct bsd_ip));
+	bcopy(&iphdr, mtod(m, struct ip *), sizeof(struct ip));
 
 	M_SETFIB(m, sc->gif_fibnum);
 
@@ -227,7 +227,7 @@ in_gif_output(struct ifnet *ifp, int family, struct mbuf *m)
 		/* cache route doesn't match */
 		bzero(dst, sizeof(*dst));
 		dst->sin_family = sin_dst->sin_family;
-		dst->sin_len = sizeof(struct bsd_sockaddr_in);
+		dst->sin_len = sizeof(struct sockaddr_in);
 		dst->sin_addr = sin_dst->sin_addr;
 		if (sc->gif_ro.ro_rt) {
 			RTFREE(sc->gif_ro.ro_rt);
@@ -252,7 +252,7 @@ in_gif_output(struct ifnet *ifp, int family, struct mbuf *m)
 		}
 #if 0
 		ifp->if_mtu = sc->gif_ro.ro_rt->rt_ifp->if_mtu
-			- sizeof(struct bsd_ip);
+			- sizeof(struct ip);
 #endif
 	}
 
@@ -274,12 +274,12 @@ in_gif_input(struct mbuf *m, int off)
 {
 	struct ifnet *gifp = NULL;
 	struct gif_softc *sc;
-	struct bsd_ip *ip;
+	struct ip *ip;
 	int af;
-	bsd_uint8_t otos;
+	u_int8_t otos;
 	int proto;
 
-	bsd_ip = mtod(m, struct bsd_ip *);
+	ip = mtod(m, struct ip *);
 	proto = ip->ip_p;
 
 	sc = (struct gif_softc *)encap_getarg(m);
@@ -303,14 +303,14 @@ in_gif_input(struct mbuf *m, int off)
 #ifdef INET
 	case IPPROTO_IPV4:
 	    {
-		struct bsd_ip *ip;
+		struct ip *ip;
 		af = AF_INET;
 		if (m->m_len < sizeof(*ip)) {
 			m = m_pullup(m, sizeof(*ip));
 			if (!m)
 				return;
 		}
-		bsd_ip = mtod(m, struct bsd_ip *);
+		ip = mtod(m, struct ip *);
 		if (ip_ecn_egress((gifp->if_flags & IFF_LINK1) ?
 				  ECN_ALLOWED : ECN_NOCARE,
 				  &otos, &ip->ip_tos) == 0) {
@@ -324,7 +324,7 @@ in_gif_input(struct mbuf *m, int off)
 	case IPPROTO_IPV6:
 	    {
 		struct ip6_hdr *ip6;
-		bsd_uint8_t itos, oitos;
+		u_int8_t itos, oitos;
 
 		af = AF_INET6;
 		if (m->m_len < sizeof(*ip6)) {
@@ -364,13 +364,13 @@ in_gif_input(struct mbuf *m, int off)
  * validate outer address.
  */
 static int
-gif_validate4(const struct bsd_ip *ip, struct gif_softc *sc, struct ifnet *ifp)
+gif_validate4(const struct ip *ip, struct gif_softc *sc, struct ifnet *ifp)
 {
-	struct bsd_sockaddr_in *src, *dst;
+	struct sockaddr_in *src, *dst;
 	struct in_ifaddr *ia4;
 
-	src = (struct bsd_sockaddr_in *)sc->gif_psrc;
-	dst = (struct bsd_sockaddr_in *)sc->gif_pdst;
+	src = (struct sockaddr_in *)sc->gif_psrc;
+	dst = (struct sockaddr_in *)sc->gif_pdst;
 
 	/* check for address match */
 	if (src->sin_addr.s_addr != ip->ip_dst.s_addr ||
@@ -400,15 +400,15 @@ gif_validate4(const struct bsd_ip *ip, struct gif_softc *sc, struct ifnet *ifp)
 
 	/* ingress filters on outer source */
 	if ((GIF2IFP(sc)->if_flags & IFF_LINK2) == 0 && ifp) {
-		struct bsd_sockaddr_in sin;
+		struct sockaddr_in sin;
 		struct rtentry *rt;
 
 		bzero(&sin, sizeof(sin));
 		sin.sin_family = AF_INET;
-		sin.sin_len = sizeof(struct bsd_sockaddr_in);
+		sin.sin_len = sizeof(struct sockaddr_in);
 		sin.sin_addr = ip->ip_src;
 		/* XXX MRT  check for the interface we would use on output */
-		rt = in_rtalloc1((struct bsd_sockaddr *)&sin, 0,
+		rt = in_rtalloc1((struct sockaddr *)&sin, 0,
 		    0UL, sc->gif_fibnum);
 		if (!rt || rt->rt_ifp != ifp) {
 #if 0
@@ -433,7 +433,7 @@ gif_validate4(const struct bsd_ip *ip, struct gif_softc *sc, struct ifnet *ifp)
 int
 gif_encapcheck4(const struct mbuf *m, int off, int proto, void *arg)
 {
-	struct bsd_ip ip;
+	struct ip ip;
 	struct gif_softc *sc;
 	struct ifnet *ifp;
 

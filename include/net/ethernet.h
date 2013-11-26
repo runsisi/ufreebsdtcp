@@ -366,26 +366,26 @@ struct ether_addr {
 struct ifnet;
 struct mbuf;
 struct route;
-struct bsd_sockaddr;
+struct sockaddr;
 struct bpf_if;
 
-extern	bsd_uint32_t ether_crc32_le(const bsd_uint8_t *, bsd_size_t);
-extern	bsd_uint32_t ether_crc32_be(const bsd_uint8_t *, bsd_size_t);
+extern	uint32_t ether_crc32_le(const uint8_t *, size_t);
+extern	uint32_t ether_crc32_be(const uint8_t *, size_t);
 extern	void ether_demux(struct ifnet *, struct mbuf *);
-extern	void ether_ifattach(struct ifnet *, const bsd_uint8_t *);
+extern	void ether_ifattach(struct ifnet *, const u_int8_t *);
 extern	void ether_ifdetach(struct ifnet *);
 extern	int  ether_ioctl(struct ifnet *, u_long, caddr_t);
 extern	int  ether_output(struct ifnet *,
-		   struct mbuf *, struct bsd_sockaddr *, struct route *);
+		   struct mbuf *, struct sockaddr *, struct route *);
 extern	int  ether_output_frame(struct ifnet *, struct mbuf *);
-extern	char *ether_sprintf(const bsd_uint8_t *);
+extern	char *ether_sprintf(const u_int8_t *);
 void	ether_vlan_mtap(struct bpf_if *, struct mbuf *,
 	    void *, u_int);
-struct mbuf  *ether_vlanencap(struct mbuf *, bsd_uint16_t);
+struct mbuf  *ether_vlanencap(struct mbuf *, uint16_t);
 
 #else /* _KERNEL */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 
 /*
  * Ethernet address conversion/parsing routines.

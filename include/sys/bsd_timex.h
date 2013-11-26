@@ -177,7 +177,7 @@
  * nanoseconds if not.
  */
 struct ntptimeval {
-	struct bsd_timespec time;	/* current time (ns) (ro) */
+	struct timespec time;	/* current time (ns) (ro) */
 	long maxerror;		/* maximum error (us) (ro) */
 	long esterror;		/* estimated error (us) (ro) */
 	long tai;		/* TAI offset */
@@ -223,7 +223,7 @@ struct timex {
 #ifdef _KERNEL
 void	ntp_update_second(int64_t *adjustment, time_t *newsec);
 #else /* !_KERNEL */
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 
 __BEGIN_DECLS
 int	ntp_adjtime(struct timex *);

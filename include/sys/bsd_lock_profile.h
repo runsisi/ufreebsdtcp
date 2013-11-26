@@ -12,7 +12,7 @@
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
  *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHORS ``AS IS'' AND ANY EXPRESS OR
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHORS ``AS IS'' AND ANY EXPRESS OR 
  * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
  * ARE DISCLAIMED.  IN NO EVENT SHAL THE AUTHORS BE LIABLE FOR ANY
@@ -32,7 +32,7 @@
 #define _SYS_LOCK_PROFILE_H_
 
 struct lock_profile_object;
-BSD_LIST_HEAD(lpohead, lock_profile_object);
+LIST_HEAD(lpohead, lock_profile_object);
 
 #ifdef _KERNEL
 #ifdef LOCK_PROFILING

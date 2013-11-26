@@ -56,12 +56,12 @@ typedef struct fpreg fpregset_t;
 
 typedef struct prstatus {
     int		pr_version;	/* Version number of struct (1) */
-    bsd_size_t	pr_statussz;	/* sizeof(prstatus_t) (1) */
-    bsd_size_t	pr_gregsetsz;	/* sizeof(gregset_t) (1) */
-    bsd_size_t	pr_fpregsetsz;	/* sizeof(fpregset_t) (1) */
+    size_t	pr_statussz;	/* sizeof(prstatus_t) (1) */
+    size_t	pr_gregsetsz;	/* sizeof(gregset_t) (1) */
+    size_t	pr_fpregsetsz;	/* sizeof(fpregset_t) (1) */
     int		pr_osreldate;	/* Kernel version (1) */
     int		pr_cursig;	/* Current signal (1) */
-    bsd_pid_t	pr_pid;		/* Process ID (1) */
+    pid_t	pr_pid;		/* Process ID (1) */
     gregset_t	pr_reg;		/* General purpose registers (1) */
 } prstatus_t;
 
@@ -75,7 +75,7 @@ typedef fpregset_t prfpregset_t;
 
 typedef struct prpsinfo {
     int		pr_version;	/* Version number of struct (1) */
-    bsd_size_t	pr_psinfosz;	/* sizeof(prpsinfo_t) (1) */
+    size_t	pr_psinfosz;	/* sizeof(prpsinfo_t) (1) */
     char	pr_fname[PRFNAMESZ+1];	/* Command name, null terminated (1) */
     char	pr_psargs[PRARGSZ+1];	/* Arguments, null terminated (1) */
 } prpsinfo_t;
@@ -87,6 +87,6 @@ typedef struct thrmisc {
     u_int	_pad;			/* Convenience pad, 0-filled (1) */
 } thrmisc_t;
 
-typedef bsd_uint64_t psaddr_t;	/* An address in the target process. */
+typedef uint64_t psaddr_t;	/* An address in the target process. */
 
 #endif /* _SYS_PROCFS_H_ */

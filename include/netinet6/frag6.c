@@ -29,20 +29,20 @@
  *	$KAME: frag6.c,v 1.33 2002/01/07 11:34:48 kjc Exp $
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/netinet6/frag6.c 250044 2013-04-29 10:52:45Z ae $");
 
-#include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/malloc.h>
-#include <sys/mbuf.h>
-#include <sys/domain.h>
-#include <sys/protosw.h>
-#include <sys/socket.h>
-#include <sys/errno.h>
-#include <sys/time.h>
-#include <sys/kernel.h>
-#include <sys/syslog.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_malloc.h>
+#include <sys/bsd_mbuf.h>
+#include <sys/bsd_domain.h>
+#include <sys/bsd_protosw.h>
+#include <sys/bsd_socket.h>
+#include <sys/bsd_errno.h>
+#include <sys/bsd_time.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_syslog.h>
 
 #include <net/if.h>
 #include <net/route.h>
@@ -56,7 +56,7 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/netinet6/frag6.c 250044 2013-04-29 10:52:4
 #include <netinet/in_systm.h>	/* for ECN definitions */
 #include <netinet/ip.h>		/* for ECN definitions */
 
-#include <security/mac/mac_framework.h>
+//#include <security/mac/mac_framework.h>
 
 /*
  * Define it to get a correct behavior on per-interface statistics.
@@ -166,7 +166,7 @@ frag6_input(struct mbuf **mp, int *offp, int proto)
 	int first_frag = 0;
 	int fragoff, frgpartlen;	/* must be larger than u_int16_t */
 	struct ifnet *dstifp;
-	bsd_uint8_t ecn, ecn0;
+	u_int8_t ecn, ecn0;
 #if 0
 	char ip6buf[INET6_ADDRSTRLEN];
 #endif
@@ -274,14 +274,14 @@ frag6_input(struct mbuf **mp, int *offp, int proto)
 		else if (V_frag6_nfragpackets >= (u_int)V_ip6_maxfragpackets)
 			goto dropfrag;
 		V_frag6_nfragpackets++;
-		q6 = (struct ip6q *)bsd_malloc(sizeof(struct ip6q), M_FTABLE,
+		q6 = (struct ip6q *)malloc(sizeof(struct ip6q), M_FTABLE,
 		    M_NOWAIT);
 		if (q6 == NULL)
 			goto dropfrag;
 		bzero(q6, sizeof(*q6));
 #ifdef MAC
 		if (mac_ip6q_init(q6, M_NOWAIT) != 0) {
-			bsd_free(q6, M_FTABLE);
+			free(q6, M_FTABLE);
 			goto dropfrag;
 		}
 		mac_ip6q_create(m, q6);
@@ -354,7 +354,7 @@ frag6_input(struct mbuf **mp, int *offp, int proto)
 
 				/* dequeue the fragment. */
 				frag6_deq(af6);
-				bsd_free(af6, M_FTABLE);
+				free(af6, M_FTABLE);
 
 				/* adjust pointer. */
 				ip6err = mtod(merr, struct ip6_hdr *);
@@ -374,7 +374,7 @@ frag6_input(struct mbuf **mp, int *offp, int proto)
 		}
 	}
 
-	ip6af = (struct ip6asfrag *)bsd_malloc(sizeof(struct ip6asfrag), M_FTABLE,
+	ip6af = (struct ip6asfrag *)malloc(sizeof(struct ip6asfrag), M_FTABLE,
 	    M_NOWAIT);
 	if (ip6af == NULL)
 		goto dropfrag;
@@ -399,14 +399,14 @@ frag6_input(struct mbuf **mp, int *offp, int proto)
 	ecn0 = q6->ip6q_ecn;
 	if (ecn == IPTOS_ECN_CE) {
 		if (ecn0 == IPTOS_ECN_NOTECT) {
-			bsd_free(ip6af, M_FTABLE);
+			free(ip6af, M_FTABLE);
 			goto dropfrag;
 		}
 		if (ecn0 != IPTOS_ECN_CE)
 			q6->ip6q_ecn = IPTOS_ECN_CE;
 	}
 	if (ecn == IPTOS_ECN_NOTECT && ecn0 != IPTOS_ECN_NOTECT) {
-		bsd_free(ip6af, M_FTABLE);
+		free(ip6af, M_FTABLE);
 		goto dropfrag;
 	}
 
@@ -473,7 +473,7 @@ frag6_input(struct mbuf **mp, int *offp, int proto)
 			    "overlaps the previous fragment\n",
 			    i, ip6_sprintf(ip6buf, &q6->ip6q_src));
 #endif
-			bsd_free(ip6af, M_FTABLE);
+			free(ip6af, M_FTABLE);
 			goto dropfrag;
 		}
 	}
@@ -485,7 +485,7 @@ frag6_input(struct mbuf **mp, int *offp, int proto)
 			    "overlaps the succeeding fragment",
 			    i, ip6_sprintf(ip6buf, &q6->ip6q_src));
 #endif
-			bsd_free(ip6af, M_FTABLE);
+			free(ip6af, M_FTABLE);
 			goto dropfrag;
 		}
 	}
@@ -540,13 +540,13 @@ insert:
 			t = t->m_next;
 		t->m_next = IP6_REASS_MBUF(af6);
 		m_adj(t->m_next, af6->ip6af_offset);
-		bsd_free(af6, M_FTABLE);
+		free(af6, M_FTABLE);
 		af6 = af6dwn;
 	}
 
 	/* adjust offset to point where the original next header starts */
 	offset = ip6af->ip6af_offset - sizeof(struct ip6_frag);
-	bsd_free(ip6af, M_FTABLE);
+	free(ip6af, M_FTABLE);
 	ip6 = mtod(m, struct ip6_hdr *);
 	ip6->ip6_plen = htons((u_short)next + offset - sizeof(struct ip6_hdr));
 	if (q6->ip6q_ecn == IPTOS_ECN_CE)
@@ -571,7 +571,7 @@ insert:
 #ifdef MAC
 			mac_ip6q_destroy(q6);
 #endif
-			bsd_free(q6, M_FTABLE);
+			free(q6, M_FTABLE);
 			V_frag6_nfragpackets--;
 			goto dropfrag;
 		}
@@ -593,7 +593,7 @@ insert:
 	mac_ip6q_reassemble(q6, m);
 	mac_ip6q_destroy(q6);
 #endif
-	bsd_free(q6, M_FTABLE);
+	free(q6, M_FTABLE);
 	V_frag6_nfragpackets--;
 
 	if (m->m_flags & M_PKTHDR) { /* Isn't it always true? */
@@ -660,14 +660,14 @@ frag6_freef(struct ip6q *q6)
 				    ICMP6_TIME_EXCEED_REASSEMBLY, 0);
 		} else
 			m_freem(m);
-		bsd_free(af6, M_FTABLE);
+		free(af6, M_FTABLE);
 	}
 	frag6_remque(q6);
 	V_frag6_nfrags -= q6->ip6q_nfrag;
 #ifdef MAC
 	mac_ip6q_destroy(q6);
 #endif
-	bsd_free(q6, M_FTABLE);
+	free(q6, M_FTABLE);
 	V_frag6_nfragpackets--;
 }
 

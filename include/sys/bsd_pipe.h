@@ -75,8 +75,8 @@ struct pipebuf {
  * Information to support direct transfers between processes for pipes.
  */
 struct pipemapping {
-	bsd_vm_size_t	cnt;		/* number of chars in buffer */
-	bsd_vm_size_t	pos;		/* current position of transfer */
+	vm_size_t	cnt;		/* number of chars in buffer */
+	vm_size_t	pos;		/* current position of transfer */
 	int		npages;		/* number of pages */
 	vm_page_t	ms[PIPENPAGES];	/* pages in source process */
 };
@@ -103,16 +103,16 @@ struct pipe {
 	struct	pipebuf pipe_buffer;	/* data storage */
 	struct	pipemapping pipe_map;	/* pipe mapping for direct I/O */
 	struct	selinfo pipe_sel;	/* for compat with select */
-	struct	bsd_timespec pipe_atime;	/* time of last access */
-	struct	bsd_timespec pipe_mtime;	/* time of last modify */
-	struct	bsd_timespec pipe_ctime;	/* time of status change */
+	struct	timespec pipe_atime;	/* time of last access */
+	struct	timespec pipe_mtime;	/* time of last modify */
+	struct	timespec pipe_ctime;	/* time of status change */
 	struct	sigio *pipe_sigio;	/* information for async I/O */
 	struct	pipe *pipe_peer;	/* link with other direction */
 	struct	pipepair *pipe_pair;	/* container structure pointer */
 	u_int	pipe_state;		/* pipe status info */
 	int	pipe_busy;		/* busy flag, mostly to handle rundown sanely */
 	int	pipe_present;		/* still present? */
-	bsd_ino_t	pipe_ino;		/* fake inode for stat(2) */
+	ino_t	pipe_ino;		/* fake inode for stat(2) */
 };
 
 /*

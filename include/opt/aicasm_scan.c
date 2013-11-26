@@ -6,7 +6,7 @@
  */
 
 #if defined(__FreeBSD__)
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 #else
 #define __unused
 #define __dead2
@@ -759,7 +759,7 @@ char *yytext;
  * $FreeBSD: release/9.2.0/sys/dev/aic7xxx/aicasm/aicasm_scan.l 229101 2011-12-31 14:34:07Z dim $
  */
 
-#include <sys/types.h>
+#include <sys/bsd_types.h>
 
 #include <inttypes.h>
 #include <limits.h>
@@ -767,7 +767,7 @@ char *yytext;
 #include <stdio.h>
 #include <string.h>
 #include <sysexits.h>
-#include <sys/queue.h>
+#include <sys/bsd_queue.h>
 
 #include "aicasm.h"
 #include "aicasm_symbol.h"
@@ -2704,7 +2704,7 @@ static void *yy_flex_alloc( size )
 yy_size_t size;
 #endif
 	{
-	return (void *) bsd_malloc( size );
+	return (void *) malloc( size );
 	}
 
 #ifdef YY_USE_PROTOS
@@ -2722,7 +2722,7 @@ yy_size_t size;
 	 * any pointer type to void*, and deal with argument conversions
 	 * as though doing an assignment.
 	 */
-	return (void *) bsd_realloc( (char *) ptr, size );
+	return (void *) realloc( (char *) ptr, size );
 	}
 
 #ifdef YY_USE_PROTOS
@@ -2732,7 +2732,7 @@ static void yy_flex_free( ptr )
 void *ptr;
 #endif
 	{
-	bsd_free( ptr );
+	free( ptr );
 	}
 
 #if YY_MAIN
@@ -2791,7 +2791,7 @@ include_file(char *file_name, include_type type)
 	}
 
 	if (type != SOURCE_FILE) {
-		include = (include_t *)bsd_malloc(sizeof(include_t));
+		include = (include_t *)malloc(sizeof(include_t));
 		if (include == NULL) {
 			stop("Unable to allocate include stack entry",
 			     EX_SOFTWARE);
@@ -2854,7 +2854,7 @@ expand_macro(struct symbol *macro_symbol)
 
 	/* Cleanup replacement text. */
 	STAILQ_FOREACH(marg, &macro_symbol->info.macroinfo->args, links) {
-		bsd_free(marg->replacement_text);
+		free(marg->replacement_text);
 	}
 }
 
@@ -2900,7 +2900,7 @@ yywrap(void)
 	yy_delete_buffer(YY_CURRENT_BUFFER);
 	(void)fclose(yyin);
 	if (yyfilename != NULL)
-		bsd_free(yyfilename);
+		free(yyfilename);
 	yyfilename = NULL;
 	include = include_stack.slh_first;
 	if (include != NULL) {
@@ -2908,7 +2908,7 @@ yywrap(void)
 		yylineno = include->lineno;
 		yyfilename = include->filename;
 		SLIST_REMOVE_HEAD(&include_stack, links);
-		bsd_free(include);
+		free(include);
 		return (0);
 	}
 	return (1);

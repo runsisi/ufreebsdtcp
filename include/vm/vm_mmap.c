@@ -40,37 +40,37 @@
  * Mapped file (mmap) interface to VM
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/vm/vm_mmap.c 253801 2013-07-30 12:17:45Z jlh $");
 
 #include "opt_compat.h"
 #include "opt_hwpmc_hooks.h"
 
-#include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/capability.h>
-#include <sys/kernel.h>
-#include <sys/lock.h>
-#include <sys/mutex.h>
-#include <sys/sysproto.h>
-#include <sys/filedesc.h>
-#include <sys/priv.h>
-#include <sys/proc.h>
-#include <sys/racct.h>
-#include <sys/resource.h>
-#include <sys/resourcevar.h>
-#include <sys/sysctl.h>
-#include <sys/vnode.h>
-#include <sys/fcntl.h>
-#include <sys/file.h>
-#include <sys/mman.h>
-#include <sys/mount.h>
-#include <sys/conf.h>
-#include <sys/stat.h>
-#include <sys/sysent.h>
-#include <sys/vmmeter.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_capability.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_lock.h>
+#include <sys/bsd_mutex.h>
+#include <sys/bsd_sysproto.h>
+#include <sys/bsd_filedesc.h>
+#include <sys/bsd_priv.h>
+#include <sys/bsd_proc.h>
+#include <sys/bsd_racct.h>
+#include <sys/bsd_resource.h>
+#include <sys/bsd_resourcevar.h>
+#include <sys/bsd_sysctl.h>
+#include <sys/bsd_vnode.h>
+#include <sys/bsd_fcntl.h>
+#include <sys/bsd_file.h>
+#include <sys/bsd_mman.h>
+#include <sys/bsd_mount.h>
+#include <sys/bsd_conf.h>
+#include <sys/bsd_stat.h>
+#include <sys/bsd_sysent.h>
+#include <sys/bsd_vmmeter.h>
 
-#include <security/mac/mac_framework.h>
+//#include <security/mac/mac_framework.h>
 
 #include <vm/vm.h>
 #include <vm/vm_param.h>
@@ -85,7 +85,7 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/vm/vm_mmap.c 253801 2013-07-30 12:17:45Z j
 #include <vm/vnode_pager.h>
 
 #ifdef HWPMC_HOOKS
-#include <sys/pmckern.h>
+#include <sys/bsd_pmckern.h>
 #endif
 
 int old_mlock = 1;
@@ -204,7 +204,7 @@ sys_mmap(td, uap)
 	int flags, error;
 	off_t pos;
 	struct vmspace *vms = td->td_proc->p_vmspace;
-	bsd_cap_rights_t rights;
+	cap_rights_t rights;
 
 	addr = (vm_offset_t) uap->addr;
 	size = uap->len;
@@ -397,7 +397,7 @@ map:
 	if (error == 0 && handle_type == OBJT_VNODE &&
 	    (prot & PROT_EXEC)) {
 		pkm.pm_file = handle;
-		pkm.pm_address = (bsd_uintptr_t) addr;
+		pkm.pm_address = (uintptr_t) addr;
 		PMC_CALL_HOOK(td, PMC_FN_MMAP, (void *) &pkm);
 	}
 #endif
@@ -587,14 +587,14 @@ sys_munmap(td, uap)
 	 * Inform hwpmc if the address range being unmapped contains
 	 * an executable region.
 	 */
-	pkm.pm_address = (bsd_uintptr_t) NULL;
+	pkm.pm_address = (uintptr_t) NULL;
 	if (vm_map_lookup_entry(map, addr, &entry)) {
 		for (;
 		     entry != &map->header && entry->start < addr + size;
 		     entry = entry->next) {
 			if (vm_map_check_protection(map, entry->start,
 				entry->end, VM_PROT_EXECUTE) == TRUE) {
-				pkm.pm_address = (bsd_uintptr_t) addr;
+				pkm.pm_address = (uintptr_t) addr;
 				pkm.pm_size = (size_t) size;
 				break;
 			}
@@ -606,7 +606,7 @@ sys_munmap(td, uap)
 #ifdef HWPMC_HOOKS
 	/* downgrade the lock to prevent a LOR with the pmc-sx lock */
 	vm_map_lock_downgrade(map);
-	if (pkm.pm_address != (bsd_uintptr_t) NULL)
+	if (pkm.pm_address != (uintptr_t) NULL)
 		PMC_CALL_HOOK(td, PMC_FN_MUNMAP, (void *) &pkm);
 	vm_map_unlock_read(map);
 #else
@@ -1269,7 +1269,7 @@ vm_mmap_vnode(struct thread *td, vm_size_t objsize,
 	vm_object_t obj;
 	vm_offset_t foff;
 	struct mount *mp;
-	struct bsd_ucred *cred;
+	struct ucred *cred;
 	int error, flags, locktype, vfslocked;
 
 	mp = vp->v_mount;

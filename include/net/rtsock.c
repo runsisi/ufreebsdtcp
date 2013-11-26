@@ -35,22 +35,22 @@
 #include "opt_inet.h"
 #include "opt_inet6.h"
 
-#include <sys/param.h>
-#include <sys/jail.h>
-#include <sys/kernel.h>
-#include <sys/domain.h>
-#include <sys/lock.h>
-#include <sys/malloc.h>
-#include <sys/mbuf.h>
-#include <sys/priv.h>
-#include <sys/proc.h>
-#include <sys/protosw.h>
-#include <sys/rwlock.h>
-#include <sys/signalvar.h>
-#include <sys/socket.h>
-#include <sys/socketvar.h>
-#include <sys/sysctl.h>
-#include <sys/systm.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_jail.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_domain.h>
+#include <sys/bsd_lock.h>
+#include <sys/bsd_malloc.h>
+#include <sys/bsd_mbuf.h>
+#include <sys/bsd_priv.h>
+#include <sys/bsd_proc.h>
+#include <sys/bsd_protosw.h>
+#include <sys/bsd_rwlock.h>
+#include <sys/bsd_signalvar.h>
+#include <sys/bsd_socket.h>
+#include <sys/bsd_socketvar.h>
+#include <sys/bsd_sysctl.h>
+#include <sys/bsd_systm.h>
 
 #include <net/if.h>
 #include <net/if_dl.h>
@@ -74,7 +74,7 @@ extern void sctp_addr_change(struct ifaddr *ifa, int cmd);
 #endif
 
 #ifdef COMPAT_FREEBSD32
-#include <sys/mount.h>
+#include <sys/bsd_mount.h>
 #include <compat/freebsd32/freebsd32.h>
 
 struct if_data32 {
@@ -146,8 +146,8 @@ struct ifa_msghdrl32 {
 MALLOC_DEFINE(M_RTABLE, "routetbl", "routing tables");
 
 /* NB: these are not modified */
-static struct	bsd_sockaddr route_src = { 2, PF_ROUTE, };
-static struct	bsd_sockaddr sa_zero   = { sizeof(sa_zero), AF_INET, };
+static struct	sockaddr route_src = { 2, PF_ROUTE, };
+static struct	sockaddr sa_zero   = { sizeof(sa_zero), AF_INET, };
 
 /*
  * Used by rtsock/raw_input callback code to decide whether to filter the update
@@ -188,12 +188,12 @@ static int	rt_xaddrs(caddr_t cp, caddr_t cplim,
 static int	sysctl_dumpentry(struct radix_node *rn, void *vw);
 static int	sysctl_iflist(int af, struct walkarg *w);
 static int	sysctl_ifmalist(int af, struct walkarg *w);
-static int	route_output(struct mbuf *m, struct bsd_socket *so);
+static int	route_output(struct mbuf *m, struct socket *so);
 static void	rt_setmetrics(u_long which, const struct rt_metrics *in,
 			struct rt_metrics_lite *out);
 static void	rt_getmetrics(const struct rt_metrics_lite *in,
 			struct rt_metrics *out);
-static void	rt_dispatch(struct mbuf *, bsd_sa_family_t);
+static void	rt_dispatch(struct mbuf *, sa_family_t);
 
 static struct netisr_handler rtsock_nh = {
 	.nh_name = "rtsock",
@@ -231,7 +231,7 @@ rts_init(void)
 SYSINIT(rtsock, SI_SUB_PROTO_DOMAIN, SI_ORDER_THIRD, rts_init, 0);
 
 static int
-raw_input_rts_cb(struct mbuf *m, struct bsd_sockproto *proto, struct bsd_sockaddr *src,
+raw_input_rts_cb(struct mbuf *m, struct sockproto *proto, struct sockaddr *src,
     struct rawcb *rp)
 {
 	int fibnum;
@@ -258,7 +258,7 @@ raw_input_rts_cb(struct mbuf *m, struct bsd_sockproto *proto, struct bsd_sockadd
 static void
 rts_input(struct mbuf *m)
 {
-	struct bsd_sockproto route_proto;
+	struct sockproto route_proto;
 	unsigned short *family;
 	struct m_tag *tag;
 
@@ -279,14 +279,14 @@ rts_input(struct mbuf *m)
  * with raw_usrreq.c, since its functionality is so restricted.  XXX
  */
 static void
-rts_abort(struct bsd_socket *so)
+rts_abort(struct socket *so)
 {
 
 	raw_usrreqs.pru_abort(so);
 }
 
 static void
-rts_close(struct bsd_socket *so)
+rts_close(struct socket *so)
 {
 
 	raw_usrreqs.pru_close(so);
@@ -295,7 +295,7 @@ rts_close(struct bsd_socket *so)
 /* pru_accept is EOPNOTSUPP */
 
 static int
-rts_attach(struct bsd_socket *so, int proto, struct thread *td)
+rts_attach(struct socket *so, int proto, struct thread *td)
 {
 	struct rawcb *rp;
 	int s, error;
@@ -303,7 +303,7 @@ rts_attach(struct bsd_socket *so, int proto, struct thread *td)
 	KASSERT(so->so_pcb == NULL, ("rts_attach: so_pcb != NULL"));
 
 	/* XXX */
-	rp = bsd_malloc(sizeof *rp, M_PCB, M_WAITOK | M_ZERO);
+	rp = malloc(sizeof *rp, M_PCB, M_WAITOK | M_ZERO);
 	if (rp == NULL)
 		return ENOBUFS;
 
@@ -322,7 +322,7 @@ rts_attach(struct bsd_socket *so, int proto, struct thread *td)
 	if (error) {
 		splx(s);
 		so->so_pcb = NULL;
-		bsd_free(rp, M_PCB);
+		free(rp, M_PCB);
 		return error;
 	}
 	RTSOCK_LOCK();
@@ -346,14 +346,14 @@ rts_attach(struct bsd_socket *so, int proto, struct thread *td)
 }
 
 static int
-rts_bind(struct bsd_socket *so, struct bsd_sockaddr *nam, struct thread *td)
+rts_bind(struct socket *so, struct sockaddr *nam, struct thread *td)
 {
 
 	return (raw_usrreqs.pru_bind(so, nam, td)); /* xxx just EINVAL */
 }
 
 static int
-rts_connect(struct bsd_socket *so, struct bsd_sockaddr *nam, struct thread *td)
+rts_connect(struct socket *so, struct sockaddr *nam, struct thread *td)
 {
 
 	return (raw_usrreqs.pru_connect(so, nam, td)); /* XXX just EINVAL */
@@ -363,7 +363,7 @@ rts_connect(struct bsd_socket *so, struct bsd_sockaddr *nam, struct thread *td)
 /* pru_control is EOPNOTSUPP */
 
 static void
-rts_detach(struct bsd_socket *so)
+rts_detach(struct socket *so)
 {
 	struct rawcb *rp = sotorawcb(so);
 
@@ -387,7 +387,7 @@ rts_detach(struct bsd_socket *so)
 }
 
 static int
-rts_disconnect(struct bsd_socket *so)
+rts_disconnect(struct socket *so)
 {
 
 	return (raw_usrreqs.pru_disconnect(so));
@@ -396,7 +396,7 @@ rts_disconnect(struct bsd_socket *so)
 /* pru_listen is EOPNOTSUPP */
 
 static int
-rts_peeraddr(struct bsd_socket *so, struct bsd_sockaddr **nam)
+rts_peeraddr(struct socket *so, struct sockaddr **nam)
 {
 
 	return (raw_usrreqs.pru_peeraddr(so, nam));
@@ -406,7 +406,7 @@ rts_peeraddr(struct bsd_socket *so, struct bsd_sockaddr **nam)
 /* pru_rcvoob is EOPNOTSUPP */
 
 static int
-rts_send(struct bsd_socket *so, int flags, struct mbuf *m, struct bsd_sockaddr *nam,
+rts_send(struct socket *so, int flags, struct mbuf *m, struct sockaddr *nam,
 	 struct mbuf *control, struct thread *td)
 {
 
@@ -416,14 +416,14 @@ rts_send(struct bsd_socket *so, int flags, struct mbuf *m, struct bsd_sockaddr *
 /* pru_sense is null */
 
 static int
-rts_shutdown(struct bsd_socket *so)
+rts_shutdown(struct socket *so)
 {
 
 	return (raw_usrreqs.pru_shutdown(so));
 }
 
 static int
-rts_sockaddr(struct bsd_socket *so, struct bsd_sockaddr **nam)
+rts_sockaddr(struct socket *so, struct sockaddr **nam)
 {
 
 	return (raw_usrreqs.pru_sockaddr(so, nam));
@@ -449,15 +449,15 @@ static struct pr_usrreqs route_usrreqs = {
  * The union of all possible address formats we handle.
  */
 union sockaddr_union {
-	struct bsd_sockaddr		sa;
-	struct bsd_sockaddr_in	sin;
-	struct bsd_sockaddr_in6	sin6;
+	struct sockaddr		sa;
+	struct sockaddr_in	sin;
+	struct sockaddr_in6	sin6;
 };
 #endif /* _SOCKADDR_UNION_DEFINED */
 
 static int
 rtm_get_jailed(struct rt_addrinfo *info, struct ifnet *ifp,
-    struct rtentry *rt, union sockaddr_union *saun, struct bsd_ucred *cred)
+    struct rtentry *rt, union sockaddr_union *saun, struct ucred *cred)
 {
 
 	/* First, see if the returned address is part of the jail. */
@@ -470,7 +470,7 @@ rtm_get_jailed(struct rt_addrinfo *info, struct ifnet *ifp,
 #ifdef INET
 	case AF_INET:
 	{
-		struct bsd_in_addr ia;
+		struct in_addr ia;
 		struct ifaddr *ifa;
 		int found;
 
@@ -481,11 +481,11 @@ rtm_get_jailed(struct rt_addrinfo *info, struct ifnet *ifp,
 		 */
 		IF_ADDR_RLOCK(ifp);
 		TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
-			struct bsd_sockaddr *sa;
+			struct sockaddr *sa;
 			sa = ifa->ifa_addr;
 			if (sa->sa_family != AF_INET)
 				continue;
-			ia = ((struct bsd_sockaddr_in *)sa)->sin_addr;
+			ia = ((struct sockaddr_in *)sa)->sin_addr;
 			if (prison_check_ip4(cred, &ia) == 0) {
 				found = 1;
 				break;
@@ -496,16 +496,16 @@ rtm_get_jailed(struct rt_addrinfo *info, struct ifnet *ifp,
 			/*
 			 * As a last resort return the 'default' jail address.
 			 */
-			ia = ((struct bsd_sockaddr_in *)rt->rt_ifa->ifa_addr)->
+			ia = ((struct sockaddr_in *)rt->rt_ifa->ifa_addr)->
 			    sin_addr;
 			if (prison_get_ip4(cred, &ia) != 0)
 				return (ESRCH);
 		}
-		bzero(&saun->sin, sizeof(struct bsd_sockaddr_in));
-		saun->sin.sin_len = sizeof(struct bsd_sockaddr_in);
+		bzero(&saun->sin, sizeof(struct sockaddr_in));
+		saun->sin.sin_len = sizeof(struct sockaddr_in);
 		saun->sin.sin_family = AF_INET;
 		saun->sin.sin_addr.s_addr = ia.s_addr;
-		info->rti_info[RTAX_IFA] = (struct bsd_sockaddr *)&saun->sin;
+		info->rti_info[RTAX_IFA] = (struct sockaddr *)&saun->sin;
 		break;
 	}
 #endif
@@ -523,11 +523,11 @@ rtm_get_jailed(struct rt_addrinfo *info, struct ifnet *ifp,
 		 */
 		IF_ADDR_RLOCK(ifp);
 		TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
-			struct bsd_sockaddr *sa;
+			struct sockaddr *sa;
 			sa = ifa->ifa_addr;
 			if (sa->sa_family != AF_INET6)
 				continue;
-			bcopy(&((struct bsd_sockaddr_in6 *)sa)->sin6_addr,
+			bcopy(&((struct sockaddr_in6 *)sa)->sin6_addr,
 			    &ia6, sizeof(struct in6_addr));
 			if (prison_check_ip6(cred, &ia6) == 0) {
 				found = 1;
@@ -539,18 +539,18 @@ rtm_get_jailed(struct rt_addrinfo *info, struct ifnet *ifp,
 			/*
 			 * As a last resort return the 'default' jail address.
 			 */
-			ia6 = ((struct bsd_sockaddr_in6 *)rt->rt_ifa->ifa_addr)->
+			ia6 = ((struct sockaddr_in6 *)rt->rt_ifa->ifa_addr)->
 			    sin6_addr;
 			if (prison_get_ip6(cred, &ia6) != 0)
 				return (ESRCH);
 		}
-		bzero(&saun->sin6, sizeof(struct bsd_sockaddr_in6));
-		saun->sin6.sin6_len = sizeof(struct bsd_sockaddr_in6);
+		bzero(&saun->sin6, sizeof(struct sockaddr_in6));
+		saun->sin6.sin6_len = sizeof(struct sockaddr_in6);
 		saun->sin6.sin6_family = AF_INET6;
 		bcopy(&ia6, &saun->sin6.sin6_addr, sizeof(struct in6_addr));
 		if (sa6_recoverscope(&saun->sin6) != 0)
 			return (ESRCH);
-		info->rti_info[RTAX_IFA] = (struct bsd_sockaddr *)&saun->sin6;
+		info->rti_info[RTAX_IFA] = (struct sockaddr *)&saun->sin6;
 		break;
 	}
 #endif
@@ -562,7 +562,7 @@ rtm_get_jailed(struct rt_addrinfo *info, struct ifnet *ifp,
 
 /*ARGSUSED*/
 static int
-route_output(struct mbuf *m, struct bsd_socket *so)
+route_output(struct mbuf *m, struct socket *so)
 {
 #define	sa_equal(a1, a2) (bcmp((a1), (a2), (a1)->sa_len) == 0)
 	struct rt_msghdr *rtm = NULL;
@@ -572,7 +572,7 @@ route_output(struct mbuf *m, struct bsd_socket *so)
 	int len, error = 0;
 	struct ifnet *ifp = NULL;
 	union sockaddr_union saun;
-	bsd_sa_family_t saf = AF_UNSPEC;
+	sa_family_t saf = AF_UNSPEC;
 
 #define senderr(e) { error = e; goto flush;}
 	if (m == NULL || ((m->m_len < sizeof(long)) &&
@@ -736,7 +736,7 @@ route_output(struct mbuf *m, struct bsd_socket *so)
 		 * the local end point of the PPP link.
 		 */
 		if (rtm->rtm_flags & RTF_ANNOUNCE) {
-			struct bsd_sockaddr laddr;
+			struct sockaddr laddr;
 
 			if (rt->rt_ifp != NULL && 
 			    rt->rt_ifp->if_type == IFT_PROPVIRTUAL) {
@@ -982,7 +982,7 @@ rt_setmetrics(u_long which, const struct rt_metrics *in,
 	/* Userland -> kernel timebase conversion. */
 	if (which & RTV_EXPIRE)
 		out->rmx_expire = in->rmx_expire ?
-		    in->rmx_expire - time_second + V_time_uptime : 0;
+		    in->rmx_expire - time_second + time_uptime : 0;
 #undef metric
 }
 
@@ -995,7 +995,7 @@ rt_getmetrics(const struct rt_metrics_lite *in, struct rt_metrics *out)
 	metric(rmx_weight);
 	/* Kernel -> userland timebase conversion. */
 	out->rmx_expire = in->rmx_expire ?
-	    in->rmx_expire - V_time_uptime + time_second : 0;
+	    in->rmx_expire - time_uptime + time_second : 0;
 #undef metric
 }
 
@@ -1007,13 +1007,13 @@ rt_getmetrics(const struct rt_metrics_lite *in, struct rt_metrics *out)
 static int
 rt_xaddrs(caddr_t cp, caddr_t cplim, struct rt_addrinfo *rtinfo)
 {
-	struct bsd_sockaddr *sa;
+	struct sockaddr *sa;
 	int i;
 
 	for (i = 0; i < RTAX_MAX && cp < cplim; i++) {
 		if ((rtinfo->rti_addrs & (1 << i)) == 0)
 			continue;
-		sa = (struct bsd_sockaddr *)cp;
+		sa = (struct sockaddr *)cp;
 		/*
 		 * It won't fit.
 		 */
@@ -1046,7 +1046,7 @@ rt_msg1(int type, struct rt_addrinfo *rtinfo)
 	struct rt_msghdr *rtm;
 	struct mbuf *m;
 	int i;
-	struct bsd_sockaddr *sa;
+	struct sockaddr *sa;
 	int len, dlen;
 
 	switch (type) {
@@ -1161,7 +1161,7 @@ again:
 	if (cp0)
 		cp += len;
 	for (i = 0; i < RTAX_MAX; i++) {
-		struct bsd_sockaddr *sa;
+		struct sockaddr *sa;
 
 		if ((sa = rtinfo->rti_info[i]) == NULL)
 			continue;
@@ -1173,16 +1173,16 @@ again:
 		}
 		len += dlen;
 	}
-	len = BSD_ALIGN(len);
+	len = ALIGN(len);
 	if (cp == NULL && w != NULL && !second_time) {
 		struct walkarg *rw = w;
 
 		if (rw->w_req) {
 			if (rw->w_tmemsize < len) {
 				if (rw->w_tmem)
-					bsd_free(rw->w_tmem, M_RTABLE);
+					free(rw->w_tmem, M_RTABLE);
 				rw->w_tmem = (caddr_t)
-					bsd_malloc(len, M_RTABLE, M_NOWAIT);
+					malloc(len, M_RTABLE, M_NOWAIT);
 				if (rw->w_tmem)
 					rw->w_tmemsize = len;
 			}
@@ -1215,7 +1215,7 @@ rt_missmsg_fib(int type, struct rt_addrinfo *rtinfo, int flags, int error,
 {
 	struct rt_msghdr *rtm;
 	struct mbuf *m;
-	struct bsd_sockaddr *sa = rtinfo->rti_info[RTAX_DST];
+	struct sockaddr *sa = rtinfo->rti_info[RTAX_DST];
 
 	if (route_cb.any_count == 0)
 		return;
@@ -1282,7 +1282,7 @@ rt_newaddrmsg_fib(int cmd, struct ifaddr *ifa, int error, struct rtentry *rt,
     int fibnum)
 {
 	struct rt_addrinfo info;
-	struct bsd_sockaddr *sa = NULL;
+	struct sockaddr *sa = NULL;
 	int pass;
 	struct mbuf *m = NULL;
 	struct ifnet *ifp = ifa->ifa_ifp;
@@ -1404,7 +1404,7 @@ rt_makeifannouncemsg(struct ifnet *ifp, int type, int what,
 	if (m != NULL) {
 		ifan = mtod(m, struct if_announcemsghdr *);
 		ifan->ifan_index = ifp->if_index;
-		bsd_strlcpy(ifan->ifan_name, ifp->if_xname,
+		strlcpy(ifan->ifan_name, ifp->if_xname,
 			sizeof(ifan->ifan_name));
 		ifan->ifan_what = what;
 	}
@@ -1417,7 +1417,7 @@ rt_makeifannouncemsg(struct ifnet *ifp, int type, int what,
  * XXX we piggyback on the RTM_IFANNOUNCE msg format in a clumsy way.
  */
 void
-rt_ieee80211msg(struct ifnet *ifp, int what, void *data, bsd_size_t data_len)
+rt_ieee80211msg(struct ifnet *ifp, int what, void *data, size_t data_len)
 {
 	struct mbuf *m;
 	struct rt_addrinfo info;
@@ -1467,7 +1467,7 @@ rt_ifannouncemsg(struct ifnet *ifp, int what)
 }
 
 static void
-rt_dispatch(struct mbuf *m, bsd_sa_family_t saf)
+rt_dispatch(struct mbuf *m, sa_family_t saf)
 {
 	struct m_tag *tag;
 
@@ -1889,7 +1889,7 @@ sysctl_rtsock(SYSCTL_HANDLER_ARGS)
 		break;
 	}
 	if (w.w_tmem)
-		bsd_free(w.w_tmem, M_RTABLE);
+		free(w.w_tmem, M_RTABLE);
 	return (error);
 }
 
@@ -1899,9 +1899,9 @@ static SYSCTL_NODE(_net, PF_ROUTE, routetable, CTLFLAG_RD, sysctl_rtsock, "");
  * Definitions of protocols supported in the ROUTE domain.
  */
 
-static struct bsd_domain routedomain;		/* or at least forward */
+static struct domain routedomain;		/* or at least forward */
 
-static struct bsd_protosw routesw[] = {
+static struct protosw routesw[] = {
 {
 	.pr_type =		SOCK_RAW,
 	.pr_domain =		&routedomain,
@@ -1913,7 +1913,7 @@ static struct bsd_protosw routesw[] = {
 }
 };
 
-static struct bsd_domain routedomain = {
+static struct domain routedomain = {
 	.dom_family =		PF_ROUTE,
 	.dom_name =		 "route",
 	.dom_protosw =		routesw,

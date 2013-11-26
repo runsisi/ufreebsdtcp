@@ -104,11 +104,11 @@ enum pmclog_type {
 
 struct pmclog_callchain {
 	PMCLOG_ENTRY_HEADER
-	bsd_uint32_t		pl_pid;
-	bsd_uint32_t		pl_pmcid;
-	bsd_uint32_t		pl_cpuflags;
+	uint32_t		pl_pid;
+	uint32_t		pl_pmcid;
+	uint32_t		pl_cpuflags;
 	/* 8 byte aligned */
-	bsd_uintptr_t		pl_pc[PMC_CALLCHAIN_DEPTH_MAX];
+	uintptr_t		pl_pc[PMC_CALLCHAIN_DEPTH_MAX];
 } __packed;
 
 #define	PMC_CALLCHAIN_CPUFLAGS_TO_CPU(CF)	(((CF) >> 16) & 0xFFFF)
@@ -126,95 +126,95 @@ struct pmclog_dropnotify {
 
 struct pmclog_initialize {
 	PMCLOG_ENTRY_HEADER
-	bsd_uint32_t		pl_version;	/* driver version */
-	bsd_uint32_t		pl_cpu;		/* enum pmc_cputype */
+	uint32_t		pl_version;	/* driver version */
+	uint32_t		pl_cpu;		/* enum pmc_cputype */
 } __packed;
 
 struct pmclog_map_in {
 	PMCLOG_ENTRY_HEADER
-	bsd_uint32_t		pl_pid;
-	bsd_uintfptr_t		pl_start;	/* 8 byte aligned */
+	uint32_t		pl_pid;
+	uintfptr_t		pl_start;	/* 8 byte aligned */
 	char			pl_pathname[PATH_MAX];
 } __packed;
 
 struct pmclog_map_out {
 	PMCLOG_ENTRY_HEADER
-	bsd_uint32_t		pl_pid;
-	bsd_uintfptr_t		pl_start;	/* 8 byte aligned */
-	bsd_uintfptr_t		pl_end;
+	uint32_t		pl_pid;
+	uintfptr_t		pl_start;	/* 8 byte aligned */
+	uintfptr_t		pl_end;
 } __packed;
 
 struct pmclog_pcsample {
 	PMCLOG_ENTRY_HEADER
-	bsd_uint32_t		pl_pid;
-	bsd_uintfptr_t		pl_pc;		/* 8 byte aligned */
-	bsd_uint32_t		pl_pmcid;
-	bsd_uint32_t		pl_usermode;
+	uint32_t		pl_pid;
+	uintfptr_t		pl_pc;		/* 8 byte aligned */
+	uint32_t		pl_pmcid;
+	uint32_t		pl_usermode;
 } __packed;
 
 struct pmclog_pmcallocate {
 	PMCLOG_ENTRY_HEADER
-	bsd_uint32_t		pl_pmcid;
-	bsd_uint32_t		pl_event;
-	bsd_uint32_t		pl_flags;
+	uint32_t		pl_pmcid;
+	uint32_t		pl_event;
+	uint32_t		pl_flags;
 } __packed;
 
 struct pmclog_pmcattach {
 	PMCLOG_ENTRY_HEADER
-	bsd_uint32_t		pl_pmcid;
-	bsd_uint32_t		pl_pid;
+	uint32_t		pl_pmcid;
+	uint32_t		pl_pid;
 	char			pl_pathname[PATH_MAX];
 } __packed;
 
 struct pmclog_pmcdetach {
 	PMCLOG_ENTRY_HEADER
-	bsd_uint32_t		pl_pmcid;
-	bsd_uint32_t		pl_pid;
+	uint32_t		pl_pmcid;
+	uint32_t		pl_pid;
 } __packed;
 
 struct pmclog_proccsw {
 	PMCLOG_ENTRY_HEADER
-	bsd_uint32_t		pl_pmcid;
-	bsd_uint64_t		pl_value;	/* keep 8 byte aligned */
-	bsd_uint32_t		pl_pid;
+	uint32_t		pl_pmcid;
+	uint64_t		pl_value;	/* keep 8 byte aligned */
+	uint32_t		pl_pid;
 } __packed;
 
 struct pmclog_procexec {
 	PMCLOG_ENTRY_HEADER
-	bsd_uint32_t		pl_pid;
-	bsd_uintfptr_t		pl_start;	/* keep 8 byte aligned */
-	bsd_uint32_t		pl_pmcid;
+	uint32_t		pl_pid;
+	uintfptr_t		pl_start;	/* keep 8 byte aligned */
+	uint32_t		pl_pmcid;
 	char			pl_pathname[PATH_MAX];
 } __packed;
 
 struct pmclog_procexit {
 	PMCLOG_ENTRY_HEADER
-	bsd_uint32_t		pl_pmcid;
-	bsd_uint64_t		pl_value;	/* keep 8 byte aligned */
-	bsd_uint32_t		pl_pid;
+	uint32_t		pl_pmcid;
+	uint64_t		pl_value;	/* keep 8 byte aligned */
+	uint32_t		pl_pid;
 } __packed;
 
 struct pmclog_procfork {
 	PMCLOG_ENTRY_HEADER
-	bsd_uint32_t		pl_oldpid;
-	bsd_uint32_t		pl_newpid;
+	uint32_t		pl_oldpid;
+	uint32_t		pl_newpid;
 } __packed;
 
 struct pmclog_sysexit {
 	PMCLOG_ENTRY_HEADER
-	bsd_uint32_t		pl_pid;
+	uint32_t		pl_pid;
 } __packed;
 
 struct pmclog_userdata {
 	PMCLOG_ENTRY_HEADER
-	bsd_uint32_t		pl_userdata;
+	uint32_t		pl_userdata;
 } __packed;
 
 struct pmclog_pmcallocatedyn {
 	PMCLOG_ENTRY_HEADER
-	bsd_uint32_t		pl_pmcid;
-	bsd_uint32_t		pl_event;
-	bsd_uint32_t		pl_flags;
+	uint32_t		pl_pmcid;
+	uint32_t		pl_event;
+	uint32_t		pl_flags;
 	char			pl_evname[PMC_NAME_MAX];
 } __packed;
 
@@ -264,16 +264,16 @@ void	pmclog_process_callchain(struct pmc *_pm, struct pmc_sample *_ps);
 void	pmclog_process_closelog(struct pmc_owner *po);
 void	pmclog_process_dropnotify(struct pmc_owner *po);
 void	pmclog_process_map_in(struct pmc_owner *po, pid_t pid,
-    bsd_uintfptr_t start, const char *path);
+    uintfptr_t start, const char *path);
 void	pmclog_process_map_out(struct pmc_owner *po, pid_t pid,
-    bsd_uintfptr_t start, bsd_uintfptr_t end);
+    uintfptr_t start, uintfptr_t end);
 void	pmclog_process_pmcallocate(struct pmc *_pm);
 void	pmclog_process_pmcattach(struct pmc *_pm, pid_t _pid, char *_path);
 void	pmclog_process_pmcdetach(struct pmc *_pm, pid_t _pid);
 void	pmclog_process_proccsw(struct pmc *_pm, struct pmc_process *_pp,
     pmc_value_t _v);
 void	pmclog_process_procexec(struct pmc_owner *_po, pmc_id_t _pmid, pid_t _pid,
-    bsd_uintfptr_t _startaddr, char *_path);
+    uintfptr_t _startaddr, char *_path);
 void	pmclog_process_procexit(struct pmc *_pm, struct pmc_process *_pp);
 void	pmclog_process_procfork(struct pmc_owner *_po, pid_t _oldpid, pid_t _newpid);
 void	pmclog_process_sysexit(struct pmc_owner *_po, pid_t _pid);

@@ -17,10 +17,10 @@
 /** @brief Unique descriptor for the ACPI_WMI_PROVIDES_GUID_STRING() method */
 extern struct kobjop_desc acpi_wmi_provides_guid_string_desc;
 /** @brief A function implementing the ACPI_WMI_PROVIDES_GUID_STRING() method */
-typedef int acpi_wmi_provides_guid_string_t(bsd_device_t dev,
+typedef int acpi_wmi_provides_guid_string_t(device_t dev,
                                             const char* guid_string);
 
-static __inline int ACPI_WMI_PROVIDES_GUID_STRING(bsd_device_t dev,
+static __inline int ACPI_WMI_PROVIDES_GUID_STRING(device_t dev,
                                                   const char* guid_string)
 {
 	kobjop_t _m;
@@ -31,13 +31,13 @@ static __inline int ACPI_WMI_PROVIDES_GUID_STRING(bsd_device_t dev,
 /** @brief Unique descriptor for the ACPI_WMI_EVALUATE_CALL() method */
 extern struct kobjop_desc acpi_wmi_evaluate_call_desc;
 /** @brief A function implementing the ACPI_WMI_EVALUATE_CALL() method */
-typedef ACPI_STATUS acpi_wmi_evaluate_call_t(bsd_device_t dev,
+typedef ACPI_STATUS acpi_wmi_evaluate_call_t(device_t dev,
                                              const char *guid_string,
                                              UINT8 instance, UINT32 method_id,
                                              const ACPI_BUFFER *in,
                                              ACPI_BUFFER *out);
 
-static __inline ACPI_STATUS ACPI_WMI_EVALUATE_CALL(bsd_device_t dev,
+static __inline ACPI_STATUS ACPI_WMI_EVALUATE_CALL(device_t dev,
                                                    const char *guid_string,
                                                    UINT8 instance,
                                                    UINT32 method_id,
@@ -52,10 +52,10 @@ static __inline ACPI_STATUS ACPI_WMI_EVALUATE_CALL(bsd_device_t dev,
 /** @brief Unique descriptor for the ACPI_WMI_GET_BLOCK() method */
 extern struct kobjop_desc acpi_wmi_get_block_desc;
 /** @brief A function implementing the ACPI_WMI_GET_BLOCK() method */
-typedef ACPI_STATUS acpi_wmi_get_block_t(bsd_device_t dev, const char *guid_string,
+typedef ACPI_STATUS acpi_wmi_get_block_t(device_t dev, const char *guid_string,
                                          UINT8 instance, ACPI_BUFFER *out);
 
-static __inline ACPI_STATUS ACPI_WMI_GET_BLOCK(bsd_device_t dev,
+static __inline ACPI_STATUS ACPI_WMI_GET_BLOCK(device_t dev,
                                                const char *guid_string,
                                                UINT8 instance, ACPI_BUFFER *out)
 {
@@ -67,10 +67,10 @@ static __inline ACPI_STATUS ACPI_WMI_GET_BLOCK(bsd_device_t dev,
 /** @brief Unique descriptor for the ACPI_WMI_SET_BLOCK() method */
 extern struct kobjop_desc acpi_wmi_set_block_desc;
 /** @brief A function implementing the ACPI_WMI_SET_BLOCK() method */
-typedef ACPI_STATUS acpi_wmi_set_block_t(bsd_device_t dev, const char *guid_string,
+typedef ACPI_STATUS acpi_wmi_set_block_t(device_t dev, const char *guid_string,
                                          UINT8 instance, const ACPI_BUFFER *in);
 
-static __inline ACPI_STATUS ACPI_WMI_SET_BLOCK(bsd_device_t dev,
+static __inline ACPI_STATUS ACPI_WMI_SET_BLOCK(device_t dev,
                                                const char *guid_string,
                                                UINT8 instance,
                                                const ACPI_BUFFER *in)
@@ -83,11 +83,11 @@ static __inline ACPI_STATUS ACPI_WMI_SET_BLOCK(bsd_device_t dev,
 /** @brief Unique descriptor for the ACPI_WMI_INSTALL_EVENT_HANDLER() method */
 extern struct kobjop_desc acpi_wmi_install_event_handler_desc;
 /** @brief A function implementing the ACPI_WMI_INSTALL_EVENT_HANDLER() method */
-typedef ACPI_STATUS acpi_wmi_install_event_handler_t(bsd_device_t dev,
+typedef ACPI_STATUS acpi_wmi_install_event_handler_t(device_t dev,
                                                      const char *guid_string,
                                                      ACPI_NOTIFY_HANDLER handler, void *data);
 
-static __inline ACPI_STATUS ACPI_WMI_INSTALL_EVENT_HANDLER(bsd_device_t dev,
+static __inline ACPI_STATUS ACPI_WMI_INSTALL_EVENT_HANDLER(device_t dev,
                                                            const char *guid_string, ACPI_NOTIFY_HANDLER handler, void *data)
 {
 	kobjop_t _m;
@@ -98,10 +98,10 @@ static __inline ACPI_STATUS ACPI_WMI_INSTALL_EVENT_HANDLER(bsd_device_t dev,
 /** @brief Unique descriptor for the ACPI_WMI_REMOVE_EVENT_HANDLER() method */
 extern struct kobjop_desc acpi_wmi_remove_event_handler_desc;
 /** @brief A function implementing the ACPI_WMI_REMOVE_EVENT_HANDLER() method */
-typedef ACPI_STATUS acpi_wmi_remove_event_handler_t(bsd_device_t dev,
+typedef ACPI_STATUS acpi_wmi_remove_event_handler_t(device_t dev,
                                                     const char *guid_string);
 
-static __inline ACPI_STATUS ACPI_WMI_REMOVE_EVENT_HANDLER(bsd_device_t dev,
+static __inline ACPI_STATUS ACPI_WMI_REMOVE_EVENT_HANDLER(device_t dev,
                                                           const char *guid_string)
 {
 	kobjop_t _m;
@@ -112,10 +112,10 @@ static __inline ACPI_STATUS ACPI_WMI_REMOVE_EVENT_HANDLER(bsd_device_t dev,
 /** @brief Unique descriptor for the ACPI_WMI_GET_EVENT_DATA() method */
 extern struct kobjop_desc acpi_wmi_get_event_data_desc;
 /** @brief A function implementing the ACPI_WMI_GET_EVENT_DATA() method */
-typedef ACPI_STATUS acpi_wmi_get_event_data_t(bsd_device_t dev, UINT32 event_id,
+typedef ACPI_STATUS acpi_wmi_get_event_data_t(device_t dev, UINT32 event_id,
                                               ACPI_BUFFER *out);
 
-static __inline ACPI_STATUS ACPI_WMI_GET_EVENT_DATA(bsd_device_t dev,
+static __inline ACPI_STATUS ACPI_WMI_GET_EVENT_DATA(device_t dev,
                                                     UINT32 event_id,
                                                     ACPI_BUFFER *out)
 {

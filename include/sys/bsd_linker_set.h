@@ -30,7 +30,7 @@
 #ifndef _SYS_LINKER_SET_H_
 #define _SYS_LINKER_SET_H_
 
-#ifndef _BSD_SYS_CDEFS_H_
+#ifndef _SYS_CDEFS_H_
 #error this file needs sys/cdefs.h as a prerequisite
 #endif
 
@@ -45,9 +45,9 @@
  */
 #ifdef __GNUCLIKE___SECTION
 #define __MAKE_SET(set, sym)						\
-	__GLOBL(__BSD_CONCAT(__start_set_,set));				\
-	__GLOBL(__BSD_CONCAT(__stop_set_,set));				\
-	static void const * /*const*/ __set_##set##_sym_##sym 		\
+	__GLOBL(__CONCAT(__start_set_,set));				\
+	__GLOBL(__CONCAT(__stop_set_,set));				\
+	static void const * const __set_##set##_sym_##sym 		\
 	__section("set_" #set) __used = &sym
 #else /* !__GNUCLIKE___SECTION */
 #ifndef lint
@@ -69,13 +69,13 @@
  * Initialize before referring to a given linker set.
  */
 #define SET_DECLARE(set, ptype)						\
-	extern ptype *__BSD_CONCAT(__start_set_,set);			\
-	extern ptype *__BSD_CONCAT(__stop_set_,set)
+	extern ptype *__CONCAT(__start_set_,set);			\
+	extern ptype *__CONCAT(__stop_set_,set)
 
 #define SET_BEGIN(set)							\
-	(&__BSD_CONCAT(__start_set_,set))
+	(&__CONCAT(__start_set_,set))
 #define SET_LIMIT(set)							\
-	(&__BSD_CONCAT(__stop_set_,set))
+	(&__CONCAT(__stop_set_,set))
 
 /*
  * Iterate over all the elements of a set.

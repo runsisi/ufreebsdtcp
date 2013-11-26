@@ -30,15 +30,15 @@
  * $FreeBSD: release/9.2.0/sys/net/if_clone.c 215701 2010-11-22 19:32:54Z dim $
  */
 
-#include <sys/param.h>
-#include <sys/malloc.h>
-#include <sys/limits.h>
-#include <sys/lock.h>
-#include <sys/mutex.h>
-#include <sys/kernel.h>
-#include <sys/systm.h>
-#include <sys/types.h>
-#include <sys/socket.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_malloc.h>
+#include <sys/bsd_limits.h>
+#include <sys/bsd_lock.h>
+#include <sys/bsd_mutex.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_types.h>
+#include <sys/bsd_socket.h>
 
 #include <net/if.h>
 #include <net/if_clone.h>
@@ -52,7 +52,7 @@
 #include <net/vnet.h>
 
 static void	if_clone_free(struct if_clone *ifc);
-static int	if_clone_createif(struct if_clone *ifc, char *name, bsd_size_t len,
+static int	if_clone_createif(struct if_clone *ifc, char *name, size_t len,
 		    caddr_t params);
 
 static struct mtx	if_cloners_mtx;
@@ -132,7 +132,7 @@ if_clone_init(void)
  * Lookup and create a clone network interface.
  */
 int
-if_clone_create(char *name, bsd_size_t len, caddr_t params)
+if_clone_create(char *name, size_t len, caddr_t params)
 {
 	struct if_clone *ifc;
 
@@ -165,7 +165,7 @@ if_clone_create(char *name, bsd_size_t len, caddr_t params)
  * Create a clone network interface.
  */
 static int
-if_clone_createif(struct if_clone *ifc, char *name, bsd_size_t len, caddr_t params)
+if_clone_createif(struct if_clone *ifc, char *name, size_t len, caddr_t params)
 {
 	int err;
 	struct ifnet *ifp;
@@ -294,7 +294,7 @@ if_clone_attach(struct if_clone *ifc)
 	len = maxclone >> 3;
 	if ((len << 3) < maxclone)
 		len++;
-	ifc->ifc_units = bsd_malloc(len, M_CLONE, M_WAITOK | M_ZERO);
+	ifc->ifc_units = malloc(len, M_CLONE, M_WAITOK | M_ZERO);
 	ifc->ifc_bmlen = len;
 	IF_CLONE_LOCK_INIT(ifc);
 	IF_CLONE_ADDREF(ifc);
@@ -347,7 +347,7 @@ if_clone_free(struct if_clone *ifc)
 	    ("%s: ifc_iflist not empty", __func__));
 
 	IF_CLONE_LOCK_DESTROY(ifc);
-	bsd_free(ifc->ifc_units, M_CLONE);
+	free(ifc->ifc_units, M_CLONE);
 }
 
 /*
@@ -376,7 +376,7 @@ if_clone_list(struct if_clonereq *ifcr)
 	    V_if_cloners_count : ifcr->ifcr_count;
 	IF_CLONERS_UNLOCK();
 
-	outbuf = bsd_malloc(IFNAMSIZ*buf_count, M_CLONE, M_WAITOK | M_ZERO);
+	outbuf = malloc(IFNAMSIZ*buf_count, M_CLONE, M_WAITOK | M_ZERO);
 
 	IF_CLONERS_LOCK();
 
@@ -391,7 +391,7 @@ if_clone_list(struct if_clonereq *ifcr)
 	for (ifc = LIST_FIRST(&V_if_cloners), buf = outbuf;
 	    ifc != NULL && count != 0;
 	    ifc = LIST_NEXT(ifc, ifc_list), count--, buf += IFNAMSIZ) {
-		bsd_strlcpy(buf, ifc->ifc_name, IFNAMSIZ);
+		strlcpy(buf, ifc->ifc_name, IFNAMSIZ);
 	}
 
 done:
@@ -399,7 +399,7 @@ done:
 	if (err == 0)
 		err = copyout(outbuf, dst, buf_count*IFNAMSIZ);
 	if (outbuf != NULL)
-		bsd_free(outbuf, M_CLONE);
+		free(outbuf, M_CLONE);
 	return (err);
 }
 
@@ -554,7 +554,7 @@ ifc_simple_match(struct if_clone *ifc, const char *name)
 }
 
 int
-ifc_simple_create(struct if_clone *ifc, char *name, bsd_size_t len, caddr_t params)
+ifc_simple_create(struct if_clone *ifc, char *name, size_t len, caddr_t params)
 {
 	char *dp;
 	int wildcard;

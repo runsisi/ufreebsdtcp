@@ -34,10 +34,10 @@
  *      @(#)bpf_filter.c	8.1 (Berkeley) 6/10/93
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/net/bpf_filter.c 224044 2011-07-14 21:06:22Z mp $");
 
-#include <sys/param.h>
+#include <sys/bsd_param.h>
 
 #if !defined(_KERNEL) || defined(sun)
 #include <netinet/in.h>
@@ -63,7 +63,7 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/net/bpf_filter.c 224044 2011-07-14 21:06:2
 #endif
 
 #ifdef _KERNEL
-#include <sys/mbuf.h>
+#include <sys/bsd_mbuf.h>
 #else
 #include <stdlib.h>
 #endif
@@ -82,13 +82,13 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/net/bpf_filter.c 224044 2011-07-14 21:06:2
 	} \
 }
 
-static bsd_uint16_t	m_xhalf(struct mbuf *m, bpf_u_int32 k, int *err);
-static bsd_uint32_t	m_xword(struct mbuf *m, bpf_u_int32 k, int *err);
+static u_int16_t	m_xhalf(struct mbuf *m, bpf_u_int32 k, int *err);
+static u_int32_t	m_xword(struct mbuf *m, bpf_u_int32 k, int *err);
 
-static bsd_uint32_t
+static u_int32_t
 m_xword(struct mbuf *m, bpf_u_int32 k, int *err)
 {
-	bsd_size_t len;
+	size_t len;
 	u_char *cp, *np;
 	struct mbuf *m0;
 
@@ -112,32 +112,32 @@ m_xword(struct mbuf *m, bpf_u_int32 k, int *err)
 	np = mtod(m0, u_char *);
 	switch (len - k) {
 	case 1:
-		return (((bsd_uint32_t)cp[0] << 24) |
-		    ((bsd_uint32_t)np[0] << 16) |
-		    ((bsd_uint32_t)np[1] << 8)  |
-		    (bsd_uint32_t)np[2]);
+		return (((u_int32_t)cp[0] << 24) |
+		    ((u_int32_t)np[0] << 16) |
+		    ((u_int32_t)np[1] << 8)  |
+		    (u_int32_t)np[2]);
 
 	case 2:
-		return (((bsd_uint32_t)cp[0] << 24) |
-		    ((bsd_uint32_t)cp[1] << 16) |
-		    ((bsd_uint32_t)np[0] << 8) |
-		    (bsd_uint32_t)np[1]);
+		return (((u_int32_t)cp[0] << 24) |
+		    ((u_int32_t)cp[1] << 16) |
+		    ((u_int32_t)np[0] << 8) |
+		    (u_int32_t)np[1]);
 
 	default:
-		return (((bsd_uint32_t)cp[0] << 24) |
-		    ((bsd_uint32_t)cp[1] << 16) |
-		    ((bsd_uint32_t)cp[2] << 8) |
-		    (bsd_uint32_t)np[0]);
+		return (((u_int32_t)cp[0] << 24) |
+		    ((u_int32_t)cp[1] << 16) |
+		    ((u_int32_t)cp[2] << 8) |
+		    (u_int32_t)np[0]);
 	}
     bad:
 	*err = 1;
 	return (0);
 }
 
-static bsd_uint16_t
+static u_int16_t
 m_xhalf(struct mbuf *m, bpf_u_int32 k, int *err)
 {
-	bsd_size_t len;
+	size_t len;
 	u_char *cp;
 	struct mbuf *m0;
 
@@ -173,9 +173,9 @@ m_xhalf(struct mbuf *m, bpf_u_int32 k, int *err)
 u_int
 bpf_filter(const struct bpf_insn *pc, u_char *p, u_int wirelen, u_int buflen)
 {
-	bsd_uint32_t A = 0, X = 0;
+	u_int32_t A = 0, X = 0;
 	bpf_u_int32 k;
-	bsd_uint32_t mem[BPF_MEMWORDS];
+	u_int32_t mem[BPF_MEMWORDS];
 
 	bzero(mem, sizeof(mem));
 
@@ -204,7 +204,7 @@ bpf_filter(const struct bpf_insn *pc, u_char *p, u_int wirelen, u_int buflen)
 
 		case BPF_LD|BPF_W|BPF_ABS:
 			k = pc->k;
-			if (k > buflen || sizeof(bsd_int32_t) > buflen - k) {
+			if (k > buflen || sizeof(int32_t) > buflen - k) {
 #ifdef _KERNEL
 				int merr;
 
@@ -219,16 +219,16 @@ bpf_filter(const struct bpf_insn *pc, u_char *p, u_int wirelen, u_int buflen)
 #endif
 			}
 #ifdef BPF_ALIGN
-			if (((bsd_intptr_t)(p + k) & 3) != 0)
+			if (((intptr_t)(p + k) & 3) != 0)
 				A = EXTRACT_LONG(&p[k]);
 			else
 #endif
-				A = bsd_ntohl(*(bsd_int32_t *)(p + k));
+				A = ntohl(*(int32_t *)(p + k));
 			continue;
 
 		case BPF_LD|BPF_H|BPF_ABS:
 			k = pc->k;
-			if (k > buflen || sizeof(bsd_int16_t) > buflen - k) {
+			if (k > buflen || sizeof(int16_t) > buflen - k) {
 #ifdef _KERNEL
 				int merr;
 
@@ -273,7 +273,7 @@ bpf_filter(const struct bpf_insn *pc, u_char *p, u_int wirelen, u_int buflen)
 		case BPF_LD|BPF_W|BPF_IND:
 			k = X + pc->k;
 			if (pc->k > buflen || X > buflen - pc->k ||
-			    sizeof(bsd_int32_t) > buflen - k) {
+			    sizeof(int32_t) > buflen - k) {
 #ifdef _KERNEL
 				int merr;
 
@@ -288,17 +288,17 @@ bpf_filter(const struct bpf_insn *pc, u_char *p, u_int wirelen, u_int buflen)
 #endif
 			}
 #ifdef BPF_ALIGN
-			if (((bsd_intptr_t)(p + k) & 3) != 0)
+			if (((intptr_t)(p + k) & 3) != 0)
 				A = EXTRACT_LONG(&p[k]);
 			else
 #endif
-				A = bsd_ntohl(*(bsd_int32_t *)(p + k));
+				A = ntohl(*(int32_t *)(p + k));
 			continue;
 
 		case BPF_LD|BPF_H|BPF_IND:
 			k = X + pc->k;
 			if (X > buflen || pc->k > buflen - X ||
-			    sizeof(bsd_int16_t) > buflen - k) {
+			    sizeof(int16_t) > buflen - k) {
 #ifdef _KERNEL
 				int merr;
 

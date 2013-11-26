@@ -37,21 +37,21 @@
 #include <sys/_bsd_types.h>
 #include <sys/_bsd_iovec.h>
 
-#ifndef _BSD_SSIZE_T_DECLARED
-typedef	__bsd_ssize_t	bsd_ssize_t;
-#define	_BSD_SSIZE_T_DECLARED
+#ifndef _SSIZE_T_DECLARED
+typedef	__ssize_t	ssize_t;
+#define	_SSIZE_T_DECLARED
 #endif
 
-#ifndef _BSD_OFF_T_DECLARED
-typedef	__bsd_off_t	bsd_off_t;
-#define	_BSD_OFF_T_DECLARED
+#ifndef _OFF_T_DECLARED
+typedef	__off_t	off_t;
+#define	_OFF_T_DECLARED
 #endif
 
 #if __BSD_VISIBLE
-enum	bsd_uio_rw { UIO_READ, UIO_WRITE };
+enum	uio_rw { UIO_READ, UIO_WRITE };
 
 /* Segment flag values. */
-enum bsd_uio_seg {
+enum uio_seg {
 	UIO_USERSPACE,		/* from user data space */
 	UIO_SYSSPACE,		/* from system space */
 	UIO_NOCOPY		/* don't copy, already in object */
@@ -61,12 +61,12 @@ enum bsd_uio_seg {
 #ifdef _KERNEL
 
 struct uio {
-	struct	bsd_iovec *uio_iov;		/* scatter/gather list */
+	struct	iovec *uio_iov;		/* scatter/gather list */
 	int	uio_iovcnt;		/* length of scatter/gather list */
-	bsd_off_t	uio_offset;		/* offset in target object */
-	bsd_ssize_t	uio_resid;		/* remaining bytes to process */
-//	enum	bsd_uio_seg uio_segflg;	/* address space */
-//	enum	bsd_uio_rw uio_rw;		/* operation */
+	off_t	uio_offset;		/* offset in target object */
+	ssize_t	uio_resid;		/* remaining bytes to process */
+	enum	uio_seg uio_segflg;	/* address space */
+	enum	uio_rw uio_rw;		/* operation */
 	struct	thread *uio_td;		/* owner */
 };
 
@@ -88,19 +88,19 @@ struct vm_page;
 
 struct uio *cloneuio(struct uio *uiop);
 int	copyinfrom(const void * __restrict src, void * __restrict dst,
-	    bsd_size_t len, int seg);
-int	copyiniov(struct bsd_iovec *iovp, u_int iovcnt, struct bsd_iovec **iov,
+	    size_t len, int seg);
+int	copyiniov(struct iovec *iovp, u_int iovcnt, struct iovec **iov,
 	    int error);
 int	copyinstrfrom(const void * __restrict src, void * __restrict dst,
-	    bsd_size_t len, bsd_size_t * __restrict copied, int seg);
-int	copyinuio(struct bsd_iovec *iovp, u_int iovcnt, struct uio **uiop);
-int	copyout_map(struct thread *td, bsd_vm_offset_t *addr, bsd_size_t sz);
-int	copyout_unmap(struct thread *td, bsd_vm_offset_t addr, bsd_size_t sz);
-int	physcopyin(void *src, bsd_vm_paddr_t dst, bsd_size_t len);
-int	physcopyout(bsd_vm_paddr_t src, void *dst, bsd_size_t len);
+	    size_t len, size_t * __restrict copied, int seg);
+int	copyinuio(struct iovec *iovp, u_int iovcnt, struct uio **uiop);
+int	copyout_map(struct thread *td, vm_offset_t *addr, size_t sz);
+int	copyout_unmap(struct thread *td, vm_offset_t addr, size_t sz);
+int	physcopyin(void *src, vm_paddr_t dst, size_t len);
+int	physcopyout(vm_paddr_t src, void *dst, size_t len);
 int	uiomove(void *cp, int n, struct uio *uio);
 int	uiomove_frombuf(void *buf, int buflen, struct uio *uio);
-int	uiomove_fromphys(struct vm_page *ma[], bsd_vm_offset_t offset, int n,
+int	uiomove_fromphys(struct vm_page *ma[], vm_offset_t offset, int n,
 	    struct uio *uio);
 int	uiomove_nofault(void *cp, int n, struct uio *uio);
 int	uiomoveco(void *cp, int n, struct uio *uio, int disposable);
@@ -108,11 +108,11 @@ int	uiomoveco(void *cp, int n, struct uio *uio, int disposable);
 #else /* !_KERNEL */
 
 __BEGIN_DECLS
-bsd_ssize_t	readv(int, const struct bsd_iovec *, int);
-bsd_ssize_t	writev(int, const struct bsd_iovec *, int);
+ssize_t	readv(int, const struct iovec *, int);
+ssize_t	writev(int, const struct iovec *, int);
 #if __BSD_VISIBLE
-bsd_ssize_t	preadv(int, const struct bsd_iovec *, int, bsd_off_t);
-bsd_ssize_t	pwritev(int, const struct bsd_iovec *, int, bsd_off_t);
+ssize_t	preadv(int, const struct iovec *, int, off_t);
+ssize_t	pwritev(int, const struct iovec *, int, off_t);
 #endif
 __END_DECLS
 

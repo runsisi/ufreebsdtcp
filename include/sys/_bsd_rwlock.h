@@ -37,7 +37,7 @@
  */
 struct rwlock {
 	struct lock_object	lock_object;
-	volatile bsd_uintptr_t	rw_lock;
+	volatile uintptr_t	rw_lock;
 };
 
 #endif /* !_SYS__RWLOCK_H_ */

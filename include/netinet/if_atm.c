@@ -31,7 +31,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/netinet/if_atm.c 216466 2010-12-15 22:58:45Z bz $");
 
 /*
@@ -43,13 +43,13 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/netinet/if_atm.c 216466 2010-12-15 22:58:4
 
 #if defined(INET) || defined(INET6)
 
-#include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/queue.h>
-#include <sys/mbuf.h>
-#include <sys/socket.h>
-#include <sys/sockio.h>
-#include <sys/syslog.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_queue.h>
+#include <sys/bsd_mbuf.h>
+#include <sys/bsd_socket.h>
+#include <sys/bsd_sockio.h>
+#include <sys/bsd_syslog.h>
 
 #include <net/if.h>
 #include <net/if_dl.h>
@@ -92,7 +92,7 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/netinet/if_atm.c 216466 2010-12-15 22:58:4
 void
 atm_rtrequest(int req, struct rtentry *rt, struct rt_addrinfo *info)
 {
-	struct bsd_sockaddr *gate = rt->rt_gateway;
+	struct sockaddr *gate = rt->rt_gateway;
 	struct atmio_openvcc op;
 	struct atmio_closevcc cl;
 	u_char *addr;
@@ -120,7 +120,7 @@ atm_rtrequest(int req, struct rtentry *rt, struct rt_addrinfo *info)
 		 * case we are being called via "ifconfig" to set the address.
 		 */
 		if ((rt->rt_flags & RTF_HOST) == 0) {
-			rt_setgate(rt,rt_key(rt),(struct bsd_sockaddr *)&null_sdl);
+			rt_setgate(rt,rt_key(rt),(struct sockaddr *)&null_sdl);
 			gate = rt->rt_gateway;
 			SDL(gate)->sdl_type = rt->rt_ifp->if_type;
 			SDL(gate)->sdl_index = rt->rt_ifp->if_index;
@@ -129,7 +129,7 @@ atm_rtrequest(int req, struct rtentry *rt, struct rt_addrinfo *info)
 
 		if (gate->sa_family != AF_LINK ||
 		    gate->sa_len < sizeof(null_sdl)) {
-			bsd_log(LOG_DEBUG, "atm_rtrequest: bad gateway value");
+			log(LOG_DEBUG, "atm_rtrequest: bad gateway value");
 			break;
 		}
 
@@ -317,13 +317,13 @@ failed:
  *   but this is enough for PVCs entered via the "route" command.
  */
 int
-atmresolve(struct rtentry *rt, struct mbuf *m, struct bsd_sockaddr *dst,
+atmresolve(struct rtentry *rt, struct mbuf *m, struct sockaddr *dst,
     struct atm_pseudohdr *desten)
 {
 	struct sockaddr_dl *sdl;
 
 	if (m->m_flags & (M_BCAST | M_MCAST)) {
-		bsd_log(LOG_INFO,
+		log(LOG_INFO,
 		    "atmresolve: BCAST/MCAST packet detected/dumped\n");
 		goto bad;
 	}

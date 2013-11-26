@@ -17,9 +17,9 @@
 /** @brief Unique descriptor for the CLOCK_GETTIME() method */
 extern struct kobjop_desc clock_gettime_desc;
 /** @brief A function implementing the CLOCK_GETTIME() method */
-typedef int clock_gettime_t(bsd_device_t dev, struct bsd_timespec *ts);
+typedef int clock_gettime_t(device_t dev, struct timespec *ts);
 
-static __inline int CLOCK_GETTIME(bsd_device_t dev, struct bsd_timespec *ts)
+static __inline int CLOCK_GETTIME(device_t dev, struct timespec *ts)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,clock_gettime);
@@ -29,9 +29,9 @@ static __inline int CLOCK_GETTIME(bsd_device_t dev, struct bsd_timespec *ts)
 /** @brief Unique descriptor for the CLOCK_SETTIME() method */
 extern struct kobjop_desc clock_settime_desc;
 /** @brief A function implementing the CLOCK_SETTIME() method */
-typedef int clock_settime_t(bsd_device_t dev, struct bsd_timespec *ts);
+typedef int clock_settime_t(device_t dev, struct timespec *ts);
 
-static __inline int CLOCK_SETTIME(bsd_device_t dev, struct bsd_timespec *ts)
+static __inline int CLOCK_SETTIME(device_t dev, struct timespec *ts)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,clock_settime);

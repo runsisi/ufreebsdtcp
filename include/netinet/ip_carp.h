@@ -58,21 +58,21 @@
  */
 
 struct carp_header {
-#if BSD_BYTE_ORDER == BSD_LITTLE_ENDIAN
-	bsd_uint8_t	carp_type:4,
+#if BYTE_ORDER == LITTLE_ENDIAN
+	u_int8_t	carp_type:4,
 			carp_version:4;
 #endif
-#if BSD_BYTE_ORDER == BSD_BIG_ENDIAN
-	bsd_uint8_t	carp_version:4,
+#if BYTE_ORDER == BIG_ENDIAN
+	u_int8_t	carp_version:4,
 			carp_type:4;
 #endif
-	bsd_uint8_t	carp_vhid;	/* virtual host id */
-	bsd_uint8_t	carp_advskew;	/* advertisement skew */
-	bsd_uint8_t	carp_authlen;   /* size of counter+md, 32bit chunks */
-	bsd_uint8_t	carp_pad1;	/* reserved */
-	bsd_uint8_t	carp_advbase;	/* advertisement interval */
-	bsd_uint16_t	carp_cksum;
-	bsd_uint32_t	carp_counter[2];
+	u_int8_t	carp_vhid;	/* virtual host id */
+	u_int8_t	carp_advskew;	/* advertisement skew */
+	u_int8_t	carp_authlen;   /* size of counter+md, 32bit chunks */
+	u_int8_t	carp_pad1;	/* reserved */
+	u_int8_t	carp_advbase;	/* advertisement interval */
+	u_int16_t	carp_cksum;
+	u_int32_t	carp_counter[2];
 	unsigned char	carp_md[20];	/* SHA1 HMAC */
 } __packed;
 
@@ -97,24 +97,24 @@ CTASSERT(sizeof(struct carp_header) == 36);
  * Statistics.
  */
 struct carpstats {
-	bsd_uint64_t	carps_ipackets;		/* total input packets, IPv4 */
-	bsd_uint64_t	carps_ipackets6;	/* total input packets, IPv6 */
-	bsd_uint64_t	carps_badif;		/* wrong interface */
-	bsd_uint64_t	carps_badttl;		/* TTL is not CARP_DFLTTL */
-	bsd_uint64_t	carps_hdrops;		/* packets shorter than hdr */
-	bsd_uint64_t	carps_badsum;		/* bad checksum */
-	bsd_uint64_t	carps_badver;		/* bad (incl unsupp) version */
-	bsd_uint64_t	carps_badlen;		/* data length does not match */
-	bsd_uint64_t	carps_badauth;		/* bad authentication */
-	bsd_uint64_t	carps_badvhid;		/* bad VHID */
-	bsd_uint64_t	carps_badaddrs;		/* bad address list */
+	uint64_t	carps_ipackets;		/* total input packets, IPv4 */
+	uint64_t	carps_ipackets6;	/* total input packets, IPv6 */
+	uint64_t	carps_badif;		/* wrong interface */
+	uint64_t	carps_badttl;		/* TTL is not CARP_DFLTTL */
+	uint64_t	carps_hdrops;		/* packets shorter than hdr */
+	uint64_t	carps_badsum;		/* bad checksum */
+	uint64_t	carps_badver;		/* bad (incl unsupp) version */
+	uint64_t	carps_badlen;		/* data length does not match */
+	uint64_t	carps_badauth;		/* bad authentication */
+	uint64_t	carps_badvhid;		/* bad VHID */
+	uint64_t	carps_badaddrs;		/* bad address list */
 
-	bsd_uint64_t	carps_opackets;		/* total output packets, IPv4 */
-	bsd_uint64_t	carps_opackets6;	/* total output packets, IPv6 */
-	bsd_uint64_t	carps_onomem;		/* no memory for an mbuf */
-	bsd_uint64_t	carps_ostates;		/* total state updates sent */
+	uint64_t	carps_opackets;		/* total output packets, IPv4 */
+	uint64_t	carps_opackets6;	/* total output packets, IPv6 */
+	uint64_t	carps_onomem;		/* no memory for an mbuf */
+	uint64_t	carps_ostates;		/* total state updates sent */
 
-	bsd_uint64_t	carps_preempt;		/* if enabled, preemptions */
+	uint64_t	carps_preempt;		/* if enabled, preemptions */
 };
 
 #ifdef _KERNEL
@@ -160,12 +160,12 @@ struct carpreq {
 void		 carp_carpdev_state(struct ifnet *);
 void		 carp_input (struct mbuf *, int);
 int		 carp6_input (struct mbuf **, int *, int);
-int		 carp_output (struct ifnet *, struct mbuf *, struct bsd_sockaddr *,
+int		 carp_output (struct ifnet *, struct mbuf *, struct sockaddr *,
 		     struct rtentry *);
-int		 carp_iamatch (struct ifnet *, struct in_ifaddr *, struct bsd_in_addr *,
-		     bsd_uint8_t **);
-struct ifaddr	*carp_iamatch6(struct ifnet *, struct bsd_in6_addr *);
-caddr_t		carp_macmatch6(struct ifnet *, struct mbuf *, const struct bsd_in6_addr *);
+int		 carp_iamatch (struct ifnet *, struct in_ifaddr *, struct in_addr *,
+		     u_int8_t **);
+struct ifaddr	*carp_iamatch6(struct ifnet *, struct in6_addr *);
+caddr_t		carp_macmatch6(struct ifnet *, struct mbuf *, const struct in6_addr *);
 struct	ifnet	*carp_forus (struct ifnet *, u_char *);
 
 /* These are external networking stack hooks for CARP */
@@ -175,17 +175,17 @@ extern void (*carp_linkstate_p)(struct ifnet *);
 extern struct ifnet *(*carp_forus_p)(struct ifnet *, u_char *);
 /* net/if_ethersubr.c */
 extern int (*carp_output_p)(struct ifnet *, struct mbuf *,
-    struct bsd_sockaddr *, struct rtentry *);
+    struct sockaddr *, struct rtentry *);
 #ifdef INET
 /* netinet/if_ether.c */
 extern int (*carp_iamatch_p)(struct ifnet *, struct in_ifaddr *,
-    struct bsd_in_addr *, bsd_uint8_t **);
+    struct in_addr *, u_int8_t **);
 #endif
 #ifdef INET6
 /* netinet6/nd6_nbr.c */
-extern struct ifaddr *(*carp_iamatch6_p)(struct ifnet *, struct bsd_in6_addr *);
+extern struct ifaddr *(*carp_iamatch6_p)(struct ifnet *, struct in6_addr *);
 extern caddr_t (*carp_macmatch6_p)(struct ifnet *, struct mbuf *,
-    const struct bsd_in6_addr *);
+    const struct in6_addr *);
 #endif
 #endif
 #endif /* _IP_CARP_H */

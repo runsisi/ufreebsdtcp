@@ -27,56 +27,56 @@
  * $FreeBSD: release/9.2.0/sys/sys/_stdint.h 222813 2011-06-07 08:46:13Z attilio $
  */
 
-#ifndef _BSD_SYS__STDINT_H_
-#define _BSD_SYS__STDINT_H_
+#ifndef _SYS__STDINT_H_
+#define _SYS__STDINT_H_
 
-#ifndef _BSD_INT8_T_DECLARED
-typedef	__bsd_int8_t		bsd_int8_t;
-#define	_BSD_INT8_T_DECLARED
+#ifndef _INT8_T_DECLARED
+typedef	__int8_t		int8_t;
+#define	_INT8_T_DECLARED
 #endif
 
-#ifndef _BSD_INT16_T_DECLARED
-typedef	__bsd_int16_t		bsd_int16_t;
-#define	_BSD_INT16_T_DECLARED
+#ifndef _INT16_T_DECLARED
+typedef	__int16_t		int16_t;
+#define	_INT16_T_DECLARED
 #endif
 
-#ifndef _BSD_INT32_T_DECLARED
-typedef	__bsd_int32_t		bsd_int32_t;
-#define	_BSD_INT32_T_DECLARED
+#ifndef _INT32_T_DECLARED
+typedef	__int32_t		int32_t;
+#define	_INT32_T_DECLARED
 #endif
 
-#ifndef _BSD_INT64_T_DECLARED
-typedef	__bsd_int64_t		bsd_int64_t;
-#define	_BSD_INT64_T_DECLARED
+#ifndef _INT64_T_DECLARED
+typedef	__int64_t		int64_t;
+#define	_INT64_T_DECLARED
 #endif
 
-#ifndef _BSD_UINT8_T_DECLARED
-typedef	__bsd_uint8_t		bsd_uint8_t;
-#define	_BSD_UINT8_T_DECLARED
+#ifndef _UINT8_T_DECLARED
+typedef	__uint8_t		uint8_t;
+#define	_UINT8_T_DECLARED
 #endif
 
-#ifndef _BSD_UINT16_T_DECLARED
-typedef	__bsd_uint16_t		bsd_uint16_t;
-#define	_BSD_UINT16_T_DECLARED
+#ifndef _UINT16_T_DECLARED
+typedef	__uint16_t		uint16_t;
+#define	_UINT16_T_DECLARED
 #endif
 
-#ifndef _BSD_UINT32_T_DECLARED
-typedef	__bsd_uint32_t		bsd_uint32_t;
-#define	_BSD_UINT32_T_DECLARED
+#ifndef _UINT32_T_DECLARED
+typedef	__uint32_t		uint32_t;
+#define	_UINT32_T_DECLARED
 #endif
 
-#ifndef _BSD_UINT64_T_DECLARED
-typedef	__bsd_uint64_t		bsd_uint64_t;
-#define	_BSD_UINT64_T_DECLARED
+#ifndef _UINT64_T_DECLARED
+typedef	__uint64_t		uint64_t;
+#define	_UINT64_T_DECLARED
 #endif
 
-#ifndef _BSD_INTPTR_T_DECLARED
-typedef	__bsd_intptr_t		bsd_intptr_t;
-#define	_BSD_INTPTR_T_DECLARED
+#ifndef _INTPTR_T_DECLARED
+typedef	__intptr_t		intptr_t;
+#define	_INTPTR_T_DECLARED
 #endif
-#ifndef _BSD_UINTPTR_T_DECLARED
-typedef	__bsd_uintptr_t		bsd_uintptr_t;
-#define	_BSD_UINTPTR_T_DECLARED
+#ifndef _UINTPTR_T_DECLARED
+typedef	__uintptr_t		uintptr_t;
+#define	_UINTPTR_T_DECLARED
 #endif
 
 #endif /* !_SYS__STDINT_H_ */

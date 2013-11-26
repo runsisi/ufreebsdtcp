@@ -30,10 +30,10 @@
  * $FreeBSD: release/9.2.0/sys/sys/syslimits.h 194498 2009-06-19 17:10:35Z brooks $
  */
 
-#ifndef _BSD_SYS_SYSLIMITS_H_
-#define _BSD_SYS_SYSLIMITS_H_
+#ifndef _SYS_SYSLIMITS_H_
+#define _SYS_SYSLIMITS_H_
 
-#if !defined(_KERNEL) && !defined(_LIMITS_H_) && !defined(_BSD_SYS_PARAM_H_)
+#if !defined(_KERNEL) && !defined(_LIMITS_H_) && !defined(_SYS_PARAM_H_)
 #ifndef _SYS_CDEFS_H_
 #error this file needs sys/cdefs.h as a prerequisite
 #endif
@@ -46,23 +46,23 @@
  * Do not add any new variables here.  (See the comment at the end of
  * the file for why.)
  */
-#define	BSD_ARG_MAX			262144	/* max bytes for an exec function */
-#ifndef BSD_CHILD_MAX
-#define	BSD_CHILD_MAX		   40	/* max simultaneous processes */
+#define	ARG_MAX			262144	/* max bytes for an exec function */
+#ifndef CHILD_MAX
+#define	CHILD_MAX		   40	/* max simultaneous processes */
 #endif
-#define	BSD_LINK_MAX		32767	/* max file link count */
-#define	BSD_MAX_CANON		  255	/* max bytes in term canon input line */
-#define	BSD_MAX_INPUT		  255	/* max bytes in terminal input */
-#define	BSD_NAME_MAX		  255	/* max bytes in a file name */
-#ifndef BSD_NGROUPS_MAX
-#define	BSD_NGROUPS_MAX	 	 1023	/* max supplemental group id's */
+#define	LINK_MAX		32767	/* max file link count */
+#define	MAX_CANON		  255	/* max bytes in term canon input line */
+#define	MAX_INPUT		  255	/* max bytes in terminal input */
+#define	NAME_MAX		  255	/* max bytes in a file name */
+#ifndef NGROUPS_MAX
+#define	NGROUPS_MAX	 	 1023	/* max supplemental group id's */
 #endif
-#ifndef BSD_OPEN_MAX
-#define	BSD_OPEN_MAX		   64	/* max open files per process */
+#ifndef OPEN_MAX
+#define	OPEN_MAX		   64	/* max open files per process */
 #endif
-#define	BSD_PATH_MAX		 1024	/* max bytes in pathname */
-#define	BSD_PIPE_BUF		  512	/* max bytes for atomic pipe writes */
-#define	BSD_IOV_MAX			 1024	/* max elements in i/o vector */
+#define	PATH_MAX		 1024	/* max bytes in pathname */
+#define	PIPE_BUF		  512	/* max bytes for atomic pipe writes */
+#define	IOV_MAX			 1024	/* max elements in i/o vector */
 
 /*
  * We leave the following values undefined to force applications to either

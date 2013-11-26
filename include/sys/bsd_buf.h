@@ -103,7 +103,7 @@ struct buf {
 	off_t		b_iooffset;
 	long		b_resid;
 	void	(*b_iodone)(struct buf *);
-	bsd_daddr_t b_blkno;		/* Underlying physical block number. */
+	daddr_t b_blkno;		/* Underlying physical block number. */
 	off_t	b_offset;		/* Offset into file. */
 	TAILQ_ENTRY(buf) b_bobufs;	/* (V) Buffer's associated vnode. */
 	struct buf	*b_left;	/* (V) splay tree link */
@@ -119,12 +119,12 @@ struct buf {
 	caddr_t	b_kvabase;		/* base kva for buffer */
 	caddr_t	b_kvaalloc;		/* allocated kva for B_KVAALLOC */
 	int	b_kvasize;		/* size of kva for buffer */
-	bsd_daddr_t b_lblkno;		/* Logical block number. */
+	daddr_t b_lblkno;		/* Logical block number. */
 	struct	vnode *b_vp;		/* Device vnode. */
 	int	b_dirtyoff;		/* Offset in buffer of dirty region. */
 	int	b_dirtyend;		/* Offset of end of dirty region. */
-	struct	bsd_ucred *b_rcred;		/* Read credentials reference. */
-	struct	bsd_ucred *b_wcred;		/* Write credentials reference. */
+	struct	ucred *b_rcred;		/* Read credentials reference. */
+	struct	ucred *b_wcred;		/* Write credentials reference. */
 	void	*b_saveaddr;		/* Original b_addr for physio. */
 	union	pager_info {
 		int	pg_reqpage;
@@ -260,8 +260,8 @@ struct buf {
  */
 extern const char *buf_wmesg;		/* Default buffer lock message */
 #define BUF_WMESG "bufwait"
-#include <sys/proc.h>			/* XXX for curthread */
-#include <sys/mutex.h>
+#include <sys/bsd_proc.h>			/* XXX for curthread */
+#include <sys/bsd_mutex.h>
 
 /*
  * Initialize a lock.
@@ -365,7 +365,7 @@ extern const char *buf_wmesg;		/* Default buffer lock message */
 
 struct buf_queue_head {
 	TAILQ_HEAD(buf_queue, buf) queue;
-	bsd_daddr_t last_pblkno;
+	daddr_t last_pblkno;
 	struct	buf *insert_point;
 	struct	buf *switch_point;
 };
@@ -488,14 +488,14 @@ void	bwillwrite(void);
 int	buf_dirty_count_severe(void);
 void	bremfree(struct buf *);
 void	bremfreef(struct buf *);	/* XXX Force bremfree, only for nfs. */
-int	bread(struct vnode *, bsd_daddr_t, int, struct bsd_ucred *, struct buf **);
-int     bread_gb(struct vnode *, bsd_daddr_t, int, struct bsd_ucred *,
+int	bread(struct vnode *, daddr_t, int, struct ucred *, struct buf **);
+int     bread_gb(struct vnode *, daddr_t, int, struct ucred *,
 	    int gbflags, struct buf **);
-void	breada(struct vnode *, bsd_daddr_t *, int *, int, struct bsd_ucred *);
-int	breadn(struct vnode *, bsd_daddr_t, int, bsd_daddr_t *, int *, int,
-	    struct bsd_ucred *, struct buf **);
-int	breadn_flags(struct vnode *, bsd_daddr_t, int, bsd_daddr_t *, int *, int,
-	    struct bsd_ucred *, int, struct buf **);
+void	breada(struct vnode *, daddr_t *, int *, int, struct ucred *);
+int	breadn(struct vnode *, daddr_t, int, daddr_t *, int *, int,
+	    struct ucred *, struct buf **);
+int	breadn_flags(struct vnode *, daddr_t, int, daddr_t *, int *, int,
+	    struct ucred *, int, struct buf **);
 void	bdwrite(struct buf *);
 void	bawrite(struct buf *);
 void	babarrierwrite(struct buf *);
@@ -507,9 +507,9 @@ void	brelse(struct buf *);
 void	bqrelse(struct buf *);
 int	vfs_bio_awrite(struct buf *);
 struct buf *     getpbuf(int *);
-struct buf *incore(struct bufobj *, bsd_daddr_t);
-struct buf *gbincore(struct bufobj *, bsd_daddr_t);
-struct buf *getblk(struct vnode *, bsd_daddr_t, int, int, int, int);
+struct buf *incore(struct bufobj *, daddr_t);
+struct buf *gbincore(struct bufobj *, daddr_t);
+struct buf *getblk(struct vnode *, daddr_t, int, int, int, int);
 struct buf *geteblk(int, int);
 int	bufwait(struct buf *);
 int	bufwrite(struct buf *);
@@ -517,13 +517,13 @@ void	bufdone(struct buf *);
 void	bufdone_finish(struct buf *);
 void	bd_speedup(void);
 
-int	cluster_read(struct vnode *, u_quad_t, bsd_daddr_t, long,
-	    struct bsd_ucred *, long, int, struct buf **);
-int	cluster_wbuild(struct vnode *, long, bsd_daddr_t, int);
+int	cluster_read(struct vnode *, u_quad_t, daddr_t, long,
+	    struct ucred *, long, int, struct buf **);
+int	cluster_wbuild(struct vnode *, long, daddr_t, int);
 void	cluster_write(struct vnode *, struct buf *, u_quad_t, int);
-int	cluster_read_gb(struct vnode *, u_quad_t, bsd_daddr_t, long,
-	    struct bsd_ucred *, long, int, int, struct buf **);
-int	cluster_wbuild_gb(struct vnode *, long, bsd_daddr_t, int, int);
+int	cluster_read_gb(struct vnode *, u_quad_t, daddr_t, long,
+	    struct ucred *, long, int, int, struct buf **);
+int	cluster_wbuild_gb(struct vnode *, long, daddr_t, int, int);
 void	cluster_write_gb(struct vnode *, struct buf *, u_quad_t, int, int);
 void	vfs_bio_bzero_buf(struct buf *bp, int base, int size);
 void	vfs_bio_set_valid(struct buf *, int base, int size);

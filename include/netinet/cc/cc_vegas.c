@@ -87,10 +87,10 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/netinet/cc/cc_vegas.c 220592 2011-04-13 11
  */
 #define	CC_VEGAS_RATE	0x01000000
 
-static void	vegas_ack_received(struct cc_var *ccv, bsd_uint16_t ack_type);
+static void	vegas_ack_received(struct cc_var *ccv, uint16_t ack_type);
 static void	vegas_cb_destroy(struct cc_var *ccv);
 static int	vegas_cb_init(struct cc_var *ccv);
-static void	vegas_cong_signal(struct cc_var *ccv, bsd_uint32_t signal_type);
+static void	vegas_cong_signal(struct cc_var *ccv, uint32_t signal_type);
 static void	vegas_conn_init(struct cc_var *ccv);
 static int	vegas_mod_init(void);
 
@@ -98,10 +98,10 @@ struct vegas {
 	int slow_start_toggle;
 };
 
-static bsd_int32_t ertt_id;
+static int32_t ertt_id;
 
-static VNET_DEFINE(bsd_uint32_t, vegas_alpha) = 1;
-static VNET_DEFINE(bsd_uint32_t, vegas_beta) = 3;
+static VNET_DEFINE(uint32_t, vegas_alpha) = 1;
+static VNET_DEFINE(uint32_t, vegas_beta) = 3;
 #define	V_vegas_alpha	VNET(vegas_alpha)
 #define	V_vegas_beta	VNET(vegas_beta)
 
@@ -124,7 +124,7 @@ struct cc_algo vegas_cc_algo = {
  * has been used.
  */
 static void
-vegas_ack_received(struct cc_var *ccv, bsd_uint16_t ack_type)
+vegas_ack_received(struct cc_var *ccv, uint16_t ack_type)
 {
 	struct ertt *e_t;
 	struct vegas *vegas_data;
@@ -172,7 +172,7 @@ vegas_cb_destroy(struct cc_var *ccv)
 {
 
 	if (ccv->cc_data != NULL)
-		bsd_free(ccv->cc_data, M_VEGAS);
+		free(ccv->cc_data, M_VEGAS);
 }
 
 static int
@@ -180,7 +180,7 @@ vegas_cb_init(struct cc_var *ccv)
 {
 	struct vegas *vegas_data;
 
-	vegas_data = bsd_malloc(sizeof(struct vegas), M_VEGAS, M_NOWAIT);
+	vegas_data = malloc(sizeof(struct vegas), M_VEGAS, M_NOWAIT);
 
 	if (vegas_data == NULL)
 		return (ENOMEM);
@@ -196,7 +196,7 @@ vegas_cb_init(struct cc_var *ccv)
  * handled here, otherwise it falls back to newreno's congestion handling.
  */
 static void
-vegas_cong_signal(struct cc_var *ccv, bsd_uint32_t signal_type)
+vegas_cong_signal(struct cc_var *ccv, uint32_t signal_type)
 {
 	struct vegas *vegas_data;
 	int presignalrecov;
@@ -257,7 +257,7 @@ static int
 vegas_alpha_handler(SYSCTL_HANDLER_ARGS)
 {
 	int error;
-	bsd_uint32_t new;
+	uint32_t new;
 
 	new = V_vegas_alpha;
 	error = sysctl_handle_int(oidp, &new, 0, req);
@@ -276,7 +276,7 @@ static int
 vegas_beta_handler(SYSCTL_HANDLER_ARGS)
 {
 	int error;
-	bsd_uint32_t new;
+	uint32_t new;
 
 	new = V_vegas_beta;
 	error = sysctl_handle_int(oidp, &new, 0, req);

@@ -46,7 +46,7 @@
  * MNTK_* flags also update DDB show mount command in vfs_subr.c.
  */
 
-typedef struct fsid { bsd_int32_t val[2]; } fsid_t;	/* filesystem id type */
+typedef struct fsid { int32_t val[2]; } fsid_t;	/* filesystem id type */
 
 /*
  * File identifier.
@@ -67,23 +67,23 @@ struct fid {
 #define	MNAMELEN	88		/* size of on/from name bufs */
 #define	STATFS_VERSION	0x20030518	/* current version number */
 struct statfs {
-	bsd_uint32_t f_version;		/* structure version number */
-	bsd_uint32_t f_type;		/* type of filesystem */
-	bsd_uint64_t f_flags;		/* copy of mount exported flags */
-	bsd_uint64_t f_bsize;		/* filesystem fragment size */
-	bsd_uint64_t f_iosize;		/* optimal transfer block size */
-	bsd_uint64_t f_blocks;		/* total data blocks in filesystem */
-	bsd_uint64_t f_bfree;		/* free blocks in filesystem */
-	bsd_int64_t	 f_bavail;		/* free blocks avail to non-superuser */
-	bsd_uint64_t f_files;		/* total file nodes in filesystem */
-	bsd_int64_t	 f_ffree;		/* free nodes avail to non-superuser */
-	bsd_uint64_t f_syncwrites;		/* count of sync writes since mount */
-	bsd_uint64_t f_asyncwrites;		/* count of async writes since mount */
-	bsd_uint64_t f_syncreads;		/* count of sync reads since mount */
-	bsd_uint64_t f_asyncreads;		/* count of async reads since mount */
-	bsd_uint64_t f_spare[10];		/* unused spare */
-	bsd_uint32_t f_namemax;		/* maximum filename length */
-	bsd_uid_t	  f_owner;		/* user that mounted the filesystem */
+	uint32_t f_version;		/* structure version number */
+	uint32_t f_type;		/* type of filesystem */
+	uint64_t f_flags;		/* copy of mount exported flags */
+	uint64_t f_bsize;		/* filesystem fragment size */
+	uint64_t f_iosize;		/* optimal transfer block size */
+	uint64_t f_blocks;		/* total data blocks in filesystem */
+	uint64_t f_bfree;		/* free blocks in filesystem */
+	int64_t	 f_bavail;		/* free blocks avail to non-superuser */
+	uint64_t f_files;		/* total file nodes in filesystem */
+	int64_t	 f_ffree;		/* free nodes avail to non-superuser */
+	uint64_t f_syncwrites;		/* count of sync writes since mount */
+	uint64_t f_asyncwrites;		/* count of async writes since mount */
+	uint64_t f_syncreads;		/* count of sync reads since mount */
+	uint64_t f_asyncreads;		/* count of async reads since mount */
+	uint64_t f_spare[10];		/* unused spare */
+	uint32_t f_namemax;		/* maximum filename length */
+	uid_t	  f_owner;		/* user that mounted the filesystem */
 	fsid_t	  f_fsid;		/* filesystem id */
 	char	  f_charspare[80];	    /* spare string space */
 	char	  f_fstypename[MFSNAMELEN]; /* filesystem type name */
@@ -107,7 +107,7 @@ struct ostatfs {
 	long	f_files;		/* total file nodes in filesystem */
 	long	f_ffree;		/* free file nodes in fs */
 	fsid_t	f_fsid;			/* filesystem id */
-	bsd_uid_t	f_owner;		/* user that mounted the filesystem */
+	uid_t	f_owner;		/* user that mounted the filesystem */
 	int	f_type;			/* type of filesystem */
 	int	f_flags;		/* copy of mount exported flags */
 	long	f_syncwrites;		/* count of sync writes since mount */
@@ -127,12 +127,12 @@ struct ostatfs {
 	long	f_spare[2];		/* unused spare */
 };
 
-BSD_TAILQ_HEAD(vnodelst, vnode);
+TAILQ_HEAD(vnodelst, vnode);
 
 /* Mount options list */
-BSD_TAILQ_HEAD(vfsoptlist, vfsopt);
+TAILQ_HEAD(vfsoptlist, vfsopt);
 struct vfsopt {
-    BSD_TAILQ_ENTRY(vfsopt) link;
+	TAILQ_ENTRY(vfsopt) link;
 	char	*name;
 	void	*value;
 	int	len;
@@ -157,7 +157,7 @@ struct mount {
 	struct mtx	mnt_mtx;		/* mount structure interlock */
 	int		mnt_gen;		/* struct mount generation */
 #define	mnt_startzero	mnt_list
-	BSD_TAILQ_ENTRY(mount) mnt_list;		/* (m) mount list */
+	TAILQ_ENTRY(mount) mnt_list;		/* (m) mount list */
 	struct vfsops	*mnt_op;		/* operations on fs */
 	struct vfsconf	*mnt_vfc;		/* configuration info */
 	struct vnode	*mnt_vnodecovered;	/* vnode we mounted on */
@@ -169,15 +169,15 @@ struct mount {
 	int		mnt_activevnodelistsize;/* (v) # of active vnodes */
 	int		mnt_writeopcount;	/* (i) write syscalls pending */
 	int		mnt_kern_flag;		/* (i) kernel only flags */
-	bsd_uint64_t	mnt_flag;		/* (i) flags shared with user */
+	uint64_t	mnt_flag;		/* (i) flags shared with user */
 	u_int		mnt_pad_noasync;
 	struct vfsoptlist *mnt_opt;		/* current mount options */
 	struct vfsoptlist *mnt_optnew;		/* new options passed to fs */
 	int		mnt_maxsymlinklen;	/* max size of short symlink */
 	struct statfs	mnt_stat;		/* cache of filesystem stats */
-	struct bsd_ucred	*mnt_cred;		/* credentials of mounter */
+	struct ucred	*mnt_cred;		/* credentials of mounter */
 	void *		mnt_data;		/* private data */
-	bsd_time_t		mnt_time;		/* last time written*/
+	time_t		mnt_time;		/* last time written*/
 	int		mnt_iosize_max;		/* max size for clusters, etc */
 	struct netexport *mnt_export;		/* export list */
 	struct label	*mnt_label;		/* MAC label for the fs */
@@ -189,8 +189,8 @@ struct mount {
 #define	mnt_endzero	mnt_gjprovider
 	char		*mnt_gjprovider;	/* gjournal provider name */
 	struct lock	mnt_explock;		/* vfs_export walkers lock */
-	BSD_TAILQ_ENTRY(mount) mnt_upper_link;	/* (m) we in the all uppers */
-	BSD_TAILQ_HEAD(, mount) mnt_uppers;		/* (m) upper mounts over us*/
+	TAILQ_ENTRY(mount) mnt_upper_link;	/* (m) we in the all uppers */
+	TAILQ_HEAD(, mount) mnt_uppers;		/* (m) upper mounts over us*/
 };
 
 /*
@@ -431,11 +431,11 @@ typedef struct fhandle	fhandle_t;
  */
 struct oexport_args {
 	int	ex_flags;		/* export related flags */
-	bsd_uid_t	ex_root;		/* mapping for root uid */
+	uid_t	ex_root;		/* mapping for root uid */
 	struct	xucred ex_anon;		/* mapping for anonymous user */
-	struct	bsd_sockaddr *ex_addr;	/* net address to which exported */
+	struct	sockaddr *ex_addr;	/* net address to which exported */
 	u_char	ex_addrlen;		/* and the net address length */
-	struct	bsd_sockaddr *ex_mask;	/* mask of valid bits in saddr */
+	struct	sockaddr *ex_mask;	/* mask of valid bits in saddr */
 	u_char	ex_masklen;		/* and the smask length */
 	char	*ex_indexfile;		/* index file for WebNFS URLs */
 };
@@ -446,11 +446,11 @@ struct oexport_args {
 #define	MAXSECFLAVORS	5
 struct export_args {
 	int	ex_flags;		/* export related flags */
-	bsd_uid_t	ex_root;		/* mapping for root uid */
+	uid_t	ex_root;		/* mapping for root uid */
 	struct	xucred ex_anon;		/* mapping for anonymous user */
-	struct	bsd_sockaddr *ex_addr;	/* net address to which exported */
+	struct	sockaddr *ex_addr;	/* net address to which exported */
 	u_char	ex_addrlen;		/* and the net address length */
-	struct	bsd_sockaddr *ex_mask;	/* mask of valid bits in saddr */
+	struct	sockaddr *ex_mask;	/* mask of valid bits in saddr */
 	u_char	ex_masklen;		/* and the smask length */
 	char	*ex_indexfile;		/* index file for WebNFS URLs */
 	int	ex_numsecflavors;	/* security flavor count */
@@ -483,7 +483,7 @@ struct vfsconf {
 	int	vfc_refcount;		/* number mounted of this type */
 	int	vfc_flags;		/* permanent flags */
 	struct	vfsoptdecl *vfc_opts;	/* mount options */
-	BSD_TAILQ_ENTRY(vfsconf) vfc_list;	/* list of vfscons */
+	TAILQ_ENTRY(vfsconf) vfc_list;	/* list of vfscons */
 };
 
 /* Userland version of the struct vfsconf. */
@@ -520,7 +520,7 @@ struct ovfsconf {
 #define	VFCF_DELEGADMIN	0x00800000	/* supports delegated administration */
 #define	VFCF_SBDRY	0x01000000	/* defer stop requests */
 
-typedef bsd_uint32_t fsctlop_t;
+typedef uint32_t fsctlop_t;
 
 struct vfsidctl {
 	int		vc_vers;	/* should be VFSIDCTL_VERS1 (below) */
@@ -529,8 +529,8 @@ struct vfsidctl {
 					/* type of fs 'nfs' or '*' */
 	fsctlop_t	vc_op;		/* operation VFS_CTL_* (below) */
 	void		*vc_ptr;	/* pointer to data structure */
-	bsd_size_t		vc_len;		/* sizeof said structure */
-	bsd_uint32_t	vc_spare[12];	/* spare (must be zero) */
+	size_t		vc_len;		/* sizeof said structure */
+	u_int32_t	vc_spare[12];	/* spare (must be zero) */
 };
 
 /* vfsidctl API version. */
@@ -548,8 +548,8 @@ struct vfsidctl {
 #define VFS_CTL_NOLOCKS	0x00010003	/* disable file locking */
 
 struct vfsquery {
-	bsd_uint32_t	vq_flags;
-	bsd_uint32_t	vq_spare[31];
+	u_int32_t	vq_flags;
+	u_int32_t	vq_spare[31];
 };
 
 /* vfsquery flags */
@@ -581,7 +581,7 @@ struct vfsquery {
 	} while (0)
 #endif
 
-struct bsd_iovec;
+struct iovec;
 struct uio;
 
 #ifdef _KERNEL
@@ -599,7 +599,7 @@ MALLOC_DECLARE(M_MOUNT);
 extern int maxvfsconf;		/* highest defined filesystem type */
 extern int nfs_mount_type;	/* vfc_typenum for nfs, or -1 */
 
-BSD_TAILQ_HEAD(vfsconfhead, vfsconf);
+TAILQ_HEAD(vfsconfhead, vfsconf);
 extern struct vfsconfhead vfsconf;
 
 /*
@@ -610,18 +610,18 @@ struct nameidata;
 struct sysctl_req;
 struct mntarg;
 
-typedef int vfs_cmount_t(struct mntarg *ma, void *data, bsd_uint64_t flags);
+typedef int vfs_cmount_t(struct mntarg *ma, void *data, uint64_t flags);
 typedef int vfs_unmount_t(struct mount *mp, int mntflags);
 typedef int vfs_root_t(struct mount *mp, int flags, struct vnode **vpp);
-typedef	int vfs_quotactl_t(struct mount *mp, int cmds, bsd_uid_t uid, void *arg);
+typedef	int vfs_quotactl_t(struct mount *mp, int cmds, uid_t uid, void *arg);
 typedef	int vfs_statfs_t(struct mount *mp, struct statfs *sbp);
 typedef	int vfs_sync_t(struct mount *mp, int waitfor);
-typedef	int vfs_vget_t(struct mount *mp, bsd_ino_t ino, int flags,
+typedef	int vfs_vget_t(struct mount *mp, ino_t ino, int flags,
 		    struct vnode **vpp);
 typedef	int vfs_fhtovp_t(struct mount *mp, struct fid *fhp,
 		    int flags, struct vnode **vpp);
-typedef	int vfs_checkexp_t(struct mount *mp, struct bsd_sockaddr *nam,
-		    int *extflagsp, struct bsd_ucred **credanonp,
+typedef	int vfs_checkexp_t(struct mount *mp, struct sockaddr *nam,
+		    int *extflagsp, struct ucred **credanonp,
 		    int *numsecflavors, int **secflavors);
 typedef	int vfs_init_t(struct vfsconf *);
 typedef	int vfs_uninit_t(struct vfsconf *);
@@ -861,7 +861,7 @@ extern	char *mountrootfsname;
 
 int	dounmount(struct mount *, int, struct thread *);
 
-int	kernel_mount(struct mntarg *ma, bsd_uint64_t flags);
+int	kernel_mount(struct mntarg *ma, uint64_t flags);
 int	kernel_vmount(int flags, ...);
 struct mntarg *mount_arg(struct mntarg *ma, const char *name, const void *val, int len);
 struct mntarg *mount_argb(struct mntarg *ma, int flag, const char *name);
@@ -871,12 +871,12 @@ void	statfs_scale_blocks(struct statfs *sf, long max_size);
 struct vfsconf *vfs_byname(const char *);
 struct vfsconf *vfs_byname_kld(const char *, struct thread *td, int *);
 void	vfs_mount_destroy(struct mount *);
-void	vfs_event_signal(fsid_t *, bsd_uint32_t, bsd_intptr_t);
+void	vfs_event_signal(fsid_t *, u_int32_t, intptr_t);
 void	vfs_freeopts(struct vfsoptlist *opts);
 void	vfs_deleteopt(struct vfsoptlist *opts, const char *name);
 int	vfs_buildopts(struct uio *auio, struct vfsoptlist **options);
-int	vfs_flagopt(struct vfsoptlist *opts, const char *name, bsd_uint64_t *w,
-	    bsd_uint64_t val);
+int	vfs_flagopt(struct vfsoptlist *opts, const char *name, uint64_t *w,
+	    uint64_t val);
 int	vfs_getopt(struct vfsoptlist *, const char *, void **, int *);
 int	vfs_getopt_pos(struct vfsoptlist *opts, const char *name);
 char	*vfs_getopts(struct vfsoptlist *, const char *, int *error);
@@ -898,7 +898,7 @@ int	vfs_export			 /* process mount export info */
 	    (struct mount *, struct export_args *);
 void	vfs_allocate_syncvnode(struct mount *);
 void	vfs_deallocate_syncvnode(struct mount *);
-int	vfs_donmount(struct thread *td, bsd_uint64_t fsflags,
+int	vfs_donmount(struct thread *td, uint64_t fsflags,
 	    struct uio *fsoptions);
 void	vfs_getnewfsid(struct mount *);
 struct cdev *vfs_getrootfsid(struct mount *);
@@ -914,11 +914,11 @@ void	vfs_oexport_conv(const struct oexport_args *oexp,
 void	vfs_ref(struct mount *);
 void	vfs_rel(struct mount *);
 struct mount *vfs_mount_alloc(struct vnode *, struct vfsconf *, const char *,
-	    struct bsd_ucred *);
+	    struct ucred *);
 int	vfs_suser(struct mount *, struct thread *);
 void	vfs_unbusy(struct mount *);
 void	vfs_unmountall(void);
-extern	BSD_TAILQ_HEAD(mntlist, mount) mountlist;	/* mounted filesystem list */
+extern	TAILQ_HEAD(mntlist, mount) mountlist;	/* mounted filesystem list */
 extern	struct mtx mountlist_mtx;
 extern	struct nfs_public nfs_pub;
 
@@ -956,7 +956,7 @@ int	getfsstat(struct statfs *, long, int);
 int	getmntinfo(struct statfs **, int);
 int	lgetfh(const char *, fhandle_t *);
 int	mount(const char *, const char *, int, void *);
-int	nmount(struct bsd_iovec *, unsigned int, int);
+int	nmount(struct iovec *, unsigned int, int);
 int	statfs(const char *, struct statfs *);
 int	unmount(const char *, int);
 

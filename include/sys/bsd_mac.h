@@ -64,7 +64,7 @@
  * and ioctls between userspace and the kernel.
  */
 struct mac {
-	bsd_size_t		 m_buflen;
+	size_t		 m_buflen;
 	char		*m_string;
 };
 

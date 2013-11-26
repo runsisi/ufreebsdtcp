@@ -10,29 +10,29 @@
  * See the source file for legal information
  */
 
-#include <sys/param.h>
-#include <sys/queue.h>
-#include <sys/kernel.h>
-#include <sys/kobj.h>
-#include <sys/bus.h>
-#include <sys/serial.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_queue.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_kobj.h>
+#include <sys/bsd_bus.h>
+#include <sys/bsd_serial.h>
 #include "serdev_if.h"
 
 
 static serdev_intr_t *
-default_ihand(bsd_device_t dev, int ipend)
+default_ihand(device_t dev, int ipend)
 {
 	return (NULL);
 }
 
 static int
-default_ipend(bsd_device_t dev)
+default_ipend(device_t dev)
 {
 	return (-1);
 }
 
 static int
-default_sysdev(bsd_device_t dev)
+default_sysdev(device_t dev)
 {
 	return (0);
 }

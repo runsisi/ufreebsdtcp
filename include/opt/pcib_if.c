@@ -10,17 +10,17 @@
  * See the source file for legal information
  */
 
-#include <sys/param.h>
-#include <sys/queue.h>
-#include <sys/kernel.h>
-#include <sys/kobj.h>
-#include <sys/bus.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_queue.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_kobj.h>
+#include <sys/bsd_bus.h>
 #include <dev/pci/pcivar.h>
 #include "pcib_if.h"
 
 
 static int
-null_route_interrupt(bsd_device_t pcib, bsd_device_t dev, int pin)
+null_route_interrupt(device_t pcib, device_t dev, int pin)
 {
 	return (PCI_INVALID_IRQ);
 }

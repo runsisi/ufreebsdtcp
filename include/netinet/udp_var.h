@@ -147,17 +147,17 @@ extern int			udp_log_in_vain;
 int		 udp_newudpcb(struct inpcb *);
 void		 udp_discardcb(struct udpcb *);
 
-void		 udp_ctlinput(int, struct bsd_sockaddr *, void *);
-int		 udp_ctloutput(struct bsd_socket *, struct bsd_sockopt *);
+void		 udp_ctlinput(int, struct sockaddr *, void *);
+int		 udp_ctloutput(struct socket *, struct sockopt *);
 void		 udp_init(void);
 #ifdef VIMAGE
 void		 udp_destroy(void);
 #endif
 void		 udp_input(struct mbuf *, int);
 struct inpcb	*udp_notify(struct inpcb *inp, int errno);
-int		 udp_shutdown(struct bsd_socket *so);
+int		 udp_shutdown(struct socket *so);
 
-int udp_set_kernel_tunneling(struct bsd_socket *so, udp_tun_func_t f);
+int udp_set_kernel_tunneling(struct socket *so, udp_tun_func_t f);
 #endif
 
 #endif

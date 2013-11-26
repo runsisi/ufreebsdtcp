@@ -23,7 +23,7 @@
 /** @brief Unique descriptor for the BUS_PRINT_CHILD() method */
 extern struct kobjop_desc bus_print_child_desc;
 /** @brief A function implementing the BUS_PRINT_CHILD() method */
-typedef int bus_print_child_t(bsd_device_t _dev, bsd_device_t _child);
+typedef int bus_print_child_t(device_t _dev, device_t _child);
 /**
  * @brief Print a description of a child device
  *
@@ -39,7 +39,7 @@ typedef int bus_print_child_t(bsd_device_t _dev, bsd_device_t _child);
  * @returns		the number of characters output.
  */
 
-static __inline int BUS_PRINT_CHILD(bsd_device_t _dev, bsd_device_t _child)
+static __inline int BUS_PRINT_CHILD(device_t _dev, device_t _child)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)_dev)->ops,bus_print_child);
@@ -49,7 +49,7 @@ static __inline int BUS_PRINT_CHILD(bsd_device_t _dev, bsd_device_t _child)
 /** @brief Unique descriptor for the BUS_PROBE_NOMATCH() method */
 extern struct kobjop_desc bus_probe_nomatch_desc;
 /** @brief A function implementing the BUS_PROBE_NOMATCH() method */
-typedef void bus_probe_nomatch_t(bsd_device_t _dev, bsd_device_t _child);
+typedef void bus_probe_nomatch_t(device_t _dev, device_t _child);
 /**
  * @brief Print a notification about an unprobed child device.
  *
@@ -60,7 +60,7 @@ typedef void bus_probe_nomatch_t(bsd_device_t _dev, bsd_device_t _child);
  * @param _child	the child device which failed to probe
  */   
 
-static __inline void BUS_PROBE_NOMATCH(bsd_device_t _dev, bsd_device_t _child)
+static __inline void BUS_PROBE_NOMATCH(device_t _dev, device_t _child)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)_dev)->ops,bus_probe_nomatch);
@@ -70,8 +70,8 @@ static __inline void BUS_PROBE_NOMATCH(bsd_device_t _dev, bsd_device_t _child)
 /** @brief Unique descriptor for the BUS_READ_IVAR() method */
 extern struct kobjop_desc bus_read_ivar_desc;
 /** @brief A function implementing the BUS_READ_IVAR() method */
-typedef int bus_read_ivar_t(bsd_device_t _dev, bsd_device_t _child, int _index,
-                            bsd_uintptr_t *_result);
+typedef int bus_read_ivar_t(device_t _dev, device_t _child, int _index,
+                            uintptr_t *_result);
 /**
  * @brief Read the value of a bus-specific attribute of a device
  *
@@ -100,8 +100,8 @@ typedef int bus_read_ivar_t(bsd_device_t _dev, bsd_device_t _child, int _index,
  *			_dev 
  */
 
-static __inline int BUS_READ_IVAR(bsd_device_t _dev, bsd_device_t _child, int _index,
-                                  bsd_uintptr_t *_result)
+static __inline int BUS_READ_IVAR(device_t _dev, device_t _child, int _index,
+                                  uintptr_t *_result)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)_dev)->ops,bus_read_ivar);
@@ -111,8 +111,8 @@ static __inline int BUS_READ_IVAR(bsd_device_t _dev, bsd_device_t _child, int _i
 /** @brief Unique descriptor for the BUS_WRITE_IVAR() method */
 extern struct kobjop_desc bus_write_ivar_desc;
 /** @brief A function implementing the BUS_WRITE_IVAR() method */
-typedef int bus_write_ivar_t(bsd_device_t _dev, bsd_device_t _child, int _indx,
-                             bsd_uintptr_t _value);
+typedef int bus_write_ivar_t(device_t _dev, device_t _child, int _indx,
+                             uintptr_t _value);
 /**
  * @brief Write the value of a bus-specific attribute of a device
  * 
@@ -131,8 +131,8 @@ typedef int bus_write_ivar_t(bsd_device_t _dev, bsd_device_t _child, int _indx,
  *			contains a read-only value
  */
 
-static __inline int BUS_WRITE_IVAR(bsd_device_t _dev, bsd_device_t _child, int _indx,
-                                   bsd_uintptr_t _value)
+static __inline int BUS_WRITE_IVAR(device_t _dev, device_t _child, int _indx,
+                                   uintptr_t _value)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)_dev)->ops,bus_write_ivar);
@@ -142,7 +142,7 @@ static __inline int BUS_WRITE_IVAR(bsd_device_t _dev, bsd_device_t _child, int _
 /** @brief Unique descriptor for the BUS_CHILD_DELETED() method */
 extern struct kobjop_desc bus_child_deleted_desc;
 /** @brief A function implementing the BUS_CHILD_DELETED() method */
-typedef void bus_child_deleted_t(bsd_device_t _dev, bsd_device_t _child);
+typedef void bus_child_deleted_t(device_t _dev, device_t _child);
 /**
  * @brief Notify a bus that a child was deleted
  *
@@ -153,7 +153,7 @@ typedef void bus_child_deleted_t(bsd_device_t _dev, bsd_device_t _child);
  * @param _child	the child device which is being deleted
  */
 
-static __inline void BUS_CHILD_DELETED(bsd_device_t _dev, bsd_device_t _child)
+static __inline void BUS_CHILD_DELETED(device_t _dev, device_t _child)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)_dev)->ops,bus_child_deleted);
@@ -163,7 +163,7 @@ static __inline void BUS_CHILD_DELETED(bsd_device_t _dev, bsd_device_t _child)
 /** @brief Unique descriptor for the BUS_CHILD_DETACHED() method */
 extern struct kobjop_desc bus_child_detached_desc;
 /** @brief A function implementing the BUS_CHILD_DETACHED() method */
-typedef void bus_child_detached_t(bsd_device_t _dev, bsd_device_t _child);
+typedef void bus_child_detached_t(device_t _dev, device_t _child);
 /**
  * @brief Notify a bus that a child was detached
  *
@@ -174,7 +174,7 @@ typedef void bus_child_detached_t(bsd_device_t _dev, bsd_device_t _child);
  * @param _child	the child device which changed state
  */
 
-static __inline void BUS_CHILD_DETACHED(bsd_device_t _dev, bsd_device_t _child)
+static __inline void BUS_CHILD_DETACHED(device_t _dev, device_t _child)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)_dev)->ops,bus_child_detached);
@@ -184,7 +184,7 @@ static __inline void BUS_CHILD_DETACHED(bsd_device_t _dev, bsd_device_t _child)
 /** @brief Unique descriptor for the BUS_DRIVER_ADDED() method */
 extern struct kobjop_desc bus_driver_added_desc;
 /** @brief A function implementing the BUS_DRIVER_ADDED() method */
-typedef void bus_driver_added_t(bsd_device_t _dev, driver_t *_driver);
+typedef void bus_driver_added_t(device_t _dev, driver_t *_driver);
 /**
  * @brief Notify a bus that a new driver was added
  * 
@@ -197,7 +197,7 @@ typedef void bus_driver_added_t(bsd_device_t _dev, driver_t *_driver);
  * @param _driver	the new driver which was added
  */
 
-static __inline void BUS_DRIVER_ADDED(bsd_device_t _dev, driver_t *_driver)
+static __inline void BUS_DRIVER_ADDED(device_t _dev, driver_t *_driver)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)_dev)->ops,bus_driver_added);
@@ -207,7 +207,7 @@ static __inline void BUS_DRIVER_ADDED(bsd_device_t _dev, driver_t *_driver)
 /** @brief Unique descriptor for the BUS_ADD_CHILD() method */
 extern struct kobjop_desc bus_add_child_desc;
 /** @brief A function implementing the BUS_ADD_CHILD() method */
-typedef bsd_device_t bus_add_child_t(bsd_device_t _dev, u_int _order, const char *_name,
+typedef device_t bus_add_child_t(device_t _dev, u_int _order, const char *_name,
                                  int _unit);
 /**
  * @brief Create a new child device
@@ -229,7 +229,7 @@ typedef bsd_device_t bus_add_child_t(bsd_device_t _dev, u_int _order, const char
  *			specified
  */
 
-static __inline bsd_device_t BUS_ADD_CHILD(bsd_device_t _dev, u_int _order,
+static __inline device_t BUS_ADD_CHILD(device_t _dev, u_int _order,
                                        const char *_name, int _unit)
 {
 	kobjop_t _m;
@@ -240,7 +240,7 @@ static __inline bsd_device_t BUS_ADD_CHILD(bsd_device_t _dev, u_int _order,
 /** @brief Unique descriptor for the BUS_ALLOC_RESOURCE() method */
 extern struct kobjop_desc bus_alloc_resource_desc;
 /** @brief A function implementing the BUS_ALLOC_RESOURCE() method */
-typedef struct resource * bus_alloc_resource_t(bsd_device_t _dev, bsd_device_t _child,
+typedef struct resource * bus_alloc_resource_t(device_t _dev, device_t _child,
                                                int _type, int *_rid,
                                                u_long _start, u_long _end,
                                                u_long _count, u_int _flags);
@@ -273,8 +273,8 @@ typedef struct resource * bus_alloc_resource_t(bsd_device_t _dev, bsd_device_t _
  *			resource could be allocated
  */
 
-static __inline struct resource * BUS_ALLOC_RESOURCE(bsd_device_t _dev,
-                                                     bsd_device_t _child, int _type,
+static __inline struct resource * BUS_ALLOC_RESOURCE(device_t _dev,
+                                                     device_t _child, int _type,
                                                      int *_rid, u_long _start,
                                                      u_long _end, u_long _count,
                                                      u_int _flags)
@@ -287,7 +287,7 @@ static __inline struct resource * BUS_ALLOC_RESOURCE(bsd_device_t _dev,
 /** @brief Unique descriptor for the BUS_ACTIVATE_RESOURCE() method */
 extern struct kobjop_desc bus_activate_resource_desc;
 /** @brief A function implementing the BUS_ACTIVATE_RESOURCE() method */
-typedef int bus_activate_resource_t(bsd_device_t _dev, bsd_device_t _child, int _type,
+typedef int bus_activate_resource_t(device_t _dev, device_t _child, int _type,
                                     int _rid, struct resource *_r);
 /**
  * @brief Activate a resource
@@ -303,7 +303,7 @@ typedef int bus_activate_resource_t(bsd_device_t _dev, bsd_device_t _child, int 
  * @param _r		the resource to activate
  */
 
-static __inline int BUS_ACTIVATE_RESOURCE(bsd_device_t _dev, bsd_device_t _child,
+static __inline int BUS_ACTIVATE_RESOURCE(device_t _dev, device_t _child,
                                           int _type, int _rid,
                                           struct resource *_r)
 {
@@ -315,7 +315,7 @@ static __inline int BUS_ACTIVATE_RESOURCE(bsd_device_t _dev, bsd_device_t _child
 /** @brief Unique descriptor for the BUS_DEACTIVATE_RESOURCE() method */
 extern struct kobjop_desc bus_deactivate_resource_desc;
 /** @brief A function implementing the BUS_DEACTIVATE_RESOURCE() method */
-typedef int bus_deactivate_resource_t(bsd_device_t _dev, bsd_device_t _child, int _type,
+typedef int bus_deactivate_resource_t(device_t _dev, device_t _child, int _type,
                                       int _rid, struct resource *_r);
 /**
  * @brief Deactivate a resource
@@ -331,7 +331,7 @@ typedef int bus_deactivate_resource_t(bsd_device_t _dev, bsd_device_t _child, in
  * @param _r		the resource to deactivate
  */
 
-static __inline int BUS_DEACTIVATE_RESOURCE(bsd_device_t _dev, bsd_device_t _child,
+static __inline int BUS_DEACTIVATE_RESOURCE(device_t _dev, device_t _child,
                                             int _type, int _rid,
                                             struct resource *_r)
 {
@@ -343,7 +343,7 @@ static __inline int BUS_DEACTIVATE_RESOURCE(bsd_device_t _dev, bsd_device_t _chi
 /** @brief Unique descriptor for the BUS_ADJUST_RESOURCE() method */
 extern struct kobjop_desc bus_adjust_resource_desc;
 /** @brief A function implementing the BUS_ADJUST_RESOURCE() method */
-typedef int bus_adjust_resource_t(bsd_device_t _dev, bsd_device_t _child, int _type,
+typedef int bus_adjust_resource_t(device_t _dev, device_t _child, int _type,
                                   struct resource *_res, u_long _start,
                                   u_long _end);
 /**
@@ -362,7 +362,7 @@ typedef int bus_adjust_resource_t(bsd_device_t _dev, bsd_device_t _child, int _t
  * @param _end		the new ending address of the resource range
  */
 
-static __inline int BUS_ADJUST_RESOURCE(bsd_device_t _dev, bsd_device_t _child,
+static __inline int BUS_ADJUST_RESOURCE(device_t _dev, device_t _child,
                                         int _type, struct resource *_res,
                                         u_long _start, u_long _end)
 {
@@ -374,7 +374,7 @@ static __inline int BUS_ADJUST_RESOURCE(bsd_device_t _dev, bsd_device_t _child,
 /** @brief Unique descriptor for the BUS_RELEASE_RESOURCE() method */
 extern struct kobjop_desc bus_release_resource_desc;
 /** @brief A function implementing the BUS_RELEASE_RESOURCE() method */
-typedef int bus_release_resource_t(bsd_device_t _dev, bsd_device_t _child, int _type,
+typedef int bus_release_resource_t(device_t _dev, device_t _child, int _type,
                                    int _rid, struct resource *_res);
 /**
  * @brief Release a resource
@@ -390,7 +390,7 @@ typedef int bus_release_resource_t(bsd_device_t _dev, bsd_device_t _child, int _
  * @param _r		the resource to release
  */
 
-static __inline int BUS_RELEASE_RESOURCE(bsd_device_t _dev, bsd_device_t _child,
+static __inline int BUS_RELEASE_RESOURCE(device_t _dev, device_t _child,
                                          int _type, int _rid,
                                          struct resource *_res)
 {
@@ -402,7 +402,7 @@ static __inline int BUS_RELEASE_RESOURCE(bsd_device_t _dev, bsd_device_t _child,
 /** @brief Unique descriptor for the BUS_SETUP_INTR() method */
 extern struct kobjop_desc bus_setup_intr_desc;
 /** @brief A function implementing the BUS_SETUP_INTR() method */
-typedef int bus_setup_intr_t(bsd_device_t _dev, bsd_device_t _child,
+typedef int bus_setup_intr_t(device_t _dev, device_t _child,
                              struct resource *_irq, int _flags,
                              driver_filter_t *_filter, driver_intr_t *_intr,
                              void *_arg, void **_cookiep);
@@ -430,7 +430,7 @@ typedef int bus_setup_intr_t(bsd_device_t _dev, bsd_device_t _child,
  *			handler
  */
 
-static __inline int BUS_SETUP_INTR(bsd_device_t _dev, bsd_device_t _child,
+static __inline int BUS_SETUP_INTR(device_t _dev, device_t _child,
                                    struct resource *_irq, int _flags,
                                    driver_filter_t *_filter,
                                    driver_intr_t *_intr, void *_arg,
@@ -444,7 +444,7 @@ static __inline int BUS_SETUP_INTR(bsd_device_t _dev, bsd_device_t _child,
 /** @brief Unique descriptor for the BUS_TEARDOWN_INTR() method */
 extern struct kobjop_desc bus_teardown_intr_desc;
 /** @brief A function implementing the BUS_TEARDOWN_INTR() method */
-typedef int bus_teardown_intr_t(bsd_device_t _dev, bsd_device_t _child,
+typedef int bus_teardown_intr_t(device_t _dev, device_t _child,
                                 struct resource *_irq, void *_cookie);
 /**
  * @brief Uninstall an interrupt handler
@@ -460,7 +460,7 @@ typedef int bus_teardown_intr_t(bsd_device_t _dev, bsd_device_t _child,
  *			was originally registered
  */
 
-static __inline int BUS_TEARDOWN_INTR(bsd_device_t _dev, bsd_device_t _child,
+static __inline int BUS_TEARDOWN_INTR(device_t _dev, device_t _child,
                                       struct resource *_irq, void *_cookie)
 {
 	kobjop_t _m;
@@ -471,7 +471,7 @@ static __inline int BUS_TEARDOWN_INTR(bsd_device_t _dev, bsd_device_t _child,
 /** @brief Unique descriptor for the BUS_SET_RESOURCE() method */
 extern struct kobjop_desc bus_set_resource_desc;
 /** @brief A function implementing the BUS_SET_RESOURCE() method */
-typedef int bus_set_resource_t(bsd_device_t _dev, bsd_device_t _child, int _type,
+typedef int bus_set_resource_t(device_t _dev, device_t _child, int _type,
                                int _rid, u_long _start, u_long _count);
 /**
  * @brief Define a resource which can be allocated with
@@ -491,7 +491,7 @@ typedef int bus_set_resource_t(bsd_device_t _dev, bsd_device_t _child, int _type
  * @param _count	the size of the resource range
  */
 
-static __inline int BUS_SET_RESOURCE(bsd_device_t _dev, bsd_device_t _child, int _type,
+static __inline int BUS_SET_RESOURCE(device_t _dev, device_t _child, int _type,
                                      int _rid, u_long _start, u_long _count)
 {
 	kobjop_t _m;
@@ -502,7 +502,7 @@ static __inline int BUS_SET_RESOURCE(bsd_device_t _dev, bsd_device_t _child, int
 /** @brief Unique descriptor for the BUS_GET_RESOURCE() method */
 extern struct kobjop_desc bus_get_resource_desc;
 /** @brief A function implementing the BUS_GET_RESOURCE() method */
-typedef int bus_get_resource_t(bsd_device_t _dev, bsd_device_t _child, int _type,
+typedef int bus_get_resource_t(device_t _dev, device_t _child, int _type,
                                int _rid, u_long *_startp, u_long *_countp);
 /**
  * @brief Describe a resource
@@ -520,7 +520,7 @@ typedef int bus_get_resource_t(bsd_device_t _dev, bsd_device_t _child, int _type
  *			of the resource range
  */
 
-static __inline int BUS_GET_RESOURCE(bsd_device_t _dev, bsd_device_t _child, int _type,
+static __inline int BUS_GET_RESOURCE(device_t _dev, device_t _child, int _type,
                                      int _rid, u_long *_startp, u_long *_countp)
 {
 	kobjop_t _m;
@@ -531,7 +531,7 @@ static __inline int BUS_GET_RESOURCE(bsd_device_t _dev, bsd_device_t _child, int
 /** @brief Unique descriptor for the BUS_DELETE_RESOURCE() method */
 extern struct kobjop_desc bus_delete_resource_desc;
 /** @brief A function implementing the BUS_DELETE_RESOURCE() method */
-typedef void bus_delete_resource_t(bsd_device_t _dev, bsd_device_t _child, int _type,
+typedef void bus_delete_resource_t(device_t _dev, device_t _child, int _type,
                                    int _rid);
 /**
  * @brief Delete a resource.
@@ -545,7 +545,7 @@ typedef void bus_delete_resource_t(bsd_device_t _dev, bsd_device_t _child, int _
  * @param _rid		the resource identifier
  */
 
-static __inline void BUS_DELETE_RESOURCE(bsd_device_t _dev, bsd_device_t _child,
+static __inline void BUS_DELETE_RESOURCE(device_t _dev, device_t _child,
                                          int _type, int _rid)
 {
 	kobjop_t _m;
@@ -556,8 +556,8 @@ static __inline void BUS_DELETE_RESOURCE(bsd_device_t _dev, bsd_device_t _child,
 /** @brief Unique descriptor for the BUS_GET_RESOURCE_LIST() method */
 extern struct kobjop_desc bus_get_resource_list_desc;
 /** @brief A function implementing the BUS_GET_RESOURCE_LIST() method */
-typedef struct resource_list * bus_get_resource_list_t(bsd_device_t _dev,
-                                                       bsd_device_t _child);
+typedef struct resource_list * bus_get_resource_list_t(device_t _dev,
+                                                       device_t _child);
 /**
  * @brief Return a struct resource_list.
  *
@@ -569,8 +569,8 @@ typedef struct resource_list * bus_get_resource_list_t(bsd_device_t _dev,
  * @param _child	the device which owns the resource list
  */
 
-static __inline struct resource_list * BUS_GET_RESOURCE_LIST(bsd_device_t _dev,
-                                                             bsd_device_t _child)
+static __inline struct resource_list * BUS_GET_RESOURCE_LIST(device_t _dev,
+                                                             device_t _child)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)_dev)->ops,bus_get_resource_list);
@@ -580,7 +580,7 @@ static __inline struct resource_list * BUS_GET_RESOURCE_LIST(bsd_device_t _dev,
 /** @brief Unique descriptor for the BUS_CHILD_PRESENT() method */
 extern struct kobjop_desc bus_child_present_desc;
 /** @brief A function implementing the BUS_CHILD_PRESENT() method */
-typedef int bus_child_present_t(bsd_device_t _dev, bsd_device_t _child);
+typedef int bus_child_present_t(device_t _dev, device_t _child);
 /**
  * @brief Is the hardware described by @p _child still attached to the
  * system?
@@ -597,7 +597,7 @@ typedef int bus_child_present_t(bsd_device_t _dev, bsd_device_t _child);
  * @param _child	the device which is being examined
  */
 
-static __inline int BUS_CHILD_PRESENT(bsd_device_t _dev, bsd_device_t _child)
+static __inline int BUS_CHILD_PRESENT(device_t _dev, device_t _child)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)_dev)->ops,bus_child_present);
@@ -607,8 +607,8 @@ static __inline int BUS_CHILD_PRESENT(bsd_device_t _dev, bsd_device_t _child)
 /** @brief Unique descriptor for the BUS_CHILD_PNPINFO_STR() method */
 extern struct kobjop_desc bus_child_pnpinfo_str_desc;
 /** @brief A function implementing the BUS_CHILD_PNPINFO_STR() method */
-typedef int bus_child_pnpinfo_str_t(bsd_device_t _dev, bsd_device_t _child, char *_buf,
-                                    bsd_size_t _buflen);
+typedef int bus_child_pnpinfo_str_t(device_t _dev, device_t _child, char *_buf,
+                                    size_t _buflen);
 /**
  * @brief Returns the pnp info for this device.
  *
@@ -622,8 +622,8 @@ typedef int bus_child_pnpinfo_str_t(bsd_device_t _dev, bsd_device_t _child, char
  * @param _buflen	the size of the buffer pointed to by @p _buf
  */
 
-static __inline int BUS_CHILD_PNPINFO_STR(bsd_device_t _dev, bsd_device_t _child,
-                                          char *_buf, bsd_size_t _buflen)
+static __inline int BUS_CHILD_PNPINFO_STR(device_t _dev, device_t _child,
+                                          char *_buf, size_t _buflen)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)_dev)->ops,bus_child_pnpinfo_str);
@@ -633,8 +633,8 @@ static __inline int BUS_CHILD_PNPINFO_STR(bsd_device_t _dev, bsd_device_t _child
 /** @brief Unique descriptor for the BUS_CHILD_LOCATION_STR() method */
 extern struct kobjop_desc bus_child_location_str_desc;
 /** @brief A function implementing the BUS_CHILD_LOCATION_STR() method */
-typedef int bus_child_location_str_t(bsd_device_t _dev, bsd_device_t _child, char *_buf,
-                                     bsd_size_t _buflen);
+typedef int bus_child_location_str_t(device_t _dev, device_t _child, char *_buf,
+                                     size_t _buflen);
 /**
  * @brief Returns the location for this device.
  *
@@ -648,8 +648,8 @@ typedef int bus_child_location_str_t(bsd_device_t _dev, bsd_device_t _child, cha
  * @param _buflen	the size of the buffer pointed to by @p _buf
  */
 
-static __inline int BUS_CHILD_LOCATION_STR(bsd_device_t _dev, bsd_device_t _child,
-                                           char *_buf, bsd_size_t _buflen)
+static __inline int BUS_CHILD_LOCATION_STR(device_t _dev, device_t _child,
+                                           char *_buf, size_t _buflen)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)_dev)->ops,bus_child_location_str);
@@ -659,7 +659,7 @@ static __inline int BUS_CHILD_LOCATION_STR(bsd_device_t _dev, bsd_device_t _chil
 /** @brief Unique descriptor for the BUS_BIND_INTR() method */
 extern struct kobjop_desc bus_bind_intr_desc;
 /** @brief A function implementing the BUS_BIND_INTR() method */
-typedef int bus_bind_intr_t(bsd_device_t _dev, bsd_device_t _child,
+typedef int bus_bind_intr_t(device_t _dev, device_t _child,
                             struct resource *_irq, int _cpu);
 /**
  * @brief Allow drivers to request that an interrupt be bound to a specific
@@ -671,7 +671,7 @@ typedef int bus_bind_intr_t(bsd_device_t _dev, bsd_device_t _child,
  * @param _cpu		the CPU to bind the interrupt to
  */
 
-static __inline int BUS_BIND_INTR(bsd_device_t _dev, bsd_device_t _child,
+static __inline int BUS_BIND_INTR(device_t _dev, device_t _child,
                                   struct resource *_irq, int _cpu)
 {
 	kobjop_t _m;
@@ -682,7 +682,7 @@ static __inline int BUS_BIND_INTR(bsd_device_t _dev, bsd_device_t _child,
 /** @brief Unique descriptor for the BUS_CONFIG_INTR() method */
 extern struct kobjop_desc bus_config_intr_desc;
 /** @brief A function implementing the BUS_CONFIG_INTR() method */
-typedef int bus_config_intr_t(bsd_device_t _dev, int _irq, enum intr_trigger _trig,
+typedef int bus_config_intr_t(device_t _dev, int _irq, enum intr_trigger _trig,
                               enum intr_polarity _pol);
 /**
  * @brief Allow (bus) drivers to specify the trigger mode and polarity
@@ -694,7 +694,7 @@ typedef int bus_config_intr_t(bsd_device_t _dev, int _irq, enum intr_trigger _tr
  * @param _pol		the interrupt polarity required
  */
 
-static __inline int BUS_CONFIG_INTR(bsd_device_t _dev, int _irq,
+static __inline int BUS_CONFIG_INTR(device_t _dev, int _irq,
                                     enum intr_trigger _trig,
                                     enum intr_polarity _pol)
 {
@@ -706,7 +706,7 @@ static __inline int BUS_CONFIG_INTR(bsd_device_t _dev, int _irq,
 /** @brief Unique descriptor for the BUS_DESCRIBE_INTR() method */
 extern struct kobjop_desc bus_describe_intr_desc;
 /** @brief A function implementing the BUS_DESCRIBE_INTR() method */
-typedef int bus_describe_intr_t(bsd_device_t _dev, bsd_device_t _child,
+typedef int bus_describe_intr_t(device_t _dev, device_t _child,
                                 struct resource *_irq, void *_cookie,
                                 const char *_descr);
 /**
@@ -721,7 +721,7 @@ typedef int bus_describe_intr_t(bsd_device_t _dev, bsd_device_t _child,
  * @param _descr	the description to associate with the interrupt
  */
 
-static __inline int BUS_DESCRIBE_INTR(bsd_device_t _dev, bsd_device_t _child,
+static __inline int BUS_DESCRIBE_INTR(device_t _dev, device_t _child,
                                       struct resource *_irq, void *_cookie,
                                       const char *_descr)
 {
@@ -733,7 +733,7 @@ static __inline int BUS_DESCRIBE_INTR(bsd_device_t _dev, bsd_device_t _child,
 /** @brief Unique descriptor for the BUS_HINTED_CHILD() method */
 extern struct kobjop_desc bus_hinted_child_desc;
 /** @brief A function implementing the BUS_HINTED_CHILD() method */
-typedef void bus_hinted_child_t(bsd_device_t _dev, const char *_dname, int _dunit);
+typedef void bus_hinted_child_t(device_t _dev, const char *_dname, int _dunit);
 /**
  * @brief Notify a (bus) driver about a child that the hints mechanism
  * believes it has discovered.
@@ -751,7 +751,7 @@ typedef void bus_hinted_child_t(bsd_device_t _dev, const char *_dname, int _duni
  * @param _dunit	the unit number of the device
  */
 
-static __inline void BUS_HINTED_CHILD(bsd_device_t _dev, const char *_dname,
+static __inline void BUS_HINTED_CHILD(device_t _dev, const char *_dname,
                                       int _dunit)
 {
 	kobjop_t _m;
@@ -762,7 +762,7 @@ static __inline void BUS_HINTED_CHILD(bsd_device_t _dev, const char *_dname,
 /** @brief Unique descriptor for the BUS_GET_DMA_TAG() method */
 extern struct kobjop_desc bus_get_dma_tag_desc;
 /** @brief A function implementing the BUS_GET_DMA_TAG() method */
-typedef bus_dma_tag_t bus_get_dma_tag_t(bsd_device_t _dev, bsd_device_t _child);
+typedef bus_dma_tag_t bus_get_dma_tag_t(device_t _dev, device_t _child);
 /**
  * @brief Returns bus_dma_tag_t for use w/ devices on the bus.
  *
@@ -770,7 +770,7 @@ typedef bus_dma_tag_t bus_get_dma_tag_t(bsd_device_t _dev, bsd_device_t _child);
  * @param _child	the device to which the tag will belong
  */
 
-static __inline bus_dma_tag_t BUS_GET_DMA_TAG(bsd_device_t _dev, bsd_device_t _child)
+static __inline bus_dma_tag_t BUS_GET_DMA_TAG(device_t _dev, device_t _child)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)_dev)->ops,bus_get_dma_tag);
@@ -780,7 +780,7 @@ static __inline bus_dma_tag_t BUS_GET_DMA_TAG(bsd_device_t _dev, bsd_device_t _c
 /** @brief Unique descriptor for the BUS_HINT_DEVICE_UNIT() method */
 extern struct kobjop_desc bus_hint_device_unit_desc;
 /** @brief A function implementing the BUS_HINT_DEVICE_UNIT() method */
-typedef void bus_hint_device_unit_t(bsd_device_t _dev, bsd_device_t _child,
+typedef void bus_hint_device_unit_t(device_t _dev, device_t _child,
                                     const char *_name, int *_unitp);
 /**
  * @brief Allow the bus to determine the unit number of a device.
@@ -791,7 +791,7 @@ typedef void bus_hint_device_unit_t(bsd_device_t _dev, bsd_device_t _child,
  * @param _unitp	a pointer to the device's new unit value
  */
 
-static __inline void BUS_HINT_DEVICE_UNIT(bsd_device_t _dev, bsd_device_t _child,
+static __inline void BUS_HINT_DEVICE_UNIT(device_t _dev, device_t _child,
                                           const char *_name, int *_unitp)
 {
 	kobjop_t _m;
@@ -802,14 +802,14 @@ static __inline void BUS_HINT_DEVICE_UNIT(bsd_device_t _dev, bsd_device_t _child
 /** @brief Unique descriptor for the BUS_NEW_PASS() method */
 extern struct kobjop_desc bus_new_pass_desc;
 /** @brief A function implementing the BUS_NEW_PASS() method */
-typedef void bus_new_pass_t(bsd_device_t _dev);
+typedef void bus_new_pass_t(device_t _dev);
 /**
  * @brief Notify a bus that the bus pass level has been changed
  *
  * @param _dev		the bus device
  */
 
-static __inline void BUS_NEW_PASS(bsd_device_t _dev)
+static __inline void BUS_NEW_PASS(device_t _dev)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)_dev)->ops,bus_new_pass);
@@ -819,7 +819,7 @@ static __inline void BUS_NEW_PASS(bsd_device_t _dev)
 /** @brief Unique descriptor for the BUS_REMAP_INTR() method */
 extern struct kobjop_desc bus_remap_intr_desc;
 /** @brief A function implementing the BUS_REMAP_INTR() method */
-typedef int bus_remap_intr_t(bsd_device_t _dev, bsd_device_t _child, u_int _irq);
+typedef int bus_remap_intr_t(device_t _dev, device_t _child, u_int _irq);
 /**
  * @brief Notify a bus that specified child's IRQ should be remapped.
  *
@@ -828,7 +828,7 @@ typedef int bus_remap_intr_t(bsd_device_t _dev, bsd_device_t _child, u_int _irq)
  * @param _irq		the irq number
  */
 
-static __inline int BUS_REMAP_INTR(bsd_device_t _dev, bsd_device_t _child, u_int _irq)
+static __inline int BUS_REMAP_INTR(device_t _dev, device_t _child, u_int _irq)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)_dev)->ops,bus_remap_intr);

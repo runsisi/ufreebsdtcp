@@ -60,7 +60,7 @@
  *	@(#)in_proto.c	8.1 (Berkeley) 6/10/93
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/netinet6/in6_proto.c 252021 2013-06-20 07:23:04Z hrs $");
 
 #include "opt_inet.h"
@@ -71,17 +71,17 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/netinet6/in6_proto.c 252021 2013-06-20 07:
 #include "opt_mpath.h"
 #include "opt_route.h"
 
-#include <sys/param.h>
-#include <sys/socket.h>
-#include <sys/socketvar.h>
-#include <sys/proc.h>
-#include <sys/protosw.h>
-#include <sys/jail.h>
-#include <sys/kernel.h>
-#include <sys/domain.h>
-#include <sys/mbuf.h>
-#include <sys/systm.h>
-#include <sys/sysctl.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_socket.h>
+#include <sys/bsd_socketvar.h>
+#include <sys/bsd_proc.h>
+#include <sys/bsd_protosw.h>
+#include <sys/bsd_jail.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_domain.h>
+#include <sys/bsd_mbuf.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_sysctl.h>
 
 #include <net/if.h>
 #include <net/radix.h>
@@ -135,7 +135,7 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/netinet6/in6_proto.c 252021 2013-06-20 07:
  */
 FEATURE(inet6, "Internet Protocol version 6");
 
-extern	struct bsd_domain inet6domain;
+extern	struct domain inet6domain;
 static	struct pr_usrreqs nousrreqs;
 
 #define PR_LISTEN	0
@@ -355,7 +355,7 @@ extern int in6_inithead(void **, int);
 extern int in6_detachhead(void **, int);
 #endif
 
-struct bsd_domain inet6domain = {
+struct domain inet6domain = {
 	.dom_family =		AF_INET6,
 	.dom_name =		"internet6",
 	.dom_protosw =		(struct protosw *)inet6sw,
@@ -369,8 +369,8 @@ struct bsd_domain inet6domain = {
 #ifdef VIMAGE
 	.dom_rtdetach =		in6_detachhead,
 #endif
-	.dom_rtoffset =		offsetof(struct bsd_sockaddr_in6, sin6_addr) << 3,
-	.dom_maxrtkey =		sizeof(struct bsd_sockaddr_in6),
+	.dom_rtoffset =		offsetof(struct sockaddr_in6, sin6_addr) << 3,
+	.dom_maxrtkey =		sizeof(struct sockaddr_in6),
 	.dom_ifattach =		in6_domifattach,
 	.dom_ifdetach =		in6_domifdetach
 };
@@ -415,7 +415,7 @@ VNET_DEFINE(int, ip6_mcast_pmtu) = 0;	/* enable pMTU discovery for multicast? */
 VNET_DEFINE(int, ip6_v6only) = 1;
 
 VNET_DEFINE(int, ip6_keepfaith) = 0;
-VNET_DEFINE(bsd_time_t, ip6_log_time) = (bsd_time_t)0L;
+VNET_DEFINE(time_t, ip6_log_time) = (time_t)0L;
 #ifdef IPSTEALTH
 VNET_DEFINE(int, ip6stealth) = 0;
 #endif
@@ -452,7 +452,7 @@ VNET_DEFINE(int, icmp6_nodeinfo_oldmcprefix) = 1;
 
 /* UDP on IP6 parameters */
 VNET_DEFINE(int, udp6_sendspace) = 9216;/* really max datagram size */
-VNET_DEFINE(int, udp6_recvspace) = 40 * (1024 + sizeof(struct bsd_sockaddr_in6));
+VNET_DEFINE(int, udp6_recvspace) = 40 * (1024 + sizeof(struct sockaddr_in6));
 					/* 40 1K datagrams */
 
 /*

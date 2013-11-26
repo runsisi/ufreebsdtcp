@@ -42,11 +42,11 @@
 #define	CPU_SETSIZE	CPU_MAXSIZE
 #endif
 
-#define	_NCPUBITS	(sizeof(long) * BSD_NBBY)	/* bits per mask */
-#define	_NCPUWORDS	bsd_howmany(CPU_SETSIZE, _NCPUBITS)
+#define	_NCPUBITS	(sizeof(long) * NBBY)	/* bits per mask */
+#define	_NCPUWORDS	howmany(CPU_SETSIZE, _NCPUBITS)
 
 typedef	struct _cpuset {
-	long	__bits[bsd_howmany(CPU_SETSIZE, _NCPUBITS)];
+	long	__bits[howmany(CPU_SETSIZE, _NCPUBITS)];
 } cpuset_t;
 
 #endif /* !_SYS__CPUSET_H_ */

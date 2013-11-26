@@ -74,25 +74,72 @@
  */
 #define	MTX_DESTROYED	(MTX_CONTESTED | MTX_UNOWNED)
 
-#define	mtx_trylock_flags_(m, opts, file, line)
+/*
+ * Prototypes
+ *
+ * NOTE: Functions prepended with `_' (underscore) are exported to other parts
+ *	 of the kernel via macros, thus allowing us to use the cpp LOCK_FILE
+ *	 and LOCK_LINE. These functions should not be called directly by any
+ *	 code using the API. Their macros cover their functionality.
+ *	 Functions with a `_' suffix are the entrypoint for the common
+ *	 KPI covering both compat shims and fast path case.  These can be
+ *	 used by consumers willing to pass options, file and line
+ *	 informations, in an option-independent way.
+ *
+ * [See below for descriptions]
+ *
+ */
+void	mtx_init(struct mtx *m, const char *name, const char *type, int opts);
+void	mtx_destroy(struct mtx *m);
+void	mtx_sysinit(void *arg);
+void	mutex_init(void);
+void	_mtx_lock_sleep(struct mtx *m, uintptr_t tid, int opts,
+	    const char *file, int line);
+void	_mtx_unlock_sleep(struct mtx *m, int opts, const char *file, int line);
+#ifdef SMP
+void	_mtx_lock_spin(struct mtx *m, uintptr_t tid, int opts,
+	    const char *file, int line);
+#endif
+void	_mtx_unlock_spin(struct mtx *m, int opts, const char *file, int line);
+int	_mtx_trylock(struct mtx *m, int opts, const char *file, int line);
+void	_mtx_lock_flags(struct mtx *m, int opts, const char *file, int line);
+void	_mtx_unlock_flags(struct mtx *m, int opts, const char *file, int line);
+void	_mtx_lock_spin_flags(struct mtx *m, int opts, const char *file,
+	     int line);
+void	_mtx_unlock_spin_flags(struct mtx *m, int opts, const char *file,
+	     int line);
+#if defined(INVARIANTS) || defined(INVARIANT_SUPPORT)
+void	_mtx_assert(struct mtx *m, int what, const char *file, int line);
+#endif
+void	_thread_lock_flags(struct thread *, int, const char *, int);
 
-#define	thread_lock_flags_(tdp, opts, file, line)
-#define	thread_lock(tdp)
-#define	thread_lock_flags(tdp, opt)
-#define	thread_unlock(tdp)
+#define	mtx_trylock_flags_(m, opts, file, line)				\
+	_mtx_trylock((m), (opts), (file), (line))
+
+#define	thread_lock_flags_(tdp, opts, file, line)			\
+    _thread_lock_flags((tdp), (opts), (file), (line))
+#define	thread_lock(tdp)						\
+    _thread_lock_flags((tdp), 0, __FILE__, __LINE__)
+#define	thread_lock_flags(tdp, opt)					\
+    _thread_lock_flags((tdp), (opt), __FILE__, __LINE__)
+#define	thread_unlock(tdp)						\
+       mtx_unlock_spin((tdp)->td_lock)
 
 #define	mtx_recurse	lock_object.lo_data
 
 /* Very simple operations on mtx_lock. */
 
 /* Try to obtain mtx_lock once. */
-#define _mtx_obtain_lock(mp, tid)
+#define _mtx_obtain_lock(mp, tid)					\
+	atomic_cmpset_acq_ptr(&(mp)->mtx_lock, MTX_UNOWNED, (tid))
 
 /* Try to release mtx_lock if it is unrecursed and uncontested. */
-#define _mtx_release_lock(mp, tid)
+#define _mtx_release_lock(mp, tid)					\
+	atomic_cmpset_rel_ptr(&(mp)->mtx_lock, (tid), MTX_UNOWNED)
 
 /* Release mtx_lock quickly, assuming we own it. */
-#define _mtx_release_lock_quick(mp)
+#define _mtx_release_lock_quick(mp)					\
+	atomic_store_rel_ptr(&(mp)->mtx_lock, MTX_UNOWNED)
 
 /*
  * Full lock operations that are suitable to be inlined in non-debug
@@ -101,7 +148,15 @@
  */
 
 /* Lock a normal mutex. */
-#define __mtx_lock(mp, tid, opts, file, line)
+#define __mtx_lock(mp, tid, opts, file, line) do {			\
+	uintptr_t _tid = (uintptr_t)(tid);				\
+									\
+	if (!_mtx_obtain_lock((mp), _tid))				\
+		_mtx_lock_sleep((mp), _tid, (opts), (file), (line));	\
+	else								\
+              	LOCKSTAT_PROFILE_OBTAIN_LOCK_SUCCESS(LS_MTX_LOCK_ACQUIRE, \
+		    mp, 0, 0, (file), (line));				\
+} while (0)
 
 /*
  * Lock a spin mutex.  For spinlocks, we handle recursion inline (it
@@ -109,10 +164,41 @@
  * some architectures).  Since spin locks are not _too_ common,
  * inlining this code is not too big a deal.
  */
-#define __mtx_lock_spin(mp, tid, opts, file, line)
+#ifdef SMP
+#define __mtx_lock_spin(mp, tid, opts, file, line) do {			\
+	uintptr_t _tid = (uintptr_t)(tid);				\
+									\
+	spinlock_enter();						\
+	if (!_mtx_obtain_lock((mp), _tid)) {				\
+		if ((mp)->mtx_lock == _tid)				\
+			(mp)->mtx_recurse++;				\
+		else							\
+			_mtx_lock_spin((mp), _tid, (opts), (file), (line)); \
+	} else 								\
+              	LOCKSTAT_PROFILE_OBTAIN_LOCK_SUCCESS(LS_MTX_SPIN_LOCK_ACQUIRE, \
+		    mp, 0, 0, (file), (line));				\
+} while (0)
+#else /* SMP */
+#define __mtx_lock_spin(mp, tid, opts, file, line) do {			\
+	uintptr_t _tid = (uintptr_t)(tid);				\
+									\
+	spinlock_enter();						\
+	if ((mp)->mtx_lock == _tid)					\
+		(mp)->mtx_recurse++;					\
+	else {								\
+		KASSERT((mp)->mtx_lock == MTX_UNOWNED, ("corrupt spinlock")); \
+		(mp)->mtx_lock = _tid;					\
+	}								\
+} while (0)
+#endif /* SMP */
 
 /* Unlock a normal mutex. */
-#define __mtx_unlock(mp, tid, opts, file, line)
+#define __mtx_unlock(mp, tid, opts, file, line) do {			\
+	uintptr_t _tid = (uintptr_t)(tid);				\
+									\
+	if (!_mtx_release_lock((mp), _tid))				\
+		_mtx_unlock_sleep((mp), (opts), (file), (line));	\
+} while (0)
 
 /*
  * Unlock a spin mutex.  For spinlocks, we can handle everything
@@ -124,8 +210,29 @@
  * spin lock, we need to always perform a matching spinlock_exit() when
  * releasing a spin lock.  This includes the recursion cases.
  */
-
-#define __mtx_unlock_spin(mp)
+#ifdef SMP
+#define __mtx_unlock_spin(mp) do {					\
+	if (mtx_recursed((mp)))						\
+		(mp)->mtx_recurse--;					\
+	else {								\
+		LOCKSTAT_PROFILE_RELEASE_LOCK(LS_MTX_SPIN_UNLOCK_RELEASE, \
+			mp);						\
+		_mtx_release_lock_quick((mp));				\
+	}                                                               \
+	spinlock_exit();				                \
+} while (0)
+#else /* SMP */
+#define __mtx_unlock_spin(mp) do {					\
+	if (mtx_recursed((mp)))						\
+		(mp)->mtx_recurse--;					\
+	else {								\
+		LOCKSTAT_PROFILE_RELEASE_LOCK(LS_MTX_SPIN_UNLOCK_RELEASE, \
+			mp);						\
+		(mp)->mtx_lock = MTX_UNOWNED;				\
+	}                                                               \
+	spinlock_exit();						\
+} while (0)
+#endif /* SMP */
 
 /*
  * Exported lock manipulation interface.
@@ -158,11 +265,11 @@
  *
  * mtx_recursed(m) returns non-zero if the lock `m' is presently recursed.
  */ 
-#define mtx_lock(m)
-#define mtx_lock_spin(m)
-#define mtx_trylock(m)
-#define mtx_unlock(m)
-#define mtx_unlock_spin(m)
+#define mtx_lock(m)		mtx_lock_flags((m), 0)
+#define mtx_lock_spin(m)	mtx_lock_spin_flags((m), 0)
+#define mtx_trylock(m)		mtx_trylock_flags((m), 0)
+#define mtx_unlock(m)		mtx_unlock_flags((m), 0)
+#define mtx_unlock_spin(m)	mtx_unlock_spin_flags((m), 0)
 
 struct mtx_pool;
 
@@ -192,43 +299,59 @@ extern struct mtx_pool *mtxpool_sleep;
 #error LOCK_DEBUG not defined, include <sys/lock.h> before <sys/mutex.h>
 #endif
 #if LOCK_DEBUG > 0 || defined(MUTEX_NOINLINE)
-#define	mtx_lock_flags_(m, opts, file, line)
-#define	mtx_unlock_flags_(m, opts, file, line)
-#define	mtx_lock_spin_flags_(m, opts, file, line)
-#define	mtx_unlock_spin_flags_(m, opts, file, line)
+#define	mtx_lock_flags_(m, opts, file, line)				\
+	_mtx_lock_flags((m), (opts), (file), (line))
+#define	mtx_unlock_flags_(m, opts, file, line)				\
+	_mtx_unlock_flags((m), (opts), (file), (line))
+#define	mtx_lock_spin_flags_(m, opts, file, line)			\
+	_mtx_lock_spin_flags((m), (opts), (file), (line))
+#define	mtx_unlock_spin_flags_(m, opts, file, line)			\
+	_mtx_unlock_spin_flags((m), (opts), (file), (line))
 #else	/* LOCK_DEBUG == 0 && !MUTEX_NOINLINE */
-#define	mtx_lock_flags_(m, opts, file, line)
-#define	mtx_unlock_flags_(m, opts, file, line)
-#define	mtx_lock_spin_flags_(m, opts, file, line)
-#define	mtx_unlock_spin_flags_(m, opts, file, line)
+#define	mtx_lock_flags_(m, opts, file, line)				\
+	__mtx_lock((m), curthread, (opts), (file), (line))
+#define	mtx_unlock_flags_(m, opts, file, line)				\
+	__mtx_unlock((m), curthread, (opts), (file), (line))
+#define	mtx_lock_spin_flags_(m, opts, file, line)			\
+	__mtx_lock_spin((m), curthread, (opts), (file), (line))
+#define	mtx_unlock_spin_flags_(m, opts, file, line)			\
+	__mtx_unlock_spin((m))
 #endif	/* LOCK_DEBUG > 0 || MUTEX_NOINLINE */
 
 #ifdef INVARIANTS
-#define	mtx_assert_(m, what, file, line)
+#define	mtx_assert_(m, what, file, line)				\
+	_mtx_assert((m), (what), (file), (line))
 
-#define GIANT_REQUIRED
+#define GIANT_REQUIRED	mtx_assert_(&Giant, MA_OWNED, __FILE__, __LINE__)
 
 #else	/* INVARIANTS */
 #define mtx_assert_(m, what, file, line)	(void)0
 #define GIANT_REQUIRED
 #endif	/* INVARIANTS */
 
-#define	mtx_lock_flags(m, opts)
-#define	mtx_unlock_flags(m, opts)
-#define	mtx_lock_spin_flags(m, opts)
-#define	mtx_unlock_spin_flags(m, opts)
-#define mtx_trylock_flags(m, opts)
-#define	mtx_assert(m, what)
+#define	mtx_lock_flags(m, opts)						\
+	mtx_lock_flags_((m), (opts), LOCK_FILE, LOCK_LINE)
+#define	mtx_unlock_flags(m, opts)					\
+	mtx_unlock_flags_((m), (opts), LOCK_FILE, LOCK_LINE)
+#define	mtx_lock_spin_flags(m, opts)					\
+	mtx_lock_spin_flags_((m), (opts), LOCK_FILE, LOCK_LINE)
+#define	mtx_unlock_spin_flags(m, opts)					\
+	mtx_unlock_spin_flags_((m), (opts), LOCK_FILE, LOCK_LINE)
+#define mtx_trylock_flags(m, opts)					\
+	mtx_trylock_flags_((m), (opts), LOCK_FILE, LOCK_LINE)
+#define	mtx_assert(m, what)						\
+	mtx_assert_((m), (what), __FILE__, __LINE__)
 
-#define	mtx_sleep(chan, mtx, pri, wmesg, timo)
+#define	mtx_sleep(chan, mtx, pri, wmesg, timo)				\
+	_sleep((chan), &(mtx)->lock_object, (pri), (wmesg), (timo))
 
-#define	mtx_initialized(m)
+#define	mtx_initialized(m)	lock_initalized(&(m)->lock_object)
 
-#define mtx_owned(m)	(1)
+#define mtx_owned(m)	(((m)->mtx_lock & ~MTX_FLAGMASK) == (uintptr_t)curthread)
 
-#define mtx_recursed(m)	(0)
+#define mtx_recursed(m)	((m)->mtx_recurse != 0)
 
-#define mtx_name(m)
+#define mtx_name(m)	((m)->lock_object.lo_name)
 
 /*
  * Global locks.
@@ -244,14 +367,36 @@ extern struct mtx blocked_lock;
  * The #ifndef is to allow lint-like tools to redefine DROP_GIANT.
  */
 #ifndef DROP_GIANT
-#define DROP_GIANT()
+#define DROP_GIANT()							\
+do {									\
+	int _giantcnt = 0;						\
+	WITNESS_SAVE_DECL(Giant);					\
+									\
+	if (mtx_owned(&Giant)) {					\
+		WITNESS_SAVE(&Giant.lock_object, Giant);		\
+		for (_giantcnt = 0; mtx_owned(&Giant) &&		\
+		    !SCHEDULER_STOPPED(); _giantcnt++)			\
+			mtx_unlock(&Giant);				\
+	}
 
-#define PICKUP_GIANT()
+#define PICKUP_GIANT()							\
+	PARTIAL_PICKUP_GIANT();						\
+} while (0)
 
-#define PARTIAL_PICKUP_GIANT()
+#define PARTIAL_PICKUP_GIANT()						\
+	mtx_assert(&Giant, MA_NOTOWNED);				\
+	if (_giantcnt > 0) {						\
+		while (_giantcnt--)					\
+			mtx_lock(&Giant);				\
+		WITNESS_RESTORE(&Giant.lock_object, Giant);		\
+	}
 #endif
 
-#define	UGAR(rval)
+#define	UGAR(rval) do {							\
+	int _val = (rval);						\
+	mtx_unlock(&Giant);						\
+	return (_val);							\
+} while (0)
 
 struct mtx_args {
 	struct mtx	*ma_mtx;
@@ -259,7 +404,16 @@ struct mtx_args {
 	int		 ma_opts;
 };
 
-#define	MTX_SYSINIT(name, mtx, desc, opts)
+#define	MTX_SYSINIT(name, mtx, desc, opts)				\
+	static struct mtx_args name##_args = {				\
+		(mtx),							\
+		(desc),							\
+		(opts)							\
+	};								\
+	SYSINIT(name##_mtx_sysinit, SI_SUB_LOCK, SI_ORDER_MIDDLE,	\
+	    mtx_sysinit, &name##_args);					\
+	SYSUNINIT(name##_mtx_sysuninit, SI_SUB_LOCK, SI_ORDER_MIDDLE,	\
+	    mtx_destroy, (mtx))
 
 /*
  * The INVARIANTS-enabled mtx_assert() functionality.
@@ -279,11 +433,6 @@ struct mtx_args {
  * Common lock type names.
  */
 #define	MTX_NETWORK_LOCK	"network driver"
-
-// runsisi AT hust.edu.cn @2013/11/20
-void mtx_init(struct mtx *m, const char *name, const char *type, int opts);
-void mtx_destroy(struct mtx *m);
-// ---------------------- @2013/11/20
 
 #endif	/* _KERNEL */
 #endif	/* _SYS_MUTEX_H_ */

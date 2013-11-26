@@ -54,7 +54,7 @@ struct kobj_method {
 #define KOBJ_CLASS_FIELDS						\
 	const char	*name;		/* class name */		\
 	kobj_method_t	*methods;	/* method table */		\
-	bsd_size_t		size;		/* object size */		\
+	size_t		size;		/* object size */		\
 	kobj_class_t	*baseclasses;	/* base classes */		\
 	u_int		refs;		/* reference count */		\
 	kobj_ops_t	ops		/* compiled method table */

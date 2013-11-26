@@ -95,8 +95,8 @@ struct vifctl {
 	u_char	vifc_flags;		/* VIFF_ flags defined below */
 	u_char	vifc_threshold;		/* min ttl required to forward on vif */
 	u_int	vifc_rate_limit;	/* max rate */
-	struct	bsd_in_addr vifc_lcl_addr;	/* local interface address */
-	struct	bsd_in_addr vifc_rmt_addr;	/* remote address (tunnels only) */
+	struct	in_addr vifc_lcl_addr;	/* local interface address */
+	struct	in_addr vifc_rmt_addr;	/* remote address (tunnels only) */
 };
 
 #define	VIFF_TUNNEL	0x1		/* no-op; retained for old source */
@@ -108,8 +108,8 @@ struct vifctl {
  * XXX if you change this, make sure to change struct mfcctl2 as well.
  */
 struct mfcctl {
-    struct bsd_in_addr  mfcc_origin;		/* ip origin of mcasts       */
-    struct bsd_in_addr  mfcc_mcastgrp;		/* multicast group associated*/
+    struct in_addr  mfcc_origin;		/* ip origin of mcasts       */
+    struct in_addr  mfcc_mcastgrp;		/* multicast group associated*/
     vifi_t	    mfcc_parent;		/* incoming vif              */
     u_char	    mfcc_ttls[MAXVIFS];		/* forwarding ttls on vifs   */
 };
@@ -120,14 +120,14 @@ struct mfcctl {
  */
 struct mfcctl2 {
 	/* the mfcctl fields */
-	struct bsd_in_addr	mfcc_origin;		/* ip origin of mcasts	     */
-	struct bsd_in_addr	mfcc_mcastgrp;		/* multicast group associated*/
+	struct in_addr	mfcc_origin;		/* ip origin of mcasts	     */
+	struct in_addr	mfcc_mcastgrp;		/* multicast group associated*/
 	vifi_t		mfcc_parent;		/* incoming vif		     */
 	u_char		mfcc_ttls[MAXVIFS];	/* forwarding ttls on vifs   */
 
 	/* extension fields */
-	bsd_uint8_t		mfcc_flags[MAXVIFS];	/* the MRT_MFC_FLAGS_* flags */
-	struct bsd_in_addr	mfcc_rp;		/* the RP address            */
+	uint8_t		mfcc_flags[MAXVIFS];	/* the MRT_MFC_FLAGS_* flags */
+	struct in_addr	mfcc_rp;		/* the RP address            */
 };
 /*
  * The advanced-API flags.
@@ -178,15 +178,15 @@ struct mfcctl2 {
  */
 
 struct bw_data {
-	struct bsd_timeval	b_time;
-	bsd_uint64_t	b_packets;
-	bsd_uint64_t	b_bytes;
+	struct timeval	b_time;
+	uint64_t	b_packets;
+	uint64_t	b_bytes;
 };
 
 struct bw_upcall {
-	struct bsd_in_addr	bu_src;			/* source address            */
-	struct bsd_in_addr	bu_dst;			/* destination address       */
-	bsd_uint32_t	bu_flags;		/* misc flags (see below)    */
+	struct in_addr	bu_src;			/* source address            */
+	struct in_addr	bu_dst;			/* destination address       */
+	uint32_t	bu_flags;		/* misc flags (see below)    */
 #define BW_UPCALL_UNIT_PACKETS   (1 << 0)	/* threshold (in packets)    */
 #define BW_UPCALL_UNIT_BYTES     (1 << 1)	/* threshold (in bytes)      */
 #define BW_UPCALL_GEQ            (1 << 2)	/* upcall if bw >= threshold */
@@ -230,8 +230,8 @@ struct mrtstat {
  * Argument structure used by mrouted to get src-grp pkt counts
  */
 struct sioc_sg_req {
-    struct bsd_in_addr src;
-    struct bsd_in_addr grp;
+    struct in_addr src;
+    struct in_addr grp;
     u_long pktcnt;
     u_long bytecnt;
     u_long wrong_if;
@@ -255,8 +255,8 @@ struct sioc_vif_req {
 struct vif {
     u_char		v_flags;	/* VIFF_ flags defined above         */
     u_char		v_threshold;	/* min ttl required to forward on vif*/
-    struct bsd_in_addr	v_lcl_addr;	/* local interface address           */
-    struct bsd_in_addr	v_rmt_addr;	/* remote address (tunnels only)     */
+    struct in_addr	v_lcl_addr;	/* local interface address           */
+    struct in_addr	v_rmt_addr;	/* remote address (tunnels only)     */
     struct ifnet       *v_ifp;		/* pointer to interface              */
     u_long		v_pkt_in;	/* # pkts in on interface            */
     u_long		v_pkt_out;	/* # pkts out on interface           */
@@ -270,17 +270,17 @@ struct vif {
  */
 struct mfc {
 	LIST_ENTRY(mfc)	mfc_hash;
-	struct bsd_in_addr	mfc_origin;		/* IP origin of mcasts	     */
-	struct bsd_in_addr  mfc_mcastgrp;		/* multicast group associated*/
+	struct in_addr	mfc_origin;		/* IP origin of mcasts	     */
+	struct in_addr  mfc_mcastgrp;		/* multicast group associated*/
 	vifi_t		mfc_parent;		/* incoming vif              */
 	u_char		mfc_ttls[MAXVIFS];	/* forwarding ttls on vifs   */
 	u_long		mfc_pkt_cnt;		/* pkt count for src-grp     */
 	u_long		mfc_byte_cnt;		/* byte count for src-grp    */
 	u_long		mfc_wrong_if;		/* wrong if for src-grp	     */
 	int		mfc_expire;		/* time to clean entry up    */
-	struct bsd_timeval	mfc_last_assert;	/* last time I sent an assert*/
-	bsd_uint8_t		mfc_flags[MAXVIFS];	/* the MRT_MFC_FLAGS_* flags */
-	struct bsd_in_addr	mfc_rp;			/* the RP address	     */
+	struct timeval	mfc_last_assert;	/* last time I sent an assert*/
+	uint8_t		mfc_flags[MAXVIFS];	/* the MRT_MFC_FLAGS_* flags */
+	struct in_addr	mfc_rp;			/* the RP address	     */
 	struct bw_meter	*mfc_bw_meter;		/* list of bandwidth meters  */
 	u_long		mfc_nstall;		/* # of packets awaiting mfc */
 	TAILQ_HEAD(, rtdetq) mfc_stall;		/* q of packets awaiting mfc */
@@ -292,8 +292,8 @@ struct mfc {
  * note the convenient similarity to an IP packet
  */
 struct igmpmsg {
-    bsd_uint32_t	    unused1;
-    bsd_uint32_t	    unused2;
+    uint32_t	    unused1;
+    uint32_t	    unused2;
     u_char	    im_msgtype;			/* what type of message	    */
 #define IGMPMSG_NOCACHE		1	/* no MFC in the kernel		    */
 #define IGMPMSG_WRONGVIF	2	/* packet came from wrong interface */
@@ -302,7 +302,7 @@ struct igmpmsg {
     u_char	    im_mbz;			/* must be zero		    */
     u_char	    im_vif;			/* vif rec'd on		    */
     u_char	    unused3;
-    struct bsd_in_addr  im_src, im_dst;
+    struct in_addr  im_src, im_dst;
 };
 
 #ifdef _KERNEL
@@ -325,9 +325,9 @@ struct rtdetq {
 struct bw_meter {
 	struct bw_meter	*bm_mfc_next;		/* next bw meter (same mfc)  */
 	struct bw_meter	*bm_time_next;		/* next bw meter (same time) */
-	bsd_uint32_t	bm_time_hash;		/* the time hash value       */
+	uint32_t	bm_time_hash;		/* the time hash value       */
 	struct mfc	*bm_mfc;		/* the corresponding mfc     */
-	bsd_uint32_t	bm_flags;		/* misc flags (see below)    */
+	uint32_t	bm_flags;		/* misc flags (see below)    */
 #define BW_METER_UNIT_PACKETS	(1 << 0)	/* threshold (in packets)    */
 #define BW_METER_UNIT_BYTES	(1 << 1)	/* threshold (in bytes)      */
 #define BW_METER_GEQ		(1 << 2)	/* upcall if bw >= threshold */
@@ -341,15 +341,15 @@ struct bw_meter {
 
 	struct bw_data	bm_threshold;		/* the upcall threshold	     */
 	struct bw_data	bm_measured;		/* the measured bw	     */
-	struct bsd_timeval	bm_start_time;		/* abs. time		     */
+	struct timeval	bm_start_time;		/* abs. time		     */
 };
 
 #ifdef _KERNEL
 
-struct bsd_sockopt;
+struct sockopt;
 
-extern int	(*ip_mrouter_set)(struct bsd_socket *, struct bsd_sockopt *);
-extern int	(*ip_mrouter_get)(struct bsd_socket *, struct bsd_sockopt *);
+extern int	(*ip_mrouter_set)(struct socket *, struct sockopt *);
+extern int	(*ip_mrouter_get)(struct socket *, struct sockopt *);
 extern int	(*ip_mrouter_done)(void);
 extern int	(*mrt_ioctl)(u_long, caddr_t, int);
 

@@ -66,7 +66,7 @@
  *	@(#)udp_usrreq.c	8.6 (Berkeley) 5/23/95
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/netinet6/udp6_usrreq.c 252692 2013-07-04 08:57:13Z ae $");
 
 #include "opt_inet.h"
@@ -74,21 +74,21 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/netinet6/udp6_usrreq.c 252692 2013-07-04 0
 #include "opt_ipfw.h"
 #include "opt_ipsec.h"
 
-#include <sys/param.h>
-#include <sys/jail.h>
-#include <sys/kernel.h>
-#include <sys/lock.h>
-#include <sys/mbuf.h>
-#include <sys/priv.h>
-#include <sys/proc.h>
-#include <sys/protosw.h>
-#include <sys/signalvar.h>
-#include <sys/socket.h>
-#include <sys/socketvar.h>
-#include <sys/sx.h>
-#include <sys/sysctl.h>
-#include <sys/syslog.h>
-#include <sys/systm.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_jail.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_lock.h>
+#include <sys/bsd_mbuf.h>
+#include <sys/bsd_priv.h>
+#include <sys/bsd_proc.h>
+#include <sys/bsd_protosw.h>
+#include <sys/bsd_signalvar.h>
+#include <sys/bsd_socket.h>
+#include <sys/bsd_socketvar.h>
+#include <sys/bsd_sx.h>
+#include <sys/bsd_sysctl.h>
+#include <sys/bsd_syslog.h>
+#include <sys/bsd_systm.h>
 
 #include <net/if.h>
 #include <net/if_types.h>
@@ -118,21 +118,21 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/netinet6/udp6_usrreq.c 252692 2013-07-04 0
 #include <netipsec/ipsec6.h>
 #endif /* IPSEC */
 
-#include <security/mac/mac_framework.h>
+//#include <security/mac/mac_framework.h>
 
 /*
  * UDP protocol implementation.
  * Per RFC 768, August, 1980.
  */
 
-extern struct bsd_protosw	bsd_inetsw[];
-static void		udp6_detach(struct bsd_socket *so);
+extern struct protosw	inetsw[];
+static void		udp6_detach(struct socket *so);
 
 static void
 udp6_append(struct inpcb *inp, struct mbuf *n, int off,
-    struct bsd_sockaddr_in6 *fromsa)
+    struct sockaddr_in6 *fromsa)
 {
-	struct bsd_socket *so;
+	struct socket *so;
 	struct mbuf *opts;
 
 	INP_LOCK_ASSERT(inp);
@@ -159,7 +159,7 @@ udp6_append(struct inpcb *inp, struct mbuf *n, int off,
 
 	so = inp->inp_socket;
 	SOCKBUF_LOCK(&so->so_rcv);
-	if (sbappendaddr_locked(&so->so_rcv, (struct bsd_sockaddr *)fromsa, n,
+	if (sbappendaddr_locked(&so->so_rcv, (struct sockaddr *)fromsa, n,
 	    opts) == 0) {
 		SOCKBUF_UNLOCK(&so->so_rcv);
 		m_freem(n);
@@ -181,9 +181,9 @@ udp6_input(struct mbuf **mp, int *offp, int proto)
 	struct udpcb *up;
 	int off = *offp;
 	int plen, ulen;
-	struct bsd_sockaddr_in6 fromsa;
+	struct sockaddr_in6 fromsa;
 	struct m_tag *fwd_tag;
-	bsd_uint16_t uh_sum;
+	uint16_t uh_sum;
 
 	ifp = m->m_pkthdr.rcvif;
 	ip6 = mtod(m, struct ip6_hdr *);
@@ -303,19 +303,19 @@ udp6_input(struct mbuf **mp, int *offp, int proto)
 			 */
 			imo = inp->in6p_moptions;
 			if (imo && IN6_IS_ADDR_MULTICAST(&ip6->ip6_dst)) {
-				struct bsd_sockaddr_in6	 mcaddr;
+				struct sockaddr_in6	 mcaddr;
 				int			 blocked;
 
 				INP_RLOCK(inp);
 
-				bzero(&mcaddr, sizeof(struct bsd_sockaddr_in6));
-				mcaddr.sin6_len = sizeof(struct bsd_sockaddr_in6);
+				bzero(&mcaddr, sizeof(struct sockaddr_in6));
+				mcaddr.sin6_len = sizeof(struct sockaddr_in6);
 				mcaddr.sin6_family = AF_INET6;
 				mcaddr.sin6_addr = ip6->ip6_dst;
 
 				blocked = im6o_mc_filter(imo, ifp,
-					(struct bsd_sockaddr *)&mcaddr,
-					(struct bsd_sockaddr *)&fromsa);
+					(struct sockaddr *)&mcaddr,
+					(struct sockaddr *)&fromsa);
 				if (blocked != MCAST_PASS) {
 					if (blocked == MCAST_NOTGMEMBER)
 						IP6STAT_INC(ip6s_notmember);
@@ -397,9 +397,9 @@ udp6_input(struct mbuf **mp, int *offp, int proto)
 	 */
 	if ((m->m_flags & M_IP6_NEXTHOP) &&
 	    (fwd_tag = m_tag_find(m, PACKET_TAG_IPFORWARD, NULL)) != NULL) {
-		struct bsd_sockaddr_in6 *next_hop6;
+		struct sockaddr_in6 *next_hop6;
 
-		next_hop6 = (struct bsd_sockaddr_in6 *)(fwd_tag + 1);
+		next_hop6 = (struct sockaddr_in6 *)(fwd_tag + 1);
 
 		/*
 		 * Transparently forwarded. Pretend to be the destination.
@@ -433,7 +433,7 @@ udp6_input(struct mbuf **mp, int *offp, int proto)
 			char ip6bufs[INET6_ADDRSTRLEN];
 			char ip6bufd[INET6_ADDRSTRLEN];
 
-			bsd_log(LOG_INFO,
+			log(LOG_INFO,
 			    "Connection attempt to UDP [%s]:%d from [%s]:%d\n",
 			    ip6_sprintf(ip6bufd, &ip6->ip6_dst),
 			    ntohs(uh->uh_dport),
@@ -476,23 +476,23 @@ badunlocked:
 }
 
 void
-udp6_ctlinput(int cmd, struct bsd_sockaddr *sa, void *d)
+udp6_ctlinput(int cmd, struct sockaddr *sa, void *d)
 {
 	struct udphdr uh;
 	struct ip6_hdr *ip6;
 	struct mbuf *m;
 	int off = 0;
 	struct ip6ctlparam *ip6cp = NULL;
-	const struct bsd_sockaddr_in6 *sa6_src = NULL;
+	const struct sockaddr_in6 *sa6_src = NULL;
 	void *cmdarg;
 	struct inpcb *(*notify)(struct inpcb *, int) = udp_notify;
 	struct udp_portonly {
-		bsd_uint16_t uh_sport;
-		bsd_uint16_t uh_dport;
+		u_int16_t uh_sport;
+		u_int16_t uh_dport;
 	} *uhp;
 
 	if (sa->sa_family != AF_INET6 ||
-	    sa->sa_len != sizeof(struct bsd_sockaddr_in6))
+	    sa->sa_len != sizeof(struct sockaddr_in6))
 		return;
 
 	if ((unsigned)cmd >= PRC_NCMDS)
@@ -516,7 +516,7 @@ udp6_ctlinput(int cmd, struct bsd_sockaddr *sa, void *d)
 		m = NULL;
 		ip6 = NULL;
 		cmdarg = NULL;
-		sa6_src = &bsd_sa6_any;
+		sa6_src = &sa6_any;
 	}
 
 	if (ip6) {
@@ -533,18 +533,18 @@ udp6_ctlinput(int cmd, struct bsd_sockaddr *sa, void *d)
 		m_copydata(m, off, sizeof(*uhp), (caddr_t)&uh);
 
 		(void) in6_pcbnotify(&V_udbinfo, sa, uh.uh_dport,
-		    (struct bsd_sockaddr *)ip6cp->ip6c_src, uh.uh_sport, cmd,
+		    (struct sockaddr *)ip6cp->ip6c_src, uh.uh_sport, cmd,
 		    cmdarg, notify);
 	} else
 		(void) in6_pcbnotify(&V_udbinfo, sa, 0,
-		    (const struct bsd_sockaddr *)sa6_src, 0, cmd, cmdarg, notify);
+		    (const struct sockaddr *)sa6_src, 0, cmd, cmdarg, notify);
 }
 
 static int
 udp6_getcred(SYSCTL_HANDLER_ARGS)
 {
 	struct xucred xuc;
-	struct bsd_sockaddr_in6 addrs[2];
+	struct sockaddr_in6 addrs[2];
 	struct inpcb *inp;
 	int error;
 
@@ -587,15 +587,15 @@ SYSCTL_PROC(_net_inet6_udp6, OID_AUTO, getcred, CTLTYPE_OPAQUE|CTLFLAG_RW, 0,
     0, udp6_getcred, "S,xucred", "Get the xucred of a UDP6 connection");
 
 static int
-udp6_output(struct inpcb *inp, struct mbuf *m, struct bsd_sockaddr *addr6,
+udp6_output(struct inpcb *inp, struct mbuf *m, struct sockaddr *addr6,
     struct mbuf *control, struct thread *td)
 {
-	bsd_uint32_t ulen = m->m_pkthdr.len;
-	bsd_uint32_t plen = sizeof(struct udphdr) + ulen;
+	u_int32_t ulen = m->m_pkthdr.len;
+	u_int32_t plen = sizeof(struct udphdr) + ulen;
 	struct ip6_hdr *ip6;
 	struct udphdr *udp6;
-	struct bsd_in6_addr *laddr, *faddr, in6a;
-	struct bsd_sockaddr_in6 *sin6 = NULL;
+	struct in6_addr *laddr, *faddr, in6a;
+	struct sockaddr_in6 *sin6 = NULL;
 	struct ifnet *oifp = NULL;
 	int scope_ambiguous = 0;
 	u_short fport;
@@ -603,14 +603,14 @@ udp6_output(struct inpcb *inp, struct mbuf *m, struct bsd_sockaddr *addr6,
 	struct ip6_pktopts *optp, opt;
 	int af = AF_INET6, hlen = sizeof(struct ip6_hdr);
 	int flags;
-	struct bsd_sockaddr_in6 tmp;
+	struct sockaddr_in6 tmp;
 
 	INP_WLOCK_ASSERT(inp);
 	INP_HASH_WLOCK_ASSERT(inp->inp_pcbinfo);
 
 	if (addr6) {
 		/* addr6 has been validated in udp6_send(). */
-		sin6 = (struct bsd_sockaddr_in6 *)addr6;
+		sin6 = (struct sockaddr_in6 *)addr6;
 
 		/* protect *sin6 from overwrites */
 		tmp = *sin6;
@@ -713,7 +713,7 @@ udp6_output(struct inpcb *inp, struct mbuf *m, struct bsd_sockaddr *addr6,
 		if (inp->inp_lport == 0 &&
 		    (error = in6_pcbsetport(laddr, inp, td->td_ucred)) != 0) {
 			/* Undo an address bind that may have occurred. */
-			inp->in6p_laddr = bsd_in6addr_any;
+			inp->in6p_laddr = in6addr_any;
 			goto release;
 		}
 	} else {
@@ -730,7 +730,7 @@ udp6_output(struct inpcb *inp, struct mbuf *m, struct bsd_sockaddr *addr6,
 				 * Such applications should be fixed,
 				 * so we bark here.
 				 */
-				bsd_log(LOG_INFO, "udp6_output: IPV6_V6ONLY "
+				log(LOG_INFO, "udp6_output: IPV6_V6ONLY "
 				    "option was set for a connected socket\n");
 				error = EINVAL;
 				goto release;
@@ -743,7 +743,7 @@ udp6_output(struct inpcb *inp, struct mbuf *m, struct bsd_sockaddr *addr6,
 	}
 
 	if (af == AF_INET)
-		hlen = sizeof(struct bsd_ip);
+		hlen = sizeof(struct ip);
 
 	/*
 	 * Calculate data length and get a mbuf
@@ -809,7 +809,7 @@ releaseopt:
 }
 
 static void
-udp6_abort(struct bsd_socket *so)
+udp6_abort(struct socket *so)
 {
 	struct inpcb *inp;
 
@@ -820,7 +820,7 @@ udp6_abort(struct bsd_socket *so)
 	if (inp->inp_vflag & INP_IPV4) {
 		struct pr_usrreqs *pru;
 
-		pru = bsd_inetsw[ip_protox[IPPROTO_UDP]].pr_usrreqs;
+		pru = inetsw[ip_protox[IPPROTO_UDP]].pr_usrreqs;
 		(*pru->pru_abort)(so);
 		return;
 	}
@@ -830,7 +830,7 @@ udp6_abort(struct bsd_socket *so)
 	if (!IN6_IS_ADDR_UNSPECIFIED(&inp->in6p_faddr)) {
 		INP_HASH_WLOCK(&V_udbinfo);
 		in6_pcbdisconnect(inp);
-		inp->in6p_laddr = bsd_in6addr_any;
+		inp->in6p_laddr = in6addr_any;
 		INP_HASH_WUNLOCK(&V_udbinfo);
 		soisdisconnected(so);
 	}
@@ -838,7 +838,7 @@ udp6_abort(struct bsd_socket *so)
 }
 
 static int
-udp6_attach(struct bsd_socket *so, int proto, struct thread *td)
+udp6_attach(struct socket *so, int proto, struct thread *td)
 {
 	struct inpcb *inp;
 	int error;
@@ -884,7 +884,7 @@ udp6_attach(struct bsd_socket *so, int proto, struct thread *td)
 }
 
 static int
-udp6_bind(struct bsd_socket *so, struct bsd_sockaddr *nam, struct thread *td)
+udp6_bind(struct socket *so, struct sockaddr *nam, struct thread *td)
 {
 	struct inpcb *inp;
 	int error;
@@ -897,20 +897,20 @@ udp6_bind(struct bsd_socket *so, struct bsd_sockaddr *nam, struct thread *td)
 	inp->inp_vflag &= ~INP_IPV4;
 	inp->inp_vflag |= INP_IPV6;
 	if ((inp->inp_flags & IN6P_IPV6_V6ONLY) == 0) {
-		struct bsd_sockaddr_in6 *sin6_p;
+		struct sockaddr_in6 *sin6_p;
 
-		sin6_p = (struct bsd_sockaddr_in6 *)nam;
+		sin6_p = (struct sockaddr_in6 *)nam;
 
 		if (IN6_IS_ADDR_UNSPECIFIED(&sin6_p->sin6_addr))
 			inp->inp_vflag |= INP_IPV4;
 #ifdef INET
 		else if (IN6_IS_ADDR_V4MAPPED(&sin6_p->sin6_addr)) {
-			struct bsd_sockaddr_in sin;
+			struct sockaddr_in sin;
 
 			in6_sin6_2_sin(&sin, sin6_p);
 			inp->inp_vflag |= INP_IPV4;
 			inp->inp_vflag &= ~INP_IPV6;
-			error = in_pcbbind(inp, (struct bsd_sockaddr *)&sin,
+			error = in_pcbbind(inp, (struct sockaddr *)&sin,
 			    td->td_ucred);
 			goto out;
 		}
@@ -927,7 +927,7 @@ out:
 }
 
 static void
-udp6_close(struct bsd_socket *so)
+udp6_close(struct socket *so)
 {
 	struct inpcb *inp;
 
@@ -938,7 +938,7 @@ udp6_close(struct bsd_socket *so)
 	if (inp->inp_vflag & INP_IPV4) {
 		struct pr_usrreqs *pru;
 
-		pru = bsd_inetsw[ip_protox[IPPROTO_UDP]].pr_usrreqs;
+		pru = inetsw[ip_protox[IPPROTO_UDP]].pr_usrreqs;
 		(*pru->pru_disconnect)(so);
 		return;
 	}
@@ -947,7 +947,7 @@ udp6_close(struct bsd_socket *so)
 	if (!IN6_IS_ADDR_UNSPECIFIED(&inp->in6p_faddr)) {
 		INP_HASH_WLOCK(&V_udbinfo);
 		in6_pcbdisconnect(inp);
-		inp->in6p_laddr = bsd_in6addr_any;
+		inp->in6p_laddr = in6addr_any;
 		INP_HASH_WUNLOCK(&V_udbinfo);
 		soisdisconnected(so);
 	}
@@ -955,14 +955,14 @@ udp6_close(struct bsd_socket *so)
 }
 
 static int
-udp6_connect(struct bsd_socket *so, struct bsd_sockaddr *nam, struct thread *td)
+udp6_connect(struct socket *so, struct sockaddr *nam, struct thread *td)
 {
 	struct inpcb *inp;
-	struct bsd_sockaddr_in6 *sin6;
+	struct sockaddr_in6 *sin6;
 	int error;
 
 	inp = sotoinpcb(so);
-	sin6 = (struct bsd_sockaddr_in6 *)nam;
+	sin6 = (struct sockaddr_in6 *)nam;
 	KASSERT(inp != NULL, ("udp6_connect: inp == NULL"));
 
 	/*
@@ -971,7 +971,7 @@ udp6_connect(struct bsd_socket *so, struct bsd_sockaddr *nam, struct thread *td)
 	INP_WLOCK(inp);
 #ifdef INET
 	if (IN6_IS_ADDR_V4MAPPED(&sin6->sin6_addr)) {
-		struct bsd_sockaddr_in sin;
+		struct sockaddr_in sin;
 
 		if ((inp->inp_flags & IN6P_IPV6_V6ONLY) != 0) {
 			error = EINVAL;
@@ -988,7 +988,7 @@ udp6_connect(struct bsd_socket *so, struct bsd_sockaddr *nam, struct thread *td)
 		if (error != 0)
 			goto out;
 		INP_HASH_WLOCK(&V_udbinfo);
-		error = in_pcbconnect(inp, (struct bsd_sockaddr *)&sin,
+		error = in_pcbconnect(inp, (struct sockaddr *)&sin,
 		    td->td_ucred);
 		INP_HASH_WUNLOCK(&V_udbinfo);
 		if (error == 0)
@@ -1016,7 +1016,7 @@ out:
 }
 
 static void
-udp6_detach(struct bsd_socket *so)
+udp6_detach(struct socket *so)
 {
 	struct inpcb *inp;
 	struct udpcb *up;
@@ -1035,7 +1035,7 @@ udp6_detach(struct bsd_socket *so)
 }
 
 static int
-udp6_disconnect(struct bsd_socket *so)
+udp6_disconnect(struct socket *so)
 {
 	struct inpcb *inp;
 	int error;
@@ -1047,7 +1047,7 @@ udp6_disconnect(struct bsd_socket *so)
 	if (inp->inp_vflag & INP_IPV4) {
 		struct pr_usrreqs *pru;
 
-		pru = bsd_inetsw[ip_protox[IPPROTO_UDP]].pr_usrreqs;
+		pru = inetsw[ip_protox[IPPROTO_UDP]].pr_usrreqs;
 		(void)(*pru->pru_disconnect)(so);
 		return (0);
 	}
@@ -1062,7 +1062,7 @@ udp6_disconnect(struct bsd_socket *so)
 
 	INP_HASH_WLOCK(&V_udbinfo);
 	in6_pcbdisconnect(inp);
-	inp->in6p_laddr = bsd_in6addr_any;
+	inp->in6p_laddr = in6addr_any;
 	INP_HASH_WUNLOCK(&V_udbinfo);
 	SOCK_LOCK(so);
 	so->so_state &= ~SS_ISCONNECTED;		/* XXX */
@@ -1073,8 +1073,8 @@ out:
 }
 
 static int
-udp6_send(struct bsd_socket *so, int flags, struct mbuf *m,
-    struct bsd_sockaddr *addr, struct mbuf *control, struct thread *td)
+udp6_send(struct socket *so, int flags, struct mbuf *m,
+    struct sockaddr *addr, struct mbuf *control, struct thread *td)
 {
 	struct inpcb *inp;
 	int error = 0;
@@ -1084,7 +1084,7 @@ udp6_send(struct bsd_socket *so, int flags, struct mbuf *m,
 
 	INP_WLOCK(inp);
 	if (addr) {
-		if (addr->sa_len != sizeof(struct bsd_sockaddr_in6)) {
+		if (addr->sa_len != sizeof(struct sockaddr_in6)) {
 			error = EINVAL;
 			goto bad;
 		}
@@ -1097,12 +1097,12 @@ udp6_send(struct bsd_socket *so, int flags, struct mbuf *m,
 #ifdef INET
 	if ((inp->inp_flags & IN6P_IPV6_V6ONLY) == 0) {
 		int hasv4addr;
-		struct bsd_sockaddr_in6 *sin6 = 0;
+		struct sockaddr_in6 *sin6 = 0;
 
 		if (addr == 0)
 			hasv4addr = (inp->inp_vflag & INP_IPV4);
 		else {
-			sin6 = (struct bsd_sockaddr_in6 *)addr;
+			sin6 = (struct sockaddr_in6 *)addr;
 			hasv4addr = IN6_IS_ADDR_V4MAPPED(&sin6->sin6_addr)
 			    ? 1 : 0;
 		}
@@ -1120,7 +1120,7 @@ udp6_send(struct bsd_socket *so, int flags, struct mbuf *m,
 			INP_WUNLOCK(inp);
 			if (sin6)
 				in6_sin6_2_sin_in_sock(addr);
-			pru = bsd_inetsw[ip_protox[IPPROTO_UDP]].pr_usrreqs;
+			pru = inetsw[ip_protox[IPPROTO_UDP]].pr_usrreqs;
 			/* addr will just be freed in sendit(). */
 			return ((*pru->pru_send)(so, flags, m, addr, control,
 			    td));

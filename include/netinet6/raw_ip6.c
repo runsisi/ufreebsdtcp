@@ -59,26 +59,26 @@
  *	@(#)raw_ip.c	8.2 (Berkeley) 1/4/94
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/netinet6/raw_ip6.c 252692 2013-07-04 08:57:13Z ae $");
 
 #include "opt_ipsec.h"
 #include "opt_inet6.h"
 
-#include <sys/param.h>
-#include <sys/errno.h>
-#include <sys/jail.h>
-#include <sys/lock.h>
-#include <sys/malloc.h>
-#include <sys/mbuf.h>
-#include <sys/priv.h>
-#include <sys/proc.h>
-#include <sys/protosw.h>
-#include <sys/signalvar.h>
-#include <sys/socket.h>
-#include <sys/socketvar.h>
-#include <sys/sx.h>
-#include <sys/syslog.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_errno.h>
+#include <sys/bsd_jail.h>
+#include <sys/bsd_lock.h>
+#include <sys/bsd_malloc.h>
+#include <sys/bsd_mbuf.h>
+#include <sys/bsd_priv.h>
+#include <sys/bsd_proc.h>
+#include <sys/bsd_protosw.h>
+#include <sys/bsd_signalvar.h>
+#include <sys/bsd_socket.h>
+#include <sys/bsd_socketvar.h>
+#include <sys/bsd_sx.h>
+#include <sys/bsd_syslog.h>
 
 #include <net/if.h>
 #include <net/if_types.h>
@@ -107,7 +107,7 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/netinet6/raw_ip6.c 252692 2013-07-04 08:57
 #include <netipsec/ipsec6.h>
 #endif /* IPSEC */
 
-#include <machine/stdarg.h>
+#include <machine/bsd_stdarg.h>
 
 #define	satosin6(sa)	((struct sockaddr_in6 *)(sa))
 #define	ifatoia6(ifa)	((struct in6_ifaddr *)(ifa))
@@ -134,13 +134,13 @@ VNET_DEFINE(struct rip6stat, rip6stat);
 /*
  * The socket used to communicate with the multicast routing daemon.
  */
-VNET_DEFINE(struct bsd_socket *, ip6_mrouter);
+VNET_DEFINE(struct socket *, ip6_mrouter);
 
 /*
  * The various mrouter functions.
  */
-int (*ip6_mrouter_set)(struct bsd_socket *, struct bsd_sockopt *);
-int (*ip6_mrouter_get)(struct bsd_socket *, struct bsd_sockopt *);
+int (*ip6_mrouter_set)(struct socket *, struct sockopt *);
+int (*ip6_mrouter_get)(struct socket *, struct sockopt *);
 int (*ip6_mrouter_done)(void);
 int (*ip6_mforward)(struct ip6_hdr *, struct ifnet *, struct mbuf *);
 int (*mrt6_ioctl)(u_long, caddr_t);
@@ -158,7 +158,7 @@ rip6_input(struct mbuf **mp, int *offp, int proto)
 	register struct inpcb *in6p;
 	struct inpcb *last = 0;
 	struct mbuf *opts = NULL;
-	struct bsd_sockaddr_in6 fromsa;
+	struct sockaddr_in6 fromsa;
 
 	RIP6STAT_INC(rip6s_ipackets);
 
@@ -236,17 +236,17 @@ rip6_input(struct mbuf **mp, int *offp, int proto)
 
 			blocked = MCAST_PASS;
 			if ((m->m_flags & M_RTALERT_MLD) == 0) {
-				struct bsd_sockaddr_in6 mcaddr;
+				struct sockaddr_in6 mcaddr;
 
-				bzero(&mcaddr, sizeof(struct bsd_sockaddr_in6));
-				mcaddr.sin6_len = sizeof(struct bsd_sockaddr_in6);
+				bzero(&mcaddr, sizeof(struct sockaddr_in6));
+				mcaddr.sin6_len = sizeof(struct sockaddr_in6);
 				mcaddr.sin6_family = AF_INET6;
 				mcaddr.sin6_addr = ip6->ip6_dst;
 
 				blocked = im6o_mc_filter(in6p->in6p_moptions,
 				    ifp,
-				    (struct bsd_sockaddr *)&mcaddr,
-				    (struct bsd_sockaddr *)&fromsa);
+				    (struct sockaddr *)&mcaddr,
+				    (struct sockaddr *)&fromsa);
 			}
 			if (blocked != MCAST_PASS) {
 				IP6STAT_INC(ip6s_notmember);
@@ -274,7 +274,7 @@ rip6_input(struct mbuf **mp, int *offp, int proto)
 				/* strip intermediate headers */
 				m_adj(n, *offp);
 				if (sbappendaddr(&last->inp_socket->so_rcv,
-						(struct bsd_sockaddr *)&fromsa,
+						(struct sockaddr *)&fromsa,
 						 n, opts) == 0) {
 					m_freem(n);
 					if (opts)
@@ -308,7 +308,7 @@ rip6_input(struct mbuf **mp, int *offp, int proto)
 		/* Strip intermediate headers. */
 		m_adj(m, *offp);
 		if (sbappendaddr(&last->inp_socket->so_rcv,
-		    (struct bsd_sockaddr *)&fromsa, m, opts) == 0) {
+		    (struct sockaddr *)&fromsa, m, opts) == 0) {
 			m_freem(m);
 			if (opts)
 				m_freem(opts);
@@ -334,18 +334,18 @@ rip6_input(struct mbuf **mp, int *offp, int proto)
 }
 
 void
-rip6_ctlinput(int cmd, struct bsd_sockaddr *sa, void *d)
+rip6_ctlinput(int cmd, struct sockaddr *sa, void *d)
 {
 	struct ip6_hdr *ip6;
 	struct mbuf *m;
 	int off = 0;
 	struct ip6ctlparam *ip6cp = NULL;
-	const struct bsd_sockaddr_in6 *sa6_src = NULL;
+	const struct sockaddr_in6 *sa6_src = NULL;
 	void *cmdarg;
 	struct inpcb *(*notify)(struct inpcb *, int) = in6_rtchange;
 
 	if (sa->sa_family != AF_INET6 ||
-	    sa->sa_len != sizeof(struct bsd_sockaddr_in6))
+	    sa->sa_len != sizeof(struct sockaddr_in6))
 		return;
 
 	if ((unsigned)cmd >= PRC_NCMDS)
@@ -371,11 +371,11 @@ rip6_ctlinput(int cmd, struct bsd_sockaddr *sa, void *d)
 		m = NULL;
 		ip6 = NULL;
 		cmdarg = NULL;
-		sa6_src = &bsd_sa6_any;
+		sa6_src = &sa6_any;
 	}
 
 	(void) in6_pcbnotify(&V_ripcbinfo, sa, 0,
-	    (const struct bsd_sockaddr *)sa6_src, 0, cmd, cmdarg, notify);
+	    (const struct sockaddr *)sa6_src, 0, cmd, cmdarg, notify);
 }
 
 /*
@@ -393,9 +393,9 @@ rip6_output(m, va_alist)
 {
 	struct mbuf *control;
 	struct m_tag *mtag;
-	struct bsd_socket *so;
-	struct bsd_sockaddr_in6 *dstsock;
-	struct bsd_in6_addr *dst;
+	struct socket *so;
+	struct sockaddr_in6 *dstsock;
+	struct in6_addr *dst;
 	struct ip6_hdr *ip6;
 	struct inpcb *in6p;
 	u_int	plen = m->m_pkthdr.len;
@@ -405,12 +405,12 @@ rip6_output(m, va_alist)
 	int type = 0, code = 0;		/* for ICMPv6 output statistics only */
 	int scope_ambiguous = 0;
 	int use_defzone = 0;
-	struct bsd_in6_addr in6a;
+	struct in6_addr in6a;
 	va_list ap;
 
 	va_start(ap, m);
-	so = va_arg(ap, struct bsd_socket *);
-	dstsock = va_arg(ap, struct bsd_sockaddr_in6 *);
+	so = va_arg(ap, struct socket *);
+	dstsock = va_arg(ap, struct sockaddr_in6 *);
 	control = va_arg(ap, struct mbuf *);
 	va_end(ap);
 
@@ -511,7 +511,7 @@ rip6_output(m, va_alist)
 	    in6p->in6p_cksum != -1) {
 		struct mbuf *n;
 		int off;
-		bsd_uint16_t *p;
+		u_int16_t *p;
 
 		/* Compute checksum. */
 		if (so->so_proto->pr_protocol == IPPROTO_ICMPV6)
@@ -531,7 +531,7 @@ rip6_output(m, va_alist)
 		}
 		if (!n)
 			goto bad;
-		p = (bsd_uint16_t *)(mtod(n, caddr_t) + off);
+		p = (u_int16_t *)(mtod(n, caddr_t) + off);
 		*p = 0;
 		*p = in6_cksum(m, ip6->ip6_nxt, sizeof(*ip6), plen);
 	}
@@ -580,7 +580,7 @@ rip6_output(m, va_alist)
  * Raw IPv6 socket option processing.
  */
 int
-rip6_ctloutput(struct bsd_socket *so, struct bsd_sockopt *sopt)
+rip6_ctloutput(struct socket *so, struct sockopt *sopt)
 {
 	struct inpcb *inp;
 	int error;
@@ -653,7 +653,7 @@ rip6_ctloutput(struct bsd_socket *so, struct bsd_sockopt *sopt)
 }
 
 static int
-rip6_attach(struct bsd_socket *so, int proto, struct thread *td)
+rip6_attach(struct socket *so, int proto, struct thread *td)
 {
 	struct inpcb *inp;
 	struct icmp6_filter *filter;
@@ -668,14 +668,14 @@ rip6_attach(struct bsd_socket *so, int proto, struct thread *td)
 	error = soreserve(so, rip_sendspace, rip_recvspace);
 	if (error)
 		return (error);
-	filter = bsd_malloc(sizeof(struct icmp6_filter), M_PCB, M_NOWAIT);
+	filter = malloc(sizeof(struct icmp6_filter), M_PCB, M_NOWAIT);
 	if (filter == NULL)
 		return (ENOMEM);
 	INP_INFO_WLOCK(&V_ripcbinfo);
 	error = in_pcballoc(so, &V_ripcbinfo);
 	if (error) {
 		INP_INFO_WUNLOCK(&V_ripcbinfo);
-		bsd_free(filter, M_PCB);
+		free(filter, M_PCB);
 		return (error);
 	}
 	inp = (struct inpcb *)so->so_pcb;
@@ -691,7 +691,7 @@ rip6_attach(struct bsd_socket *so, int proto, struct thread *td)
 }
 
 static void
-rip6_detach(struct bsd_socket *so)
+rip6_detach(struct socket *so)
 {
 	struct inpcb *inp;
 
@@ -703,7 +703,7 @@ rip6_detach(struct bsd_socket *so)
 	/* xxx: RSVP */
 	INP_INFO_WLOCK(&V_ripcbinfo);
 	INP_WLOCK(inp);
-	bsd_free(inp->in6p_icmp6filt, M_PCB);
+	free(inp->in6p_icmp6filt, M_PCB);
 	in_pcbdetach(inp);
 	in_pcbfree(inp);
 	INP_INFO_WUNLOCK(&V_ripcbinfo);
@@ -711,7 +711,7 @@ rip6_detach(struct bsd_socket *so)
 
 /* XXXRW: This can't ever be called. */
 static void
-rip6_abort(struct bsd_socket *so)
+rip6_abort(struct socket *so)
 {
 	struct inpcb *inp;
 
@@ -722,7 +722,7 @@ rip6_abort(struct bsd_socket *so)
 }
 
 static void
-rip6_close(struct bsd_socket *so)
+rip6_close(struct socket *so)
 {
 	struct inpcb *inp;
 
@@ -733,7 +733,7 @@ rip6_close(struct bsd_socket *so)
 }
 
 static int
-rip6_disconnect(struct bsd_socket *so)
+rip6_disconnect(struct socket *so)
 {
 	struct inpcb *inp;
 
@@ -742,16 +742,16 @@ rip6_disconnect(struct bsd_socket *so)
 
 	if ((so->so_state & SS_ISCONNECTED) == 0)
 		return (ENOTCONN);
-	inp->in6p_faddr = bsd_in6addr_any;
+	inp->in6p_faddr = in6addr_any;
 	rip6_abort(so);
 	return (0);
 }
 
 static int
-rip6_bind(struct bsd_socket *so, struct bsd_sockaddr *nam, struct thread *td)
+rip6_bind(struct socket *so, struct sockaddr *nam, struct thread *td)
 {
 	struct inpcb *inp;
-	struct bsd_sockaddr_in6 *addr = (struct bsd_sockaddr_in6 *)nam;
+	struct sockaddr_in6 *addr = (struct sockaddr_in6 *)nam;
 	struct ifaddr *ifa = NULL;
 	int error = 0;
 
@@ -768,7 +768,7 @@ rip6_bind(struct bsd_socket *so, struct bsd_sockaddr *nam, struct thread *td)
 		return (error);
 
 	if (!IN6_IS_ADDR_UNSPECIFIED(&addr->sin6_addr) &&
-	    (ifa = ifa_ifwithaddr((struct bsd_sockaddr *)addr)) == NULL)
+	    (ifa = ifa_ifwithaddr((struct sockaddr *)addr)) == NULL)
 		return (EADDRNOTAVAIL);
 	if (ifa != NULL &&
 	    ((struct in6_ifaddr *)ifa)->ia6_flags &
@@ -788,11 +788,11 @@ rip6_bind(struct bsd_socket *so, struct bsd_sockaddr *nam, struct thread *td)
 }
 
 static int
-rip6_connect(struct bsd_socket *so, struct bsd_sockaddr *nam, struct thread *td)
+rip6_connect(struct socket *so, struct sockaddr *nam, struct thread *td)
 {
 	struct inpcb *inp;
-	struct bsd_sockaddr_in6 *addr = (struct bsd_sockaddr_in6 *)nam;
-	struct bsd_in6_addr in6a;
+	struct sockaddr_in6 *addr = (struct sockaddr_in6 *)nam;
+	struct in6_addr in6a;
 	struct ifnet *ifp = NULL;
 	int error = 0, scope_ambiguous = 0;
 
@@ -846,7 +846,7 @@ rip6_connect(struct bsd_socket *so, struct bsd_sockaddr *nam, struct thread *td)
 }
 
 static int
-rip6_shutdown(struct bsd_socket *so)
+rip6_shutdown(struct socket *so)
 {
 	struct inpcb *inp;
 
@@ -860,12 +860,12 @@ rip6_shutdown(struct bsd_socket *so)
 }
 
 static int
-rip6_send(struct bsd_socket *so, int flags, struct mbuf *m, struct bsd_sockaddr *nam,
+rip6_send(struct socket *so, int flags, struct mbuf *m, struct sockaddr *nam,
     struct mbuf *control, struct thread *td)
 {
 	struct inpcb *inp;
-	struct bsd_sockaddr_in6 tmp;
-	struct bsd_sockaddr_in6 *dst;
+	struct sockaddr_in6 tmp;
+	struct sockaddr_in6 *dst;
 	int ret;
 
 	inp = sotoinpcb(so);
@@ -881,10 +881,10 @@ rip6_send(struct bsd_socket *so, int flags, struct mbuf *m, struct bsd_sockaddr 
 		/* XXX */
 		bzero(&tmp, sizeof(tmp));
 		tmp.sin6_family = AF_INET6;
-		tmp.sin6_len = sizeof(struct bsd_sockaddr_in6);
+		tmp.sin6_len = sizeof(struct sockaddr_in6);
 		INP_RLOCK(inp);
 		bcopy(&inp->in6p_faddr, &tmp.sin6_addr,
-		    sizeof(struct bsd_in6_addr));
+		    sizeof(struct in6_addr));
 		INP_RUNLOCK(inp);
 		dst = &tmp;
 	} else {
@@ -892,11 +892,11 @@ rip6_send(struct bsd_socket *so, int flags, struct mbuf *m, struct bsd_sockaddr 
 			m_freem(m);
 			return (ENOTCONN);
 		}
-		if (nam->sa_len != sizeof(struct bsd_sockaddr_in6)) {
+		if (nam->sa_len != sizeof(struct sockaddr_in6)) {
 			m_freem(m);
 			return (EINVAL);
 		}
-		tmp = *(struct bsd_sockaddr_in6 *)nam;
+		tmp = *(struct sockaddr_in6 *)nam;
 		dst = &tmp;
 
 		if (dst->sin6_family == AF_UNSPEC) {
@@ -905,7 +905,7 @@ rip6_send(struct bsd_socket *so, int flags, struct mbuf *m, struct bsd_sockaddr 
 			 * compatibility to buggy applications that
 			 * rely on old (and wrong) kernel behavior.
 			 */
-			bsd_log(LOG_INFO, "rip6 SEND: address family is "
+			log(LOG_INFO, "rip6 SEND: address family is "
 			    "unspec. Assume AF_INET6\n");
 			dst->sin6_family = AF_INET6;
 		} else if (dst->sin6_family != AF_INET6) {

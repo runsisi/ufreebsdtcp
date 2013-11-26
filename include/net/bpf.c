@@ -34,38 +34,38 @@
  *      @(#)bpf.c	8.4 (Berkeley) 1/9/95
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/net/bpf.c 251756 2013-06-14 18:56:37Z ghelmer $");
 
 #include "opt_bpf.h"
 #include "opt_compat.h"
 #include "opt_netgraph.h"
 
-#include <sys/types.h>
-#include <sys/param.h>
-#include <sys/lock.h>
-#include <sys/rwlock.h>
-#include <sys/systm.h>
-#include <sys/conf.h>
-#include <sys/fcntl.h>
-#include <sys/jail.h>
-#include <sys/malloc.h>
-#include <sys/mbuf.h>
-#include <sys/time.h>
-#include <sys/priv.h>
-#include <sys/proc.h>
-#include <sys/signalvar.h>
-#include <sys/filio.h>
-#include <sys/sockio.h>
-#include <sys/ttycom.h>
-#include <sys/uio.h>
+#include <sys/bsd_types.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_lock.h>
+#include <sys/bsd_rwlock.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_conf.h>
+#include <sys/bsd_fcntl.h>
+#include <sys/bsd_jail.h>
+#include <sys/bsd_malloc.h>
+#include <sys/bsd_mbuf.h>
+#include <sys/bsd_time.h>
+#include <sys/bsd_priv.h>
+#include <sys/bsd_proc.h>
+#include <sys/bsd_signalvar.h>
+#include <sys/bsd_filio.h>
+#include <sys/bsd_sockio.h>
+#include <sys/bsd_ttycom.h>
+#include <sys/bsd_uio.h>
 
-#include <sys/event.h>
-#include <sys/file.h>
-#include <sys/poll.h>
-#include <sys/proc.h>
+#include <sys/bsd_event.h>
+#include <sys/bsd_file.h>
+#include <sys/bsd_poll.h>
+#include <sys/bsd_proc.h>
 
-#include <sys/socket.h>
+#include <sys/bsd_socket.h>
 
 #include <net/if.h>
 #define	BPF_INTERNAL
@@ -80,12 +80,12 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/net/bpf.c 251756 2013-06-14 18:56:37Z ghel
 
 #include <netinet/in.h>
 #include <netinet/if_ether.h>
-#include <sys/kernel.h>
-#include <sys/sysctl.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_sysctl.h>
 
 #include <net80211/ieee80211_freebsd.h>
 
-#include <security/mac/mac_framework.h>
+//#include <security/mac/mac_framework.h>
 
 MALLOC_DEFINE(M_BPF, "BPF", "BPF data");
 
@@ -97,7 +97,7 @@ MALLOC_DEFINE(M_BPF, "BPF", "BPF data");
     (offsetof(type, bh_hdrlen) + sizeof(((type *)0)->bh_hdrlen))
 
 #ifdef COMPAT_FREEBSD32
-#include <sys/mount.h>
+#include <sys/bsd_mount.h>
 #include <compat/freebsd32/freebsd32.h>
 #define BPF_ALIGNMENT32 sizeof(int32_t)
 #define BPF_WORDALIGN32(x) (((x)+(BPF_ALIGNMENT32-1))&~(BPF_ALIGNMENT32-1))
@@ -150,14 +150,14 @@ static void	bpf_detachd(struct bpf_d *);
 static void	bpf_detachd_locked(struct bpf_d *);
 static void	bpf_freed(struct bpf_d *);
 static int	bpf_movein(struct uio *, int, struct ifnet *, struct mbuf **,
-		    struct bsd_sockaddr *, int *, struct bpf_insn *);
+		    struct sockaddr *, int *, struct bpf_insn *);
 static int	bpf_setif(struct bpf_d *, struct ifreq *);
 static void	bpf_timed_out(void *);
 static __inline void
 		bpf_wakeup(struct bpf_d *);
 static void	catchpacket(struct bpf_d *, u_char *, u_int, u_int,
 		    void (*)(struct bpf_d *, caddr_t, u_int, void *, u_int),
-		    struct bsd_bintime *);
+		    struct bintime *);
 static void	reset_d(struct bpf_d *);
 static int	bpf_setf(struct bpf_d *, struct bpf_program *, u_long cmd);
 static int	bpf_getdltlist(struct bpf_d *, struct bpf_dltlist *);
@@ -409,7 +409,7 @@ bpf_ioctl_sblen(struct bpf_d *d, u_int *i)
 }
 
 static int
-bpf_ioctl_getzmax(struct thread *td, struct bpf_d *d, bsd_size_t *i)
+bpf_ioctl_getzmax(struct thread *td, struct bpf_d *d, size_t *i)
 {
 
 	if (d->bd_bufmode != BPF_BUFMODE_ZBUF)
@@ -440,7 +440,7 @@ bpf_ioctl_setzbuf(struct thread *td, struct bpf_d *d, struct bpf_zbuf *bz)
  */
 static int
 bpf_movein(struct uio *uio, int linktype, struct ifnet *ifp, struct mbuf **mp,
-    struct bsd_sockaddr *sockp, int *hdrlen, struct bpf_insn *wfilter)
+    struct sockaddr *sockp, int *hdrlen, struct bpf_insn *wfilter)
 {
 	const struct ieee80211_bpf_params *p;
 	struct ether_header *eh;
@@ -792,7 +792,7 @@ bpf_dtor(void *data)
 	knlist_destroy(&d->bd_sel.si_note);
 	callout_drain(&d->bd_callout);
 	bpf_freed(d);
-	bsd_free(d, M_BPF);
+	free(d, M_BPF);
 }
 
 /*
@@ -806,10 +806,10 @@ bpfopen(struct cdev *dev, int flags, int fmt, struct thread *td)
 	struct bpf_d *d;
 	int error, size;
 
-	d = bsd_malloc(sizeof(*d), M_BPF, M_WAITOK | M_ZERO);
+	d = malloc(sizeof(*d), M_BPF, M_WAITOK | M_ZERO);
 	error = devfs_set_cdevpriv(d, bpf_dtor);
 	if (error != 0) {
-		bsd_free(d, M_BPF);
+		free(d, M_BPF);
 		return (error);
 	}
 
@@ -1031,7 +1031,7 @@ bpfwrite(struct cdev *dev, struct uio *uio, int ioflag)
 	struct bpf_d *d;
 	struct ifnet *ifp;
 	struct mbuf *m, *mc;
-	struct bsd_sockaddr dst;
+	struct sockaddr dst;
 	int error, hlen;
 
 	error = devfs_get_cdevpriv((void **)&d);
@@ -1416,7 +1416,7 @@ bpfioctl(struct cdev *dev, u_long cmd, caddr_t addr, int flags,
 			struct ifnet *const ifp = d->bd_bif->bif_ifp;
 			struct ifreq *const ifr = (struct ifreq *)addr;
 
-			bsd_strlcpy(ifr->ifr_name, ifp->if_xname,
+			strlcpy(ifr->ifr_name, ifp->if_xname,
 			    sizeof(ifr->ifr_name));
 		}
 		BPF_UNLOCK();
@@ -1439,10 +1439,10 @@ bpfioctl(struct cdev *dev, u_long cmd, caddr_t addr, int flags,
 	case BIOCSRTIMEOUT32:
 #endif
 		{
-			struct bsd_timeval *tv = (struct bsd_timeval *)addr;
+			struct timeval *tv = (struct timeval *)addr;
 #ifdef COMPAT_FREEBSD32
 			struct timeval32 *tv32;
-			struct bsd_timeval tv64;
+			struct timeval tv64;
 
 			if (cmd == BIOCSRTIMEOUT32) {
 				tv32 = (struct timeval32 *)addr;
@@ -1451,7 +1451,7 @@ bpfioctl(struct cdev *dev, u_long cmd, caddr_t addr, int flags,
 				tv->tv_usec = tv32->tv_usec;
 			} else
 #endif
-				tv = (struct bsd_timeval *)addr;
+				tv = (struct timeval *)addr;
 
 			/*
 			 * Subtract 1 tick from tvtohz() since this isn't
@@ -1470,16 +1470,16 @@ bpfioctl(struct cdev *dev, u_long cmd, caddr_t addr, int flags,
 	case BIOCGRTIMEOUT32:
 #endif
 		{
-			struct bsd_timeval *tv;
+			struct timeval *tv;
 #ifdef COMPAT_FREEBSD32
 			struct timeval32 *tv32;
-			struct bsd_timeval tv64;
+			struct timeval tv64;
 
 			if (cmd == BIOCGRTIMEOUT32)
 				tv = &tv64;
 			else
 #endif
-				tv = (struct bsd_timeval *)addr;
+				tv = (struct timeval *)addr;
 
 			tv->tv_sec = d->bd_rtout / hz;
 			tv->tv_usec = (d->bd_rtout % hz) * tick;
@@ -1704,7 +1704,7 @@ bpfioctl(struct cdev *dev, u_long cmd, caddr_t addr, int flags,
 		break;
 
 	case BIOCGETZMAX:
-		error = bpf_ioctl_getzmax(td, d, (bsd_size_t *)addr);
+		error = bpf_ioctl_getzmax(td, d, (size_t *)addr);
 		break;
 
 	case BIOCSETZBUF:
@@ -1742,7 +1742,7 @@ bpf_setf(struct bpf_d *d, struct bpf_program *fp, u_long cmd)
 #ifdef BPF_JITTER
 	bpf_jit_filter *jfunc, *ofunc;
 #endif
-	bsd_size_t size;
+	size_t size;
 	u_int flen;
 	int need_upgrade;
 
@@ -1753,7 +1753,7 @@ bpf_setf(struct bpf_d *d, struct bpf_program *fp, u_long cmd)
 	case BIOCSETFNR32:
 		fp32 = (struct bpf_program32 *)fp;
 		fp_swab.bf_len = fp32->bf_len;
-		fp_swab.bf_insns = (struct bpf_insn *)(bsd_uintptr_t)fp32->bf_insns;
+		fp_swab.bf_insns = (struct bpf_insn *)(uintptr_t)fp32->bf_insns;
 		fp = &fp_swab;
 		switch (cmd) {
 		case BIOCSETF32:
@@ -1783,10 +1783,10 @@ bpf_setf(struct bpf_d *d, struct bpf_program *fp, u_long cmd)
 	size = flen * sizeof(*fp->bf_insns);
 	if (size > 0) {
 		/* We're setting up new filter.  Copy and check actual data. */
-		fcode = bsd_malloc(size, M_BPF, M_WAITOK);
+		fcode = malloc(size, M_BPF, M_WAITOK);
 		if (copyin(fp->bf_insns, fcode, size) != 0 ||
 		    !bpf_validate(fcode, flen)) {
-			bsd_free(fcode, M_BPF);
+			free(fcode, M_BPF);
 			return (EINVAL);
 		}
 #ifdef BPF_JITTER
@@ -1834,7 +1834,7 @@ bpf_setf(struct bpf_d *d, struct bpf_program *fp, u_long cmd)
 	if (d->bd_bif != NULL)
 		BPFIF_WUNLOCK(d->bd_bif);
 	if (old != NULL)
-		bsd_free(old, M_BPF);
+		free(old, M_BPF);
 #ifdef BPF_JITTER
 	if (ofunc != NULL)
 		bpf_destroy_jit_filter(ofunc);
@@ -2014,7 +2014,7 @@ bpf_ts_quality(int tstype)
 }
 
 static int
-bpf_gettime(struct bsd_bintime *bt, int tstype, struct mbuf *m)
+bpf_gettime(struct bintime *bt, int tstype, struct mbuf *m)
 {
 	struct m_tag *tag;
 	int quality;
@@ -2026,7 +2026,7 @@ bpf_gettime(struct bsd_bintime *bt, int tstype, struct mbuf *m)
 	if (m != NULL) {
 		tag = m_tag_locate(m, MTAG_BPF, MTAG_BPF_TIMESTAMP, NULL);
 		if (tag != NULL) {
-			*bt = *(struct bsd_bintime *)(tag + 1);
+			*bt = *(struct bintime *)(tag + 1);
 			return (BPF_TSTAMP_EXTERN);
 		}
 	}
@@ -2047,7 +2047,7 @@ bpf_gettime(struct bsd_bintime *bt, int tstype, struct mbuf *m)
 void
 bpf_tap(struct bpf_if *bp, u_char *pkt, u_int pktlen)
 {
-	struct bsd_bintime bt;
+	struct bintime bt;
 	struct bpf_d *d;
 #ifdef BPF_JITTER
 	bpf_jit_filter *bf;
@@ -2114,7 +2114,7 @@ bpf_tap(struct bpf_if *bp, u_char *pkt, u_int pktlen)
 void
 bpf_mtap(struct bpf_if *bp, struct mbuf *m)
 {
-	struct bsd_bintime bt;
+	struct bintime bt;
 	struct bpf_d *d;
 #ifdef BPF_JITTER
 	bpf_jit_filter *bf;
@@ -2169,7 +2169,7 @@ bpf_mtap(struct bpf_if *bp, struct mbuf *m)
 void
 bpf_mtap2(struct bpf_if *bp, void *data, u_int dlen, struct mbuf *m)
 {
-	struct bsd_bintime bt;
+	struct bintime bt;
 	struct mbuf mb;
 	struct bpf_d *d;
 	u_int pktlen, slen;
@@ -2254,11 +2254,11 @@ bpf_hdrlen(struct bpf_d *d)
 }
 
 static void
-bpf_bintime2ts(struct bsd_bintime *bt, struct bpf_ts *ts, int tstype)
+bpf_bintime2ts(struct bintime *bt, struct bpf_ts *ts, int tstype)
 {
-	struct bsd_bintime bt2;
-	struct bsd_timeval tsm;
-	struct bsd_timespec tsn;
+	struct bintime bt2;
+	struct timeval tsm;
+	struct timespec tsn;
 
 	if ((tstype & BPF_T_MONOTONIC) == 0) {
 		bt2 = *bt;
@@ -2293,7 +2293,7 @@ bpf_bintime2ts(struct bsd_bintime *bt, struct bpf_ts *ts, int tstype)
 static void
 catchpacket(struct bpf_d *d, u_char *pkt, u_int pktlen, u_int snaplen,
     void (*cpfn)(struct bpf_d *, caddr_t, u_int, void *, u_int),
-    struct bsd_bintime *bt)
+    struct bintime *bt)
 {
 	struct bpf_xhdr hdr;
 #ifndef BURN_BRIDGES
@@ -2452,14 +2452,14 @@ bpf_freed(struct bpf_d *d)
 	 */
 	bpf_free(d);
 	if (d->bd_rfilter != NULL) {
-		bsd_free((caddr_t)d->bd_rfilter, M_BPF);
+		free((caddr_t)d->bd_rfilter, M_BPF);
 #ifdef BPF_JITTER
 		if (d->bd_bfilter != NULL)
 			bpf_destroy_jit_filter(d->bd_bfilter);
 #endif
 	}
 	if (d->bd_wfilter != NULL)
-		bsd_free((caddr_t)d->bd_wfilter, M_BPF);
+		free((caddr_t)d->bd_wfilter, M_BPF);
 	mtx_destroy(&d->bd_lock);
 }
 
@@ -2485,7 +2485,7 @@ bpfattach2(struct ifnet *ifp, u_int dlt, u_int hdrlen, struct bpf_if **driverp)
 {
 	struct bpf_if *bp;
 
-	bp = bsd_malloc(sizeof(*bp), M_BPF, M_NOWAIT | M_ZERO);
+	bp = malloc(sizeof(*bp), M_BPF, M_NOWAIT | M_ZERO);
 	if (bp == NULL)
 		panic("bpfattach");
 
@@ -2597,7 +2597,7 @@ bpf_ifdetach(void *arg __unused, struct ifnet *ifp)
 	BPF_UNLOCK();
 
 	rw_destroy(&bp->bif_lock);
-	bsd_free(bp, M_BPF);
+	free(bp, M_BPF);
 }
 
 /*
@@ -2742,7 +2742,7 @@ bpfstats_fill_xbpf(struct xbpf_d *d, struct bpf_d *bd)
 	d->bd_hlen = bd->bd_hlen;
 	d->bd_bufsize = bd->bd_bufsize;
 	d->bd_pid = bd->bd_pid;
-	bsd_strlcpy(d->bd_ifname,
+	strlcpy(d->bd_ifname,
 	    bd->bd_bif->bif_ifp->if_xname, IFNAMSIZ);
 	d->bd_locked = bd->bd_locked;
 	d->bd_wcount = bd->bd_wcount;
@@ -2791,11 +2791,11 @@ bpf_stats_sysctl(SYSCTL_HANDLER_ARGS)
 		return (SYSCTL_OUT(req, 0, bpf_bpfd_cnt * sizeof(*xbd)));
 	if (bpf_bpfd_cnt == 0)
 		return (SYSCTL_OUT(req, 0, 0));
-	xbdbuf = bsd_malloc(req->oldlen, M_BPF, M_WAITOK);
+	xbdbuf = malloc(req->oldlen, M_BPF, M_WAITOK);
 	BPF_LOCK();
 	if (req->oldlen < (bpf_bpfd_cnt * sizeof(*xbd))) {
 		BPF_UNLOCK();
-		bsd_free(xbdbuf, M_BPF);
+		free(xbdbuf, M_BPF);
 		return (ENOMEM);
 	}
 	index = 0;
@@ -2818,7 +2818,7 @@ bpf_stats_sysctl(SYSCTL_HANDLER_ARGS)
 	}
 	BPF_UNLOCK();
 	error = SYSCTL_OUT(req, xbdbuf, index * sizeof(*xbd));
-	bsd_free(xbdbuf, M_BPF);
+	free(xbdbuf, M_BPF);
 	return (error);
 }
 

@@ -61,15 +61,15 @@ int	khelp_register_helper(struct helper *h);
 
 int	khelp_deregister_helper(struct helper *h);
 
-int	khelp_init_osd(bsd_uint32_t classes, struct osd *hosd);
+int	khelp_init_osd(uint32_t classes, struct osd *hosd);
 
 int	khelp_destroy_osd(struct osd *hosd);
 
-void *	khelp_get_osd(struct osd *hosd, bsd_int32_t id);
+void *	khelp_get_osd(struct osd *hosd, int32_t id);
 
-bsd_int32_t	khelp_get_id(char *hname);
+int32_t	khelp_get_id(char *hname);
 
-int	khelp_add_hhook(struct hookinfo *hki, bsd_uint32_t flags);
+int	khelp_add_hhook(struct hookinfo *hki, uint32_t flags);
 
 int	khelp_remove_hhook(struct hookinfo *hki);
 

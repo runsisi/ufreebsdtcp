@@ -91,7 +91,7 @@
  * of the public interface and are wrappered with a macro.
  */
 void	sx_sysinit(void *arg);
-#define	sx_init(sx, desc)	//sx_init_flags((sx), (desc), 0)
+#define	sx_init(sx, desc)	sx_init_flags((sx), (desc), 0)
 void	sx_init_flags(struct sx *sx, const char *description, int opts);
 void	sx_destroy(struct sx *sx);
 int	_sx_slock(struct sx *sx, int opts, const char *file, int line);
@@ -102,10 +102,10 @@ void	_sx_sunlock(struct sx *sx, const char *file, int line);
 void	_sx_xunlock(struct sx *sx, const char *file, int line);
 int	_sx_try_upgrade(struct sx *sx, const char *file, int line);
 void	_sx_downgrade(struct sx *sx, const char *file, int line);
-int	_sx_xlock_hard(struct sx *sx, bsd_uintptr_t tid, int opts,
+int	_sx_xlock_hard(struct sx *sx, uintptr_t tid, int opts,
 	    const char *file, int line);
 int	_sx_slock_hard(struct sx *sx, int opts, const char *file, int line);
-void	_sx_xunlock_hard(struct sx *sx, bsd_uintptr_t tid, const char *file, int
+void	_sx_xunlock_hard(struct sx *sx, uintptr_t tid, const char *file, int
 	    line);
 void	_sx_sunlock_hard(struct sx *sx, const char *file, int line);
 #if defined(INVARIANTS) || defined(INVARIANT_SUPPORT)
@@ -154,7 +154,7 @@ static __inline int
 __sx_xlock(struct sx *sx, struct thread *td, int opts, const char *file,
     int line)
 {
-	bsd_uintptr_t tid = (bsd_uintptr_t)td;
+	uintptr_t tid = (uintptr_t)td;
 	int error = 0;
 
 	if (!atomic_cmpset_acq_ptr(&sx->sx_lock, SX_LOCK_UNLOCKED, tid))
@@ -170,7 +170,7 @@ __sx_xlock(struct sx *sx, struct thread *td, int opts, const char *file,
 static __inline void
 __sx_xunlock(struct sx *sx, struct thread *td, const char *file, int line)
 {
-	bsd_uintptr_t tid = (bsd_uintptr_t)td;
+	uintptr_t tid = (uintptr_t)td;
 
 	if (!atomic_cmpset_rel_ptr(&sx->sx_lock, tid, SX_LOCK_UNLOCKED))
 		_sx_xunlock_hard(sx, tid, file, line);
@@ -180,7 +180,7 @@ __sx_xunlock(struct sx *sx, struct thread *td, const char *file, int line)
 static __inline int
 __sx_slock(struct sx *sx, int opts, const char *file, int line)
 {
-	bsd_uintptr_t x = sx->sx_lock;
+	uintptr_t x = sx->sx_lock;
 	int error = 0;
 
 	if (!(x & SX_LOCK_SHARED) ||
@@ -203,7 +203,7 @@ __sx_slock(struct sx *sx, int opts, const char *file, int line)
 static __inline void
 __sx_sunlock(struct sx *sx, const char *file, int line)
 {
-	bsd_uintptr_t x = sx->sx_lock;
+	uintptr_t x = sx->sx_lock;
 
 	if (x == (SX_SHARERS_LOCK(1) | SX_LOCK_EXCLUSIVE_WAITERS) ||
 	    !atomic_cmpset_rel_ptr(&sx->sx_lock, x, x - SX_ONE_SHARER))
@@ -254,13 +254,13 @@ __sx_sunlock(struct sx *sx, const char *file, int line)
 #define	sx_assert_(sx, what, file, line)	(void)0
 #endif
 
-#define	sx_xlock(sx)		//sx_xlock_((sx), LOCK_FILE, LOCK_LINE)
-#define	sx_xlock_sig(sx)	//sx_xlock_sig_((sx), LOCK_FILE, LOCK_LINE)
-#define	sx_xunlock(sx)		//sx_xunlock_((sx), LOCK_FILE, LOCK_LINE)
-#define	sx_slock(sx)		//sx_slock_((sx), LOCK_FILE, LOCK_LINE)
-#define	sx_slock_sig(sx)	//sx_slock_sig_((sx), LOCK_FILE, LOCK_LINE)
-#define	sx_sunlock(sx)		//sx_sunlock_((sx), LOCK_FILE, LOCK_LINE)
-#define	sx_assert(sx, what)	//sx_assert_((sx), (what), __FILE__, __LINE__)
+#define	sx_xlock(sx)		sx_xlock_((sx), LOCK_FILE, LOCK_LINE)
+#define	sx_xlock_sig(sx)	sx_xlock_sig_((sx), LOCK_FILE, LOCK_LINE)
+#define	sx_xunlock(sx)		sx_xunlock_((sx), LOCK_FILE, LOCK_LINE)
+#define	sx_slock(sx)		sx_slock_((sx), LOCK_FILE, LOCK_LINE)
+#define	sx_slock_sig(sx)	sx_slock_sig_((sx), LOCK_FILE, LOCK_LINE)
+#define	sx_sunlock(sx)		sx_sunlock_((sx), LOCK_FILE, LOCK_LINE)
+#define	sx_assert(sx, what)	sx_assert_((sx), (what), __FILE__, __LINE__)
 
 /*
  * Return a pointer to the owning thread if the lock is exclusively
@@ -272,7 +272,7 @@ __sx_sunlock(struct sx *sx, const char *file, int line)
 
 #define	sx_xlocked(sx)							\
 	(((sx)->sx_lock & ~(SX_LOCK_FLAGMASK & ~SX_LOCK_SHARED)) ==	\
-	    (bsd_uintptr_t)curthread)
+	    (uintptr_t)curthread)
 
 #define	sx_unlock_(sx, file, line) do {					\
 	if (sx_xlocked(sx))						\

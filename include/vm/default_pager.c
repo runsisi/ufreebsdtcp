@@ -37,15 +37,15 @@
  * is maintained whenever a resident page also has swap backing store.
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/vm/default_pager.c 216128 2010-12-02 17:37:16Z trasz $");
 
-#include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/lock.h>
-#include <sys/proc.h>
-#include <sys/resourcevar.h>
-#include <sys/mutex.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_lock.h>
+#include <sys/bsd_proc.h>
+#include <sys/bsd_resourcevar.h>
+#include <sys/bsd_mutex.h>
 
 #include <vm/vm.h>
 #include <vm/vm_object.h>
@@ -54,7 +54,7 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/vm/default_pager.c 216128 2010-12-02 17:37
 #include <vm/swap_pager.h>
 
 static vm_object_t default_pager_alloc(void *, vm_ooffset_t, vm_prot_t,
-    vm_ooffset_t, struct bsd_ucred *);
+    vm_ooffset_t, struct ucred *);
 static void default_pager_dealloc(vm_object_t);
 static int default_pager_getpages(vm_object_t, vm_page_t *, int, int);
 static void default_pager_putpages(vm_object_t, vm_page_t *, int, 
@@ -77,7 +77,7 @@ struct pagerops defaultpagerops = {
  */
 static vm_object_t
 default_pager_alloc(void *handle, vm_ooffset_t size, vm_prot_t prot,
-    vm_ooffset_t offset, struct bsd_ucred *cred)
+    vm_ooffset_t offset, struct ucred *cred)
 {
 	vm_object_t object;
 

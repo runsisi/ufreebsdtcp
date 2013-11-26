@@ -47,20 +47,20 @@
  *   For now let the user handle that case.
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/net/if_epair.c 248085 2013-03-09 02:36:32Z marius $");
 
-#include <sys/param.h>
-#include <sys/kernel.h>
-#include <sys/mbuf.h>
-#include <sys/module.h>
-#include <sys/refcount.h>
-#include <sys/queue.h>
-#include <sys/smp.h>
-#include <sys/socket.h>
-#include <sys/sockio.h>
-#include <sys/sysctl.h>
-#include <sys/types.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_mbuf.h>
+#include <sys/bsd_module.h>
+#include <sys/bsd_refcount.h>
+#include <sys/bsd_queue.h>
+#include <sys/bsd_smp.h>
+#include <sys/bsd_socket.h>
+#include <sys/bsd_sockio.h>
+#include <sys/bsd_sysctl.h>
+#include <sys/bsd_types.h>
 
 #include <net/bpf.h>
 #include <net/ethernet.h>
@@ -89,7 +89,7 @@ SYSCTL_INT(_net_link_epair, OID_AUTO, epair_debug, CTLFLAG_RW,
 #endif
 
 static void epair_nh_sintr(struct mbuf *);
-static struct mbuf *epair_nh_m2cpuid(struct mbuf *, bsd_uintptr_t, u_int *);
+static struct mbuf *epair_nh_m2cpuid(struct mbuf *, uintptr_t, u_int *);
 static void epair_nh_drainedcpu(u_int);
 
 static void epair_start_locked(struct ifnet *);
@@ -97,7 +97,7 @@ static int epair_media_change(struct ifnet *);
 static void epair_media_status(struct ifnet *, struct ifmediareq *);
 
 static int epair_clone_match(struct if_clone *, const char *);
-static int epair_clone_create(struct if_clone *, char *, bsd_size_t, caddr_t);
+static int epair_clone_create(struct if_clone *, char *, size_t, caddr_t);
 static int epair_clone_destroy(struct if_clone *, struct ifnet *);
 
 /* Netisr realted definitions and sysctl. */
@@ -261,7 +261,7 @@ epair_nh_sintr(struct mbuf *m)
 }
 
 static struct mbuf *
-epair_nh_m2cpuid(struct mbuf *m, bsd_uintptr_t source, u_int *cpuid)
+epair_nh_m2cpuid(struct mbuf *m, uintptr_t source, u_int *cpuid)
 {
 
 	*cpuid = cpuid_from_ifp(m->m_pkthdr.rcvif);
@@ -303,7 +303,7 @@ epair_nh_drainedcpu(u_int cpuid)
 			EPAIR_REFCOUNT_ASSERT((int)sc->refcount >= 1,
 			    ("%s: ifp=%p sc->refcount not >= 1: %d",
 			    __func__, ifp, sc->refcount));
-			bsd_free(elm, M_EPAIR);
+			free(elm, M_EPAIR);
 		}
 		IFQ_UNLOCK(&ifp->if_snd);
 
@@ -345,7 +345,7 @@ epair_remove_ifp_from_draining(struct ifnet *ifp)
 				EPAIR_REFCOUNT_ASSERT((int)sc->refcount >= 1,
 				    ("%s: ifp=%p sc->refcount not >= 1: %d",
 				    __func__, ifp, sc->refcount));
-				bsd_free(elm, M_EPAIR);
+				free(elm, M_EPAIR);
 			}
 		}
 		EPAIR_UNLOCK(epair_dpcpu);
@@ -369,7 +369,7 @@ epair_add_ifp_for_draining(struct ifnet *ifp)
 	if (elm != NULL)
 		return (0);
 
-	elm = bsd_malloc(sizeof(struct epair_ifp_drain), M_EPAIR, M_NOWAIT|M_ZERO);
+	elm = malloc(sizeof(struct epair_ifp_drain), M_EPAIR, M_NOWAIT|M_ZERO);
 	if (elm == NULL)
 		return (ENOMEM);
 
@@ -704,13 +704,13 @@ epair_clone_match(struct if_clone *ifc, const char *name)
 }
 
 static int
-epair_clone_create(struct if_clone *ifc, char *name, bsd_size_t len, caddr_t params)
+epair_clone_create(struct if_clone *ifc, char *name, size_t len, caddr_t params)
 {
 	struct epair_softc *sca, *scb;
 	struct ifnet *ifp;
 	char *dp;
 	int error, unit, wildcard;
-	bsd_uint8_t eaddr[ETHER_ADDR_LEN];	/* 00:00:00:00:00:00 */
+	uint8_t eaddr[ETHER_ADDR_LEN];	/* 00:00:00:00:00:00 */
 
 	/*
 	 * We are abusing params to create our second interface.
@@ -728,7 +728,7 @@ epair_clone_create(struct if_clone *ifc, char *name, bsd_size_t len, caddr_t par
 		eaddr[5] = 0x0b;
 		ether_ifattach(ifp, eaddr);
 		/* Correctly set the name for the cloner list. */
-		bsd_strlcpy(name, scb->ifp->if_xname, len);
+		strlcpy(name, scb->ifp->if_xname, len);
 		return (0);
 	}
 
@@ -766,22 +766,22 @@ epair_clone_create(struct if_clone *ifc, char *name, bsd_size_t len, caddr_t par
 	*(dp+1) = '\0';
 
 	/* Allocate memory for both [ab] interfaces */
-	sca = bsd_malloc(sizeof(struct epair_softc), M_EPAIR, M_WAITOK | M_ZERO);
+	sca = malloc(sizeof(struct epair_softc), M_EPAIR, M_WAITOK | M_ZERO);
 	EPAIR_REFCOUNT_INIT(&sca->refcount, 1);
 	sca->ifp = if_alloc(IFT_ETHER);
 	if (sca->ifp == NULL) {
-		bsd_free(sca, M_EPAIR);
+		free(sca, M_EPAIR);
 		ifc_free_unit(ifc, unit);
 		return (ENOSPC);
 	}
 
-	scb = bsd_malloc(sizeof(struct epair_softc), M_EPAIR, M_WAITOK | M_ZERO);
+	scb = malloc(sizeof(struct epair_softc), M_EPAIR, M_WAITOK | M_ZERO);
 	EPAIR_REFCOUNT_INIT(&scb->refcount, 1);
 	scb->ifp = if_alloc(IFT_ETHER);
 	if (scb->ifp == NULL) {
-		bsd_free(scb, M_EPAIR);
+		free(scb, M_EPAIR);
 		if_free(sca->ifp);
-		bsd_free(sca, M_EPAIR);
+		free(sca, M_EPAIR);
 		ifc_free_unit(ifc, unit);
 		return (ENOSPC);
 	}
@@ -806,7 +806,7 @@ epair_clone_create(struct if_clone *ifc, char *name, bsd_size_t len, caddr_t par
 	/* Finish initialization of interface <n>a. */
 	ifp = sca->ifp;
 	ifp->if_softc = sca;
-	bsd_strlcpy(ifp->if_xname, name, IFNAMSIZ);
+	strlcpy(ifp->if_xname, name, IFNAMSIZ);
 	ifp->if_dname = ifc->ifc_name;
 	ifp->if_dunit = unit;
 	ifp->if_flags = IFF_BROADCAST | IFF_SIMPLEX | IFF_MULTICAST;
@@ -832,7 +832,7 @@ epair_clone_create(struct if_clone *ifc, char *name, bsd_size_t len, caddr_t par
 
 	ifp = scb->ifp;
 	ifp->if_softc = scb;
-	bsd_strlcpy(ifp->if_xname, name, IFNAMSIZ);
+	strlcpy(ifp->if_xname, name, IFNAMSIZ);
 	ifp->if_dname = ifc->ifc_name;
 	ifp->if_dunit = unit;
 	ifp->if_flags = IFF_BROADCAST | IFF_SIMPLEX | IFF_MULTICAST;
@@ -843,7 +843,7 @@ epair_clone_create(struct if_clone *ifc, char *name, bsd_size_t len, caddr_t par
 	ifp->if_init  = epair_init;
 	ifp->if_snd.ifq_maxlen = ifqmaxlen;
 	/* We need to play some tricks here for the second interface. */
-	bsd_strlcpy(name, EPAIRNAME, len);
+	strlcpy(name, EPAIRNAME, len);
 	error = if_clone_create(name, len, (caddr_t)scb);
 	if (error)
 		panic("%s: if_clone_createif() for our 2nd iface failed: %d",
@@ -857,7 +857,7 @@ epair_clone_create(struct if_clone *ifc, char *name, bsd_size_t len, caddr_t par
 	 * Restore name to <n>a as the ifp for this will go into the
 	 * cloner list for the initial call.
 	 */
-	bsd_strlcpy(name, sca->ifp->if_xname, len);
+	strlcpy(name, sca->ifp->if_xname, len);
 	DPRINTF("name='%s/%db' created sca=%p scb=%p\n", name, unit, sca, scb);
 
 	/* Initialise pseudo media types. */
@@ -927,7 +927,7 @@ epair_clone_destroy(struct if_clone *ifc, struct ifnet *ifp)
 		    __func__, error);
 	if_free(oifp);
 	ifmedia_removeall(&scb->media);
-	bsd_free(scb, M_EPAIR);
+	free(scb, M_EPAIR);
 	CURVNET_RESTORE();
 
 	ether_ifdetach(ifp);
@@ -939,7 +939,7 @@ epair_clone_destroy(struct if_clone *ifc, struct ifnet *ifp)
 	    ("%s: ifp=%p sca->refcount!=1: %d", __func__, ifp, sca->refcount));
 	if_free(ifp);
 	ifmedia_removeall(&sca->media);
-	bsd_free(sca, M_EPAIR);
+	free(sca, M_EPAIR);
 	ifc_free_unit(ifc, unit);
 
 	return (0);

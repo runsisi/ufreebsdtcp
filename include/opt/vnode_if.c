@@ -7,14 +7,14 @@
 
 #include "opt_kdtrace.h"
 
-#include <sys/param.h>
-#include <sys/event.h>
-#include <sys/kernel.h>
-#include <sys/mount.h>
-#include <sys/sdt.h>
-#include <sys/signalvar.h>
-#include <sys/systm.h>
-#include <sys/vnode.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_event.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_mount.h>
+#include <sys/bsd_sdt.h>
+#include <sys/bsd_signalvar.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_vnode.h>
 
 SDT_PROVIDER_DECLARE(vfs);
 

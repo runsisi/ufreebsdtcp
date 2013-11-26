@@ -53,9 +53,9 @@ struct vnet;
  * handle on protocol and pointer to protocol
  * private data and error information.
  */
-typedef	bsd_uquad_t so_gen_t;
+typedef	u_quad_t so_gen_t;
 
-struct bsd_socket;
+struct socket;
 
 /*-
  * Locking key to struct socket:
@@ -68,7 +68,7 @@ struct bsd_socket;
  * (g) used only as a sleep/wakeup address, no value.
  * (h) locked by global mutex so_global_mtx.
  */
-struct bsd_socket {
+struct socket {
 	int	so_count;		/* (b) reference count */
 	short	so_type;		/* (a) generic type, see socket.h */
 	short	so_options;		/* from socket call, see socket.h */
@@ -77,7 +77,7 @@ struct bsd_socket {
 	int	so_qstate;		/* (e) internal state flags SQ_* */
 	void	*so_pcb;		/* protocol control block */
 	struct	vnet *so_vnet;		/* network stack instance */
-	struct	bsd_protosw *so_proto;	/* (a) protocol handle */
+	struct	protosw *so_proto;	/* (a) protocol handle */
 /*
  * Variables for connection queuing.
  * Socket where accepts occur is so_head in all subsidiary sockets.
@@ -89,10 +89,10 @@ struct bsd_socket {
  * We allow connections to queue up based on current queue lengths
  * and limit on number of queued connections for this socket.
  */
-	struct	bsd_socket *so_head;	/* (e) back pointer to listen socket */
-	BSD_TAILQ_HEAD(, bsd_socket) so_incomp;	/* (e) queue of partial unaccepted connections */
-	BSD_TAILQ_HEAD(, bsd_socket) so_comp;	/* (e) queue of complete unaccepted connections */
-	BSD_TAILQ_ENTRY(bsd_socket) so_list;	/* (e) list of unaccepted connections */
+	struct	socket *so_head;	/* (e) back pointer to listen socket */
+	TAILQ_HEAD(, socket) so_incomp;	/* (e) queue of partial unaccepted connections */
+	TAILQ_HEAD(, socket) so_comp;	/* (e) queue of complete unaccepted connections */
+	TAILQ_ENTRY(socket) so_list;	/* (e) list of unaccepted connections */
 	u_short	so_qlen;		/* (e) number of unaccepted connections */
 	u_short	so_incqlen;		/* (e) number of unaccepted incomplete
 					   connections */
@@ -102,11 +102,11 @@ struct bsd_socket {
 	struct	sigio *so_sigio;	/* [sg] information for async I/O or
 					   out of band data (SIGURG) */
 	u_long	so_oobmark;		/* (c) chars to oob mark */
-	BSD_TAILQ_HEAD(, aiocblist) so_aiojobq; /* AIO ops waiting on socket */
+	TAILQ_HEAD(, aiocblist) so_aiojobq; /* AIO ops waiting on socket */
 
 	struct sockbuf so_rcv, so_snd;
 
-	struct	bsd_ucred *so_cred;		/* (a) user credentials */
+	struct	ucred *so_cred;		/* (a) user credentials */
 	struct	label *so_label;	/* (b) MAC label for socket */
 	struct	label *so_peerlabel;	/* (b) cached MAC label for peer */
 	/* NB: generation count must not be first. */
@@ -124,16 +124,7 @@ struct bsd_socket {
 	 * so_user_cookie is used by ipfw/dummynet.
 	 */
 	int so_fibnum;		/* routing domain for this socket */
-	bsd_uint32_t so_user_cookie;
-
-	// runsisi AT hust.edu.cn @2013/11/13
-	int so_fd;          /* this socket's corresponding fd */
-	int so_otype;       /* original type, dps use the msb to identify sock for rpc */
-	DPS_AO_ID so_aoid;      /* the ao we are live in */
-	DPS_AO_ID so_appaoid;   /* the ao who created the so live in */
-	T_QUE_HANDLE so_rcvq;    /* dps queue for receive */
-	T_QUE_HANDLE so_sndq;    /* dps queue for send */
-    // ---------------------- @2013/11/13
+	uint32_t so_user_cookie;
 };
 
 /*
@@ -165,16 +156,12 @@ extern struct mtx accept_mtx;
 #define	SQ_INCOMP		0x0800	/* unaccepted, incomplete connection */
 #define	SQ_COMP			0x1000	/* unaccepted, complete connection */
 
-// runsisi AT hust.edu.cn @2013/11/14
-#define SO_FOR_RPC(so)  ((so)->so_otype & 0x80000000)  /* if it's a sock created by rpc */
-// ---------------------- @2013/11/14
-
 /*
  * Externalized form of struct socket used by the sysctl(3) interface.
  */
 struct xsocket {
-	bsd_size_t	xso_len;	/* length of this structure */
-	struct	bsd_socket *xso_so;	/* makes a convenient handle sometimes */
+	size_t	xso_len;	/* length of this structure */
+	struct	socket *xso_so;	/* makes a convenient handle sometimes */
 	short	so_type;
 	short	so_options;
 	short	so_linger;
@@ -187,10 +174,10 @@ struct xsocket {
 	u_short	so_qlimit;
 	short	so_timeo;
 	u_short	so_error;
-	bsd_pid_t	so_pgid;
+	pid_t	so_pgid;
 	u_long	so_oobmark;
 	struct xsockbuf so_rcv, so_snd;
-	bsd_uid_t	so_uid;		/* XXX */
+	uid_t	so_uid;		/* XXX */
 };
 
 #ifdef _KERNEL
@@ -219,7 +206,7 @@ struct xsocket {
 /* can we read something from so? */
 #define	soreadabledata(so) \
     ((so)->so_rcv.sb_cc >= (so)->so_rcv.sb_lowat || \
-	!BSD_TAILQ_EMPTY(&(so)->so_comp) || (so)->so_error)
+	!TAILQ_EMPTY(&(so)->so_comp) || (so)->so_error)
 #define	soreadable(so) \
 	(soreadabledata(so) || ((so)->so_rcv.sb_state & SBS_CANTRCVMORE))
 
@@ -291,12 +278,12 @@ struct xsocket {
 struct accept_filter {
 	char	accf_name[16];
 	int	(*accf_callback)
-		(struct bsd_socket *so, void *arg, int waitflag);
+		(struct socket *so, void *arg, int waitflag);
 	void *	(*accf_create)
-		(struct bsd_socket *so, char *arg);
+		(struct socket *so, char *arg);
 	void	(*accf_destroy)
-		(struct bsd_socket *so);
-	BSD_SLIST_ENTRY(accept_filter) accf_next;
+		(struct socket *so);
+	SLIST_ENTRY(accept_filter) accf_next;
 };
 
 #ifdef MALLOC_DECLARE
@@ -311,8 +298,8 @@ extern struct uma_zone *socket_zone;
 extern so_gen_t so_gencnt;
 
 struct mbuf;
-struct bsd_sockaddr;
-struct bsd_ucred;
+struct sockaddr;
+struct ucred;
 struct uio;
 
 /* 'which' values for socket upcalls. */
@@ -327,76 +314,61 @@ struct uio;
  * From uipc_socket and friends
  */
 int	sockargs(struct mbuf **mp, caddr_t buf, int buflen, int type);
-int	getsockaddr(struct bsd_sockaddr **namp, caddr_t uaddr, bsd_size_t len);
-void	soabort(struct bsd_socket *so);
-int	bsd_soaccept(struct bsd_socket *so, struct bsd_sockaddr **nam);
-int	socheckuid(struct bsd_socket *so, bsd_uid_t uid);
-int	bsd_sobind(struct bsd_socket *so, struct bsd_sockaddr *nam, struct thread *td);
-int	bsd_soclose(struct bsd_socket *so);
-int	bsd_soconnect(struct bsd_socket *so, struct bsd_sockaddr *nam, struct thread *td);
-int	soconnect2(struct bsd_socket *so1, struct bsd_socket *so2);
+int	getsockaddr(struct sockaddr **namp, caddr_t uaddr, size_t len);
+void	soabort(struct socket *so);
+int	soaccept(struct socket *so, struct sockaddr **nam);
+int	socheckuid(struct socket *so, uid_t uid);
+int	sobind(struct socket *so, struct sockaddr *nam, struct thread *td);
+int	soclose(struct socket *so);
+int	soconnect(struct socket *so, struct sockaddr *nam, struct thread *td);
+int	soconnect2(struct socket *so1, struct socket *so2);
 int	socow_setup(struct mbuf *m0, struct uio *uio);
-int	bsd_socreate(int dom, struct bsd_socket **aso, int type, int proto,
-	    struct bsd_ucred *cred, struct thread *td);
-int	sodisconnect(struct bsd_socket *so);
-struct	bsd_sockaddr *sodupsockaddr(const struct bsd_sockaddr *sa, int mflags);
-void	sofree(struct bsd_socket *so);
-void	sohasoutofband(struct bsd_socket *so);
-int	bsd_solisten(struct bsd_socket *so, int backlog, struct thread *td);
-void	solisten_proto(struct bsd_socket *so, int backlog);
-int	solisten_proto_check(struct bsd_socket *so);
-struct bsd_socket *
-	sonewconn(struct bsd_socket *head, int connstatus);
+int	socreate(int dom, struct socket **aso, int type, int proto,
+	    struct ucred *cred, struct thread *td);
+int	sodisconnect(struct socket *so);
+struct	sockaddr *sodupsockaddr(const struct sockaddr *sa, int mflags);
+void	sofree(struct socket *so);
+void	sohasoutofband(struct socket *so);
+int	solisten(struct socket *so, int backlog, struct thread *td);
+void	solisten_proto(struct socket *so, int backlog);
+int	solisten_proto_check(struct socket *so);
+struct socket *
+	sonewconn(struct socket *head, int connstatus);
 
 
-int	sopoll(struct bsd_socket *so, int events, struct bsd_ucred *active_cred,
+int	sopoll(struct socket *so, int events, struct ucred *active_cred,
 	    struct thread *td);
-int	sopoll_generic(struct bsd_socket *so, int events,
-	    struct bsd_ucred *active_cred, struct thread *td);
-int	soreceive(struct bsd_socket *so, struct bsd_sockaddr **paddr, struct uio *uio,
+int	sopoll_generic(struct socket *so, int events,
+	    struct ucred *active_cred, struct thread *td);
+int	soreceive(struct socket *so, struct sockaddr **paddr, struct uio *uio,
 	    struct mbuf **mp0, struct mbuf **controlp, int *flagsp);
-int	soreceive_stream(struct bsd_socket *so, struct bsd_sockaddr **paddr,
+int	soreceive_stream(struct socket *so, struct sockaddr **paddr,
 	    struct uio *uio, struct mbuf **mp0, struct mbuf **controlp,
 	    int *flagsp);
-int	soreceive_dgram(struct bsd_socket *so, struct bsd_sockaddr **paddr,
+int	soreceive_dgram(struct socket *so, struct sockaddr **paddr,
 	    struct uio *uio, struct mbuf **mp0, struct mbuf **controlp,
 	    int *flagsp);
-int	soreceive_generic(struct bsd_socket *so, struct bsd_sockaddr **paddr,
+int	soreceive_generic(struct socket *so, struct sockaddr **paddr,
 	    struct uio *uio, struct mbuf **mp0, struct mbuf **controlp,
 	    int *flagsp);
-int	soreserve(struct bsd_socket *so, u_long sndcc, u_long rcvcc);
-void	sorflush(struct bsd_socket *so);
-int	bsd_sosend(struct bsd_socket *so, struct bsd_sockaddr *addr, struct uio *uio,
+int	soreserve(struct socket *so, u_long sndcc, u_long rcvcc);
+void	sorflush(struct socket *so);
+int	sosend(struct socket *so, struct sockaddr *addr, struct uio *uio,
 	    struct mbuf *top, struct mbuf *control, int flags,
 	    struct thread *td);
-int	sosend_dgram(struct bsd_socket *so, struct bsd_sockaddr *addr,
+int	sosend_dgram(struct socket *so, struct sockaddr *addr,
 	    struct uio *uio, struct mbuf *top, struct mbuf *control,
 	    int flags, struct thread *td);
-int	sosend_generic(struct bsd_socket *so, struct bsd_sockaddr *addr,
+int	sosend_generic(struct socket *so, struct sockaddr *addr,
 	    struct uio *uio, struct mbuf *top, struct mbuf *control,
 	    int flags, struct thread *td);
-int	bsd_soshutdown(struct bsd_socket *so, int how);
-// runsisi AT hust.edu.cn @2013/11/21
-int bsd_sogetsockname(struct bsd_socket *so, struct bsd_sockaddr **sa,
-        bsd_socklen_t *alen);
-int bsd_sogetpeername(struct bsd_socket *so, struct bsd_sockaddr **sa,
-        bsd_socklen_t *alen);
-// ---------------------- @2013/11/21
-void	sotoxsocket(struct bsd_socket *so, struct xsocket *xso);
-void	soupcall_clear(struct bsd_socket *so, int which);
-void	soupcall_set(struct bsd_socket *so, int which,
-	    int (*func)(struct bsd_socket *, void *, int), void *arg);
-// runsisi AT hust.edu.cn @2013/11/13
-/*
- * these functions are implemented in socket_kernel.c
- */
-int     sogetqsize(int qtype);
-int     socreateq(struct bsd_socket *so);
-int     sodelq(struct bsd_socket *so);
-int     soasyncnotify(struct bsd_socket *so, int ev);
-// ---------------------- @2013/11/13
-void	sowakeup(struct bsd_socket *so, struct sockbuf *sb);
-int	selsocket(struct bsd_socket *so, int events, struct bsd_timeval *tv,
+int	soshutdown(struct socket *so, int how);
+void	sotoxsocket(struct socket *so, struct xsocket *xso);
+void	soupcall_clear(struct socket *so, int which);
+void	soupcall_set(struct socket *so, int which,
+	    int (*func)(struct socket *, void *, int), void *arg);
+void	sowakeup(struct socket *so, struct sockbuf *sb);
+int	selsocket(struct socket *so, int events, struct timeval *tv,
 	    struct thread *td);
 
 /*

@@ -33,9 +33,9 @@
 #ifndef _NET_IF_GRE_H
 #define _NET_IF_GRE_H
 
-#include <sys/ioccom.h>
+#include <sys/bsd_ioccom.h>
 #ifdef _KERNEL
-#include <sys/queue.h>
+#include <sys/bsd_queue.h>
 
 /*
  * Version of the WCCP, need to be configured manually since
@@ -53,15 +53,15 @@ struct gre_softc {
 	int gre_unit;
 	int gre_flags;
 	u_int	gre_fibnum;	/* use this fib for envelopes */
-	struct bsd_in_addr g_src;	/* source address of gre packets */
-	struct bsd_in_addr g_dst;	/* destination address of gre packets */
+	struct in_addr g_src;	/* source address of gre packets */
+	struct in_addr g_dst;	/* destination address of gre packets */
 	struct route route;	/* routing entry that determines, where a
 				   encapsulated packet should go */
 	u_char g_proto;		/* protocol of encapsulator */
 
 	const struct encaptab *encap;	/* encapsulation cookie */
 
-	bsd_uint32_t key;		/* key included in outgoing GRE packets */
+	uint32_t key;		/* key included in outgoing GRE packets */
 				/* zero means none */
 
 	wccp_ver_t wccp_ver;	/* version of the WCCP */
@@ -70,10 +70,10 @@ struct gre_softc {
 
 
 struct gre_h {
-	bsd_uint16_t flags;	/* GRE flags */
-	bsd_uint16_t ptype;	/* protocol type of payload typically
+	u_int16_t flags;	/* GRE flags */
+	u_int16_t ptype;	/* protocol type of payload typically
 				   Ether protocol type*/
-	bsd_uint32_t options[0];	/* optional options */
+	uint32_t options[0];	/* optional options */
 /*
  *  from here on: fields are optional, presence indicated by flags
  *
@@ -96,7 +96,7 @@ struct gre_h {
 } __packed;
 
 struct greip {
-	struct bsd_ip gi_i;
+	struct ip gi_i;
 	struct gre_h  gi_g;
 } __packed;
 
@@ -126,7 +126,7 @@ struct greip {
  * should be routed over more than one tunnel hop by hop
  */
 struct gre_sre {
-	bsd_uint16_t sre_family;	/* address family */
+	u_int16_t sre_family;	/* address family */
 	u_char	sre_offset;	/* offset to first octet of active entry */
 	u_char	sre_length;	/* number of octets in the SRE.
 				   sre_lengthl==0 -> last entry. */
@@ -135,20 +135,20 @@ struct gre_sre {
 
 struct greioctl {
 	int unit;
-	struct bsd_in_addr addr;
+	struct in_addr addr;
 };
 
 /* for mobile encaps */
 
 struct mobile_h {
-	bsd_uint16_t proto;		/* protocol and S-bit */
-	bsd_uint16_t hcrc;			/* header checksum */
-	bsd_uint32_t odst;			/* original destination address */
-	bsd_uint32_t osrc;			/* original source addr, if S-bit set */
+	u_int16_t proto;		/* protocol and S-bit */
+	u_int16_t hcrc;			/* header checksum */
+	u_int32_t odst;			/* original destination address */
+	u_int32_t osrc;			/* original source addr, if S-bit set */
 } __packed;
 
 struct mobip_h {
-	struct bsd_ip	mi;
+	struct ip	mi;
 	struct mobile_h	mh;
 } __packed;
 
@@ -179,7 +179,7 @@ LIST_HEAD(gre_softc_head, gre_softc);
 extern struct mtx gre_mtx;
 extern struct gre_softc_head gre_softc_list;
 
-bsd_uint16_t	gre_in_cksum(bsd_uint16_t *, u_int);
+u_int16_t	gre_in_cksum(u_int16_t *, u_int);
 #endif /* _KERNEL */
 
 #endif

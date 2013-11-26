@@ -33,7 +33,7 @@
 #ifndef _BSM_AUDIT_RECORD_H_
 #define _BSM_AUDIT_RECORD_H_
 
-#include <sys/time.h>			/* struct timeval */
+#include <sys/bsd_time.h>			/* struct timeval */
 
 /*
  * Token type identifiers.
@@ -175,14 +175,14 @@
 
 __BEGIN_DECLS
 
-struct bsd_in_addr;
-struct bsd_in6_addr;
-struct bsd_ip;
+struct in_addr;
+struct in6_addr;
+struct ip;
 struct ipc_perm;
 struct kevent;
-struct bsd_sockaddr;
-struct bsd_sockaddr_in;
-struct bsd_sockaddr_in6;
+struct sockaddr;
+struct sockaddr_in;
+struct sockaddr_in6;
 struct sockaddr_un;
 #if defined(_KERNEL) || defined(KERNEL)
 struct vnode_au_info;
@@ -226,9 +226,9 @@ token_t	*au_to_data(char unit_print, char unit_type, char unit_count,
 token_t	*au_to_exit(int retval, int err);
 token_t	*au_to_groups(int *groups);
 token_t	*au_to_newgroups(uint16_t n, gid_t *groups);
-token_t	*au_to_in_addr(struct bsd_in_addr *internet_addr);
-token_t	*au_to_in_addr_ex(struct bsd_in6_addr *internet_addr);
-token_t	*au_to_ip(struct bsd_ip *ip);
+token_t	*au_to_in_addr(struct in_addr *internet_addr);
+token_t	*au_to_in_addr_ex(struct in6_addr *internet_addr);
+token_t	*au_to_ip(struct ip *ip);
 token_t	*au_to_ipc(char type, int id);
 token_t	*au_to_ipc_perm(struct ipc_perm *perm);
 token_t	*au_to_iport(uint16_t iport);
@@ -253,10 +253,10 @@ token_t	*au_to_return32(char status, uint32_t ret);
 token_t	*au_to_return64(char status, uint64_t ret);
 token_t	*au_to_seq(long audit_count);
 token_t	*au_to_socket_ex(u_short so_domain, u_short so_type,
-	    struct bsd_sockaddr *sa_local, struct bsd_sockaddr *sa_remote);
-token_t	*au_to_sock_inet(struct bsd_sockaddr_in *so);
-token_t	*au_to_sock_inet32(struct bsd_sockaddr_in *so);
-token_t	*au_to_sock_inet128(struct bsd_sockaddr_in6 *so);
+	    struct sockaddr *sa_local, struct sockaddr *sa_remote);
+token_t	*au_to_sock_inet(struct sockaddr_in *so);
+token_t	*au_to_sock_inet32(struct sockaddr_in *so);
+token_t	*au_to_sock_inet128(struct sockaddr_in6 *so);
 token_t	*au_to_sock_unix(struct sockaddr_un *so);
 token_t	*au_to_subject(au_id_t auid, uid_t euid, gid_t egid, uid_t ruid,
 	    gid_t rgid, pid_t pid, au_asid_t sid, au_tid_t *tid);

@@ -17,9 +17,9 @@
 /** @brief Unique descriptor for the MMCBR_UPDATE_IOS() method */
 extern struct kobjop_desc mmcbr_update_ios_desc;
 /** @brief A function implementing the MMCBR_UPDATE_IOS() method */
-typedef int mmcbr_update_ios_t(bsd_device_t brdev, bsd_device_t reqdev);
+typedef int mmcbr_update_ios_t(device_t brdev, device_t reqdev);
 
-static __inline int MMCBR_UPDATE_IOS(bsd_device_t brdev, bsd_device_t reqdev)
+static __inline int MMCBR_UPDATE_IOS(device_t brdev, device_t reqdev)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)brdev)->ops,mmcbr_update_ios);
@@ -29,10 +29,10 @@ static __inline int MMCBR_UPDATE_IOS(bsd_device_t brdev, bsd_device_t reqdev)
 /** @brief Unique descriptor for the MMCBR_REQUEST() method */
 extern struct kobjop_desc mmcbr_request_desc;
 /** @brief A function implementing the MMCBR_REQUEST() method */
-typedef int mmcbr_request_t(bsd_device_t brdev, bsd_device_t reqdev,
+typedef int mmcbr_request_t(device_t brdev, device_t reqdev,
                             struct mmc_request *req);
 
-static __inline int MMCBR_REQUEST(bsd_device_t brdev, bsd_device_t reqdev,
+static __inline int MMCBR_REQUEST(device_t brdev, device_t reqdev,
                                   struct mmc_request *req)
 {
 	kobjop_t _m;
@@ -43,9 +43,9 @@ static __inline int MMCBR_REQUEST(bsd_device_t brdev, bsd_device_t reqdev,
 /** @brief Unique descriptor for the MMCBR_GET_RO() method */
 extern struct kobjop_desc mmcbr_get_ro_desc;
 /** @brief A function implementing the MMCBR_GET_RO() method */
-typedef int mmcbr_get_ro_t(bsd_device_t brdev, bsd_device_t reqdev);
+typedef int mmcbr_get_ro_t(device_t brdev, device_t reqdev);
 
-static __inline int MMCBR_GET_RO(bsd_device_t brdev, bsd_device_t reqdev)
+static __inline int MMCBR_GET_RO(device_t brdev, device_t reqdev)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)brdev)->ops,mmcbr_get_ro);
@@ -55,9 +55,9 @@ static __inline int MMCBR_GET_RO(bsd_device_t brdev, bsd_device_t reqdev)
 /** @brief Unique descriptor for the MMCBR_ACQUIRE_HOST() method */
 extern struct kobjop_desc mmcbr_acquire_host_desc;
 /** @brief A function implementing the MMCBR_ACQUIRE_HOST() method */
-typedef int mmcbr_acquire_host_t(bsd_device_t brdev, bsd_device_t reqdev);
+typedef int mmcbr_acquire_host_t(device_t brdev, device_t reqdev);
 
-static __inline int MMCBR_ACQUIRE_HOST(bsd_device_t brdev, bsd_device_t reqdev)
+static __inline int MMCBR_ACQUIRE_HOST(device_t brdev, device_t reqdev)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)brdev)->ops,mmcbr_acquire_host);
@@ -67,9 +67,9 @@ static __inline int MMCBR_ACQUIRE_HOST(bsd_device_t brdev, bsd_device_t reqdev)
 /** @brief Unique descriptor for the MMCBR_RELEASE_HOST() method */
 extern struct kobjop_desc mmcbr_release_host_desc;
 /** @brief A function implementing the MMCBR_RELEASE_HOST() method */
-typedef int mmcbr_release_host_t(bsd_device_t brdev, bsd_device_t reqdev);
+typedef int mmcbr_release_host_t(device_t brdev, device_t reqdev);
 
-static __inline int MMCBR_RELEASE_HOST(bsd_device_t brdev, bsd_device_t reqdev)
+static __inline int MMCBR_RELEASE_HOST(device_t brdev, device_t reqdev)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)brdev)->ops,mmcbr_release_host);

@@ -39,16 +39,16 @@
 #include "opt_inet6.h"
 #include "opt_ipx.h"
 
-#include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/kernel.h>
-#include <sys/mbuf.h>
-#include <sys/module.h>
-#include <machine/bus.h>
-#include <sys/rman.h>
-#include <sys/socket.h>
-#include <sys/sockio.h>
-#include <sys/sysctl.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_mbuf.h>
+#include <sys/bsd_module.h>
+#include <machine/bsd_bus.h>
+#include <sys/bsd_rman.h>
+#include <sys/bsd_socket.h>
+#include <sys/bsd_sockio.h>
+#include <sys/bsd_sysctl.h>
 
 #include <net/if.h>
 #include <net/if_clone.h>
@@ -81,7 +81,7 @@
 #include <netatalk/at_var.h>
 #endif
 
-#include <security/mac/mac_framework.h>
+//#include <security/mac/mac_framework.h>
 
 #ifdef TINY_LOMTU
 #define	LOMTU	(1024+512)
@@ -101,7 +101,7 @@
 int		loioctl(struct ifnet *, u_long, caddr_t);
 static void	lortrequest(int, struct rtentry *, struct rt_addrinfo *);
 int		looutput(struct ifnet *ifp, struct mbuf *m,
-		    struct bsd_sockaddr *dst, struct route *ro);
+		    struct sockaddr *dst, struct route *ro);
 static int	lo_clone_create(struct if_clone *, int, caddr_t);
 static void	lo_clone_destroy(struct ifnet *);
 
@@ -149,7 +149,7 @@ lo_clone_create(struct if_clone *ifc, int unit, caddr_t params)
 	    IFCAP_HWCSUM | IFCAP_HWCSUM_IPV6;
 	ifp->if_hwassist = LO_CSUM_FEATURES | LO_CSUM_FEATURES6;
 	if_attach(ifp);
-	bpfattach(ifp, DLT_NULL, sizeof(bsd_uint32_t));
+	bpfattach(ifp, DLT_NULL, sizeof(u_int32_t));
 	if (V_loif == NULL)
 		V_loif = ifp;
 
@@ -211,10 +211,10 @@ static moduledata_t loop_mod = {
 DECLARE_MODULE(if_lo, loop_mod, SI_SUB_PROTO_IFATTACHDOMAIN, SI_ORDER_ANY);
 
 int
-looutput(struct ifnet *ifp, struct mbuf *m, struct bsd_sockaddr *dst,
+looutput(struct ifnet *ifp, struct mbuf *m, struct sockaddr *dst,
     struct route *ro)
 {
-	bsd_uint32_t af;
+	u_int32_t af;
 	struct rtentry *rt = NULL;
 #ifdef MAC
 	int error;
@@ -326,7 +326,7 @@ if_simloop(struct ifnet *ifp, struct mbuf *m, int af, int hlen)
 		if (bpf_peers_present(V_loif->if_bpf)) {
 			if ((m->m_flags & M_MCAST) == 0 || V_loif == ifp) {
 				/* XXX beware sizeof(af) != 4 */
-				bsd_uint32_t af1 = af;
+				u_int32_t af1 = af;
 
 				/*
 				 * We need to prepend the address family.

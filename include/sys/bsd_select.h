@@ -39,14 +39,14 @@
 #include <sys/_bsd_timeval.h>
 #include <sys/bsd_timespec.h>
 
-typedef	unsigned long	__bsd_fd_mask;
+typedef	unsigned long	__fd_mask;
 #if __BSD_VISIBLE
-typedef	__bsd_fd_mask	bsd_fd_mask;
+typedef	__fd_mask	fd_mask;
 #endif
 
-#ifndef _BSD_SIGSET_T_DECLARED
-#define	_BSD_SIGSET_T_DECLARED
-typedef	__bsd_sigset_t	bsd_sigset_t;
+#ifndef _SIGSET_T_DECLARED
+#define	_SIGSET_T_DECLARED
+typedef	__sigset_t	sigset_t;
 #endif
 
 /*
@@ -59,30 +59,30 @@ typedef	__bsd_sigset_t	bsd_sigset_t;
 #define	FD_SETSIZE	1024U
 #endif
 
-#define	_NFDBITS	(sizeof(__bsd_fd_mask) * 8)	/* bits per mask */
+#define	_NFDBITS	(sizeof(__fd_mask) * 8)	/* bits per mask */
 #if __BSD_VISIBLE
-#define	BSD_NFDBITS		_NFDBITS
+#define	NFDBITS		_NFDBITS
 #endif
 
 #ifndef _howmany
 #define	_howmany(x, y)	(((x) + ((y) - 1)) / (y))
 #endif
 
-typedef	struct bsd_fd_set {
-	__bsd_fd_mask	__fds_bits[_howmany(FD_SETSIZE, _NFDBITS)];
-} bsd_fd_set;
+typedef	struct fd_set {
+	__fd_mask	__fds_bits[_howmany(FD_SETSIZE, _NFDBITS)];
+} fd_set;
 #if __BSD_VISIBLE
 #define	fds_bits	__fds_bits
 #endif
 
-#define	__fdset_mask(n)	((__bsd_fd_mask)1 << ((n) % _NFDBITS))
-#define	BSD_FD_CLR(n, p)	((p)->__fds_bits[(n)/_NFDBITS] &= ~__fdset_mask(n))
+#define	__fdset_mask(n)	((__fd_mask)1 << ((n) % _NFDBITS))
+#define	FD_CLR(n, p)	((p)->__fds_bits[(n)/_NFDBITS] &= ~__fdset_mask(n))
 #if __BSD_VISIBLE
-#define	BSD_FD_COPY(f, t)	(void)(*(t) = *(f))
+#define	FD_COPY(f, t)	(void)(*(t) = *(f))
 #endif
-#define	BSD_FD_ISSET(n, p)	(((p)->__fds_bits[(n)/_NFDBITS] & __fdset_mask(n)) != 0)
-#define	BSD_FD_SET(n, p)	((p)->__fds_bits[(n)/_NFDBITS] |= __fdset_mask(n))
-#define	BSD_FD_ZERO(p) do {					\
+#define	FD_ISSET(n, p)	(((p)->__fds_bits[(n)/_NFDBITS] & __fdset_mask(n)) != 0)
+#define	FD_SET(n, p)	((p)->__fds_bits[(n)/_NFDBITS] |= __fdset_mask(n))
+#define	FD_ZERO(p) do {					\
 	fd_set *_p;					\
 	__size_t _n;					\
 							\
@@ -95,12 +95,12 @@ typedef	struct bsd_fd_set {
 #ifndef _KERNEL
 
 __BEGIN_DECLS
-int pselect(int, bsd_fd_set *__restrict, bsd_fd_set *__restrict, bsd_fd_set *__restrict,
-    const struct bsd_timespec *__restrict, const bsd_sigset_t *__restrict);
+int pselect(int, fd_set *__restrict, fd_set *__restrict, fd_set *__restrict,
+	const struct timespec *__restrict, const sigset_t *__restrict);
 #ifndef _SELECT_DECLARED
 #define	_SELECT_DECLARED
 /* XXX missing restrict type-qualifier */
-int	select(int, bsd_fd_set *, bsd_fd_set *, bsd_fd_set *, struct bsd_timeval *);
+int	select(int, fd_set *, fd_set *, fd_set *, struct timeval *);
 #endif
 __END_DECLS
 #endif /* !_KERNEL */

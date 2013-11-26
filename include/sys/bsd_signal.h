@@ -138,12 +138,12 @@
  * have the same calling protocol so there is no problem in practice.
  * A bit in sa_flags could be used to specify the number of args.
  */
-typedef	void __bsd_sighandler_t(int);
+typedef	void __sighandler_t(int);
 
 #if __POSIX_VISIBLE || __XSI_VISIBLE
-#ifndef _BSD_SIGSET_T_DECLARED
-#define	_BSD_SIGSET_T_DECLARED
-typedef	__bsd_sigset_t	bsd_sigset_t;
+#ifndef _SIGSET_T_DECLARED
+#define	_SIGSET_T_DECLARED
+typedef	__sigset_t	sigset_t;
 #endif
 #endif
 
@@ -164,7 +164,7 @@ struct sigevent {
 	int	sigev_signo;		/* Signal number */
 	union sigval sigev_value;	/* Signal value */
 	union {
-		__bsd_lwpid_t	_threadid;
+		__lwpid_t	_threadid;
 		struct {
 			void (*_function)(union sigval);
 			void *_attribute; /* pthread_attr_t * */
@@ -192,7 +192,7 @@ struct sigevent {
 #endif /* __POSIX_VISIBLE >= 199309 */
 
 #if __POSIX_VISIBLE >= 199309 || __XSI_VISIBLE
-typedef	struct __bsd_siginfo {
+typedef	struct __siginfo {
 	int	si_signo;		/* signal number */
 	int	si_errno;		/* errno association */
 	/*
@@ -202,8 +202,8 @@ typedef	struct __bsd_siginfo {
 	 * FreeBSD signal handler.
 	 */
 	int	si_code;		/* signal code */
-	__bsd_pid_t	si_pid;			/* sending process */
-	__bsd_uid_t	si_uid;			/* sender's ruid */
+	__pid_t	si_pid;			/* sending process */
+	__uid_t	si_uid;			/* sender's ruid */
 	int	si_status;		/* exit value */
 	void	*si_addr;		/* faulting instruction */
 	union sigval si_value;		/* signal value */
@@ -226,7 +226,7 @@ typedef	struct __bsd_siginfo {
 			int	__spare2__[7];
 		} __spare__;
 	} _reason;
-} bsd_siginfo_t;
+} siginfo_t;
 
 #define si_trapno	_reason._fault._trapno
 #define si_timerid	_reason._timer._timerid
@@ -291,7 +291,7 @@ typedef	struct __bsd_siginfo {
 #endif
 
 #if __POSIX_VISIBLE || __XSI_VISIBLE
-struct __bsd_siginfo;
+struct __siginfo;
 
 /*
  * Signal vector "template" used in sigaction call.
@@ -299,10 +299,10 @@ struct __bsd_siginfo;
 struct sigaction {
 	union {
 		void    (*__sa_handler)(int);
-		void    (*__sa_sigaction)(int, struct __bsd_siginfo *, void *);
+		void    (*__sa_sigaction)(int, struct __siginfo *, void *);
 	} __sigaction_u;		/* signal handler */
 	int	sa_flags;		/* see signal options below */
-	bsd_sigset_t sa_mask;		/* signal mask to apply */
+	sigset_t sa_mask;		/* signal mask to apply */
 };
 
 #define	sa_handler	__sigaction_u.__sa_handler
@@ -348,8 +348,8 @@ struct sigaction {
 #endif
 
 #if __BSD_VISIBLE
-typedef	__bsd_sighandler_t	*bsd_sig_t;	/* type of pointer to a signal function */
-typedef	void __bsd_siginfohandler_t(int, struct __bsd_siginfo *, void *);
+typedef	__sighandler_t	*sig_t;	/* type of pointer to a signal function */
+typedef	void __siginfohandler_t(int, struct __siginfo *, void *);
 #endif
 
 #if __XSI_VISIBLE
@@ -357,14 +357,14 @@ typedef	void __bsd_siginfohandler_t(int, struct __bsd_siginfo *, void *);
  * Structure used in sigaltstack call.
  */
 #if __BSD_VISIBLE
-typedef	struct bsd_sigaltstack {
+typedef	struct sigaltstack {
 #else
 typedef	struct {
 #endif
 	char	*ss_sp;			/* signal stack base */
-	__bsd_size_t ss_size;		/* signal stack length */
+	__size_t ss_size;		/* signal stack length */
 	int	ss_flags;		/* SS_DISABLE and/or SS_ONSTACK */
-} bsd_stack_t;
+} stack_t;
 
 #define	SS_ONSTACK	0x0001	/* take signal on alternate stack */
 #define	SS_DISABLE	0x0004	/* disable taking signals on alternate stack */
@@ -378,7 +378,7 @@ typedef	struct {
  * Signal vector "template" used in sigvec call.
  */
 struct sigvec {
-	__bsd_sighandler_t *sv_handler;	/* signal handler */
+	__sighandler_t *sv_handler;	/* signal handler */
 	int	sv_mask;		/* signal mask to apply */
 	int	sv_flags;		/* see signal options below */
 };
@@ -437,7 +437,7 @@ struct sigstack {
  * defined by <sys/signal.h>.
  */
 __BEGIN_DECLS
-__bsd_sighandler_t *signal(int, __bsd_sighandler_t *);
+__sighandler_t *signal(int, __sighandler_t *);
 __END_DECLS
 
 #endif /* !_SYS_SIGNAL_H_ */

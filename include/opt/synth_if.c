@@ -10,13 +10,13 @@
  * See the source file for legal information
  */
 
-#include <sys/param.h>
-#include <sys/queue.h>
-#include <sys/kernel.h>
-#include <sys/kobj.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_queue.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_kobj.h>
 #include "synth_if.h"
 
-#include <sys/systm.h>
+#include <sys/bsd_systm.h>
 
 
 synth_killnote_t nokillnote;
@@ -41,7 +41,7 @@ synth_insync_t noinsync;
 synth_alloc_t noalloc;
 
     int
-	nokillnote(void *_kobj, bsd_uint8_t _chn, bsd_uint8_t _note, bsd_uint8_t _vel)
+	nokillnote(void *_kobj, uint8_t _chn, uint8_t _note, uint8_t _vel)
 	{
 	    printf("nokillnote\n");
 	    return 0;
@@ -62,42 +62,42 @@ synth_alloc_t noalloc;
 	}
 
     int
-	nostartnote(void *_kb, bsd_uint8_t _voice, bsd_uint8_t _note, bsd_uint8_t _parm)
+	nostartnote(void *_kb, uint8_t _voice, uint8_t _note, uint8_t _parm)
 	{
 	    printf("nostartnote\n");
 	    return 0;
 	}
 
     int
-	nosetinstr(void *_kb, bsd_uint8_t _chn, bsd_uint16_t _patchno)
+	nosetinstr(void *_kb, uint8_t _chn, uint16_t _patchno)
 	{
 	    printf("nosetinstr\n");
 	    return 0;
 	}
 
     int
-	nohwcontrol(void *_kb, bsd_uint8_t *_event)
+	nohwcontrol(void *_kb, uint8_t *_event)
 	{
 	    printf("nohwcontrol\n");
 	    return 0;
 	}
 
     int 
-	noaftertouch ( void /* X */ * _kobj, bsd_uint8_t _x1, bsd_uint8_t _x2)
+	noaftertouch ( void /* X */ * _kobj, uint8_t _x1, uint8_t _x2)
 	{
 	    printf("noaftertouch\n");
 	    return 0;
 	}
 
     int
-	nopanning ( void /* X */ * _kobj, bsd_uint8_t _x1, bsd_uint8_t _x2)
+	nopanning ( void /* X */ * _kobj, uint8_t _x1, uint8_t _x2)
 	{
 	    printf("nopanning\n");
 	    return 0;
 	}
 
     int 
-	nocontroller ( void /* X */ * _kobj, bsd_uint8_t _x1, bsd_uint8_t _x2, bsd_uint16_t _x3)
+	nocontroller ( void /* X */ * _kobj, uint8_t _x1, uint8_t _x2, uint16_t _x3)
 	{
 	    printf("nocontroller\n");
 	    return 0;
@@ -106,21 +106,21 @@ synth_alloc_t noalloc;
     int 
 	novolumemethod (
 		void /* X */ * _kobj,
-		bsd_uint8_t _x1)
+		uint8_t _x1)
 	{
 	    printf("novolumemethod\n");
 	    return 0;
 	}
 
     int 
-	nobender ( void /* X */ * _kobj, bsd_uint8_t _voice, bsd_uint16_t _bend)
+	nobender ( void /* X */ * _kobj, uint8_t _voice, uint16_t _bend)
 	{
 	    printf("nobender\n");
 	    return 0;
 	}
 
     int 
-	nosetupvoice ( void /* X */ * _kobj, bsd_uint8_t _voice, bsd_uint8_t _chn)
+	nosetupvoice ( void /* X */ * _kobj, uint8_t _voice, uint8_t _chn)
 	{
 
 	    printf("nosetupvoice\n");
@@ -128,21 +128,21 @@ synth_alloc_t noalloc;
 	}
 
     int 
-	nosendsysex ( void /* X */ * _kobj, void * _buf, bsd_size_t _len)
+	nosendsysex ( void /* X */ * _kobj, void * _buf, size_t _len)
 	{
 	    printf("nosendsysex\n");
 	    return 0;
 	}
 
     int 
-	noallocvoice ( void /* X */ * _kobj, bsd_uint8_t _chn, bsd_uint8_t _note, void *_x)
+	noallocvoice ( void /* X */ * _kobj, uint8_t _chn, uint8_t _note, void *_x)
 	{
 	    printf("noallocvoice\n");
 	    return 0;
 	}
 
     int 
-	nowriteraw ( void /* X */ * _kobjt, bsd_uint8_t * _buf, bsd_size_t _len)
+	nowriteraw ( void /* X */ * _kobjt, uint8_t * _buf, size_t _len)
 	{
 	    printf("nowriteraw\n");
 	    return 1;
@@ -180,7 +180,7 @@ synth_alloc_t noalloc;
 	}
 
     int 
-	noalloc ( void /* x */ * _kbojt, bsd_uint8_t _chn, bsd_uint8_t _note)
+	noalloc ( void /* x */ * _kbojt, uint8_t _chn, uint8_t _note)
 	{
 	    printf("noalloc\n");
 	    return 0;

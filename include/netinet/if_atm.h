@@ -40,8 +40,8 @@
 struct atm_pseudohdr;
 struct mbuf;
 struct rtentry;
-struct bsd_sockaddr;
+struct sockaddr;
 
 void atm_rtrequest(int, struct rtentry *, struct rt_addrinfo *);
-int atmresolve(struct rtentry *, struct mbuf *, struct bsd_sockaddr *,
+int atmresolve(struct rtentry *, struct mbuf *, struct sockaddr *,
 		struct atm_pseudohdr *);

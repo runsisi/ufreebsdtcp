@@ -40,18 +40,18 @@
 #include "opt_mrouting.h"
 #include "opt_mpath.h"
 
-#include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/syslog.h>
-#include <sys/malloc.h>
-#include <sys/mbuf.h>
-#include <sys/socket.h>
-#include <sys/sysctl.h>
-#include <sys/syslog.h>
-#include <sys/sysproto.h>
-#include <sys/proc.h>
-#include <sys/domain.h>
-#include <sys/kernel.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_syslog.h>
+#include <sys/bsd_malloc.h>
+#include <sys/bsd_mbuf.h>
+#include <sys/bsd_socket.h>
+#include <sys/bsd_sysctl.h>
+#include <sys/bsd_syslog.h>
+#include <sys/bsd_sysproto.h>
+#include <sys/bsd_proc.h>
+#include <sys/bsd_domain.h>
+#include <sys/bsd_kernel.h>
 
 #include <net/if.h>
 #include <net/if_dl.h>
@@ -191,7 +191,7 @@ rt_tables_get_rnh(int table, int fam)
 static void
 route_init(void)
 {
-	struct bsd_domain *dom;
+	struct domain *dom;
 	int max_keylen = 0;
 
 	/* whack the tunable ints into  line. */
@@ -211,12 +211,12 @@ SYSINIT(route_init, SI_SUB_PROTO_DOMAIN, SI_ORDER_THIRD, route_init, 0);
 static void
 vnet_route_init(const void *unused __unused)
 {
-	struct bsd_domain *dom;
+	struct domain *dom;
 	struct radix_node_head **rnh;
 	int table;
 	int fam;
 
-	V_rt_tables = bsd_malloc(rt_numfibs * (AF_MAX+1) *
+	V_rt_tables = malloc(rt_numfibs * (AF_MAX+1) *
 	    sizeof(struct radix_node_head *), M_RTABLE, M_WAITOK|M_ZERO);
 
 	V_rtzone = uma_zcreate("rtentry", sizeof(struct rtentry), NULL, NULL,
@@ -251,7 +251,7 @@ vnet_route_uninit(const void *unused __unused)
 {
 	int table;
 	int fam;
-	struct bsd_domain *dom;
+	struct domain *dom;
 	struct radix_node_head **rnh;
 
 	for (dom = domains; dom; dom = dom->dom_next) {
@@ -344,14 +344,14 @@ rtalloc_ign_fib(struct route *ro, u_long ignore, u_int fibnum)
  * The returned route, if any, is locked.
  */
 struct rtentry *
-rtalloc1(struct bsd_sockaddr *dst, int report, u_long ignflags)
+rtalloc1(struct sockaddr *dst, int report, u_long ignflags)
 {
 
 	return (rtalloc1_fib(dst, report, ignflags, RT_DEFAULT_FIB));
 }
 
 struct rtentry *
-rtalloc1_fib(struct bsd_sockaddr *dst, int report, u_long ignflags,
+rtalloc1_fib(struct sockaddr *dst, int report, u_long ignflags,
 		    u_int fibnum)
 {
 	struct radix_node_head *rnh;
@@ -443,7 +443,7 @@ rtfree(struct rtentry *rt)
 	 */
 	RT_REMREF(rt);
 	if (rt->rt_refcnt > 0) {
-		bsd_log(LOG_DEBUG, "%s: %p has %d refs\n", __func__, rt, rt->rt_refcnt);
+		log(LOG_DEBUG, "%s: %p has %d refs\n", __func__, rt, rt->rt_refcnt);
 		goto done;
 	}
 
@@ -510,22 +510,22 @@ done:
  * message from the network layer.
  */
 void
-rtredirect(struct bsd_sockaddr *dst,
-	struct bsd_sockaddr *gateway,
-	struct bsd_sockaddr *netmask,
+rtredirect(struct sockaddr *dst,
+	struct sockaddr *gateway,
+	struct sockaddr *netmask,
 	int flags,
-	struct bsd_sockaddr *src)
+	struct sockaddr *src)
 {
 
 	rtredirect_fib(dst, gateway, netmask, flags, src, RT_DEFAULT_FIB);
 }
 
 void
-rtredirect_fib(struct bsd_sockaddr *dst,
-	struct bsd_sockaddr *gateway,
-	struct bsd_sockaddr *netmask,
+rtredirect_fib(struct sockaddr *dst,
+	struct sockaddr *gateway,
+	struct sockaddr *netmask,
 	int flags,
-	struct bsd_sockaddr *src,
+	struct sockaddr *src,
 	u_int fibnum)
 {
 	struct rtentry *rt, *rt0 = NULL;
@@ -677,14 +677,14 @@ rtioctl_fib(u_long req, caddr_t data, u_int fibnum)
  * For both ifa_ifwithroute() routines, 'ifa' is returned referenced.
  */
 struct ifaddr *
-ifa_ifwithroute(int flags, struct bsd_sockaddr *dst, struct bsd_sockaddr *gateway)
+ifa_ifwithroute(int flags, struct sockaddr *dst, struct sockaddr *gateway)
 {
 
 	return (ifa_ifwithroute_fib(flags, dst, gateway, RT_DEFAULT_FIB));
 }
 
 struct ifaddr *
-ifa_ifwithroute_fib(int flags, struct bsd_sockaddr *dst, struct bsd_sockaddr *gateway,
+ifa_ifwithroute_fib(int flags, struct sockaddr *dst, struct sockaddr *gateway,
 				u_int fibnum)
 {
 	register struct ifaddr *ifa;
@@ -759,9 +759,9 @@ ifa_ifwithroute_fib(int flags, struct bsd_sockaddr *dst, struct bsd_sockaddr *ga
  */
 int
 rtrequest(int req,
-	struct bsd_sockaddr *dst,
-	struct bsd_sockaddr *gateway,
-	struct bsd_sockaddr *netmask,
+	struct sockaddr *dst,
+	struct sockaddr *gateway,
+	struct sockaddr *netmask,
 	int flags,
 	struct rtentry **ret_nrt)
 {
@@ -772,9 +772,9 @@ rtrequest(int req,
 
 int
 rtrequest_fib(int req,
-	struct bsd_sockaddr *dst,
-	struct bsd_sockaddr *gateway,
-	struct bsd_sockaddr *netmask,
+	struct sockaddr *dst,
+	struct sockaddr *gateway,
+	struct sockaddr *netmask,
 	int flags,
 	struct rtentry **ret_nrt,
 	u_int fibnum)
@@ -833,7 +833,7 @@ rt_getifa_fib(struct rt_addrinfo *info, u_int fibnum)
 	if (info->rti_ifa == NULL && ifaaddr != NULL)
 		info->rti_ifa = ifa_ifwithaddr(ifaaddr);
 	if (info->rti_ifa == NULL) {
-		struct bsd_sockaddr *sa;
+		struct sockaddr *sa;
 
 		sa = ifaaddr != NULL ? ifaaddr :
 		    (gateway != NULL ? gateway : dst);
@@ -1060,8 +1060,8 @@ rtrequest1_fib(int req, struct rt_addrinfo *info, struct rtentry **ret_nrt,
 	register struct radix_node *rn;
 	register struct radix_node_head *rnh;
 	struct ifaddr *ifa;
-	struct bsd_sockaddr *ndst;
-	struct bsd_sockaddr_storage mdst;
+	struct sockaddr *ndst;
+	struct sockaddr_storage mdst;
 #define senderr(x) { error = x ; goto bad; }
 
 	KASSERT((fibnum < rt_numfibs), ("rtrequest1_fib: bad fibnum"));
@@ -1097,8 +1097,8 @@ rtrequest1_fib(int req, struct rt_addrinfo *info, struct rtentry **ret_nrt,
 	switch (req) {
 	case RTM_DELETE:
 		if (netmask) {
-			rt_maskedcopy(dst, (struct bsd_sockaddr *)&mdst, netmask);
-			dst = (struct bsd_sockaddr *)&mdst;
+			rt_maskedcopy(dst, (struct sockaddr *)&mdst, netmask);
+			dst = (struct sockaddr *)&mdst;
 		}
 #ifdef RADIX_MPATH
 		if (rn_mpath_capable(rnh)) {
@@ -1202,7 +1202,7 @@ rtrequest1_fib(int req, struct rt_addrinfo *info, struct rtentry **ret_nrt,
 		/*
 		 * point to the (possibly newly malloc'd) dest address.
 		 */
-		ndst = (struct bsd_sockaddr *)rt_key(rt);
+		ndst = (struct sockaddr *)rt_key(rt);
 
 		/*
 		 * make sure it contains the value we want (masked if needed).
@@ -1248,7 +1248,7 @@ rtrequest1_fib(int req, struct rt_addrinfo *info, struct rtentry **ret_nrt,
 #if defined(INET6) || defined(INET)
 			rn = rnh->rnh_matchaddr(dst, rnh);
 			if (rn && ((rn->rn_flags & RNF_ROOT) == 0)) {
-				struct bsd_sockaddr *mask;
+				struct sockaddr *mask;
 				u_char *m, *n;
 				int len;
 				
@@ -1359,7 +1359,7 @@ bad:
 #undef flags
 
 int
-rt_setgate(struct rtentry *rt, struct bsd_sockaddr *dst, struct bsd_sockaddr *gate)
+rt_setgate(struct rtentry *rt, struct sockaddr *dst, struct sockaddr *gate)
 {
 	/* XXX dst may be overwritten, can we move this to below */
 	int dlen = SA_SIZE(dst), glen = SA_SIZE(gate);
@@ -1394,8 +1394,8 @@ rt_setgate(struct rtentry *rt, struct bsd_sockaddr *dst, struct bsd_sockaddr *ga
 		 */
 		bcopy(dst, new, dlen);
 		Free(rt_key(rt));	/* free old block, if any */
-		rt_key(rt) = (struct bsd_sockaddr *)new;
-		rt->rt_gateway = (struct bsd_sockaddr *)(new + dlen);
+		rt_key(rt) = (struct sockaddr *)new;
+		rt->rt_gateway = (struct sockaddr *)(new + dlen);
 	}
 
 	/*
@@ -1407,7 +1407,7 @@ rt_setgate(struct rtentry *rt, struct bsd_sockaddr *dst, struct bsd_sockaddr *ga
 }
 
 void
-rt_maskedcopy(struct bsd_sockaddr *src, struct bsd_sockaddr *dst, struct bsd_sockaddr *netmask)
+rt_maskedcopy(struct sockaddr *src, struct sockaddr *dst, struct sockaddr *netmask)
 {
 	register u_char *cp1 = (u_char *)src;
 	register u_char *cp2 = (u_char *)dst;
@@ -1433,8 +1433,8 @@ rt_maskedcopy(struct bsd_sockaddr *src, struct bsd_sockaddr *dst, struct bsd_soc
 static inline  int
 rtinit1(struct ifaddr *ifa, int cmd, int flags, int fibnum)
 {
-	struct bsd_sockaddr *dst;
-	struct bsd_sockaddr *netmask;
+	struct sockaddr *dst;
+	struct sockaddr *netmask;
 	struct rtentry *rt = NULL;
 	struct rt_addrinfo info;
 	int error = 0;
@@ -1490,8 +1490,8 @@ rtinit1(struct ifaddr *ifa, int cmd, int flags, int fibnum)
 		 * XXX this is kinda inet specific..
 		 */
 		if (netmask != NULL) {
-			rt_maskedcopy(dst, (struct bsd_sockaddr *)tempbuf, netmask);
-			dst = (struct bsd_sockaddr *)tempbuf;
+			rt_maskedcopy(dst, (struct sockaddr *)tempbuf, netmask);
+			dst = (struct sockaddr *)tempbuf;
 		}
 	}
 	/*
@@ -1539,7 +1539,7 @@ rtinit1(struct ifaddr *ifa, int cmd, int flags, int fibnum)
 			error = (rn == NULL ||
 			    (rn->rn_flags & RNF_ROOT) ||
 			    RNTORT(rn)->rt_ifa != ifa ||
-			    !sa_equal((struct bsd_sockaddr *)rn->rn_key, dst));
+			    !sa_equal((struct sockaddr *)rn->rn_key, dst));
 			RADIX_NODE_HEAD_RUNLOCK(rnh);
 			if (error) {
 				/* this is only an error if bad on ALL tables */
@@ -1559,7 +1559,7 @@ rtinit1(struct ifaddr *ifa, int cmd, int flags, int fibnum)
 		 */
 		if (cmd == RTM_ADD)
 			info.rti_info[RTAX_GATEWAY] =
-			    (struct bsd_sockaddr *)&null_sdl;
+			    (struct sockaddr *)&null_sdl;
 		else
 			info.rti_info[RTAX_GATEWAY] = ifa->ifa_addr;
 		info.rti_info[RTAX_NETMASK] = netmask;
@@ -1681,7 +1681,7 @@ rtinit_fib(struct ifaddr *ifa, int cmd, int flags)
 int
 rtinit(struct ifaddr *ifa, int cmd, int flags)
 {
-	struct bsd_sockaddr *dst;
+	struct sockaddr *dst;
 	int fib = RT_DEFAULT_FIB;
 
 	if (flags & RTF_HOST) {

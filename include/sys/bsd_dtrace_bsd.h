@@ -48,7 +48,7 @@ struct bio;
 typedef	void (*cyclic_clock_func_t)(struct trapframe *);
 extern cyclic_clock_func_t	cyclic_clock_func;
 
-void clocksource_cyc_set(const struct bsd_bintime *t);
+void clocksource_cyc_set(const struct bintime *t);
 
 /*
  * The dtrace module handles traps that occur during a DTrace probe.
@@ -62,7 +62,7 @@ int	dtrace_trap(struct trapframe *, u_int);
 extern dtrace_trap_func_t	dtrace_trap_func;
 
 /* Used by the machine dependent trap() code. */
-typedef	int (*dtrace_invop_func_t)(bsd_uintptr_t, bsd_uintptr_t *, bsd_uintptr_t);
+typedef	int (*dtrace_invop_func_t)(uintptr_t, uintptr_t *, uintptr_t);
 typedef void (*dtrace_doubletrap_func_t)(void);
 
 /* Global variables in trap.c */
@@ -97,21 +97,21 @@ extern dtrace_execexit_func_t	dtrace_fasttrap_exec;
 extern dtrace_execexit_func_t	dtrace_fasttrap_exit;
 
 /* The dtmalloc provider hooks into malloc. */
-typedef	void (*dtrace_malloc_probe_func_t)(bsd_uint32_t, bsd_uintptr_t arg0,
-    bsd_uintptr_t arg1, bsd_uintptr_t arg2, bsd_uintptr_t arg3, bsd_uintptr_t arg4);
+typedef	void (*dtrace_malloc_probe_func_t)(u_int32_t, uintptr_t arg0,
+    uintptr_t arg1, uintptr_t arg2, uintptr_t arg3, uintptr_t arg4);
 
 extern dtrace_malloc_probe_func_t   dtrace_malloc_probe;
 
 /* dtnfsclient NFSv[34] access cache provider hooks. */
-typedef void (*dtrace_nfsclient_accesscache_flush_probe_func_t)(bsd_uint32_t,
+typedef void (*dtrace_nfsclient_accesscache_flush_probe_func_t)(uint32_t,
     struct vnode *);
 extern dtrace_nfsclient_accesscache_flush_probe_func_t
     dtrace_nfsclient_accesscache_flush_done_probe;
 extern dtrace_nfsclient_accesscache_flush_probe_func_t
     dtrace_nfscl_accesscache_flush_done_probe;
 
-typedef void (*dtrace_nfsclient_accesscache_get_probe_func_t)(bsd_uint32_t,
-    struct vnode *, bsd_uid_t, bsd_uint32_t);
+typedef void (*dtrace_nfsclient_accesscache_get_probe_func_t)(uint32_t,
+    struct vnode *, uid_t, uint32_t);
 extern dtrace_nfsclient_accesscache_get_probe_func_t
     dtrace_nfsclient_accesscache_get_hit_probe,
     dtrace_nfsclient_accesscache_get_miss_probe;
@@ -119,36 +119,36 @@ extern dtrace_nfsclient_accesscache_get_probe_func_t
     dtrace_nfscl_accesscache_get_hit_probe,
     dtrace_nfscl_accesscache_get_miss_probe;
 
-typedef void (*dtrace_nfsclient_accesscache_load_probe_func_t)(bsd_uint32_t,
-    struct vnode *, bsd_uid_t, bsd_uint32_t, int);
+typedef void (*dtrace_nfsclient_accesscache_load_probe_func_t)(uint32_t,
+    struct vnode *, uid_t, uint32_t, int);
 extern dtrace_nfsclient_accesscache_load_probe_func_t
     dtrace_nfsclient_accesscache_load_done_probe;
 extern dtrace_nfsclient_accesscache_load_probe_func_t
     dtrace_nfscl_accesscache_load_done_probe;
 
 /* dtnfsclient NFSv[234] attribute cache provider hooks. */
-typedef void (*dtrace_nfsclient_attrcache_flush_probe_func_t)(bsd_uint32_t,
+typedef void (*dtrace_nfsclient_attrcache_flush_probe_func_t)(uint32_t,
     struct vnode *);
 extern dtrace_nfsclient_attrcache_flush_probe_func_t
     dtrace_nfsclient_attrcache_flush_done_probe;
 extern dtrace_nfsclient_attrcache_flush_probe_func_t
     dtrace_nfscl_attrcache_flush_done_probe;
 
-typedef void (*dtrace_nfsclient_attrcache_get_hit_probe_func_t)(bsd_uint32_t,
+typedef void (*dtrace_nfsclient_attrcache_get_hit_probe_func_t)(uint32_t,
     struct vnode *, struct vattr *);
 extern dtrace_nfsclient_attrcache_get_hit_probe_func_t
     dtrace_nfsclient_attrcache_get_hit_probe;
 extern dtrace_nfsclient_attrcache_get_hit_probe_func_t
     dtrace_nfscl_attrcache_get_hit_probe;
 
-typedef void (*dtrace_nfsclient_attrcache_get_miss_probe_func_t)(bsd_uint32_t,
+typedef void (*dtrace_nfsclient_attrcache_get_miss_probe_func_t)(uint32_t,
     struct vnode *);
 extern dtrace_nfsclient_attrcache_get_miss_probe_func_t
     dtrace_nfsclient_attrcache_get_miss_probe;
 extern dtrace_nfsclient_attrcache_get_miss_probe_func_t
     dtrace_nfscl_attrcache_get_miss_probe;
 
-typedef void (*dtrace_nfsclient_attrcache_load_probe_func_t)(bsd_uint32_t,
+typedef void (*dtrace_nfsclient_attrcache_load_probe_func_t)(uint32_t,
     struct vnode *, struct vattr *, int);
 extern dtrace_nfsclient_attrcache_load_probe_func_t
     dtrace_nfsclient_attrcache_load_done_probe;
@@ -156,34 +156,34 @@ extern dtrace_nfsclient_attrcache_load_probe_func_t
     dtrace_nfscl_attrcache_load_done_probe;
 
 /* dtnfsclient NFSv[234] RPC provider hooks. */
-typedef void (*dtrace_nfsclient_nfs23_start_probe_func_t)(bsd_uint32_t,
-    struct vnode *, struct mbuf *, struct bsd_ucred *, int);
+typedef void (*dtrace_nfsclient_nfs23_start_probe_func_t)(uint32_t,
+    struct vnode *, struct mbuf *, struct ucred *, int);
 extern dtrace_nfsclient_nfs23_start_probe_func_t
     dtrace_nfsclient_nfs23_start_probe;
 extern dtrace_nfsclient_nfs23_start_probe_func_t
     dtrace_nfscl_nfs234_start_probe;
 
-typedef void (*dtrace_nfsclient_nfs23_done_probe_func_t)(bsd_uint32_t,
-    struct vnode *, struct mbuf *, struct bsd_ucred *, int, int);
+typedef void (*dtrace_nfsclient_nfs23_done_probe_func_t)(uint32_t,
+    struct vnode *, struct mbuf *, struct ucred *, int, int);
 extern dtrace_nfsclient_nfs23_done_probe_func_t
     dtrace_nfsclient_nfs23_done_probe;
 extern dtrace_nfsclient_nfs23_done_probe_func_t
     dtrace_nfscl_nfs234_done_probe;
 
 /* IO Provider hooks, really hook into devstat */
-typedef void (*dtrace_io_start_probe_func_t)(bsd_uint32_t, struct bio *,
+typedef void (*dtrace_io_start_probe_func_t)(uint32_t, struct bio *,
 					     struct devstat *);
 extern dtrace_io_start_probe_func_t dtrace_io_start_probe;
 
-typedef void (*dtrace_io_done_probe_func_t)(bsd_uint32_t, struct bio *,
+typedef void (*dtrace_io_done_probe_func_t)(uint32_t, struct bio *,
 					    struct devstat *);
 extern dtrace_io_done_probe_func_t dtrace_io_done_probe;
 
-typedef void (*dtrace_io_wait_start_probe_func_t)(bsd_uint32_t, bsd_uintptr_t *, 
+typedef void (*dtrace_io_wait_start_probe_func_t)(uint32_t, uintptr_t *, 
 						  struct devstat *);
 extern dtrace_io_wait_start_probe_func_t dtrace_io_wait_start_probe;
 
-typedef void (*dtrace_io_wait_done_probe_func_t)(bsd_uint32_t, bsd_uintptr_t *, 
+typedef void (*dtrace_io_wait_done_probe_func_t)(uint32_t, uintptr_t *, 
 						 struct devstat *);
 extern dtrace_io_wait_done_probe_func_t dtrace_io_wait_done_probe;
 
@@ -192,14 +192,14 @@ extern dtrace_io_wait_done_probe_func_t dtrace_io_wait_done_probe;
  * hooks have been compiled with sufficient space for it's private
  * structures.
  */
-bsd_size_t	kdtrace_proc_size(void);
-bsd_size_t	kdtrace_thread_size(void);
+size_t	kdtrace_proc_size(void);
+size_t	kdtrace_thread_size(void);
 
 /*
  * OpenSolaris compatible time functions returning nanoseconds.
  * On OpenSolaris these return hrtime_t which we define as uint64_t.
  */
-bsd_uint64_t	dtrace_gethrtime(void);
-bsd_uint64_t	dtrace_gethrestime(void);
+uint64_t	dtrace_gethrtime(void);
+uint64_t	dtrace_gethrestime(void);
 
 #endif /* _SYS_DTRACE_BSD_H */

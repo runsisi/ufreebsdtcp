@@ -32,20 +32,20 @@
 #include <machine/bsd_vdso.h>
 
 struct vdso_timehands {
-	bsd_uint32_t	th_algo;
-	bsd_uint32_t	th_gen;
-	bsd_uint64_t	th_scale;
-	bsd_uint32_t 	th_offset_count;
-	bsd_uint32_t	th_counter_mask;
-	struct bsd_bintime	th_offset;
-	struct bsd_bintime	th_boottime;
+	uint32_t	th_algo;
+	uint32_t	th_gen;
+	uint64_t	th_scale;
+	uint32_t 	th_offset_count;
+	uint32_t	th_counter_mask;
+	struct bintime	th_offset;
+	struct bintime	th_boottime;
 	VDSO_TIMEHANDS_MD
 };
 
 struct vdso_timekeep {
-	bsd_uint32_t	tk_ver;
-	bsd_uint32_t	tk_enabled;
-	bsd_uint32_t	tk_current;
+	uint32_t	tk_ver;
+	uint32_t	tk_enabled;
+	uint32_t	tk_current;
 	struct vdso_timehands	tk_th[];
 };
 
@@ -56,12 +56,12 @@ struct vdso_timekeep {
 
 #ifndef _KERNEL
 
-struct bsd_timespec;
-struct bsd_timeval;
-struct bsd_timezone;
+struct timespec;
+struct timeval;
+struct timezone;
 
-int __vdso_clock_gettime(bsd_clockid_t clock_id, struct bsd_timespec *ts);
-int __vdso_gettimeofday(struct bsd_timeval *tv, struct bsd_timezone *tz);
+int __vdso_clock_gettime(clockid_t clock_id, struct timespec *ts);
+int __vdso_gettimeofday(struct timeval *tv, struct timezone *tz);
 u_int __vdso_gettc(const struct vdso_timehands *vdso_th);
 int __vdso_gettimekeep(struct vdso_timekeep **tk);
 
@@ -71,7 +71,7 @@ int __vdso_gettimekeep(struct vdso_timekeep **tk);
 
 void timekeep_push_vdso(void);
 
-bsd_uint32_t tc_fill_vdso_timehands(struct vdso_timehands *vdso_th);
+uint32_t tc_fill_vdso_timehands(struct vdso_timehands *vdso_th);
 
 /*
  * The cpu_fill_vdso_timehands() function should fill MD-part of the
@@ -81,36 +81,36 @@ bsd_uint32_t tc_fill_vdso_timehands(struct vdso_timehands *vdso_th);
  * global sysctl enable override is handled by machine-independed code
  * after cpu_fill_vdso_timehands() call is made.
  */
-bsd_uint32_t cpu_fill_vdso_timehands(struct vdso_timehands *vdso_th);
+uint32_t cpu_fill_vdso_timehands(struct vdso_timehands *vdso_th);
 
 #define	VDSO_TH_NUM	4
 
 #ifdef COMPAT_FREEBSD32
 struct bintime32 {
-	bsd_uint32_t	sec;
-	bsd_uint32_t	frac[2];
+	uint32_t	sec;
+	uint32_t	frac[2];
 };
 
 struct vdso_timehands32 {
-	bsd_uint32_t	th_algo;
-	bsd_uint32_t	th_gen;
-	bsd_uint32_t	th_scale[2];
-	bsd_uint32_t 	th_offset_count;
-	bsd_uint32_t	th_counter_mask;
+	uint32_t	th_algo;
+	uint32_t	th_gen;
+	uint32_t	th_scale[2];
+	uint32_t 	th_offset_count;
+	uint32_t	th_counter_mask;
 	struct bintime32	th_offset;
 	struct bintime32	th_boottime;
 	VDSO_TIMEHANDS_MD32
 };
 
 struct vdso_timekeep32 {
-	bsd_uint32_t	tk_ver;
-	bsd_uint32_t	tk_enabled;
-	bsd_uint32_t	tk_current;
+	uint32_t	tk_ver;
+	uint32_t	tk_enabled;
+	uint32_t	tk_current;
 	struct vdso_timehands32	tk_th[];
 };
 
-bsd_uint32_t tc_fill_vdso_timehands32(struct vdso_timehands32 *vdso_th32);
-bsd_uint32_t cpu_fill_vdso_timehands32(struct vdso_timehands32 *vdso_th32);
+uint32_t tc_fill_vdso_timehands32(struct vdso_timehands32 *vdso_th32);
+uint32_t cpu_fill_vdso_timehands32(struct vdso_timehands32 *vdso_th32);
 
 #endif
 #endif

@@ -66,7 +66,7 @@ struct	mbuf;
 struct	thread;
 struct	rtentry;
 struct	rt_addrinfo;
-struct	bsd_socket;
+struct	socket;
 struct	ether_header;
 struct	carp_if;
 struct  ifvlantrunk;
@@ -93,11 +93,11 @@ struct	vnet;
 
 #include <altq/if_altq.h>
 
-BSD_TAILQ_HEAD(ifnethead, ifnet);	/* we use TAILQs so that the order of */
-BSD_TAILQ_HEAD(ifaddrhead, ifaddr);	/* instantiation is preserved in the list */
-BSD_TAILQ_HEAD(ifprefixhead, ifprefix);
-BSD_TAILQ_HEAD(ifmultihead, ifmultiaddr);
-BSD_TAILQ_HEAD(ifgrouphead, ifg_group);
+TAILQ_HEAD(ifnethead, ifnet);	/* we use TAILQs so that the order of */
+TAILQ_HEAD(ifaddrhead, ifaddr);	/* instantiation is preserved in the list */
+TAILQ_HEAD(ifprefixhead, ifprefix);
+TAILQ_HEAD(ifmultihead, ifmultiaddr);
+TAILQ_HEAD(ifgrouphead, ifg_group);
 
 /*
  * Structure defining a queue for a network interface.
@@ -121,7 +121,7 @@ struct ifnet {
 	void	*if_softc;		/* pointer to driver state */
 	void	*if_l2com;		/* pointer to protocol bits */
 	struct vnet *if_vnet;		/* pointer to network stack instance */
-	BSD_TAILQ_ENTRY(ifnet) if_link; 	/* all struct ifnets are chained */
+	TAILQ_ENTRY(ifnet) if_link; 	/* all struct ifnets are chained */
 	char	if_xname[IFNAMSIZ];	/* external name (name + unit) */
 	const char *if_dname;		/* driver name */
 	int	if_dunit;		/* unit or IF_DUNIT_NONE */
@@ -147,13 +147,13 @@ struct ifnet {
 	int	if_capabilities;	/* interface features & capabilities */
 	int	if_capenable;		/* enabled features & capabilities */
 	void	*if_linkmib;		/* link-type-specific MIB data */
-	bsd_size_t	if_linkmiblen;		/* length of above data */
+	size_t	if_linkmiblen;		/* length of above data */
 	struct	if_data if_data;
 	struct	ifmultihead if_multiaddrs; /* multicast addresses configured */
 	int	if_amcount;		/* number of all-multicast requests */
 /* procedure handles */
 	int	(*if_output)		/* output routine (enqueue) */
-		(struct ifnet *, struct mbuf *, struct bsd_sockaddr *,
+		(struct ifnet *, struct mbuf *, struct sockaddr *,
 		     struct route *);
 	void	(*if_input)		/* input routine (from h/w driver) */
 		(struct ifnet *, struct mbuf *);
@@ -164,7 +164,7 @@ struct ifnet {
 	void	(*if_init)		/* Init routine */
 		(void *);
 	int	(*if_resolvemulti)	/* validate/resolve multicast */
-		(struct ifnet *, struct bsd_sockaddr **, struct bsd_sockaddr *);
+		(struct ifnet *, struct sockaddr **, struct sockaddr *);
 	void	(*if_qflush)		/* flush any queues */
 		(struct ifnet *);
 	int	(*if_transmit)		/* initiate output routine */
@@ -176,7 +176,7 @@ struct ifnet {
 	void	*if_llsoftc;		/* link layer softc */
 	int	if_drv_flags;		/* driver-managed status flags */
 	struct  ifaltq if_snd;		/* output queue (includes altq) */
-	const bsd_uint8_t *if_broadcastaddr; /* linklevel broadcast bytestring */
+	const u_int8_t *if_broadcastaddr; /* linklevel broadcast bytestring */
 
 	void	*if_bridge;		/* bridge glue */
 
@@ -184,14 +184,14 @@ struct ifnet {
 
 	/* these are only used by IPv6 */
 	struct	ifprefixhead if_prefixhead; /* list of prefixes per if */
-	void	*if_afdata[BSD_AF_MAX];
+	void	*if_afdata[AF_MAX];
 	int	if_afdata_initialized;
 	struct	rwlock if_afdata_lock;
 	struct	task if_linktask;	/* task for link change events */
 	struct	mtx if_addr_mtx;	/* mutex to protect address lists */
 
-	BSD_LIST_ENTRY(ifnet) if_clones;	/* interfaces of a cloner */
-	BSD_TAILQ_HEAD(, ifg_list) if_groups; /* linked list of groups per if */
+	LIST_ENTRY(ifnet) if_clones;	/* interfaces of a cloner */
+	TAILQ_HEAD(, ifg_list) if_groups; /* linked list of groups per if */
 					/* protected by if_addr_mtx */
 	void	*if_pf_kif;
 	void	*if_lagg;		/* lagg glue */
@@ -278,9 +278,9 @@ void	if_maddr_runlock(struct ifnet *ifp);	/* if_multiaddrs */
  * (defined above).  Entries are added to and deleted from these structures
  * by these macros, which should be called with ipl raised to splimp().
  */
-#define IF_LOCK(ifq)		//mtx_lock(&(ifq)->ifq_mtx)
-#define IF_UNLOCK(ifq)		//mtx_unlock(&(ifq)->ifq_mtx)
-#define	IF_LOCK_ASSERT(ifq)	//mtx_assert(&(ifq)->ifq_mtx, MA_OWNED)
+#define IF_LOCK(ifq)		mtx_lock(&(ifq)->ifq_mtx)
+#define IF_UNLOCK(ifq)		mtx_unlock(&(ifq)->ifq_mtx)
+#define	IF_LOCK_ASSERT(ifq)	mtx_assert(&(ifq)->ifq_mtx, MA_OWNED)
 #define	_IF_QFULL(ifq)		((ifq)->ifq_len >= (ifq)->ifq_maxlen)
 #define	_IF_DROP(ifq)		((ifq)->ifq_drops++)
 #define	_IF_QLEN(ifq)		((ifq)->ifq_len)
@@ -386,18 +386,18 @@ struct ifg_group {
 	char				 ifg_group[IFNAMSIZ];
 	u_int				 ifg_refcnt;
 	void				*ifg_pf_kif;
-	BSD_TAILQ_HEAD(, ifg_member)	 ifg_members;
-	BSD_TAILQ_ENTRY(ifg_group)		 ifg_next;
+	TAILQ_HEAD(, ifg_member)	 ifg_members;
+	TAILQ_ENTRY(ifg_group)		 ifg_next;
 };
 
 struct ifg_member {
-	BSD_TAILQ_ENTRY(ifg_member)	 ifgm_next;
+	TAILQ_ENTRY(ifg_member)	 ifgm_next;
 	struct ifnet		*ifgm_ifp;
 };
 
 struct ifg_list {
 	struct ifg_group	*ifgl_group;
-	BSD_TAILQ_ENTRY(ifg_list)	 ifgl_next;
+	TAILQ_ENTRY(ifg_list)	 ifgl_next;
 };
 
 /* group attach event */
@@ -444,7 +444,7 @@ do {									\
 	else {								\
 		if (_IF_QFULL(ifq)) {					\
 			m_freem(m);					\
-			(err) = BSD_ENOBUFS;				\
+			(err) = ENOBUFS;				\
 		} else {						\
 			_IF_ENQUEUE(ifq, m);				\
 			(err) = 0;					\
@@ -595,7 +595,7 @@ do {									\
 #ifdef _KERNEL
 static __inline int
 drbr_enqueue(struct ifnet *ifp, struct buf_ring *br, struct mbuf *m)
-{
+{	
 	int error = 0;
 
 #ifdef ALTQ
@@ -615,12 +615,12 @@ static __inline void
 drbr_putback(struct ifnet *ifp, struct buf_ring *br, struct mbuf *new)
 {
 	/*
-	 * The top of the list needs to be swapped
+	 * The top of the list needs to be swapped 
 	 * for this one.
 	 */
 #ifdef ALTQ
 	if (ifp != NULL && ALTQ_IS_ENABLED(&ifp->if_snd)) {
-		/*
+		/* 
 		 * Peek in altq case dequeued it
 		 * so put it back.
 		 */
@@ -637,7 +637,7 @@ drbr_peek(struct ifnet *ifp, struct buf_ring *br)
 #ifdef ALTQ
 	struct mbuf *m;
 	if (ifp != NULL && ALTQ_IS_ENABLED(&ifp->if_snd)) {
-		/*
+		/* 
 		 * Pull it off like a dequeue
 		 * since drbr_advance() does nothing
 		 * for altq and drbr_putback() will
@@ -658,7 +658,7 @@ drbr_flush(struct ifnet *ifp, struct buf_ring *br)
 #ifdef ALTQ
 	if (ifp != NULL && ALTQ_IS_ENABLED(&ifp->if_snd))
 		IFQ_PURGE(&ifp->if_snd);
-#endif
+#endif	
 	while ((m = buf_ring_dequeue_sc(br)) != NULL)
 		m_freem(m);
 }
@@ -677,7 +677,7 @@ drbr_dequeue(struct ifnet *ifp, struct buf_ring *br)
 #ifdef ALTQ
 	struct mbuf *m;
 
-	if (ifp != NULL && ALTQ_IS_ENABLED(&ifp->if_snd)) {
+	if (ifp != NULL && ALTQ_IS_ENABLED(&ifp->if_snd)) {	
 		IFQ_DEQUEUE(&ifp->if_snd, m);
 		return (m);
 	}
@@ -699,7 +699,7 @@ drbr_advance(struct ifnet *ifp, struct buf_ring *br)
 
 static __inline struct mbuf *
 drbr_dequeue_cond(struct ifnet *ifp, struct buf_ring *br,
-    int (*func) (struct mbuf *, void *), void *arg)
+    int (*func) (struct mbuf *, void *), void *arg) 
 {
 	struct mbuf *m;
 #ifdef ALTQ
@@ -774,20 +774,20 @@ drbr_inuse(struct ifnet *ifp, struct buf_ring *br)
  * (ifa_addr, ifa_dstaddr and ifa_netmask) referenced here.
  */
 struct ifaddr {
-	struct	bsd_sockaddr *ifa_addr;	/* address of interface */
-	struct	bsd_sockaddr *ifa_dstaddr;	/* other end of p-to-p link */
+	struct	sockaddr *ifa_addr;	/* address of interface */
+	struct	sockaddr *ifa_dstaddr;	/* other end of p-to-p link */
 #define	ifa_broadaddr	ifa_dstaddr	/* broadcast address interface */
-	struct	bsd_sockaddr *ifa_netmask;	/* used to determine subnet */
+	struct	sockaddr *ifa_netmask;	/* used to determine subnet */
 	struct	if_data if_data;	/* not all members are meaningful */
 	struct	ifnet *ifa_ifp;		/* back-pointer to interface */
-	BSD_TAILQ_ENTRY(ifaddr) ifa_link;	/* queue macro glue */
+	TAILQ_ENTRY(ifaddr) ifa_link;	/* queue macro glue */
 	void	(*ifa_rtrequest)	/* check or clean routes (+ or -)'d */
 		(int, struct rtentry *, struct rt_addrinfo *);
 	u_short	ifa_flags;		/* mostly rt_flags for cloning */
 	u_int	ifa_refcnt;		/* references to this structure */
 	int	ifa_metric;		/* cost of going out this interface */
 	int (*ifa_claim_addr)		/* check if an addr goes to this if */
-		(struct ifaddr *, struct bsd_sockaddr *);
+		(struct ifaddr *, struct sockaddr *);
 	struct mtx ifa_mtx;
 };
 #define	IFA_ROUTE	RTF_UP		/* route installed */
@@ -812,9 +812,9 @@ void	ifa_ref(struct ifaddr *ifa);
  * and are linked together so all prefixes for an interface can be located.
  */
 struct ifprefix {
-	struct	bsd_sockaddr *ifpr_prefix;	/* prefix of interface */
+	struct	sockaddr *ifpr_prefix;	/* prefix of interface */
 	struct	ifnet *ifpr_ifp;	/* back-pointer to interface */
-	BSD_TAILQ_ENTRY(ifprefix) ifpr_list; /* queue macro glue */
+	TAILQ_ENTRY(ifprefix) ifpr_list; /* queue macro glue */
 	u_char	ifpr_plen;		/* prefix length in bits */
 	u_char	ifpr_type;		/* protocol dependent prefix type */
 };
@@ -824,9 +824,9 @@ struct ifprefix {
  * structure except that it keeps track of multicast addresses.
  */
 struct ifmultiaddr {
-	BSD_TAILQ_ENTRY(ifmultiaddr) ifma_link; /* queue macro glue */
-	struct	bsd_sockaddr *ifma_addr; 	/* address this membership is for */
-	struct	bsd_sockaddr *ifma_lladdr;	/* link-layer translation, if any */
+	TAILQ_ENTRY(ifmultiaddr) ifma_link; /* queue macro glue */
+	struct	sockaddr *ifma_addr; 	/* address this membership is for */
+	struct	sockaddr *ifma_lladdr;	/* link-layer translation, if any */
 	struct	ifnet *ifma_ifp;	/* back-pointer to interface */
 	u_int	ifma_refcount;		/* reference count */
 	void	*ifma_protospec;	/* protocol-specific state, if any */
@@ -901,12 +901,12 @@ extern	int ifqmaxlen;
 
 int	if_addgroup(struct ifnet *, const char *);
 int	if_delgroup(struct ifnet *, const char *);
-int	if_addmulti(struct ifnet *, struct bsd_sockaddr *, struct ifmultiaddr **);
+int	if_addmulti(struct ifnet *, struct sockaddr *, struct ifmultiaddr **);
 int	if_allmulti(struct ifnet *, int);
 struct	ifnet* if_alloc(u_char);
 void	if_attach(struct ifnet *);
 void	if_dead(struct ifnet *);
-int	if_delmulti(struct ifnet *, struct bsd_sockaddr *);
+int	if_delmulti(struct ifnet *, struct sockaddr *);
 void	if_delmulti_ifma(struct ifmultiaddr *);
 void	if_detach(struct ifnet *);
 void	if_vmove(struct ifnet *, struct vnet *);
@@ -914,7 +914,7 @@ void	if_purgeaddrs(struct ifnet *);
 void	if_delallmulti(struct ifnet *);
 void	if_down(struct ifnet *);
 struct ifmultiaddr *
-	if_findmulti(struct ifnet *, struct bsd_sockaddr *);
+	if_findmulti(struct ifnet *, struct sockaddr *);
 void	if_free(struct ifnet *);
 void	if_free_type(struct ifnet *, u_char);
 void	if_initname(struct ifnet *, const char *, int);
@@ -925,7 +925,7 @@ void	if_ref(struct ifnet *);
 void	if_rele(struct ifnet *);
 int	if_setlladdr(struct ifnet *, const u_char *, int);
 void	if_up(struct ifnet *);
-int	ifioctl(struct bsd_socket *, u_long, caddr_t, struct thread *);
+int	ifioctl(struct socket *, u_long, caddr_t, struct thread *);
 int	ifpromisc(struct ifnet *, int);
 struct	ifnet *ifunit(const char *);
 struct	ifnet *ifunit_ref(const char *);
@@ -933,18 +933,18 @@ struct	ifnet *ifunit_ref(const char *);
 void	ifq_init(struct ifaltq *, struct ifnet *ifp);
 void	ifq_delete(struct ifaltq *);
 
-int	ifa_add_loopback_route(struct ifaddr *, struct bsd_sockaddr *);
-int	ifa_del_loopback_route(struct ifaddr *, struct bsd_sockaddr *);
+int	ifa_add_loopback_route(struct ifaddr *, struct sockaddr *);
+int	ifa_del_loopback_route(struct ifaddr *, struct sockaddr *);
 
-struct	ifaddr *ifa_ifwithaddr(struct bsd_sockaddr *);
-int		ifa_ifwithaddr_check(struct bsd_sockaddr *);
-struct	ifaddr *ifa_ifwithbroadaddr(struct bsd_sockaddr *);
-struct	ifaddr *ifa_ifwithdstaddr(struct bsd_sockaddr *);
-struct	ifaddr *ifa_ifwithnet(struct bsd_sockaddr *, int);
-struct	ifaddr *ifa_ifwithroute(int, struct bsd_sockaddr *, struct bsd_sockaddr *);
-struct	ifaddr *ifa_ifwithroute_fib(int, struct bsd_sockaddr *, struct bsd_sockaddr *, u_int);
+struct	ifaddr *ifa_ifwithaddr(struct sockaddr *);
+int		ifa_ifwithaddr_check(struct sockaddr *);
+struct	ifaddr *ifa_ifwithbroadaddr(struct sockaddr *);
+struct	ifaddr *ifa_ifwithdstaddr(struct sockaddr *);
+struct	ifaddr *ifa_ifwithnet(struct sockaddr *, int);
+struct	ifaddr *ifa_ifwithroute(int, struct sockaddr *, struct sockaddr *);
+struct	ifaddr *ifa_ifwithroute_fib(int, struct sockaddr *, struct sockaddr *, u_int);
 
-struct	ifaddr *ifaof_ifpforaddr(struct bsd_sockaddr *, struct ifnet *);
+struct	ifaddr *ifaof_ifpforaddr(struct sockaddr *, struct ifnet *);
 
 int	if_simloop(struct ifnet *ifp, struct mbuf *m, int af, int hlen);
 

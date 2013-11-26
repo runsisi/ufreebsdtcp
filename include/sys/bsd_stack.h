@@ -36,7 +36,7 @@ struct sbuf;
 /* MI Routines. */
 struct stack	*stack_create(void);
 void		 stack_destroy(struct stack *);
-int		 stack_put(struct stack *, bsd_vm_offset_t);
+int		 stack_put(struct stack *, vm_offset_t);
 void		 stack_copy(struct stack *, struct stack *);
 void		 stack_zero(struct stack *);
 void		 stack_print(struct stack *);

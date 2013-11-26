@@ -72,8 +72,8 @@ static eventhandler_tag lle_event_eh;
 static eventhandler_tag route_redirect_eh;
 
 static int
-toedev_connect(struct toedev *tod __unused, struct bsd_socket *so __unused,
-    struct rtentry *rt __unused, struct bsd_sockaddr *nam __unused)
+toedev_connect(struct toedev *tod __unused, struct socket *so __unused,
+    struct rtentry *rt __unused, struct sockaddr *nam __unused)
 {
 
 	return (ENOTSUP);
@@ -125,8 +125,8 @@ toedev_pcb_detach(struct toedev *tod __unused, struct tcpcb *tp __unused)
 
 static void
 toedev_l2_update(struct toedev *tod __unused, struct ifnet *ifp __unused,
-    struct bsd_sockaddr *sa __unused, bsd_uint8_t *lladdr __unused,
-    bsd_uint16_t vtag __unused)
+    struct sockaddr *sa __unused, uint8_t *lladdr __unused,
+    uint16_t vtag __unused)
 {
 
 	return;
@@ -165,7 +165,7 @@ toedev_syncache_respond(struct toedev *tod __unused, void *ctx __unused,
 
 static void
 toedev_offload_socket(struct toedev *tod __unused, void *ctx __unused,
-    struct bsd_socket *so __unused)
+    struct socket *so __unused)
 {
 
 	return;
@@ -323,10 +323,10 @@ unregister_toedev(struct toedev *tod)
 }
 
 void
-toe_syncache_add(struct in_conninfo *inc, struct tcpopt *to, struct bsd_tcphdr *th,
+toe_syncache_add(struct in_conninfo *inc, struct tcpopt *to, struct tcphdr *th,
     struct inpcb *inp, void *tod, void *todctx)
 {
-	struct bsd_socket *lso = inp->inp_socket;
+	struct socket *lso = inp->inp_socket;
 
 	INP_INFO_WLOCK_ASSERT(&V_tcbinfo);
 	INP_WLOCK_ASSERT(inp);
@@ -336,7 +336,7 @@ toe_syncache_add(struct in_conninfo *inc, struct tcpopt *to, struct bsd_tcphdr *
 
 int
 toe_syncache_expand(struct in_conninfo *inc, struct tcpopt *to,
-    struct bsd_tcphdr *th, struct bsd_socket **lsop)
+    struct tcphdr *th, struct socket **lsop)
 {
 
 	INP_INFO_WLOCK_ASSERT(&V_tcbinfo);
@@ -353,7 +353,7 @@ toe_syncache_expand(struct in_conninfo *inc, struct tcpopt *to,
  * equivalent.
  */
 int
-toe_4tuple_check(struct in_conninfo *inc, struct bsd_tcphdr *th, struct ifnet *ifp)
+toe_4tuple_check(struct in_conninfo *inc, struct tcphdr *th, struct ifnet *ifp)
 {
 	struct inpcb *inp;
 
@@ -387,9 +387,9 @@ toe_lle_event(void *arg __unused, struct llentry *lle, int evt)
 {
 	struct toedev *tod;
 	struct ifnet *ifp;
-	struct bsd_sockaddr *sa;
-	bsd_uint8_t *lladdr;
-	bsd_uint16_t vtag;
+	struct sockaddr *sa;
+	uint8_t *lladdr;
+	uint16_t vtag;
 
 	LLE_WLOCK_ASSERT(lle);
 
@@ -425,7 +425,7 @@ toe_lle_event(void *arg __unused, struct llentry *lle, int evt)
 		KASSERT(lle->la_flags & LLE_VALID,
 		    ("%s: %p resolved but not valid?", __func__, lle));
 
-		lladdr = (bsd_uint8_t *)&lle->ll_addr;
+		lladdr = (uint8_t *)&lle->ll_addr;
 #ifdef VLAN_TAG
 		VLAN_TAG(ifp, &vtag);
 #endif
@@ -439,7 +439,7 @@ toe_lle_event(void *arg __unused, struct llentry *lle, int evt)
  */
 static void
 toe_route_redirect_event(void *arg __unused, struct rtentry *rt0,
-    struct rtentry *rt1, struct bsd_sockaddr *sa)
+    struct rtentry *rt1, struct sockaddr *sa)
 {
 
 	return;
@@ -451,7 +451,7 @@ toe_route_redirect_event(void *arg __unused, struct rtentry *rt0,
  * the result of a route lookup and is on-link on the given ifp.
  */
 static int
-toe_nd6_resolve(struct ifnet *ifp, struct bsd_sockaddr *sa, bsd_uint8_t *lladdr)
+toe_nd6_resolve(struct ifnet *ifp, struct sockaddr *sa, uint8_t *lladdr)
 {
 	struct llentry *lle;
 	struct sockaddr_in6 *sin6 = (void *)sa;
@@ -513,8 +513,8 @@ restart:
  * tod_l2_update will be called later, when the entry is resolved or times out.
  */
 int
-toe_l2_resolve(struct toedev *tod, struct ifnet *ifp, struct bsd_sockaddr *sa,
-    bsd_uint8_t *lladdr, bsd_uint16_t *vtag)
+toe_l2_resolve(struct toedev *tod, struct ifnet *ifp, struct sockaddr *sa,
+    uint8_t *lladdr, uint16_t *vtag)
 {
 #ifdef INET
 	struct llentry *lle;

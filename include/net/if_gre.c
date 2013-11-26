@@ -45,20 +45,20 @@
 #include "opt_inet.h"
 #include "opt_inet6.h"
 
-#include <sys/param.h>
-#include <sys/jail.h>
-#include <sys/kernel.h>
-#include <sys/libkern.h>
-#include <sys/malloc.h>
-#include <sys/module.h>
-#include <sys/mbuf.h>
-#include <sys/priv.h>
-#include <sys/proc.h>
-#include <sys/protosw.h>
-#include <sys/socket.h>
-#include <sys/sockio.h>
-#include <sys/sysctl.h>
-#include <sys/systm.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_jail.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_libkern.h>
+#include <sys/bsd_malloc.h>
+#include <sys/bsd_module.h>
+#include <sys/bsd_mbuf.h>
+#include <sys/bsd_priv.h>
+#include <sys/bsd_proc.h>
+#include <sys/bsd_protosw.h>
+#include <sys/bsd_socket.h>
+#include <sys/bsd_sockio.h>
+#include <sys/bsd_sysctl.h>
+#include <sys/bsd_systm.h>
 
 #include <net/ethernet.h>
 #include <net/if.h>
@@ -95,8 +95,8 @@
 #define	MTAG_COOKIE_GRE		1307983903
 #define	MTAG_GRE_NESTING	1
 struct mtag_gre_nesting {
-	bsd_uint16_t	count;
-	bsd_uint16_t	max;
+	uint16_t	count;
+	uint16_t	max;
 	struct ifnet	*ifp[];
 };
 
@@ -112,7 +112,7 @@ struct gre_softc_head gre_softc_list;
 static int	gre_clone_create(struct if_clone *, int, caddr_t);
 static void	gre_clone_destroy(struct ifnet *);
 static int	gre_ioctl(struct ifnet *, u_long, caddr_t);
-static int	gre_output(struct ifnet *, struct mbuf *, struct bsd_sockaddr *,
+static int	gre_output(struct ifnet *, struct mbuf *, struct sockaddr *,
 		    struct route *ro);
 
 IFC_SIMPLE_DECLARE(gre, 0);
@@ -122,8 +122,8 @@ static int gre_compute_route(struct gre_softc *sc);
 static void	greattach(void);
 
 #ifdef INET
-extern struct bsd_domain inetdomain;
-static const struct bsd_protosw in_gre_protosw = {
+extern struct domain inetdomain;
+static const struct protosw in_gre_protosw = {
 	.pr_type =		SOCK_RAW,
 	.pr_domain =		&inetdomain,
 	.pr_protocol =		IPPROTO_GRE,
@@ -134,7 +134,7 @@ static const struct bsd_protosw in_gre_protosw = {
 	.pr_ctloutput =		rip_ctloutput,
 	.pr_usrreqs =		&rip_usrreqs
 };
-static const struct bsd_protosw in_mobile_protosw = {
+static const struct protosw in_mobile_protosw = {
 	.pr_type =		SOCK_RAW,
 	.pr_domain =		&inetdomain,
 	.pr_protocol =		IPPROTO_MOBILE,
@@ -183,11 +183,11 @@ gre_clone_create(ifc, unit, params)
 {
 	struct gre_softc *sc;
 
-	sc = bsd_malloc(sizeof(struct gre_softc), M_GRE, M_WAITOK | M_ZERO);
+	sc = malloc(sizeof(struct gre_softc), M_GRE, M_WAITOK | M_ZERO);
 
 	GRE2IFP(sc) = if_alloc(IFT_TUNNEL);
 	if (GRE2IFP(sc) == NULL) {
-		bsd_free(sc, M_GRE);
+		free(sc, M_GRE);
 		return (ENOSPC);
 	}
 
@@ -209,7 +209,7 @@ gre_clone_create(ifc, unit, params)
 	sc->wccp_ver = WCCP_V1;
 	sc->key = 0;
 	if_attach(GRE2IFP(sc));
-	bpfattach(GRE2IFP(sc), DLT_NULL, sizeof(bsd_uint32_t));
+	bpfattach(GRE2IFP(sc), DLT_NULL, sizeof(u_int32_t));
 	mtx_lock(&gre_mtx);
 	LIST_INSERT_HEAD(&gre_softc_list, sc, sc_list);
 	mtx_unlock(&gre_mtx);
@@ -233,7 +233,7 @@ gre_clone_destroy(ifp)
 	bpfdetach(ifp);
 	if_detach(ifp);
 	if_free(ifp);
-	bsd_free(sc, M_GRE);
+	free(sc, M_GRE);
 }
 
 /*
@@ -241,21 +241,21 @@ gre_clone_destroy(ifp)
  * given by sc->g_proto. See also RFC 1701 and RFC 2004
  */
 static int
-gre_output(struct ifnet *ifp, struct mbuf *m, struct bsd_sockaddr *dst,
+gre_output(struct ifnet *ifp, struct mbuf *m, struct sockaddr *dst,
 	   struct route *ro)
 {
 	int error = 0;
 	struct gre_softc *sc = ifp->if_softc;
 	struct greip *gh;
-	struct bsd_ip *ip;
+	struct ip *ip;
 	struct m_tag *mtag;
 	struct mtag_gre_nesting *gt;
-	bsd_size_t len;
+	size_t len;
 	u_short gre_ip_id = 0;
-	bsd_uint8_t gre_ip_tos = 0;
-	bsd_uint16_t etype = 0;
+	uint8_t gre_ip_tos = 0;
+	u_int16_t etype = 0;
 	struct mobile_h mob_h;
-	bsd_uint32_t af;
+	u_int32_t af;
 	int extra = 0, max;
 
 	/*
@@ -356,7 +356,7 @@ gre_output(struct ifnet *ifp, struct mbuf *m, struct bsd_sockaddr *dst,
 			struct mbuf *m0;
 			int msiz;
 
-			bsd_ip = mtod(m, struct bsd_ip *);
+			ip = mtod(m, struct ip *);
 
 			/*
 			 * RFC2004 specifies that fragmented diagrams shouldn't
@@ -387,7 +387,7 @@ gre_output(struct ifnet *ifp, struct mbuf *m, struct bsd_sockaddr *dst,
 				msiz = MOB_H_SIZ_L;
 			}
 			mob_h.proto = htons(mob_h.proto);
-			mob_h.hcrc = gre_in_cksum((bsd_uint16_t *)&mob_h, msiz);
+			mob_h.hcrc = gre_in_cksum((u_int16_t *)&mob_h, msiz);
 
 			if ((m->m_data - msiz) < m->m_pktdat) {
 				/* need new mbuf */
@@ -399,22 +399,22 @@ gre_output(struct ifnet *ifp, struct mbuf *m, struct bsd_sockaddr *dst,
 					goto end;
 				}
 				m0->m_next = m;
-				m->m_data += sizeof(struct bsd_ip);
-				m->m_len -= sizeof(struct bsd_ip);
+				m->m_data += sizeof(struct ip);
+				m->m_len -= sizeof(struct ip);
 				m0->m_pkthdr.len = m->m_pkthdr.len + msiz;
-				m0->m_len = msiz + sizeof(struct bsd_ip);
+				m0->m_len = msiz + sizeof(struct ip);
 				m0->m_data += max_linkhdr;
 				memcpy(mtod(m0, caddr_t), (caddr_t)ip,
-				       sizeof(struct bsd_ip));
+				       sizeof(struct ip));
 				m = m0;
 			} else {  /* we have some space left in the old one */
 				m->m_data -= msiz;
 				m->m_len += msiz;
 				m->m_pkthdr.len += msiz;
 				bcopy(ip, mtod(m, caddr_t),
-					sizeof(struct bsd_ip));
+					sizeof(struct ip));
 			}
-			bsd_ip = mtod(m, struct bsd_ip *);
+			ip = mtod(m, struct ip *);
 			memcpy((caddr_t)(ip + 1), &mob_h, (unsigned)msiz);
 			ip->ip_len = ntohs(ip->ip_len) + msiz;
 		} else {  /* AF_INET */
@@ -426,11 +426,11 @@ gre_output(struct ifnet *ifp, struct mbuf *m, struct bsd_sockaddr *dst,
 	} else if (sc->g_proto == IPPROTO_GRE) {
 		switch (dst->sa_family) {
 		case AF_INET:
-			bsd_ip = mtod(m, struct bsd_ip *);
+			ip = mtod(m, struct ip *);
 			gre_ip_tos = ip->ip_tos;
 			gre_ip_id = ip->ip_id;
 			if (sc->wccp_ver == WCCP_V2) {
-				extra = sizeof(bsd_uint32_t);
+				extra = sizeof(uint32_t);
 				etype =  WCCP_PROTOCOL_TYPE;
 			} else {
 				etype = ETHERTYPE_IP;
@@ -457,7 +457,7 @@ gre_output(struct ifnet *ifp, struct mbuf *m, struct bsd_sockaddr *dst,
 		/* Reserve space for GRE header + optional GRE key */
 		int hdrlen = sizeof(struct greip) + extra;
 		if (sc->key)
-			hdrlen += sizeof(bsd_uint32_t);
+			hdrlen += sizeof(uint32_t);
 		M_PREPEND(m, hdrlen, M_DONTWAIT);
 	} else {
 		_IF_DROP(&ifp->if_snd);
@@ -476,7 +476,7 @@ gre_output(struct ifnet *ifp, struct mbuf *m, struct bsd_sockaddr *dst,
 
 	gh = mtod(m, struct greip *);
 	if (sc->g_proto == IPPROTO_GRE) {
-		bsd_uint32_t *options = gh->gi_options;
+		uint32_t *options = gh->gi_options;
 
 		memset((void *)gh, 0, sizeof(struct greip) + extra);
 		gh->gi_ptype = htons(etype);
@@ -494,11 +494,11 @@ gre_output(struct ifnet *ifp, struct mbuf *m, struct bsd_sockaddr *dst,
 	if (sc->g_proto != IPPROTO_MOBILE) {
 		gh->gi_src = sc->g_src;
 		gh->gi_dst = sc->g_dst;
-		((struct bsd_ip*)gh)->ip_v = IPPROTO_IPV4;
-		((struct bsd_ip*)gh)->ip_hl = (sizeof(struct bsd_ip)) >> 2;
-		((struct bsd_ip*)gh)->ip_ttl = GRE_TTL;
-		((struct bsd_ip*)gh)->ip_tos = gre_ip_tos;
-		((struct bsd_ip*)gh)->ip_id = gre_ip_id;
+		((struct ip*)gh)->ip_v = IPPROTO_IPV4;
+		((struct ip*)gh)->ip_hl = (sizeof(struct ip)) >> 2;
+		((struct ip*)gh)->ip_ttl = GRE_TTL;
+		((struct ip*)gh)->ip_tos = gre_ip_tos;
+		((struct ip*)gh)->ip_id = gre_ip_id;
 		gh->gi_len = m->m_pkthdr.len;
 	}
 
@@ -525,11 +525,11 @@ gre_ioctl(struct ifnet *ifp, u_long cmd, caddr_t data)
 	struct in_aliasreq *aifr = (struct in_aliasreq *)data;
 	struct gre_softc *sc = ifp->if_softc;
 	int s;
-	struct bsd_sockaddr_in si;
-	struct bsd_sockaddr *sa = NULL;
+	struct sockaddr_in si;
+	struct sockaddr *sa = NULL;
 	int error, adj;
-	struct bsd_sockaddr_in sp, sm, dp, dm;
-	bsd_uint32_t key;
+	struct sockaddr_in sp, sm, dp, dm;
+	uint32_t key;
 
 	error = 0;
 	adj = 0;
@@ -674,7 +674,7 @@ gre_ioctl(struct ifnet *ifp, u_long cmd, caddr_t data)
 			bzero(&dp, sizeof(dp));
 			bzero(&dm, sizeof(dm));
 			sp.sin_len = sm.sin_len = dp.sin_len = dm.sin_len =
-			    sizeof(struct bsd_sockaddr_in);
+			    sizeof(struct sockaddr_in);
 			sp.sin_family = sm.sin_family = dp.sin_family =
 			    dm.sin_family = AF_INET;
 			sp.sin_addr = sc->g_src;
@@ -701,7 +701,7 @@ gre_ioctl(struct ifnet *ifp, u_long cmd, caddr_t data)
 	case GREGADDRS:
 		memset(&si, 0, sizeof(si));
 		si.sin_family = AF_INET;
-		si.sin_len = sizeof(struct bsd_sockaddr_in);
+		si.sin_len = sizeof(struct sockaddr_in);
 		si.sin_addr.s_addr = sc->g_src.s_addr;
 		sa = sintosa(&si);
 		error = prison_if(curthread->td_ucred, sa);
@@ -712,7 +712,7 @@ gre_ioctl(struct ifnet *ifp, u_long cmd, caddr_t data)
 	case GREGADDRD:
 		memset(&si, 0, sizeof(si));
 		si.sin_family = AF_INET;
-		si.sin_len = sizeof(struct bsd_sockaddr_in);
+		si.sin_len = sizeof(struct sockaddr_in);
 		si.sin_addr.s_addr = sc->g_dst.s_addr;
 		sa = sintosa(&si);
 		error = prison_if(curthread->td_ucred, sa);
@@ -779,14 +779,14 @@ gre_ioctl(struct ifnet *ifp, u_long cmd, caddr_t data)
 		}
 		memset(&si, 0, sizeof(si));
 		si.sin_family = AF_INET;
-		si.sin_len = sizeof(struct bsd_sockaddr_in);
+		si.sin_len = sizeof(struct sockaddr_in);
 		si.sin_addr.s_addr = sc->g_src.s_addr;
-		error = prison_if(curthread->td_ucred, (struct bsd_sockaddr *)&si);
+		error = prison_if(curthread->td_ucred, (struct sockaddr *)&si);
 		if (error != 0)
 			break;
 		memcpy(&lifr->addr, &si, sizeof(si));
 		si.sin_addr.s_addr = sc->g_dst.s_addr;
-		error = prison_if(curthread->td_ucred, (struct bsd_sockaddr *)&si);
+		error = prison_if(curthread->td_ucred, (struct sockaddr *)&si);
 		if (error != 0)
 			break;
 		memcpy(&lifr->dstaddr, &si, sizeof(si));
@@ -801,9 +801,9 @@ gre_ioctl(struct ifnet *ifp, u_long cmd, caddr_t data)
 		}
 		memset(&si, 0, sizeof(si));
 		si.sin_family = AF_INET;
-		si.sin_len = sizeof(struct bsd_sockaddr_in);
+		si.sin_len = sizeof(struct sockaddr_in);
 		si.sin_addr.s_addr = sc->g_src.s_addr;
-		error = prison_if(curthread->td_ucred, (struct bsd_sockaddr *)&si);
+		error = prison_if(curthread->td_ucred, (struct sockaddr *)&si);
 		if (error != 0)
 			break;
 		bcopy(&si, &ifr->ifr_addr, sizeof(ifr->ifr_addr));
@@ -818,9 +818,9 @@ gre_ioctl(struct ifnet *ifp, u_long cmd, caddr_t data)
 		}
 		memset(&si, 0, sizeof(si));
 		si.sin_family = AF_INET;
-		si.sin_len = sizeof(struct bsd_sockaddr_in);
+		si.sin_len = sizeof(struct sockaddr_in);
 		si.sin_addr.s_addr = sc->g_dst.s_addr;
-		error = prison_if(curthread->td_ucred, (struct bsd_sockaddr *)&si);
+		error = prison_if(curthread->td_ucred, (struct sockaddr *)&si);
 		if (error != 0)
 			break;
 		bcopy(&si, &ifr->ifr_addr, sizeof(ifr->ifr_addr));
@@ -877,7 +877,7 @@ gre_compute_route(struct gre_softc *sc)
 	ro = &sc->route;
 
 	memset(ro, 0, sizeof(struct route));
-	((struct bsd_sockaddr_in *)&ro->ro_dst)->sin_addr = sc->g_dst;
+	((struct sockaddr_in *)&ro->ro_dst)->sin_addr = sc->g_dst;
 	ro->ro_dst.sa_family = AF_INET;
 	ro->ro_dst.sa_len = sizeof(ro->ro_dst);
 
@@ -888,13 +888,13 @@ gre_compute_route(struct gre_softc *sc)
 	 * XXX MRT Use a different FIB for the tunnel to solve this problem.
 	 */
 	if ((GRE2IFP(sc)->if_flags & IFF_LINK1) == 0) {
-		((struct bsd_sockaddr_in *)&ro->ro_dst)->sin_addr.s_addr ^=
+		((struct sockaddr_in *)&ro->ro_dst)->sin_addr.s_addr ^=
 		    htonl(0x01);
 	}
 
 #ifdef DIAGNOSTIC
 	printf("%s: searching for a route to %s", if_name(GRE2IFP(sc)),
-	    inet_ntoa(((struct bsd_sockaddr_in *)&ro->ro_dst)->sin_addr));
+	    inet_ntoa(((struct sockaddr_in *)&ro->ro_dst)->sin_addr));
 #endif
 
 	rtalloc_fib(ro, sc->gre_fibnum);
@@ -918,11 +918,11 @@ gre_compute_route(struct gre_softc *sc)
 	 * the route and search one to this interface ...
 	 */
 	if ((GRE2IFP(sc)->if_flags & IFF_LINK1) == 0)
-		((struct bsd_sockaddr_in *)&ro->ro_dst)->sin_addr = sc->g_dst;
+		((struct sockaddr_in *)&ro->ro_dst)->sin_addr = sc->g_dst;
 
 #ifdef DIAGNOSTIC
 	printf(", choosing %s with gateway %s", if_name(ro->ro_rt->rt_ifp),
-	    inet_ntoa(((struct bsd_sockaddr_in *)(ro->ro_rt->rt_gateway))->sin_addr));
+	    inet_ntoa(((struct sockaddr_in *)(ro->ro_rt->rt_gateway))->sin_addr));
 	printf("\n");
 #endif
 
@@ -933,10 +933,10 @@ gre_compute_route(struct gre_softc *sc)
  * do a checksum of a buffer - much like in_cksum, which operates on
  * mbufs.
  */
-bsd_uint16_t
-gre_in_cksum(bsd_uint16_t *p, u_int len)
+u_int16_t
+gre_in_cksum(u_int16_t *p, u_int len)
 {
-	bsd_uint32_t sum = 0;
+	u_int32_t sum = 0;
 	int nwords = len >> 1;
 
 	while (nwords-- != 0)

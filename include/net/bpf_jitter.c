@@ -29,28 +29,28 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/net/bpf_jitter.c 199615 2009-11-20 21:12:40Z jkim $");
 
 #ifdef _KERNEL
 #include "opt_bpf.h"
 
-#include <sys/param.h>
-#include <sys/kernel.h>
-#include <sys/malloc.h>
-#include <sys/mbuf.h>
-#include <sys/sysctl.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_malloc.h>
+#include <sys/bsd_mbuf.h>
+#include <sys/bsd_sysctl.h>
 #else
 #include <stdlib.h>
-#include <sys/mman.h>
-#include <sys/param.h>
-#include <sys/types.h>
+#include <sys/bsd_mman.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_types.h>
 #endif
 
 #include <net/bpf.h>
 #include <net/bpf_jitter.h>
 
-bpf_filter_func	bpf_jit_compile(struct bpf_insn *, u_int, bsd_size_t *);
+bpf_filter_func	bpf_jit_compile(struct bpf_insn *, u_int, size_t *);
 
 static u_int	bpf_jit_accept_all(u_char *, u_int, u_int);
 
@@ -70,10 +70,10 @@ bpf_jitter(struct bpf_insn *fp, int nins)
 
 	/* Allocate the filter structure. */
 #ifdef _KERNEL
-	filter = (struct bpf_jit_filter *)bsd_malloc(sizeof(*filter),
+	filter = (struct bpf_jit_filter *)malloc(sizeof(*filter),
 	    M_BPFJIT, M_NOWAIT);
 #else
-	filter = (struct bpf_jit_filter *)bsd_malloc(sizeof(*filter));
+	filter = (struct bpf_jit_filter *)malloc(sizeof(*filter));
 #endif
 	if (filter == NULL)
 		return (NULL);
@@ -87,9 +87,9 @@ bpf_jitter(struct bpf_insn *fp, int nins)
 	/* Create the binary. */
 	if ((filter->func = bpf_jit_compile(fp, nins, &filter->size)) == NULL) {
 #ifdef _KERNEL
-		bsd_free(filter, M_BPFJIT);
+		free(filter, M_BPFJIT);
 #else
-		bsd_free(filter);
+		free(filter);
 #endif
 		return (NULL);
 	}
@@ -103,12 +103,12 @@ bpf_destroy_jit_filter(bpf_jit_filter *filter)
 
 #ifdef _KERNEL
 	if (filter->func != bpf_jit_accept_all)
-		bsd_free(filter->func, M_BPFJIT);
-	bsd_free(filter, M_BPFJIT);
+		free(filter->func, M_BPFJIT);
+	free(filter, M_BPFJIT);
 #else
 	if (filter->func != bpf_jit_accept_all)
 		munmap(filter->func, filter->size);
-	bsd_free(filter);
+	free(filter);
 #endif
 }
 

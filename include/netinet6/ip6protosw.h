@@ -71,13 +71,13 @@
  */
 
 struct mbuf;
-struct bsd_sockaddr;
-struct bsd_socket;
-struct bsd_domain;
+struct sockaddr;
+struct socket;
+struct domain;
 struct thread;
 struct ip6_hdr;
 struct icmp6_hdr;
-struct bsd_in6_addr;
+struct in6_addr;
 struct pr_usrreqs;
 
 /*
@@ -103,16 +103,16 @@ struct ip6ctlparam {
 	struct icmp6_hdr *ip6c_icmp6;	/* icmp6 header of target packet */
 	struct ip6_hdr *ip6c_ip6;	/* ip6 header of target packet */
 	int ip6c_off;			/* offset of the target proto header */
-	struct bsd_sockaddr_in6 *ip6c_src;	/* srcaddr w/ additional info */
-	struct bsd_sockaddr_in6 *ip6c_dst;	/* (final) dstaddr w/ additional info */
-	struct bsd_in6_addr *ip6c_finaldst;	/* final destination address */
+	struct sockaddr_in6 *ip6c_src;	/* srcaddr w/ additional info */
+	struct sockaddr_in6 *ip6c_dst;	/* (final) dstaddr w/ additional info */
+	struct in6_addr *ip6c_finaldst;	/* final destination address */
 	void *ip6c_cmdarg;		/* control command dependent data */
-	bsd_uint8_t ip6c_nxt;		/* final next header field */
+	u_int8_t ip6c_nxt;		/* final next header field */
 };
 
 struct ip6protosw {
 	short	pr_type;		/* socket type used for */
-	struct	bsd_domain *pr_domain;	/* domain protocol a member of */
+	struct	domain *pr_domain;	/* domain protocol a member of */
 	short	pr_protocol;		/* protocol number */
 	short	pr_flags;		/* see below */
 
@@ -122,9 +122,9 @@ struct ip6protosw {
 	int	(*pr_output)		/* output to protocol (from above) */
 			(struct mbuf *, ...);
 	void	(*pr_ctlinput)		/* control input (from below) */
-			(int, struct bsd_sockaddr *, void *);
+			(int, struct sockaddr *, void *);
 	int	(*pr_ctloutput)		/* control output (from above) */
-			(struct bsd_socket *, struct bsd_sockopt *);
+			(struct socket *, struct sockopt *);
 
 /* utility hooks */
 	void	(*pr_init)		/* initialization hook */

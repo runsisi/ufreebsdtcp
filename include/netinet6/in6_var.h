@@ -86,10 +86,10 @@
  *	in kernel: modify preferred/expire only
  */
 struct in6_addrlifetime {
-	bsd_time_t ia6t_expire;	/* valid lifetime expiration time */
-	bsd_time_t ia6t_preferred;	/* preferred lifetime expiration time */
-	bsd_uint32_t ia6t_vltime;	/* valid lifetime */
-	bsd_uint32_t ia6t_pltime;	/* prefix lifetime */
+	time_t ia6t_expire;	/* valid lifetime expiration time */
+	time_t ia6t_preferred;	/* preferred lifetime expiration time */
+	u_int32_t ia6t_vltime;	/* valid lifetime */
+	u_int32_t ia6t_pltime;	/* prefix lifetime */
 };
 
 struct nd_ifinfo;
@@ -112,74 +112,74 @@ struct	in6_ifaddr {
 	struct	ifaddr ia_ifa;		/* protocol-independent info */
 #define	ia_ifp		ia_ifa.ifa_ifp
 #define ia_flags	ia_ifa.ifa_flags
-	struct	bsd_sockaddr_in6 ia_addr;	/* interface address */
-	struct	bsd_sockaddr_in6 ia_net;	/* network number of interface */
-	struct	bsd_sockaddr_in6 ia_dstaddr; /* space for destination addr */
-	struct	bsd_sockaddr_in6 ia_prefixmask; /* prefix mask */
-	bsd_uint32_t ia_plen;		/* prefix length */
-	BSD_TAILQ_ENTRY(in6_ifaddr)	ia_link;	/* list of IPv6 addresses */
+	struct	sockaddr_in6 ia_addr;	/* interface address */
+	struct	sockaddr_in6 ia_net;	/* network number of interface */
+	struct	sockaddr_in6 ia_dstaddr; /* space for destination addr */
+	struct	sockaddr_in6 ia_prefixmask; /* prefix mask */
+	u_int32_t ia_plen;		/* prefix length */
+	TAILQ_ENTRY(in6_ifaddr)	ia_link;	/* list of IPv6 addresses */
 	int	ia6_flags;
 
 	struct in6_addrlifetime ia6_lifetime;
-	bsd_time_t	ia6_createtime; /* the creation time of this address, which is
+	time_t	ia6_createtime; /* the creation time of this address, which is
 				 * currently used for temporary addresses only.
 				 */
-	bsd_time_t	ia6_updatetime;
+	time_t	ia6_updatetime;
 
 	/* back pointer to the ND prefix (for autoconfigured addresses only) */
 	struct nd_prefix *ia6_ndpr;
 
 	/* multicast addresses joined from the kernel */
-	BSD_LIST_HEAD(, in6_multi_mship) ia6_memberships;
+	LIST_HEAD(, in6_multi_mship) ia6_memberships;
 };
 
 /* List of in6_ifaddr's. */
-BSD_TAILQ_HEAD(in6_ifaddrhead, in6_ifaddr);
+TAILQ_HEAD(in6_ifaddrhead, in6_ifaddr);
 
 /* control structure to manage address selection policy */
 struct in6_addrpolicy {
-	struct bsd_sockaddr_in6 addr; /* prefix address */
-	struct bsd_sockaddr_in6 addrmask; /* prefix mask */
+	struct sockaddr_in6 addr; /* prefix address */
+	struct sockaddr_in6 addrmask; /* prefix mask */
 	int preced;		/* precedence */
 	int label;		/* matching label */
-	bsd_uquad_t use;		/* statistics */
+	u_quad_t use;		/* statistics */
 };
 
 /*
  * IPv6 interface statistics, as defined in RFC2465 Ipv6IfStatsEntry (p12).
  */
 struct in6_ifstat {
-	bsd_uquad_t ifs6_in_receive;	/* # of total input datagram */
-	bsd_uquad_t ifs6_in_hdrerr;	/* # of datagrams with invalid hdr */
-	bsd_uquad_t ifs6_in_toobig;	/* # of datagrams exceeded MTU */
-	bsd_uquad_t ifs6_in_noroute;	/* # of datagrams with no route */
-	bsd_uquad_t ifs6_in_addrerr;	/* # of datagrams with invalid dst */
-	bsd_uquad_t ifs6_in_protounknown;	/* # of datagrams with unknown proto */
+	u_quad_t ifs6_in_receive;	/* # of total input datagram */
+	u_quad_t ifs6_in_hdrerr;	/* # of datagrams with invalid hdr */
+	u_quad_t ifs6_in_toobig;	/* # of datagrams exceeded MTU */
+	u_quad_t ifs6_in_noroute;	/* # of datagrams with no route */
+	u_quad_t ifs6_in_addrerr;	/* # of datagrams with invalid dst */
+	u_quad_t ifs6_in_protounknown;	/* # of datagrams with unknown proto */
 					/* NOTE: increment on final dst if */
-	bsd_uquad_t ifs6_in_truncated;	/* # of truncated datagrams */
-	bsd_uquad_t ifs6_in_discard;	/* # of discarded datagrams */
+	u_quad_t ifs6_in_truncated;	/* # of truncated datagrams */
+	u_quad_t ifs6_in_discard;	/* # of discarded datagrams */
 					/* NOTE: fragment timeout is not here */
-	bsd_uquad_t ifs6_in_deliver;	/* # of datagrams delivered to ULP */
+	u_quad_t ifs6_in_deliver;	/* # of datagrams delivered to ULP */
 					/* NOTE: increment on final dst if */
-	bsd_uquad_t ifs6_out_forward;	/* # of datagrams forwarded */
+	u_quad_t ifs6_out_forward;	/* # of datagrams forwarded */
 					/* NOTE: increment on outgoing if */
-	bsd_uquad_t ifs6_out_request;	/* # of outgoing datagrams from ULP */
+	u_quad_t ifs6_out_request;	/* # of outgoing datagrams from ULP */
 					/* NOTE: does not include forwrads */
-	bsd_uquad_t ifs6_out_discard;	/* # of discarded datagrams */
-	bsd_uquad_t ifs6_out_fragok;	/* # of datagrams fragmented */
-	bsd_uquad_t ifs6_out_fragfail;	/* # of datagrams failed on fragment */
-	bsd_uquad_t ifs6_out_fragcreat;	/* # of fragment datagrams */
+	u_quad_t ifs6_out_discard;	/* # of discarded datagrams */
+	u_quad_t ifs6_out_fragok;	/* # of datagrams fragmented */
+	u_quad_t ifs6_out_fragfail;	/* # of datagrams failed on fragment */
+	u_quad_t ifs6_out_fragcreat;	/* # of fragment datagrams */
 					/* NOTE: this is # after fragment */
-	bsd_uquad_t ifs6_reass_reqd;	/* # of incoming fragmented packets */
+	u_quad_t ifs6_reass_reqd;	/* # of incoming fragmented packets */
 					/* NOTE: increment on final dst if */
-	bsd_uquad_t ifs6_reass_ok;		/* # of reassembled packets */
+	u_quad_t ifs6_reass_ok;		/* # of reassembled packets */
 					/* NOTE: this is # after reass */
 					/* NOTE: increment on final dst if */
-	bsd_uquad_t ifs6_reass_fail;	/* # of reass failures */
+	u_quad_t ifs6_reass_fail;	/* # of reass failures */
 					/* NOTE: may not be packet count */
 					/* NOTE: increment on final dst if */
-	bsd_uquad_t ifs6_in_mcast;		/* # of inbound multicast datagrams */
-	bsd_uquad_t ifs6_out_mcast;	/* # of outbound multicast datagrams */
+	u_quad_t ifs6_in_mcast;		/* # of inbound multicast datagrams */
+	u_quad_t ifs6_out_mcast;	/* # of outbound multicast datagrams */
 };
 
 /*
@@ -191,84 +191,84 @@ struct icmp6_ifstat {
 	 * Input statistics
 	 */
 	/* ipv6IfIcmpInMsgs, total # of input messages */
-	bsd_uquad_t ifs6_in_msg;
+	u_quad_t ifs6_in_msg;
 	/* ipv6IfIcmpInErrors, # of input error messages */
-	bsd_uquad_t ifs6_in_error;
+	u_quad_t ifs6_in_error;
 	/* ipv6IfIcmpInDestUnreachs, # of input dest unreach errors */
-	bsd_uquad_t ifs6_in_dstunreach;
+	u_quad_t ifs6_in_dstunreach;
 	/* ipv6IfIcmpInAdminProhibs, # of input administratively prohibited errs */
-	bsd_uquad_t ifs6_in_adminprohib;
+	u_quad_t ifs6_in_adminprohib;
 	/* ipv6IfIcmpInTimeExcds, # of input time exceeded errors */
-	bsd_uquad_t ifs6_in_timeexceed;
+	u_quad_t ifs6_in_timeexceed;
 	/* ipv6IfIcmpInParmProblems, # of input parameter problem errors */
-	bsd_uquad_t ifs6_in_paramprob;
+	u_quad_t ifs6_in_paramprob;
 	/* ipv6IfIcmpInPktTooBigs, # of input packet too big errors */
-	bsd_uquad_t ifs6_in_pkttoobig;
+	u_quad_t ifs6_in_pkttoobig;
 	/* ipv6IfIcmpInEchos, # of input echo requests */
-	bsd_uquad_t ifs6_in_echo;
+	u_quad_t ifs6_in_echo;
 	/* ipv6IfIcmpInEchoReplies, # of input echo replies */
-	bsd_uquad_t ifs6_in_echoreply;
+	u_quad_t ifs6_in_echoreply;
 	/* ipv6IfIcmpInRouterSolicits, # of input router solicitations */
-	bsd_uquad_t ifs6_in_routersolicit;
+	u_quad_t ifs6_in_routersolicit;
 	/* ipv6IfIcmpInRouterAdvertisements, # of input router advertisements */
-	bsd_uquad_t ifs6_in_routeradvert;
+	u_quad_t ifs6_in_routeradvert;
 	/* ipv6IfIcmpInNeighborSolicits, # of input neighbor solicitations */
-	bsd_uquad_t ifs6_in_neighborsolicit;
+	u_quad_t ifs6_in_neighborsolicit;
 	/* ipv6IfIcmpInNeighborAdvertisements, # of input neighbor advertisements */
-	bsd_uquad_t ifs6_in_neighboradvert;
+	u_quad_t ifs6_in_neighboradvert;
 	/* ipv6IfIcmpInRedirects, # of input redirects */
-	bsd_uquad_t ifs6_in_redirect;
+	u_quad_t ifs6_in_redirect;
 	/* ipv6IfIcmpInGroupMembQueries, # of input MLD queries */
-	bsd_uquad_t ifs6_in_mldquery;
+	u_quad_t ifs6_in_mldquery;
 	/* ipv6IfIcmpInGroupMembResponses, # of input MLD reports */
-	bsd_uquad_t ifs6_in_mldreport;
+	u_quad_t ifs6_in_mldreport;
 	/* ipv6IfIcmpInGroupMembReductions, # of input MLD done */
-	bsd_uquad_t ifs6_in_mlddone;
+	u_quad_t ifs6_in_mlddone;
 
 	/*
 	 * Output statistics. We should solve unresolved routing problem...
 	 */
 	/* ipv6IfIcmpOutMsgs, total # of output messages */
-	bsd_uquad_t ifs6_out_msg;
+	u_quad_t ifs6_out_msg;
 	/* ipv6IfIcmpOutErrors, # of output error messages */
-	bsd_uquad_t ifs6_out_error;
+	u_quad_t ifs6_out_error;
 	/* ipv6IfIcmpOutDestUnreachs, # of output dest unreach errors */
-	bsd_uquad_t ifs6_out_dstunreach;
+	u_quad_t ifs6_out_dstunreach;
 	/* ipv6IfIcmpOutAdminProhibs, # of output administratively prohibited errs */
-	bsd_uquad_t ifs6_out_adminprohib;
+	u_quad_t ifs6_out_adminprohib;
 	/* ipv6IfIcmpOutTimeExcds, # of output time exceeded errors */
-	bsd_uquad_t ifs6_out_timeexceed;
+	u_quad_t ifs6_out_timeexceed;
 	/* ipv6IfIcmpOutParmProblems, # of output parameter problem errors */
-	bsd_uquad_t ifs6_out_paramprob;
+	u_quad_t ifs6_out_paramprob;
 	/* ipv6IfIcmpOutPktTooBigs, # of output packet too big errors */
-	bsd_uquad_t ifs6_out_pkttoobig;
+	u_quad_t ifs6_out_pkttoobig;
 	/* ipv6IfIcmpOutEchos, # of output echo requests */
-	bsd_uquad_t ifs6_out_echo;
+	u_quad_t ifs6_out_echo;
 	/* ipv6IfIcmpOutEchoReplies, # of output echo replies */
-	bsd_uquad_t ifs6_out_echoreply;
+	u_quad_t ifs6_out_echoreply;
 	/* ipv6IfIcmpOutRouterSolicits, # of output router solicitations */
-	bsd_uquad_t ifs6_out_routersolicit;
+	u_quad_t ifs6_out_routersolicit;
 	/* ipv6IfIcmpOutRouterAdvertisements, # of output router advertisements */
-	bsd_uquad_t ifs6_out_routeradvert;
+	u_quad_t ifs6_out_routeradvert;
 	/* ipv6IfIcmpOutNeighborSolicits, # of output neighbor solicitations */
-	bsd_uquad_t ifs6_out_neighborsolicit;
+	u_quad_t ifs6_out_neighborsolicit;
 	/* ipv6IfIcmpOutNeighborAdvertisements, # of output neighbor advertisements */
-	bsd_uquad_t ifs6_out_neighboradvert;
+	u_quad_t ifs6_out_neighboradvert;
 	/* ipv6IfIcmpOutRedirects, # of output redirects */
-	bsd_uquad_t ifs6_out_redirect;
+	u_quad_t ifs6_out_redirect;
 	/* ipv6IfIcmpOutGroupMembQueries, # of output MLD queries */
-	bsd_uquad_t ifs6_out_mldquery;
+	u_quad_t ifs6_out_mldquery;
 	/* ipv6IfIcmpOutGroupMembResponses, # of output MLD reports */
-	bsd_uquad_t ifs6_out_mldreport;
+	u_quad_t ifs6_out_mldreport;
 	/* ipv6IfIcmpOutGroupMembReductions, # of output MLD done */
-	bsd_uquad_t ifs6_out_mlddone;
+	u_quad_t ifs6_out_mlddone;
 };
 
 struct	in6_ifreq {
 	char	ifr_name[IFNAMSIZ];
 	union {
-		struct	bsd_sockaddr_in6 ifru_addr;
-		struct	bsd_sockaddr_in6 ifru_dstaddr;
+		struct	sockaddr_in6 ifru_addr;
+		struct	sockaddr_in6 ifru_dstaddr;
 		int	ifru_flags;
 		int	ifru_flags6;
 		int	ifru_metric;
@@ -276,15 +276,15 @@ struct	in6_ifreq {
 		struct in6_addrlifetime ifru_lifetime;
 		struct in6_ifstat ifru_stat;
 		struct icmp6_ifstat ifru_icmp6stat;
-		bsd_uint32_t ifru_scope_id[16];
+		u_int32_t ifru_scope_id[16];
 	} ifr_ifru;
 };
 
 struct	in6_aliasreq {
 	char	ifra_name[IFNAMSIZ];
-	struct	bsd_sockaddr_in6 ifra_addr;
-	struct	bsd_sockaddr_in6 ifra_dstaddr;
-	struct	bsd_sockaddr_in6 ifra_prefixmask;
+	struct	sockaddr_in6 ifra_addr;
+	struct	sockaddr_in6 ifra_dstaddr;
+	struct	sockaddr_in6 ifra_prefixmask;
 	int	ifra_flags;
 	struct in6_addrlifetime ifra_lifetime;
 };
@@ -319,10 +319,10 @@ struct  in6_prefixreq {
 	char	ipr_name[IFNAMSIZ];
 	u_char	ipr_origin;
 	u_char	ipr_plen;
-	bsd_uint32_t ipr_vltime;
-	bsd_uint32_t ipr_pltime;
+	u_int32_t ipr_vltime;
+	u_int32_t ipr_pltime;
 	struct in6_prflags ipr_flags;
-	struct	bsd_sockaddr_in6 ipr_prefix;
+	struct	sockaddr_in6 ipr_prefix;
 };
 
 #define PR_ORIG_RA	0
@@ -351,11 +351,11 @@ struct	in6_rrenumreq {
 		u_char autonomous : 1;
 		u_char reserved : 6;
 	} irr_raflagmask;
-	bsd_uint32_t irr_vltime;
-	bsd_uint32_t irr_pltime;
+	u_int32_t irr_vltime;
+	u_int32_t irr_pltime;
 	struct in6_prflags irr_flags;
-	struct	bsd_sockaddr_in6 irr_matchprefix;
-	struct	bsd_sockaddr_in6 irr_useprefix;
+	struct	sockaddr_in6 irr_matchprefix;
+	struct	sockaddr_in6 irr_useprefix;
 };
 
 #define irr_raf_mask_onlink	irr_raflagmask.onlink
@@ -506,7 +506,7 @@ do {								\
 		((struct in6_ifextra *)((ifp)->if_afdata[AF_INET6]))->in6_ifstat->tag++; \
 } while (/*CONSTCOND*/ 0)
 
-extern struct bsd_in6_addr zeroin6_addr;
+extern struct in6_addr zeroin6_addr;
 extern u_char inet6ctlerrmap[];
 VNET_DECLARE(unsigned long, in6_maxmtu);
 #define	V_in6_maxmtu			VNET(in6_maxmtu)
@@ -517,12 +517,12 @@ VNET_DECLARE(unsigned long, in6_maxmtu);
  */
 struct ip6_msource {
 	RB_ENTRY(ip6_msource)	im6s_link;	/* RB tree links */
-	struct bsd_in6_addr		im6s_addr;
+	struct in6_addr		im6s_addr;
 	struct im6s_st {
-		bsd_uint16_t	ex;		/* # of exclusive members */
-		bsd_uint16_t	in;		/* # of inclusive members */
+		uint16_t	ex;		/* # of exclusive members */
+		uint16_t	in;		/* # of inclusive members */
 	}			im6s_st[2];	/* state at t0, t1 */
-	bsd_uint8_t			im6s_stp;	/* pending query */
+	uint8_t			im6s_stp;	/* pending query */
 };
 RB_HEAD(ip6_msource_tree, ip6_msource);
 
@@ -533,8 +533,8 @@ RB_HEAD(ip6_msource_tree, ip6_msource);
  */
 struct in6_msource {
 	RB_ENTRY(ip6_msource)	im6s_link;	/* Common field */
-	struct bsd_in6_addr		im6s_addr;	/* Common field */
-	bsd_uint8_t			im6sl_st[2];	/* state before/at commit */
+	struct in6_addr		im6s_addr;	/* Common field */
+	uint8_t			im6sl_st[2];	/* state before/at commit */
 };
 
 #ifdef _KERNEL
@@ -548,7 +548,7 @@ static __inline int
 ip6_msource_cmp(const struct ip6_msource *a, const struct ip6_msource *b)
 {
 
-	return (memcmp(&a->im6s_addr, &b->im6s_addr, sizeof(struct bsd_in6_addr)));
+	return (memcmp(&a->im6s_addr, &b->im6s_addr, sizeof(struct in6_addr)));
 }
 RB_PROTOTYPE(ip6_msource_tree, ip6_msource, im6s_link, ip6_msource_cmp);
 #endif /* _KERNEL */
@@ -559,7 +559,7 @@ RB_PROTOTYPE(ip6_msource_tree, ip6_msource, im6s_link, ip6_msource_cmp);
 struct in6_mfilter {
 	struct ip6_msource_tree	im6f_sources; /* source list for (S,G) */
 	u_long			im6f_nsrc;    /* # of source entries */
-	bsd_uint8_t			im6f_st[2];   /* state before/at commit */
+	uint8_t			im6f_st[2];   /* state before/at commit */
 };
 
 /*
@@ -567,7 +567,7 @@ struct in6_mfilter {
  */
 struct in6_multi_mship {
 	struct	in6_multi *i6mm_maddr;
-	BSD_LIST_ENTRY(in6_multi_mship) i6mm_chain;
+	LIST_ENTRY(in6_multi_mship) i6mm_chain;
 };
 
 /*
@@ -593,8 +593,8 @@ struct in6_multi_mship {
  * w/o breaking the ABI for ifmcstat.
  */
 struct in6_multi {
-	BSD_LIST_ENTRY(in6_multi) in6m_entry; /* list glue */
-	struct	bsd_in6_addr in6m_addr;	/* IPv6 multicast address */
+	LIST_ENTRY(in6_multi) in6m_entry; /* list glue */
+	struct	in6_addr in6m_addr;	/* IPv6 multicast address */
 	struct	ifnet *in6m_ifp;	/* back pointer to ifnet */
 	struct	ifmultiaddr *in6m_ifma;	/* back pointer to ifmultiaddr */
 	u_int	in6m_refcount;		/* reference count */
@@ -603,15 +603,15 @@ struct in6_multi {
 
 	/* New fields for MLDv2 follow. */
 	struct mld_ifinfo	*in6m_mli;	/* MLD info */
-	BSD_SLIST_ENTRY(in6_multi)	 in6m_nrele;	/* to-be-released by MLD */
+	SLIST_ENTRY(in6_multi)	 in6m_nrele;	/* to-be-released by MLD */
 	struct ip6_msource_tree	 in6m_srcs;	/* tree of sources */
 	u_long			 in6m_nsrc;	/* # of tree entries */
 
 	struct ifqueue		 in6m_scq;	/* queue of pending
 						 * state-change packets */
-	struct bsd_timeval		 in6m_lastgsrtv;	/* last G-S-R query */
-	bsd_uint16_t		 in6m_sctimer;	/* state-change timer */
-	bsd_uint16_t		 in6m_scrv;	/* state-change rexmit count */
+	struct timeval		 in6m_lastgsrtv;	/* last G-S-R query */
+	uint16_t		 in6m_sctimer;	/* state-change timer */
+	uint16_t		 in6m_scrv;	/* state-change rexmit count */
 
 	/*
 	 * SSM state counters which track state at T0 (the time the last
@@ -621,11 +621,11 @@ struct in6_multi {
 	 * are maintained here to optimize for common use-cases.
 	 */
 	struct in6m_st {
-		bsd_uint16_t	iss_fmode;	/* MLD filter mode */
-		bsd_uint16_t	iss_asm;	/* # of ASM listeners */
-		bsd_uint16_t	iss_ex;		/* # of exclusive members */
-		bsd_uint16_t	iss_in;		/* # of inclusive members */
-		bsd_uint16_t	iss_rec;	/* # of recorded sources */
+		uint16_t	iss_fmode;	/* MLD filter mode */
+		uint16_t	iss_asm;	/* # of ASM listeners */
+		uint16_t	iss_ex;		/* # of exclusive members */
+		uint16_t	iss_in;		/* # of inclusive members */
+		uint16_t	iss_rec;	/* # of recorded sources */
 	}			in6m_st[2];	/* state at t0, t1 */
 };
 
@@ -637,18 +637,18 @@ struct in6_multi {
  *  and at least one listener includes it.
  * May be used by ifmcstat(8).
  */
-static __inline bsd_uint8_t
+static __inline uint8_t
 im6s_get_mode(const struct in6_multi *inm, const struct ip6_msource *ims,
-    bsd_uint8_t t)
+    uint8_t t)
 {
 
 	t = !!t;
 	if (inm->in6m_st[t].iss_ex > 0 &&
 	    inm->in6m_st[t].iss_ex == ims->im6s_st[t].ex)
-		return (BSD_MCAST_EXCLUDE);
+		return (MCAST_EXCLUDE);
 	else if (ims->im6s_st[t].in > 0 && ims->im6s_st[t].ex == 0)
-		return (BSD_MCAST_INCLUDE);
-	return (BSD_MCAST_UNDEFINED);
+		return (MCAST_INCLUDE);
+	return (MCAST_UNDEFINED);
 }
 
 #ifdef _KERNEL
@@ -673,7 +673,7 @@ extern struct mtx in6_multi_mtx;
  * SMPng: The IN6_MULTI_LOCK and IF_ADDR_LOCK on ifp must be held.
  */
 static __inline struct in6_multi *
-in6m_lookup_locked(struct ifnet *ifp, const struct bsd_in6_addr *mcaddr)
+in6m_lookup_locked(struct ifnet *ifp, const struct in6_addr *mcaddr)
 {
 	struct ifmultiaddr *ifma;
 	struct in6_multi *inm;
@@ -682,10 +682,10 @@ in6m_lookup_locked(struct ifnet *ifp, const struct bsd_in6_addr *mcaddr)
 	IF_ADDR_LOCK_ASSERT(ifp);
 
 	inm = NULL;
-	BSD_TAILQ_FOREACH(ifma, &((ifp)->if_multiaddrs), ifma_link) {
-		if (ifma->ifma_addr->sa_family == BSD_AF_INET6) {
+	TAILQ_FOREACH(ifma, &((ifp)->if_multiaddrs), ifma_link) {
+		if (ifma->ifma_addr->sa_family == AF_INET6) {
 			inm = (struct in6_multi *)ifma->ifma_protospec;
-			if (BSD_IN6_ARE_ADDR_EQUAL(&inm->in6m_addr, mcaddr))
+			if (IN6_ARE_ADDR_EQUAL(&inm->in6m_addr, mcaddr))
 				break;
 			inm = NULL;
 		}
@@ -699,7 +699,7 @@ in6m_lookup_locked(struct ifnet *ifp, const struct bsd_in6_addr *mcaddr)
  * SMPng: Assumes that neithr the IN6_MULTI_LOCK() or IF_ADDR_LOCK() are held.
  */
 static __inline struct in6_multi *
-in6m_lookup(struct ifnet *ifp, const struct bsd_in6_addr *mcaddr)
+in6m_lookup(struct ifnet *ifp, const struct in6_addr *mcaddr)
 {
 	struct in6_multi *inm;
 
@@ -722,36 +722,36 @@ in6m_acquire_locked(struct in6_multi *inm)
 }
 
 struct ip6_moptions;
-struct bsd_sockopt;
+struct sockopt;
 
 /* Multicast KPIs. */
 int	im6o_mc_filter(const struct ip6_moptions *, const struct ifnet *,
-	    const struct bsd_sockaddr *, const struct bsd_sockaddr *);
-int	in6_mc_join(struct ifnet *, const struct bsd_in6_addr *,
+	    const struct sockaddr *, const struct sockaddr *);
+int	in6_mc_join(struct ifnet *, const struct in6_addr *,
 	    struct in6_mfilter *, struct in6_multi **, int);
-int	in6_mc_join_locked(struct ifnet *, const struct bsd_in6_addr *,
+int	in6_mc_join_locked(struct ifnet *, const struct in6_addr *,
 	    struct in6_mfilter *, struct in6_multi **, int);
 int	in6_mc_leave(struct in6_multi *, struct in6_mfilter *);
 int	in6_mc_leave_locked(struct in6_multi *, struct in6_mfilter *);
 void	in6m_clear_recorded(struct in6_multi *);
 void	in6m_commit(struct in6_multi *);
 void	in6m_print(const struct in6_multi *);
-int	in6m_record_source(struct in6_multi *, const struct bsd_in6_addr *);
+int	in6m_record_source(struct in6_multi *, const struct in6_addr *);
 void	in6m_release_locked(struct in6_multi *);
 void	ip6_freemoptions(struct ip6_moptions *);
-int	ip6_getmoptions(struct inpcb *, struct bsd_sockopt *);
-int	ip6_setmoptions(struct inpcb *, struct bsd_sockopt *);
+int	ip6_getmoptions(struct inpcb *, struct sockopt *);
+int	ip6_setmoptions(struct inpcb *, struct sockopt *);
 
 /* Legacy KAME multicast KPIs. */
 struct in6_multi_mship *
-	in6_joingroup(struct ifnet *, struct bsd_in6_addr *, int *, int);
+	in6_joingroup(struct ifnet *, struct in6_addr *, int *, int);
 int	in6_leavegroup(struct in6_multi_mship *);
 
 /* flags to in6_update_ifa */
 #define IN6_IFAUPDATE_DADDELAY	0x1 /* first time to configure an address */
 
-int	in6_mask2len(struct bsd_in6_addr *, u_char *);
-int	in6_control(struct bsd_socket *, u_long, caddr_t, struct ifnet *,
+int	in6_mask2len(struct in6_addr *, u_char *);
+int	in6_control(struct socket *, u_long, caddr_t, struct ifnet *,
 	struct thread *);
 int	in6_update_ifa(struct ifnet *, struct in6_aliasreq *,
 	struct in6_ifaddr *, int);
@@ -764,14 +764,14 @@ void	in6_domifdetach(struct ifnet *, void *);
 void	in6_setmaxmtu(void);
 int	in6_if2idlen(struct ifnet *);
 struct in6_ifaddr *in6ifa_ifpforlinklocal(struct ifnet *, int);
-struct in6_ifaddr *in6ifa_ifpwithaddr(struct ifnet *, struct bsd_in6_addr *);
+struct in6_ifaddr *in6ifa_ifpwithaddr(struct ifnet *, struct in6_addr *);
 struct in6_ifaddr *in6ifa_llaonifp(struct ifnet *);
-char	*ip6_sprintf(char *, const struct bsd_in6_addr *);
-int	in6_addr2zoneid(struct ifnet *, struct bsd_in6_addr *, bsd_uint32_t *);
-int	in6_matchlen(struct bsd_in6_addr *, struct bsd_in6_addr *);
-int	in6_are_prefix_equal(struct bsd_in6_addr *, struct bsd_in6_addr *, int);
-void	in6_prefixlen2mask(struct bsd_in6_addr *, int);
-int	in6_prefix_ioctl(struct bsd_socket *, u_long, caddr_t,
+char	*ip6_sprintf(char *, const struct in6_addr *);
+int	in6_addr2zoneid(struct ifnet *, struct in6_addr *, u_int32_t *);
+int	in6_matchlen(struct in6_addr *, struct in6_addr *);
+int	in6_are_prefix_equal(struct in6_addr *, struct in6_addr *, int);
+void	in6_prefixlen2mask(struct in6_addr *, int);
+int	in6_prefix_ioctl(struct socket *, u_long, caddr_t,
 	struct ifnet *);
 int	in6_prefix_add_ifid(int, struct in6_ifaddr *);
 void	in6_prefix_remove_ifid(int, struct in6_ifaddr *);
@@ -779,19 +779,19 @@ void	in6_purgeprefix(struct ifnet *);
 void	in6_ifremloop(struct ifaddr *);
 void	in6_ifaddloop(struct ifaddr *);
 
-int	in6_is_addr_deprecated(struct bsd_sockaddr_in6 *);
+int	in6_is_addr_deprecated(struct sockaddr_in6 *);
 int	in6_src_ioctl(u_long, caddr_t);
 
 /*
  * Extended API for IPv6 FIB support.
  */
-void	in6_rtredirect(struct bsd_sockaddr *, struct bsd_sockaddr *, struct bsd_sockaddr *,
-	    int, struct bsd_sockaddr *, u_int);
-int	in6_rtrequest(int, struct bsd_sockaddr *, struct bsd_sockaddr *,
-	    struct bsd_sockaddr *, int, struct rtentry **, u_int);
+void	in6_rtredirect(struct sockaddr *, struct sockaddr *, struct sockaddr *,
+	    int, struct sockaddr *, u_int);
+int	in6_rtrequest(int, struct sockaddr *, struct sockaddr *,
+	    struct sockaddr *, int, struct rtentry **, u_int);
 void	in6_rtalloc(struct route_in6 *, u_int);
 void	in6_rtalloc_ign(struct route_in6 *, u_long, u_int);
-struct rtentry *in6_rtalloc1(struct bsd_sockaddr *, int, u_long, u_int);
+struct rtentry *in6_rtalloc1(struct sockaddr *, int, u_long, u_int);
 #endif /* _KERNEL */
 
 #endif /* _NETINET6_IN6_VAR_H_ */

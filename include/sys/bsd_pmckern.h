@@ -64,17 +64,17 @@
 
 struct pmckern_procexec {
 	int		pm_credentialschanged;
-	bsd_uintfptr_t	pm_entryaddr;
+	uintfptr_t	pm_entryaddr;
 };
 
 struct pmckern_map_in {
 	void		*pm_file;	/* filename or vnode pointer */
-	bsd_uintfptr_t	pm_address;	/* address object is loaded at */
+	uintfptr_t	pm_address;	/* address object is loaded at */
 };
 
 struct pmckern_map_out {
-	bsd_uintfptr_t	pm_address;	/* start address of region */
-	bsd_size_t		pm_size;	/* size of unmapped region */
+	uintfptr_t	pm_address;	/* start address of region */
+	size_t		pm_size;	/* size of unmapped region */
 };
 
 struct pmckern_soft {

@@ -33,14 +33,14 @@
 /*
  * Routines to build and maintain radix trees for routing lookups.
  */
-#include <sys/param.h>
+#include <sys/bsd_param.h>
 #ifdef	_KERNEL
-#include <sys/lock.h>
-#include <sys/mutex.h>
-#include <sys/rwlock.h>
-#include <sys/systm.h>
-#include <sys/malloc.h>
-#include <sys/syslog.h>
+#include <sys/bsd_lock.h>
+#include <sys/bsd_mutex.h>
+#include <sys/bsd_rwlock.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_malloc.h>
+#include <sys/bsd_syslog.h>
 #include <net/radix.h>
 #include "opt_mpath.h"
 #ifdef RADIX_MPATH
@@ -464,7 +464,7 @@ on1:
 				/* x->rn_bit < b && x->rn_bit >= 0 */
 #ifdef RN_DEBUG
 	if (rn_debug)
-		bsd_log(LOG_DEBUG, "rn_insert: Going In:\n"), traverse(p);
+		log(LOG_DEBUG, "rn_insert: Going In:\n"), traverse(p);
 #endif
 	t = rn_newpair(v_arg, b, nodes); 
 	tt = t->rn_left;
@@ -482,7 +482,7 @@ on1:
 	}
 #ifdef RN_DEBUG
 	if (rn_debug)
-		bsd_log(LOG_DEBUG, "rn_insert: Coming Out:\n"), traverse(p);
+		log(LOG_DEBUG, "rn_insert: Coming Out:\n"), traverse(p);
 #endif
     }
 	return (tt);
@@ -537,7 +537,7 @@ rn_addmask(n_arg, search, skip)
 	bcopy(addmask_key, cp, mlen);
 	x = rn_insert(cp, mask_rnhead, &maskduplicated, x);
 	if (maskduplicated) {
-		bsd_log(LOG_ERR, "rn_addmask: mask impossibly already in tree");
+		log(LOG_ERR, "rn_addmask: mask impossibly already in tree");
 		Free(saved_x);
 		return (x);
 	}
@@ -592,7 +592,7 @@ rn_new_radix_mask(tt, next)
 
 	MKGet(m);
 	if (m == 0) {
-		bsd_log(LOG_ERR, "Mask for route not entered\n");
+		log(LOG_ERR, "Mask for route not entered\n");
 		return (0);
 	}
 	bzero(m, sizeof *m);
@@ -762,7 +762,7 @@ on2:
 			mmask = m->rm_leaf->rn_mask;
 			if (tt->rn_flags & RNF_NORMAL) {
 #if !defined(RADIX_MPATH)
-			    bsd_log(LOG_ERR,
+			    log(LOG_ERR,
 			        "Non-unique normal route, mask not entered\n");
 #endif
 				return tt;
@@ -819,12 +819,12 @@ rn_delete(v_arg, netmask_arg, head)
 		goto on1;
 	if (tt->rn_flags & RNF_NORMAL) {
 		if (m->rm_leaf != tt || m->rm_refs > 0) {
-			bsd_log(LOG_ERR, "rn_delete: inconsistent annotation\n");
+			log(LOG_ERR, "rn_delete: inconsistent annotation\n");
 			return 0;  /* dangling ref could cause disaster */
 		}
 	} else {
 		if (m->rm_mask != tt->rn_mask) {
-			bsd_log(LOG_ERR, "rn_delete: inconsistent annotation\n");
+			log(LOG_ERR, "rn_delete: inconsistent annotation\n");
 			goto on1;
 		}
 		if (--m->rm_refs >= 0)
@@ -845,7 +845,7 @@ rn_delete(v_arg, netmask_arg, head)
 			break;
 		}
 	if (m == 0) {
-		bsd_log(LOG_ERR, "rn_delete: couldn't find our annotation\n");
+		log(LOG_ERR, "rn_delete: couldn't find our annotation\n");
 		if (tt->rn_flags & RNF_NORMAL)
 			return (0); /* Dangling ref to us */
 	}
@@ -883,7 +883,7 @@ on1:
 				if (tt->rn_dupedkey)		/* parent */
 					tt->rn_dupedkey->rn_parent = p;
 								/* parent */
-			} else bsd_log(LOG_ERR, "rn_delete: couldn't find us\n");
+			} else log(LOG_ERR, "rn_delete: couldn't find us\n");
 		}
 		t = tt + 1;
 		if  (t->rn_flags & RNF_ACTIVE) {
@@ -936,7 +936,7 @@ on1:
 					m = mm;
 				}
 			if (m)
-				bsd_log(LOG_ERR,
+				log(LOG_ERR,
 				    "rn_delete: Orphaned Mask %p at %p\n",
 				    m, x);
 		}
@@ -1186,7 +1186,7 @@ rn_init(int maxk)
 
 	max_keylen = maxk;
 	if (max_keylen == 0) {
-		bsd_log(LOG_ERR,
+		log(LOG_ERR,
 		    "rn_init: radix functions require max_keylen be set\n");
 		return;
 	}

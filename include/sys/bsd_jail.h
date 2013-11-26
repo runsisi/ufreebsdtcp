@@ -32,22 +32,22 @@
 
 #ifdef _KERNEL
 struct jail_v0 {
-	bsd_uint32_t	version;
+	u_int32_t	version;
 	char		*path;
 	char		*hostname;
-	bsd_uint32_t	ip_number;
+	u_int32_t	ip_number;
 };
 #endif
 
 struct jail {
-	bsd_uint32_t	version;
+	uint32_t	version;
 	char		*path;
 	char		*hostname;
 	char		*jailname;
-	bsd_uint32_t	ip4s;
-	bsd_uint32_t	ip6s;
-	struct bsd_in_addr	*ip4;
-	struct bsd_in6_addr	*ip6;
+	uint32_t	ip4s;
+	uint32_t	ip6s;
+	struct in_addr	*ip4;
+	struct in6_addr	*ip6;
 };
 #define	JAIL_API_VERSION	2
 
@@ -61,7 +61,7 @@ struct xprison_v1 {
 	int		 pr_id;
 	char		 pr_path[MAXPATHLEN];
 	char		 pr_host[MAXHOSTNAMELEN];
-	bsd_uint32_t	 pr_ip;
+	u_int32_t	 pr_ip;
 };
 #endif
 
@@ -69,19 +69,19 @@ struct xprison {
 	int		 pr_version;
 	int		 pr_id;
 	int		 pr_state;
-	bsd_cpusetid_t	 pr_cpusetid;
-	char		 pr_path[BSD_MAXPATHLEN];
-	char		 pr_host[BSD_MAXHOSTNAMELEN];
-	char		 pr_name[BSD_MAXHOSTNAMELEN];
-	bsd_uint32_t	 pr_ip4s;
-	bsd_uint32_t	 pr_ip6s;
+	cpusetid_t	 pr_cpusetid;
+	char		 pr_path[MAXPATHLEN];
+	char		 pr_host[MAXHOSTNAMELEN];
+	char		 pr_name[MAXHOSTNAMELEN];
+	uint32_t	 pr_ip4s;
+	uint32_t	 pr_ip6s;
 #if 0
 	/*
 	 * sizeof(xprison) will be malloced + size needed for all
 	 * IPv4 and IPv6 addesses. Offsets are based numbers of addresses.
 	 */
-	struct bsd_in_addr	 pr_ip4[];
-	struct bsd_in6_addr	 pr_ip6[];
+	struct in_addr	 pr_ip4[];
+	struct in6_addr	 pr_ip6[];
 #endif
 };
 #define	XPRISON_VERSION		3
@@ -151,13 +151,13 @@ struct prison_racct;
  *   (d) set only during destruction of jail, no mutex needed
  */
 struct prison {
-	BSD_TAILQ_ENTRY(prison) pr_list;			/* (a) all prisons */
+	TAILQ_ENTRY(prison) pr_list;			/* (a) all prisons */
 	int		 pr_id;				/* (c) prison id */
 	int		 pr_ref;			/* (p) refcount */
 	int		 pr_uref;			/* (p) user (alive) refcount */
 	unsigned	 pr_flags;			/* (p) PR_* flags */
-	BSD_LIST_HEAD(, prison) pr_children;		/* (a) list of child jails */
-	BSD_LIST_ENTRY(prison) pr_sibling;			/* (a) next in parent's list */
+	LIST_HEAD(, prison) pr_children;		/* (a) list of child jails */
+	LIST_ENTRY(prison) pr_sibling;			/* (a) next in parent's list */
 	struct prison	*pr_parent;			/* (c) containing jail */
 	struct mtx	 pr_mtx;
 	struct task	 pr_task;			/* (d) destroy task */
@@ -167,8 +167,8 @@ struct prison {
 	struct vnode	*pr_root;			/* (c) vnode to rdir */
 	int		 pr_ip4s;			/* (p) number of v4 IPs */
 	int		 pr_ip6s;			/* (p) number of v6 IPs */
-	struct bsd_in_addr	*pr_ip4;			/* (p) v4 IPs of jail */
-	struct bsd_in6_addr	*pr_ip6;			/* (p) v6 IPs of jail */
+	struct in_addr	*pr_ip4;			/* (p) v4 IPs of jail */
+	struct in6_addr	*pr_ip6;			/* (p) v6 IPs of jail */
 	struct prison_racct *pr_prison_racct;		/* (c) racct jail proxy */
 	void		*pr_sparep[3];
 	int		 pr_childcount;			/* (a) number of child jails */
@@ -179,16 +179,16 @@ struct prison {
 	int		 pr_devfs_rsnum;		/* (p) devfs ruleset */
 	int		 pr_spare[4];
 	unsigned long	 pr_hostid;			/* (p) jail hostid */
-	char		 pr_name[BSD_MAXHOSTNAMELEN];	/* (p) admin jail name */
-	char		 pr_path[BSD_MAXPATHLEN];		/* (c) chroot path */
-	char		 pr_hostname[BSD_MAXHOSTNAMELEN];	/* (p) jail hostname */
-	char		 pr_domainname[BSD_MAXHOSTNAMELEN];	/* (p) jail domainname */
+	char		 pr_name[MAXHOSTNAMELEN];	/* (p) admin jail name */
+	char		 pr_path[MAXPATHLEN];		/* (c) chroot path */
+	char		 pr_hostname[MAXHOSTNAMELEN];	/* (p) jail hostname */
+	char		 pr_domainname[MAXHOSTNAMELEN];	/* (p) jail domainname */
 	char		 pr_hostuuid[HOSTUUIDLEN];	/* (p) jail hostuuid */
 };
 
 struct prison_racct {
-	BSD_LIST_ENTRY(prison_racct) prr_next;
-	char		prr_name[BSD_MAXHOSTNAMELEN];
+	LIST_ENTRY(prison_racct) prr_next;
+	char		prr_name[MAXHOSTNAMELEN];
 	u_int		prr_refcount;
 	struct racct	*prr_racct;
 };
@@ -261,7 +261,7 @@ prison_unlock(struct prison *pr)
 
 /* Traverse a prison's immediate children. */
 #define	FOREACH_PRISON_CHILD(ppr, cpr)					\
-	BSD_LIST_FOREACH(cpr, &(ppr)->pr_children, pr_sibling)
+	LIST_FOREACH(cpr, &(ppr)->pr_children, pr_sibling)
 
 /*
  * Preorder traversal of all of a prison's descendants.
@@ -270,12 +270,12 @@ prison_unlock(struct prison *pr)
  */
 #define	FOREACH_PRISON_DESCENDANT(ppr, cpr, descend)			\
 	for ((cpr) = (ppr), (descend) = 1;				\
-	    ((cpr) = (((descend) && !BSD_LIST_EMPTY(&(cpr)->pr_children))	\
-	      ? BSD_LIST_FIRST(&(cpr)->pr_children)				\
+	    ((cpr) = (((descend) && !LIST_EMPTY(&(cpr)->pr_children))	\
+	      ? LIST_FIRST(&(cpr)->pr_children)				\
 	      : ((cpr) == (ppr)						\
 		 ? NULL							\
-		 : (((descend) = BSD_LIST_NEXT(cpr, pr_sibling) != NULL)	\
-		    ? BSD_LIST_NEXT(cpr, pr_sibling)			\
+		 : (((descend) = LIST_NEXT(cpr, pr_sibling) != NULL)	\
+		    ? LIST_NEXT(cpr, pr_sibling)			\
 		    : (cpr)->pr_parent))));)				\
 		if (!(descend))						\
 			;						\
@@ -286,13 +286,13 @@ prison_unlock(struct prison *pr)
  */
 #define	FOREACH_PRISON_DESCENDANT_LOCKED(ppr, cpr, descend)		\
 	for ((cpr) = (ppr), (descend) = 1;				\
-	    ((cpr) = (((descend) && !BSD_LIST_EMPTY(&(cpr)->pr_children))	\
-	      ? BSD_LIST_FIRST(&(cpr)->pr_children)				\
+	    ((cpr) = (((descend) && !LIST_EMPTY(&(cpr)->pr_children))	\
+	      ? LIST_FIRST(&(cpr)->pr_children)				\
 	      : ((cpr) == (ppr)						\
 		 ? NULL							\
 		 : ((prison_unlock(cpr),				\
-		    (descend) = BSD_LIST_NEXT(cpr, pr_sibling) != NULL)	\
-		    ? BSD_LIST_NEXT(cpr, pr_sibling)			\
+		    (descend) = LIST_NEXT(cpr, pr_sibling) != NULL)	\
+		    ? LIST_NEXT(cpr, pr_sibling)			\
 		    : (cpr)->pr_parent))));)				\
 		if ((descend) ? (prison_lock(cpr), 0) : 1)		\
 			;						\
@@ -303,13 +303,13 @@ prison_unlock(struct prison *pr)
  */
 #define	FOREACH_PRISON_DESCENDANT_LOCKED_LEVEL(ppr, cpr, descend, level)\
 	for ((cpr) = (ppr), (descend) = 1, (level) = 0;			\
-	    ((cpr) = (((descend) && !BSD_LIST_EMPTY(&(cpr)->pr_children))	\
-	      ? (level++, BSD_LIST_FIRST(&(cpr)->pr_children))		\
+	    ((cpr) = (((descend) && !LIST_EMPTY(&(cpr)->pr_children))	\
+	      ? (level++, LIST_FIRST(&(cpr)->pr_children))		\
 	      : ((cpr) == (ppr)						\
 		 ? NULL							\
 		 : ((prison_unlock(cpr),				\
-		    (descend) = BSD_LIST_NEXT(cpr, pr_sibling) != NULL)	\
-		    ? BSD_LIST_NEXT(cpr, pr_sibling)			\
+		    (descend) = LIST_NEXT(cpr, pr_sibling) != NULL)	\
+		    ? LIST_NEXT(cpr, pr_sibling)			\
 		    : (level--, (cpr)->pr_parent)))));)			\
 		if ((descend) ? (prison_lock(cpr), 0) : 1)		\
 			;						\
@@ -320,7 +320,7 @@ prison_unlock(struct prison *pr)
  */
 extern struct	prison prison0;
 
-BSD_TAILQ_HEAD(prisonlist, prison);
+TAILQ_HEAD(prisonlist, prison);
 extern struct	prisonlist allprison;
 extern struct	sx allprison_lock;
 
@@ -352,26 +352,26 @@ SYSCTL_DECL(_security_jail_param);
 /*
  * Kernel support functions for jail().
  */
-struct bsd_ucred;
+struct ucred;
 struct mount;
-struct bsd_sockaddr;
+struct sockaddr;
 struct statfs;
-int jailed(struct bsd_ucred *cred);
-int jailed_without_vnet(struct bsd_ucred *);
-void getcredhostname(struct bsd_ucred *, char *, bsd_size_t);
-void getcreddomainname(struct bsd_ucred *, char *, bsd_size_t);
-void getcredhostuuid(struct bsd_ucred *, char *, bsd_size_t);
-void getcredhostid(struct bsd_ucred *, unsigned long *);
-int prison_allow(struct bsd_ucred *, unsigned);
-int prison_check(struct bsd_ucred *cred1, struct bsd_ucred *cred2);
-int prison_owns_vnet(struct bsd_ucred *);
-int prison_canseemount(struct bsd_ucred *cred, struct mount *mp);
-void prison_enforce_statfs(struct bsd_ucred *cred, struct mount *mp,
+int jailed(struct ucred *cred);
+int jailed_without_vnet(struct ucred *);
+void getcredhostname(struct ucred *, char *, size_t);
+void getcreddomainname(struct ucred *, char *, size_t);
+void getcredhostuuid(struct ucred *, char *, size_t);
+void getcredhostid(struct ucred *, unsigned long *);
+int prison_allow(struct ucred *, unsigned);
+int prison_check(struct ucred *cred1, struct ucred *cred2);
+int prison_owns_vnet(struct ucred *);
+int prison_canseemount(struct ucred *cred, struct mount *mp);
+void prison_enforce_statfs(struct ucred *cred, struct mount *mp,
     struct statfs *sp);
 struct prison *prison_find(int prid);
 struct prison *prison_find_child(struct prison *, int);
 struct prison *prison_find_name(struct prison *, const char *);
-int prison_flag(struct bsd_ucred *, unsigned);
+int prison_flag(struct ucred *, unsigned);
 void prison_free(struct prison *pr);
 void prison_free_locked(struct prison *pr);
 void prison_hold(struct prison *pr);
@@ -380,23 +380,23 @@ void prison_proc_hold(struct prison *);
 void prison_proc_free(struct prison *);
 int prison_ischild(struct prison *, struct prison *);
 int prison_equal_ip4(struct prison *, struct prison *);
-int prison_get_ip4(struct bsd_ucred *cred, struct bsd_in_addr *ia);
-int prison_local_ip4(struct bsd_ucred *cred, struct bsd_in_addr *ia);
-int prison_remote_ip4(struct bsd_ucred *cred, struct bsd_in_addr *ia);
-int prison_check_ip4(struct bsd_ucred *cred, struct bsd_in_addr *ia);
-int prison_saddrsel_ip4(struct bsd_ucred *, struct bsd_in_addr *);
+int prison_get_ip4(struct ucred *cred, struct in_addr *ia);
+int prison_local_ip4(struct ucred *cred, struct in_addr *ia);
+int prison_remote_ip4(struct ucred *cred, struct in_addr *ia);
+int prison_check_ip4(struct ucred *cred, struct in_addr *ia);
+int prison_saddrsel_ip4(struct ucred *, struct in_addr *);
 #ifdef INET6
 int prison_equal_ip6(struct prison *, struct prison *);
-int prison_get_ip6(struct bsd_ucred *, struct bsd_in6_addr *);
-int prison_local_ip6(struct bsd_ucred *, struct bsd_in6_addr *, int);
-int prison_remote_ip6(struct bsd_ucred *, struct bsd_in6_addr *);
-int prison_check_ip6(struct bsd_ucred *, struct bsd_in6_addr *);
-int prison_saddrsel_ip6(struct bsd_ucred *, struct bsd_in6_addr *);
+int prison_get_ip6(struct ucred *, struct in6_addr *);
+int prison_local_ip6(struct ucred *, struct in6_addr *, int);
+int prison_remote_ip6(struct ucred *, struct in6_addr *);
+int prison_check_ip6(struct ucred *, struct in6_addr *);
+int prison_saddrsel_ip6(struct ucred *, struct in6_addr *);
 #endif
-int prison_check_af(struct bsd_ucred *cred, int af);
-int prison_if(struct bsd_ucred *cred, struct bsd_sockaddr *sa);
+int prison_check_af(struct ucred *cred, int af);
+int prison_if(struct ucred *cred, struct sockaddr *sa);
 char *prison_name(struct prison *, struct prison *);
-int prison_priv_check(struct bsd_ucred *cred, int priv);
+int prison_priv_check(struct ucred *cred, int priv);
 int sysctl_jail_param(SYSCTL_HANDLER_ARGS);
 void prison_racct_foreach(void (*callback)(struct racct *racct,
     void *arg2, void *arg3), void *arg2, void *arg3);

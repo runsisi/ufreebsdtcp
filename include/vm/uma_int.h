@@ -90,8 +90,8 @@
  *	i == item
  *	s == slab pointer
  *
- *	    <----------------  Page (UMA_SLAB_SIZE) ------------------>
- *	    ___________________________________________________________
+ *	<----------------  Page (UMA_SLAB_SIZE) ------------------>
+ *	___________________________________________________________
  *     | _  _  _  _  _  _  _  _  _  _  _  _  _  _  _   ___________ |
  *     ||i||i||i||i||i||i||i||i||i||i||i||i||i||i||i| |slab header||
  *     ||_||_||_||_||_||_||_||_||_||_||_||_||_||_||_| |___________|| 
@@ -100,23 +100,23 @@
  *
  *	This is an OFFPAGE slab. These can be larger than UMA_SLAB_SIZE.
  *
- *	    ___________________________________________________________
+ *	___________________________________________________________
  *     | _  _  _  _  _  _  _  _  _  _  _  _  _  _  _  _  _  _  _   |
  *     ||i||i||i||i||i||i||i||i||i||i||i||i||i||i||i||i||i||i||i|  |
  *     ||_||_||_||_||_||_||_||_||_||_||_||_||_||_||_||_||_||_||_|  |
  *     |___________________________________________________________|
  *       ___________    ^
- *	    |slab header|   |
- *	    |___________|---*
+ *	|slab header|   |
+ *	|___________|---*
  *
  */
 
 #ifndef VM_UMA_INT_H
 #define VM_UMA_INT_H
 
-#define UMA_SLAB_SIZE	BSD_PAGE_SIZE	/* How big are our slabs? */
-#define UMA_SLAB_MASK	(BSD_PAGE_SIZE - 1)	/* Mask to get back to the page */
-#define UMA_SLAB_SHIFT	BSD_PAGE_SHIFT	/* Number of bits PAGE_MASK */
+#define UMA_SLAB_SIZE	PAGE_SIZE	/* How big are our slabs? */
+#define UMA_SLAB_MASK	(PAGE_SIZE - 1)	/* Mask to get back to the page */
+#define UMA_SLAB_SHIFT	PAGE_SHIFT	/* Number of bits PAGE_MASK */
 
 #define UMA_BOOT_PAGES		64	/* Pages allocated for startup */
 
@@ -143,15 +143,15 @@
     (h)->uh_hashmask)
 
 #define UMA_HASH_INSERT(h, s, mem)					\
-		BSD_SLIST_INSERT_HEAD(&(h)->uh_slab_hash[UMA_HASH((h),	\
+		SLIST_INSERT_HEAD(&(h)->uh_slab_hash[UMA_HASH((h),	\
 		    (mem))], (s), us_hlink)
 #define UMA_HASH_REMOVE(h, s, mem)					\
-		BSD_SLIST_REMOVE(&(h)->uh_slab_hash[UMA_HASH((h),		\
+		SLIST_REMOVE(&(h)->uh_slab_hash[UMA_HASH((h),		\
 		    (mem))], (s), uma_slab, us_hlink)
 
 /* Hash table for freed address -> slab translation */
 
-BSD_SLIST_HEAD(slabhead, uma_slab);
+SLIST_HEAD(slabhead, uma_slab);
 
 struct uma_hash {
 	struct slabhead	*uh_slab_hash;	/* Hash table for slabs */
@@ -163,7 +163,7 @@ struct uma_hash {
  * align field or structure to cache line
  */
 #if defined(__amd64__)
-#define UMA_ALIGN	__aligned(BSD_CACHE_LINE_SIZE)
+#define UMA_ALIGN	__aligned(CACHE_LINE_SIZE)
 #else
 #define UMA_ALIGN
 #endif
@@ -173,9 +173,9 @@ struct uma_hash {
  */
 
 struct uma_bucket {
-	BSD_LIST_ENTRY(uma_bucket)	ub_link;	/* Link into the zone */
-	bsd_int16_t	ub_cnt;				/* Count of free items. */
-	bsd_int16_t	ub_entries;			/* Max items. */
+	LIST_ENTRY(uma_bucket)	ub_link;	/* Link into the zone */
+	int16_t	ub_cnt;				/* Count of free items. */
+	int16_t	ub_entries;			/* Max items. */
 	void	*ub_bucket[];			/* actual allocation storage */
 };
 
@@ -184,8 +184,8 @@ typedef struct uma_bucket * uma_bucket_t;
 struct uma_cache {
 	uma_bucket_t	uc_freebucket;	/* Bucket we're freeing to */
 	uma_bucket_t	uc_allocbucket;	/* Bucket to allocate from */
-	bsd_uint64_t	uc_allocs;	/* Count of allocations */
-	bsd_uint64_t	uc_frees;	/* Count of frees */
+	u_int64_t	uc_allocs;	/* Count of allocations */
+	u_int64_t	uc_frees;	/* Count of frees */
 } UMA_ALIGN;
 
 typedef struct uma_cache * uma_cache_t;
@@ -197,24 +197,24 @@ typedef struct uma_cache * uma_cache_t;
  *
  */
 struct uma_keg {
-    BSD_LIST_ENTRY(uma_keg)	uk_link;	/* List of all kegs */
+	LIST_ENTRY(uma_keg)	uk_link;	/* List of all kegs */
 
 	struct mtx	uk_lock;	/* Lock for the keg */
 	struct uma_hash	uk_hash;
 
 	const char	*uk_name;		/* Name of creating zone. */
-	BSD_LIST_HEAD(,uma_zone)	uk_zones;	/* Keg's zones */
-	BSD_LIST_HEAD(,uma_slab)	uk_part_slab;	/* partially allocated slabs */
-	BSD_LIST_HEAD(,uma_slab)	uk_free_slab;	/* empty slab list */
-	BSD_LIST_HEAD(,uma_slab)	uk_full_slab;	/* full slabs */
+	LIST_HEAD(,uma_zone)	uk_zones;	/* Keg's zones */
+	LIST_HEAD(,uma_slab)	uk_part_slab;	/* partially allocated slabs */
+	LIST_HEAD(,uma_slab)	uk_free_slab;	/* empty slab list */
+	LIST_HEAD(,uma_slab)	uk_full_slab;	/* full slabs */
 
-	bsd_uint32_t	uk_recurse;	/* Allocation recursion count */
-	bsd_uint32_t	uk_align;	/* Alignment mask */
-	bsd_uint32_t	uk_pages;	/* Total page count */
-	bsd_uint32_t	uk_free;	/* Count of items free in slabs */
-	bsd_uint32_t	uk_size;	/* Requested size of each item */
-	bsd_uint32_t	uk_rsize;	/* Real size of each item */
-	bsd_uint32_t	uk_maxpages;	/* Maximum number of pages to alloc */
+	u_int32_t	uk_recurse;	/* Allocation recursion count */
+	u_int32_t	uk_align;	/* Alignment mask */
+	u_int32_t	uk_pages;	/* Total page count */
+	u_int32_t	uk_free;	/* Count of items free in slabs */
+	u_int32_t	uk_size;	/* Requested size of each item */
+	u_int32_t	uk_rsize;	/* Real size of each item */
+	u_int32_t	uk_maxpages;	/* Maximum number of pages to alloc */
 
 	uma_init	uk_init;	/* Keg's init routine */
 	uma_fini	uk_fini;	/* Keg's fini routine */
@@ -222,13 +222,13 @@ struct uma_keg {
 	uma_free	uk_freef;	/* Free routine */
 
 	struct vm_object	*uk_obj;	/* Zone specific object */
-	bsd_vm_offset_t	uk_kva;		/* Base kva for zones with objs */
+	vm_offset_t	uk_kva;		/* Base kva for zones with objs */
 	uma_zone_t	uk_slabzone;	/* Slab zone backing us, if OFFPAGE */
 
-	bsd_uint16_t	uk_pgoff;	/* Offset to uma_slab struct */
-	bsd_uint16_t	uk_ppera;	/* pages per allocation from backend */
-	bsd_uint16_t	uk_ipers;	/* Items per slab */
-	bsd_uint32_t	uk_flags;	/* Internal flags */
+	u_int16_t	uk_pgoff;	/* Offset to uma_slab struct */
+	u_int16_t	uk_ppera;	/* pages per allocation from backend */
+	u_int16_t	uk_ipers;	/* Items per slab */
+	u_int32_t	uk_flags;	/* Internal flags */
 };
 typedef struct uma_keg	* uma_keg_t;
 
@@ -238,21 +238,21 @@ typedef struct uma_keg	* uma_keg_t;
 struct uma_slab_head {
 	uma_keg_t	us_keg;			/* Keg we live in */
 	union {
-	    BSD_LIST_ENTRY(uma_slab)	_us_link;	/* slabs in zone */
+		LIST_ENTRY(uma_slab)	_us_link;	/* slabs in zone */
 		unsigned long	_us_size;	/* Size of allocation */
 	} us_type;
-	BSD_SLIST_ENTRY(uma_slab)	us_hlink;	/* Link for hash table */
-	bsd_uint8_t	*us_data;		/* First item */
-	bsd_uint8_t	us_flags;		/* Page flags see uma.h */
-	bsd_uint8_t	us_freecount;	/* How many are free? */
-	bsd_uint8_t	us_firstfree;	/* First free item index */
+	SLIST_ENTRY(uma_slab)	us_hlink;	/* Link for hash table */
+	u_int8_t	*us_data;		/* First item */
+	u_int8_t	us_flags;		/* Page flags see uma.h */
+	u_int8_t	us_freecount;	/* How many are free? */
+	u_int8_t	us_firstfree;	/* First free item index */
 };
 
 /* The standard slab structure */
 struct uma_slab {
 	struct uma_slab_head	us_head;	/* slab header data */
 	struct {
-		bsd_uint8_t	us_item;
+		u_int8_t	us_item;
 	} us_freelist[1];			/* actual number bigger */
 };
 
@@ -263,8 +263,8 @@ struct uma_slab {
 struct uma_slab_refcnt {
 	struct uma_slab_head	us_head;	/* slab header data */
 	struct {
-		bsd_uint8_t	us_item;
-		bsd_uint32_t	us_refcnt;
+		u_int8_t	us_item;
+		u_int32_t	us_refcnt;
 	} us_freelist[1];			/* actual number bigger */
 };
 
@@ -293,7 +293,7 @@ typedef uma_slab_t (*uma_slaballoc)(uma_zone_t, uma_keg_t, int);
     sizeof(struct uma_slab_head))
 
 struct uma_klink {
-    BSD_LIST_ENTRY(uma_klink)	kl_link;
+	LIST_ENTRY(uma_klink)	kl_link;
 	uma_keg_t		kl_keg;
 };
 typedef struct uma_klink *uma_klink_t;
@@ -308,11 +308,11 @@ struct uma_zone {
 	const char	*uz_name;	/* Text name of the zone */
 	struct mtx	*uz_lock;	/* Lock for the zone (keg's lock) */
 
-	BSD_LIST_ENTRY(uma_zone)	uz_link;	/* List of all zones in keg */
-	BSD_LIST_HEAD(,uma_bucket)	uz_full_bucket;	/* full buckets */
-	BSD_LIST_HEAD(,uma_bucket)	uz_free_bucket;	/* Buckets for frees */
+	LIST_ENTRY(uma_zone)	uz_link;	/* List of all zones in keg */
+	LIST_HEAD(,uma_bucket)	uz_full_bucket;	/* full buckets */
+	LIST_HEAD(,uma_bucket)	uz_free_bucket;	/* Buckets for frees */
 
-	BSD_LIST_HEAD(,uma_klink)	uz_kegs;	/* List of kegs. */
+	LIST_HEAD(,uma_klink)	uz_kegs;	/* List of kegs. */
 	struct uma_klink	uz_klink;	/* klink for first keg. */
 
 	uma_slaballoc	uz_slab;	/* Allocate a slab from the backend. */
@@ -321,15 +321,15 @@ struct uma_zone {
 	uma_init	uz_init;	/* Initializer for each item */
 	uma_fini	uz_fini;	/* Discards memory */
 
-	bsd_uint32_t	uz_flags;	/* Flags inherited from kegs */
-	bsd_uint32_t	uz_size;	/* Size inherited from kegs */
+	u_int32_t	uz_flags;	/* Flags inherited from kegs */
+	u_int32_t	uz_size;	/* Size inherited from kegs */
 
-	bsd_uint64_t	uz_allocs UMA_ALIGN; /* Total number of allocations */
-	bsd_uint64_t	uz_frees;	/* Total number of frees */
-	bsd_uint64_t	uz_fails;	/* Total number of alloc failures */
-	bsd_uint64_t	uz_sleeps;	/* Total number of alloc sleeps */
-	bsd_uint16_t	uz_fills;	/* Outstanding bucket fills */
-	bsd_uint16_t	uz_count;	/* Highest value ub_ptr can have */
+	u_int64_t	uz_allocs UMA_ALIGN; /* Total number of allocations */
+	u_int64_t	uz_frees;	/* Total number of frees */
+	u_int64_t	uz_fails;	/* Total number of alloc failures */
+	u_int64_t	uz_sleeps;	/* Total number of alloc sleeps */
+	uint16_t	uz_fills;	/* Outstanding bucket fills */
+	uint16_t	uz_count;	/* Highest value ub_ptr can have */
 
 	/*
 	 * This HAS to be the last item because we adjust the zone size
@@ -356,7 +356,7 @@ struct uma_zone {
 
 #ifdef _KERNEL
 /* Internal prototypes */
-static __inline uma_slab_t hash_sfind(struct uma_hash *hash, bsd_uint8_t *data);
+static __inline uma_slab_t hash_sfind(struct uma_hash *hash, u_int8_t *data);
 void *uma_large_malloc(int size, int wait);
 void uma_large_free(uma_slab_t slab);
 
@@ -390,18 +390,53 @@ void uma_large_free(uma_slab_t slab);
  *	A pointer to a slab if successful, else NULL.
  */
 static __inline uma_slab_t
-hash_sfind(struct uma_hash *hash, bsd_uint8_t *data)
+hash_sfind(struct uma_hash *hash, u_int8_t *data)
 {
         uma_slab_t slab;
         int hval;
 
         hval = UMA_HASH(hash, data);
 
-        BSD_SLIST_FOREACH(slab, &hash->uh_slab_hash[hval], us_hlink) {
-                if ((bsd_uint8_t *)slab->us_data == data)
+        SLIST_FOREACH(slab, &hash->uh_slab_hash[hval], us_hlink) {
+                if ((u_int8_t *)slab->us_data == data)
                         return (slab);
         }
         return (NULL);
+}
+
+static __inline uma_slab_t
+vtoslab(vm_offset_t va)
+{
+	vm_page_t p;
+	uma_slab_t slab;
+
+	p = PHYS_TO_VM_PAGE(pmap_kextract(va));
+	slab = (uma_slab_t )p->object;
+
+	if (p->flags & PG_SLAB)
+		return (slab);
+	else
+		return (NULL);
+}
+
+static __inline void
+vsetslab(vm_offset_t va, uma_slab_t slab)
+{
+	vm_page_t p;
+
+	p = PHYS_TO_VM_PAGE(pmap_kextract(va));
+	p->object = (vm_object_t)slab;
+	p->flags |= PG_SLAB;
+}
+
+static __inline void
+vsetobj(vm_offset_t va, vm_object_t obj)
+{
+	vm_page_t p;
+
+	p = PHYS_TO_VM_PAGE(pmap_kextract(va));
+	p->object = obj;
+	p->flags &= ~PG_SLAB;
 }
 
 /*
@@ -409,8 +444,8 @@ hash_sfind(struct uma_hash *hash, bsd_uint8_t *data)
  * if they can provide more effecient allocation functions.  This is useful
  * for using direct mapped addresses.
  */
-void *uma_small_alloc(uma_zone_t zone, int bytes, bsd_uint8_t *pflag, int wait);
-void uma_small_free(void *mem, int size, bsd_uint8_t flags);
+void *uma_small_alloc(uma_zone_t zone, int bytes, u_int8_t *pflag, int wait);
+void uma_small_free(void *mem, int size, u_int8_t flags);
 #endif /* _KERNEL */
 
 #endif /* VM_UMA_INT_H */

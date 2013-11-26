@@ -62,25 +62,25 @@
  *	Virtual memory mapping module.
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/vm/vm_map.c 251902 2013-06-18 07:04:19Z des $");
 
-#include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/kernel.h>
-#include <sys/ktr.h>
-#include <sys/lock.h>
-#include <sys/mutex.h>
-#include <sys/proc.h>
-#include <sys/vmmeter.h>
-#include <sys/mman.h>
-#include <sys/vnode.h>
-#include <sys/racct.h>
-#include <sys/resourcevar.h>
-#include <sys/file.h>
-#include <sys/sysctl.h>
-#include <sys/sysent.h>
-#include <sys/shm.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_ktr.h>
+#include <sys/bsd_lock.h>
+#include <sys/bsd_mutex.h>
+#include <sys/bsd_proc.h>
+#include <sys/bsd_vmmeter.h>
+#include <sys/bsd_mman.h>
+#include <sys/bsd_vnode.h>
+#include <sys/bsd_racct.h>
+#include <sys/bsd_resourcevar.h>
+#include <sys/bsd_file.h>
+#include <sys/bsd_sysctl.h>
+#include <sys/bsd_sysent.h>
+#include <sys/bsd_shm.h>
 
 #include <vm/vm.h>
 #include <vm/vm_param.h>
@@ -1139,7 +1139,7 @@ vm_map_insert(vm_map_t map, vm_object_t object, vm_ooffset_t offset,
 	vm_map_entry_t prev_entry;
 	vm_map_entry_t temp_entry;
 	vm_eflags_t protoeflags;
-	struct bsd_ucred *cred;
+	struct ucred *cred;
 	vm_inherit_t inheritance;
 	boolean_t charge_prev_obj;
 
@@ -1873,7 +1873,7 @@ vm_map_protect(vm_map_t map, vm_offset_t start, vm_offset_t end,
 {
 	vm_map_entry_t current, entry;
 	vm_object_t obj;
-	struct bsd_ucred *cred;
+	struct ucred *cred;
 	vm_prot_t old_prot;
 
 	vm_map_lock(map);
@@ -2929,7 +2929,7 @@ vm_map_copy_entry(
 	vm_object_t src_object;
 	vm_map_entry_t fake_entry;
 	vm_offset_t size;
-	struct bsd_ucred *cred;
+	struct ucred *cred;
 	int charged;
 
 	VM_MAP_ASSERT_LOCKED(dst_map);
@@ -3374,7 +3374,7 @@ vm_map_growstack(struct proc *p, vm_offset_t addr)
 	size_t grow_amount, max_grow;
 	rlim_t lmemlim, stacklim, vmemlim;
 	int is_procstack, rv;
-	struct bsd_ucred *cred;
+	struct ucred *cred;
 #ifdef notyet
 	uint64_t limit;
 #endif
@@ -3757,7 +3757,7 @@ vm_map_lookup(vm_map_t *var_map,		/* IN/OUT */
 	vm_prot_t fault_type = fault_typea;
 	vm_object_t eobject;
 	vm_size_t size;
-	struct bsd_ucred *cred;
+	struct ucred *cred;
 
 RetryLookup:;
 
@@ -4012,9 +4012,9 @@ vm_map_lookup_done(vm_map_t map, vm_map_entry_t entry)
 
 #include "opt_ddb.h"
 #ifdef DDB
-#include <sys/kernel.h>
+#include <sys/bsd_kernel.h>
 
-#include <ddb/ddb.h>
+//#include <ddb/ddb.h>
 
 /*
  *	vm_map_print:	[ debug ]

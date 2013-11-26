@@ -35,9 +35,9 @@
 struct	ether_vlan_header {
 	u_char	evl_dhost[ETHER_ADDR_LEN];
 	u_char	evl_shost[ETHER_ADDR_LEN];
-	bsd_uint16_t evl_encap_proto;
-	bsd_uint16_t evl_tag;
-	bsd_uint16_t evl_proto;
+	u_int16_t evl_encap_proto;
+	u_int16_t evl_tag;
+	u_int16_t evl_proto;
 };
 
 #define	EVL_VLID_MASK		0x0FFF
@@ -145,8 +145,8 @@ struct	vlanreq {
 
 extern	void (*vlan_trunk_cap_p)(struct ifnet *);
 extern	struct ifnet *(*vlan_trunkdev_p)(struct ifnet *);
-extern	struct ifnet *(*vlan_devat_p)(struct ifnet *, bsd_uint16_t);
-extern	int (*vlan_tag_p)(struct ifnet *, bsd_uint16_t *);
+extern	struct ifnet *(*vlan_devat_p)(struct ifnet *, uint16_t);
+extern	int (*vlan_tag_p)(struct ifnet *, uint16_t *);
 extern	int (*vlan_setcookie_p)(struct ifnet *, void *);
 extern	void *(*vlan_cookie_p)(struct ifnet *);
 

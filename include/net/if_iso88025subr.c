@@ -44,14 +44,14 @@
 #include "opt_inet6.h"
 #include "opt_ipx.h"
 
-#include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/kernel.h>
-#include <sys/malloc.h>
-#include <sys/mbuf.h>
-#include <sys/module.h>
-#include <sys/socket.h>
-#include <sys/sockio.h> 
+#include <sys/bsd_param.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_malloc.h>
+#include <sys/bsd_mbuf.h>
+#include <sys/bsd_module.h>
+#include <sys/bsd_socket.h>
+#include <sys/bsd_sockio.h> 
 
 #include <net/if.h>
 #include <net/if_arp.h>
@@ -80,13 +80,13 @@
 #include <netipx/ipx_if.h>
 #endif
 
-#include <security/mac/mac_framework.h>
+//#include <security/mac/mac_framework.h>
 
 static const u_char iso88025_broadcastaddr[ISO88025_ADDR_LEN] =
 			{ 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 
-static int iso88025_resolvemulti (struct ifnet *, struct bsd_sockaddr **,
-				  struct bsd_sockaddr *);
+static int iso88025_resolvemulti (struct ifnet *, struct sockaddr **,
+				  struct sockaddr *);
 
 #define	senderr(e)	do { error = (e); goto bad; } while (0)
 
@@ -94,7 +94,7 @@ static int iso88025_resolvemulti (struct ifnet *, struct bsd_sockaddr **,
  * Perform common duties while attaching to interface list
  */
 void
-iso88025_ifattach(struct ifnet *ifp, const bsd_uint8_t *lla, int bpf)
+iso88025_ifattach(struct ifnet *ifp, const u_int8_t *lla, int bpf)
 {
     struct ifaddr *ifa;
     struct sockaddr_dl *sdl;
@@ -201,9 +201,9 @@ iso88025_ioctl(struct ifnet *ifp, u_long command, caddr_t data)
                 break;
 
         case SIOCGIFADDR: {
-                        struct bsd_sockaddr *sa;
+                        struct sockaddr *sa;
 
-                        sa = (struct bsd_sockaddr *) & ifr->ifr_data;
+                        sa = (struct sockaddr *) & ifr->ifr_data;
                         bcopy(IF_LLADDR(ifp),
                               (caddr_t) sa->sa_data, ISO88025_ADDR_LEN);
                 }
@@ -234,10 +234,10 @@ int
 iso88025_output(ifp, m, dst, ro)
 	struct ifnet *ifp;
 	struct mbuf *m;
-	struct bsd_sockaddr *dst;
+	struct sockaddr *dst;
 	struct route *ro;
 {
-	bsd_uint16_t snap_type = 0;
+	u_int16_t snap_type = 0;
 	int loop_copy = 0, error = 0, rif_len = 0;
 	u_char edst[ISO88025_ADDR_LEN];
 	struct iso88025_header *th;
@@ -333,7 +333,7 @@ iso88025_output(ifp, m, dst, ro)
 #ifdef IPX
 	case AF_IPX:
 	{
-		bsd_uint8_t	*cp;
+		u_int8_t	*cp;
 
 		bcopy((caddr_t)&(satoipx_addr(dst).x_host), (caddr_t)edst,
 		      ISO88025_ADDR_LEN);
@@ -342,7 +342,7 @@ iso88025_output(ifp, m, dst, ro)
 		m = m_pullup(m, 3);
 		if (m == 0)
 			senderr(ENOBUFS);
-		cp = mtod(m, bsd_uint8_t *);
+		cp = mtod(m, u_int8_t *);
 		*cp++ = ETHERTYPE_IPX_8022;
 		*cp++ = ETHERTYPE_IPX_8022;
 		*cp++ = LLC_UI;
@@ -564,7 +564,7 @@ iso88025_input(ifp, m)
 		break;
 #endif	/* IPX */
 	case LLC_SNAP_LSAP: {
-		bsd_uint16_t type;
+		u_int16_t type;
 		if ((l->llc_control != LLC_UI) ||
 		    (l->llc_ssap != LLC_SNAP_LSAP)) {
 			ifp->if_noproto++;
@@ -633,7 +633,7 @@ iso88025_input(ifp, m)
 		case LLC_TEST:
 		case LLC_TEST_P:
 		{
-			struct bsd_sockaddr sa;
+			struct sockaddr sa;
 			struct arpcom *ac;
 			struct iso88025_sockaddr_data *th2;
 			int i;
@@ -694,12 +694,12 @@ dropanyway:
 static int
 iso88025_resolvemulti (ifp, llsa, sa)
 	struct ifnet *ifp;
-	struct bsd_sockaddr **llsa;
-	struct bsd_sockaddr *sa;
+	struct sockaddr **llsa;
+	struct sockaddr *sa;
 {
 	struct sockaddr_dl *sdl;
 #ifdef INET
-	struct bsd_sockaddr_in *sin;
+	struct sockaddr_in *sin;
 #endif
 #ifdef INET6
 	struct sockaddr_in6 *sin6;
@@ -721,11 +721,11 @@ iso88025_resolvemulti (ifp, llsa, sa)
 
 #ifdef INET
 	case AF_INET:
-		sin = (struct bsd_sockaddr_in *)sa;
+		sin = (struct sockaddr_in *)sa;
 		if (!IN_MULTICAST(ntohl(sin->sin_addr.s_addr))) {
 			return (EADDRNOTAVAIL);
 		}
-		sdl = bsd_malloc(sizeof *sdl, M_IFMADDR,
+		sdl = malloc(sizeof *sdl, M_IFMADDR,
 		       M_NOWAIT|M_ZERO);
 		if (sdl == NULL)
 			return (ENOMEM);
@@ -736,7 +736,7 @@ iso88025_resolvemulti (ifp, llsa, sa)
 		sdl->sdl_alen = ISO88025_ADDR_LEN;
 		e_addr = LLADDR(sdl);
 		ETHER_MAP_IP_MULTICAST(&sin->sin_addr, e_addr);
-		*llsa = (struct bsd_sockaddr *)sdl;
+		*llsa = (struct sockaddr *)sdl;
 		return (0);
 #endif
 #ifdef INET6
@@ -755,7 +755,7 @@ iso88025_resolvemulti (ifp, llsa, sa)
 		if (!IN6_IS_ADDR_MULTICAST(&sin6->sin6_addr)) {
 			return (EADDRNOTAVAIL);
 		}
-		sdl = bsd_malloc(sizeof *sdl, M_IFMADDR,
+		sdl = malloc(sizeof *sdl, M_IFMADDR,
 		       M_NOWAIT|M_ZERO);
 		if (sdl == NULL)
 			return (ENOMEM);
@@ -766,7 +766,7 @@ iso88025_resolvemulti (ifp, llsa, sa)
 		sdl->sdl_alen = ISO88025_ADDR_LEN;
 		e_addr = LLADDR(sdl);
 		ETHER_MAP_IPV6_MULTICAST(&sin6->sin6_addr, e_addr);
-		*llsa = (struct bsd_sockaddr *)sdl;
+		*llsa = (struct sockaddr *)sdl;
 		return (0);
 #endif
 
@@ -788,7 +788,7 @@ iso88025_alloc(u_char type, struct ifnet *ifp)
 {
 	struct arpcom	*ac;
  
-        ac = bsd_malloc(sizeof(struct arpcom), M_ISO88025, M_WAITOK | M_ZERO);
+        ac = malloc(sizeof(struct arpcom), M_ISO88025, M_WAITOK | M_ZERO);
 	ac->ac_ifp = ifp;
 
 	return (ac);
@@ -798,7 +798,7 @@ static void
 iso88025_free(void *com, u_char type)
 {
  
-        bsd_free(com, M_ISO88025);
+        free(com, M_ISO88025);
 }
  
 static int

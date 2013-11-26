@@ -73,20 +73,20 @@
  * is being followed here.
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/netinet/ip_fastfwd.c 243586 2012-11-27 01:59:51Z ae $");
 
 #include "opt_ipfw.h"
 #include "opt_ipstealth.h"
 
-#include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/kernel.h>
-#include <sys/malloc.h>
-#include <sys/mbuf.h>
-#include <sys/protosw.h>
-#include <sys/socket.h>
-#include <sys/sysctl.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_malloc.h>
+#include <sys/bsd_mbuf.h>
+#include <sys/bsd_protosw.h>
+#include <sys/bsd_socket.h>
+#include <sys/bsd_sysctl.h>
 
 #include <net/pfil.h>
 #include <net/if.h>
@@ -104,7 +104,7 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/netinet/ip_fastfwd.c 243586 2012-11-27 01:
 #include <netinet/ip_icmp.h>
 #include <netinet/ip_options.h>
 
-#include <machine/in_cksum.h>
+#include <machine/bsd_in_cksum.h>
 
 static VNET_DEFINE(int, ipfastforward_active);
 #define	V_ipfastforward_active		VNET(ipfastforward_active)
@@ -112,17 +112,17 @@ static VNET_DEFINE(int, ipfastforward_active);
 SYSCTL_VNET_INT(_net_inet_ip, OID_AUTO, fastforwarding, CTLFLAG_RW,
     &VNET_NAME(ipfastforward_active), 0, "Enable fast IP forwarding");
 
-static struct bsd_sockaddr_in *
-ip_findroute(struct route *ro, struct bsd_in_addr dest, struct mbuf *m)
+static struct sockaddr_in *
+ip_findroute(struct route *ro, struct in_addr dest, struct mbuf *m)
 {
-	struct bsd_sockaddr_in *dst;
+	struct sockaddr_in *dst;
 	struct rtentry *rt;
 
 	/*
 	 * Find route to destination.
 	 */
 	bzero(ro, sizeof(*ro));
-	dst = (struct bsd_sockaddr_in *)&ro->ro_dst;
+	dst = (struct sockaddr_in *)&ro->ro_dst;
 	dst->sin_family = AF_INET;
 	dst->sin_len = sizeof(*dst);
 	dst->sin_addr.s_addr = dest.s_addr;
@@ -136,7 +136,7 @@ ip_findroute(struct route *ro, struct bsd_in_addr dest, struct mbuf *m)
 	    (rt->rt_ifp->if_flags & IFF_UP) &&
 	    (rt->rt_ifp->if_drv_flags & IFF_DRV_RUNNING)) {
 		if (rt->rt_flags & RTF_GATEWAY)
-			dst = (struct bsd_sockaddr_in *)rt->rt_gateway;
+			dst = (struct sockaddr_in *)rt->rt_gateway;
 	} else {
 		IPSTAT_INC(ips_noroute);
 		IPSTAT_INC(ips_cantforward);
@@ -158,12 +158,12 @@ ip_findroute(struct route *ro, struct bsd_in_addr dest, struct mbuf *m)
 struct mbuf *
 ip_fastforward(struct mbuf *m)
 {
-	struct bsd_ip *ip;
+	struct ip *ip;
 	struct mbuf *m0 = NULL;
 	struct route ro;
-	struct bsd_sockaddr_in *dst = NULL;
+	struct sockaddr_in *dst = NULL;
 	struct ifnet *ifp;
-	struct bsd_in_addr odest, dest;
+	struct in_addr odest, dest;
 	u_short sum, ip_len;
 	int error = 0;
 	int hlen, mtu;
@@ -187,7 +187,7 @@ ip_fastforward(struct mbuf *m)
 	/*
 	 * Is entire packet big enough?
 	 */
-	if (m->m_pkthdr.len < sizeof(struct bsd_ip)) {
+	if (m->m_pkthdr.len < sizeof(struct ip)) {
 		IPSTAT_INC(ips_tooshort);
 		goto drop;
 	}
@@ -195,13 +195,13 @@ ip_fastforward(struct mbuf *m)
 	/*
 	 * Is first mbuf large enough for ip header and is header present?
 	 */
-	if (m->m_len < sizeof (struct bsd_ip) &&
-	   (m = m_pullup(m, sizeof (struct bsd_ip))) == NULL) {
+	if (m->m_len < sizeof (struct ip) &&
+	   (m = m_pullup(m, sizeof (struct ip))) == NULL) {
 		IPSTAT_INC(ips_toosmall);
 		return NULL;	/* mbuf already free'd */
 	}
 
-	ip = mtod(m, struct bsd_ip *);
+	ip = mtod(m, struct ip *);
 
 	/*
 	 * Is it IPv4?
@@ -215,7 +215,7 @@ ip_fastforward(struct mbuf *m)
 	 * Is IP header length correct and is it in first mbuf?
 	 */
 	hlen = ip->ip_hl << 2;
-	if (hlen < sizeof(struct bsd_ip)) {	/* minimum header length */
+	if (hlen < sizeof(struct ip)) {	/* minimum header length */
 		IPSTAT_INC(ips_badhlen);
 		goto drop;
 	}
@@ -224,7 +224,7 @@ ip_fastforward(struct mbuf *m)
 			IPSTAT_INC(ips_badhlen);
 			return NULL;	/* mbuf already free'd */
 		}
-		ip = mtod(m, struct bsd_ip *);
+		ip = mtod(m, struct ip *);
 	}
 
 	/*
@@ -233,7 +233,7 @@ ip_fastforward(struct mbuf *m)
 	if (m->m_pkthdr.csum_flags & CSUM_IP_CHECKED)
 		sum = !(m->m_pkthdr.csum_flags & CSUM_IP_VALID);
 	else {
-		if (hlen == sizeof(struct bsd_ip))
+		if (hlen == sizeof(struct ip))
 			sum = in_cksum_hdr(ip);
 		else
 			sum = in_cksum(m, hlen);
@@ -293,7 +293,7 @@ ip_fastforward(struct mbuf *m)
 	/*
 	 * Only IP packets without options
 	 */
-	if (ip->ip_hl != (sizeof(struct bsd_ip) >> 2)) {
+	if (ip->ip_hl != (sizeof(struct ip) >> 2)) {
 		if (ip_doopts == 1)
 			return m;
 		else if (ip_doopts == 2) {
@@ -360,7 +360,7 @@ ip_fastforward(struct mbuf *m)
 	M_ASSERTVALID(m);
 	M_ASSERTPKTHDR(m);
 
-	ip = mtod(m, struct bsd_ip *);	/* m may have changed by pfil hook */
+	ip = mtod(m, struct ip *);	/* m may have changed by pfil hook */
 	dest.s_addr = ip->ip_dst.s_addr;
 
 	/*
@@ -406,7 +406,7 @@ passin:
 	 * doing it right here.
 	 */
 	ip->ip_ttl -= IPTTLDEC;
-	if (ip->ip_sum >= (bsd_uint16_t) ~htons(IPTTLDEC << 8))
+	if (ip->ip_sum >= (u_int16_t) ~htons(IPTTLDEC << 8))
 		ip->ip_sum -= ~htons(IPTTLDEC << 8);
 	else
 		ip->ip_sum += htons(IPTTLDEC << 8);
@@ -446,7 +446,7 @@ passin:
 	M_ASSERTVALID(m);
 	M_ASSERTPKTHDR(m);
 
-	ip = mtod(m, struct bsd_ip *);
+	ip = mtod(m, struct ip *);
 	dest.s_addr = ip->ip_dst.s_addr;
 
 	/*
@@ -474,7 +474,7 @@ forwardlocal:
 		 * Redo route lookup with new destination address
 		 */
 		if (fwd_tag) {
-			dest.s_addr = ((struct bsd_sockaddr_in *)
+			dest.s_addr = ((struct sockaddr_in *)
 				    (fwd_tag + 1))->sin_addr.s_addr;
 			m_tag_delete(m, fwd_tag);
 			m->m_flags &= ~M_IP_NEXTHOP;
@@ -495,7 +495,7 @@ passout:
 	 */
 	if ((ro.ro_rt->rt_flags & RTF_REJECT) &&
 	    (ro.ro_rt->rt_rmx.rmx_expire == 0 ||
-	    V_time_uptime < ro.ro_rt->rt_rmx.rmx_expire)) {
+	    time_uptime < ro.ro_rt->rt_rmx.rmx_expire)) {
 		icmp_error(m, ICMP_UNREACH, ICMP_UNREACH_HOST, 0, 0);
 		goto consumed;
 	}
@@ -539,7 +539,7 @@ passout:
 		 * Send off the packet via outgoing interface
 		 */
 		error = (*ifp->if_output)(ifp, m,
-				(struct bsd_sockaddr *)dst, &ro);
+				(struct sockaddr *)dst, &ro);
 	} else {
 		/*
 		 * Handle EMSGSIZE with icmp reply needfrag for TCP MTU discovery
@@ -572,7 +572,7 @@ passout:
 				m->m_nextpkt = NULL;
 
 				error = (*ifp->if_output)(ifp, m,
-					(struct bsd_sockaddr *)dst, &ro);
+					(struct sockaddr *)dst, &ro);
 				if (error)
 					break;
 			} while ((m = m0) != NULL);

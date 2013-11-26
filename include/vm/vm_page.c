@@ -76,23 +76,23 @@
  *	Resident memory management module.
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/vm/vm_page.c 251450 2013-06-06 05:28:28Z kib $");
 
 #include "opt_vm.h"
 
-#include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/lock.h>
-#include <sys/kernel.h>
-#include <sys/limits.h>
-#include <sys/malloc.h>
-#include <sys/msgbuf.h>
-#include <sys/mutex.h>
-#include <sys/proc.h>
-#include <sys/sysctl.h>
-#include <sys/vmmeter.h>
-#include <sys/vnode.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_lock.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_limits.h>
+#include <sys/bsd_malloc.h>
+#include <sys/bsd_msgbuf.h>
+#include <sys/bsd_mutex.h>
+#include <sys/bsd_proc.h>
+#include <sys/bsd_sysctl.h>
+#include <sys/bsd_vmmeter.h>
+#include <sys/bsd_vnode.h>
 
 #include <vm/vm.h>
 #include <vm/pmap.h>
@@ -108,7 +108,7 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/vm/vm_page.c 251450 2013-06-06 05:28:28Z k
 #include <vm/uma.h>
 #include <vm/uma_int.h>
 
-#include <machine/md_var.h>
+#include <machine/bsd_md_var.h>
 
 /*
  *	Associated with page of user-allocatable memory is a
@@ -340,7 +340,7 @@ vm_page_startup(vm_offset_t vaddr)
 	page_range = last_pa / PAGE_SIZE;
 	vm_page_dump_size = round_page(roundup2(page_range, NBBY) / NBBY);
 	new_end -= vm_page_dump_size;
-	vm_page_dump = (void *)(bsd_uintptr_t)pmap_map(&vaddr, new_end,
+	vm_page_dump = (void *)(uintptr_t)pmap_map(&vaddr, new_end,
 	    new_end + vm_page_dump_size, VM_PROT_READ | VM_PROT_WRITE);
 	bzero((void *)vm_page_dump, vm_page_dump_size);
 #endif
@@ -450,12 +450,12 @@ vm_page_startup(vm_offset_t vaddr)
 }
 
 
-CTASSERT(offsetof(struct vm_page, aflags) % sizeof(bsd_uint32_t) == 0);
+CTASSERT(offsetof(struct vm_page, aflags) % sizeof(uint32_t) == 0);
 
 void
-vm_page_aflag_set(vm_page_t m, bsd_uint8_t bits)
+vm_page_aflag_set(vm_page_t m, uint8_t bits)
 {
-	bsd_uint32_t *addr, val;
+	uint32_t *addr, val;
 
 	/*
 	 * The PGA_WRITEABLE flag can only be set if the page is managed and
@@ -474,7 +474,7 @@ vm_page_aflag_set(vm_page_t m, bsd_uint8_t bits)
 	 * are handled properly by atomics.
 	 */
 	addr = (void *)&m->aflags;
-	MPASS(((bsd_uintptr_t)addr & (sizeof(bsd_uint32_t) - 1)) == 0);
+	MPASS(((uintptr_t)addr & (sizeof(uint32_t) - 1)) == 0);
 	val = bits;
 #if BYTE_ORDER == BIG_ENDIAN
 	val <<= 24;
@@ -483,9 +483,9 @@ vm_page_aflag_set(vm_page_t m, bsd_uint8_t bits)
 } 
 
 void
-vm_page_aflag_clear(vm_page_t m, bsd_uint8_t bits)
+vm_page_aflag_clear(vm_page_t m, uint8_t bits)
 {
-	bsd_uint32_t *addr, val;
+	uint32_t *addr, val;
 
 	/*
 	 * The PGA_REFERENCED flag can only be cleared if the object
@@ -498,7 +498,7 @@ vm_page_aflag_clear(vm_page_t m, bsd_uint8_t bits)
 	 * See the comment in vm_page_aflag_set().
 	 */
 	addr = (void *)&m->aflags;
-	MPASS(((bsd_uintptr_t)addr & (sizeof(bsd_uint32_t) - 1)) == 0);
+	MPASS(((uintptr_t)addr & (sizeof(uint32_t) - 1)) == 0);
 	val = bits;
 #if BYTE_ORDER == BIG_ENDIAN
 	val <<= 24;
@@ -2484,7 +2484,7 @@ vm_page_set_valid(vm_page_t m, int base, int size)
 static __inline void
 vm_page_clear_dirty_mask(vm_page_t m, vm_page_bits_t pagebits)
 {
-	bsd_uintptr_t addr;
+	uintptr_t addr;
 #if PAGE_SIZE < 16384
 	int shift;
 #endif
@@ -2509,25 +2509,25 @@ vm_page_clear_dirty_mask(vm_page_t m, vm_page_bits_t pagebits)
 		 * alignment is needed. Only require existence of
 		 * atomic_clear_64 when page size is 32768.
 		 */
-		addr = (bsd_uintptr_t)&m->dirty;
+		addr = (uintptr_t)&m->dirty;
 #if PAGE_SIZE == 32768
 		atomic_clear_64((uint64_t *)addr, pagebits);
 #elif PAGE_SIZE == 16384
-		atomic_clear_32((bsd_uint32_t *)addr, pagebits);
+		atomic_clear_32((uint32_t *)addr, pagebits);
 #else		/* PAGE_SIZE <= 8192 */
 		/*
 		 * Use a trick to perform a 32-bit atomic on the
 		 * containing aligned word, to not depend on the existence
 		 * of atomic_clear_{8, 16}.
 		 */
-		shift = addr & (sizeof(bsd_uint32_t) - 1);
+		shift = addr & (sizeof(uint32_t) - 1);
 #if BYTE_ORDER == BIG_ENDIAN
-		shift = (sizeof(bsd_uint32_t) - sizeof(m->dirty) - shift) * NBBY;
+		shift = (sizeof(uint32_t) - sizeof(m->dirty) - shift) * NBBY;
 #else
 		shift *= NBBY;
 #endif
-		addr &= ~(sizeof(bsd_uint32_t) - 1);
-		atomic_clear_32((bsd_uint32_t *)addr, pagebits << shift);
+		addr &= ~(sizeof(uint32_t) - 1);
+		atomic_clear_32((uint32_t *)addr, pagebits << shift);
 #endif		/* PAGE_SIZE */
 	}
 }
@@ -2875,9 +2875,9 @@ vm_page_object_lock_assert(vm_page_t m)
 
 #include "opt_ddb.h"
 #ifdef DDB
-#include <sys/kernel.h>
+#include <sys/bsd_kernel.h>
 
-#include <ddb/ddb.h>
+//#include <ddb/ddb.h>
 
 DB_SHOW_COMMAND(page, vm_page_print_page_info)
 {

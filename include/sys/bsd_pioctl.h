@@ -39,7 +39,7 @@
 #ifndef _SYS_PIOCTL_H
 # define _SYS_PIOCTL_H
 
-# include <sys/bsd_ioccom.h>
+# include <sys/ioccom.h>
 
 struct procfs_status {
 	int	state;	/* Running, stopped, something else? */

@@ -36,29 +36,29 @@ struct lro_entry
 	struct mbuf		*m_head;
 	struct mbuf		*m_tail;
 	union {
-		struct bsd_ip	*ip4;
+		struct ip	*ip4;
 		struct ip6_hdr	*ip6;
 	} leip;
 	union {
-		bsd_in_addr_t	s_ip4;
-		struct bsd_in6_addr	s_ip6;
+		in_addr_t	s_ip4;
+		struct in6_addr	s_ip6;
 	} lesource;
 	union {
-		bsd_in_addr_t	d_ip4;
-		struct bsd_in6_addr	d_ip6;
+		in_addr_t	d_ip4;
+		struct in6_addr	d_ip6;
 	} ledest;
-	bsd_uint16_t		source_port;
-	bsd_uint16_t		dest_port;
-	bsd_uint16_t		eh_type;	/* EthernetHeader type. */
-	bsd_uint16_t		append_cnt;
-	bsd_uint32_t		p_len;		/* IP header payload length. */
-	bsd_uint32_t		ulp_csum;	/* TCP, etc. checksum. */
-	bsd_uint32_t		next_seq;	/* tcp_seq */
-	bsd_uint32_t		ack_seq;	/* tcp_seq */
-	bsd_uint32_t		tsval;
-	bsd_uint32_t		tsecr;
-	bsd_uint16_t		window;
-	bsd_uint16_t		timestamp;	/* flag, not a TCP hdr field. */
+	uint16_t		source_port;
+	uint16_t		dest_port;
+	uint16_t		eh_type;	/* EthernetHeader type. */
+	uint16_t		append_cnt;
+	uint32_t		p_len;		/* IP header payload length. */
+	uint32_t		ulp_csum;	/* TCP, etc. checksum. */
+	uint32_t		next_seq;	/* tcp_seq */
+	uint32_t		ack_seq;	/* tcp_seq */
+	uint32_t		tsval;
+	uint32_t		tsecr;
+	uint16_t		window;
+	uint16_t		timestamp;	/* flag, not a TCP hdr field. */
 };
 SLIST_HEAD(lro_head, lro_entry);
 
@@ -84,7 +84,7 @@ struct lro_ctrl {
 int tcp_lro_init(struct lro_ctrl *);
 void tcp_lro_free(struct lro_ctrl *);
 void tcp_lro_flush(struct lro_ctrl *, struct lro_entry *);
-int tcp_lro_rx(struct lro_ctrl *, struct mbuf *, bsd_uint32_t);
+int tcp_lro_rx(struct lro_ctrl *, struct mbuf *, uint32_t);
 
 #define	TCP_LRO_CANNOT		-1
 #define	TCP_LRO_NOT_SUPPORTED	1

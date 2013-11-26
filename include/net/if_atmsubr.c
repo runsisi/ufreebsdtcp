@@ -34,23 +34,23 @@
  * if_atmsubr.c
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/net/if_atmsubr.c 249132 2013-04-05 08:22:11Z mav $");
 
 #include "opt_inet.h"
 #include "opt_inet6.h"
 #include "opt_natm.h"
 
-#include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/kernel.h>
-#include <sys/module.h>
-#include <sys/mbuf.h>
-#include <sys/socket.h>
-#include <sys/sockio.h>
-#include <sys/errno.h>
-#include <sys/sysctl.h>
-#include <sys/malloc.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_module.h>
+#include <sys/bsd_mbuf.h>
+#include <sys/bsd_socket.h>
+#include <sys/bsd_sockio.h>
+#include <sys/bsd_errno.h>
+#include <sys/bsd_sysctl.h>
+#include <sys/bsd_malloc.h>
 
 #include <net/if.h>
 #include <net/netisr.h>
@@ -69,7 +69,7 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/net/if_atmsubr.c 249132 2013-04-05 08:22:1
 #include <netnatm/natm.h>
 #endif
 
-#include <security/mac/mac_framework.h>
+//#include <security/mac/mac_framework.h>
 
 /*
  * Netgraph interface functions.
@@ -85,7 +85,7 @@ void	(*ng_atm_input_p)(struct ifnet *, struct mbuf **,
 	    struct atm_pseudohdr *, void *);
 void	(*ng_atm_input_orphan_p)(struct ifnet *, struct mbuf *,
 	    struct atm_pseudohdr *, void *);
-void	(*ng_atm_event_p)(struct ifnet *, bsd_uint32_t, void *);
+void	(*ng_atm_event_p)(struct ifnet *, uint32_t, void *);
 
 /*
  * Harp pseudo interface hooks
@@ -94,7 +94,7 @@ void	(*atm_harp_input_p)(struct ifnet *ifp, struct mbuf **m,
 	    struct atm_pseudohdr *ah, void *rxhand);
 void	(*atm_harp_attach_p)(struct ifnet *);
 void	(*atm_harp_detach_p)(struct ifnet *);
-void	(*atm_harp_event_p)(struct ifnet *, bsd_uint32_t, void *);
+void	(*atm_harp_event_p)(struct ifnet *, uint32_t, void *);
 
 SYSCTL_NODE(_hw, OID_AUTO, atm, CTLFLAG_RW, 0, "ATM hardware");
 
@@ -121,16 +121,16 @@ static MALLOC_DEFINE(M_IFATM, "ifatm", "atm interface internals");
  *		ro->ro_rt must also be NULL.
  */
 int
-atm_output(struct ifnet *ifp, struct mbuf *m0, struct bsd_sockaddr *dst,
+atm_output(struct ifnet *ifp, struct mbuf *m0, struct sockaddr *dst,
     struct route *ro)
 {
-	bsd_uint16_t etype = 0;			/* if using LLC/SNAP */
+	u_int16_t etype = 0;			/* if using LLC/SNAP */
 	int error = 0, sz;
 	struct atm_pseudohdr atmdst, *ad;
 	struct mbuf *m = m0;
 	struct atmllc *atmllc;
 	struct atmllc *llc_hdr = NULL;
-	bsd_uint32_t atm_flags;
+	u_int32_t atm_flags;
 
 #ifdef MAC
 	error = mac_ifnet_check_transmit(ifp, m);
@@ -242,7 +242,7 @@ atm_input(struct ifnet *ifp, struct atm_pseudohdr *ah, struct mbuf *m,
     void *rxhand)
 {
 	int isr;
-	bsd_uint16_t etype = ETHERTYPE_IP;		/* default */
+	u_int16_t etype = ETHERTYPE_IP;		/* default */
 
 	if ((ifp->if_flags & IFF_UP) == 0) {
 		m_freem(m);
@@ -409,7 +409,7 @@ atm_getvccs(struct atmio_vcc **table, u_int size, u_int start,
     struct mtx *lock, int waitok)
 {
 	u_int cid, alloc;
-	bsd_size_t len;
+	size_t len;
 	struct atmio_vcctable *vccs;
 	struct atmio_vcc *v;
 
@@ -463,7 +463,7 @@ atm_alloc(u_char type, struct ifnet *ifp)
 {
 	struct ifatm	*ifatm;
 
-	ifatm = bsd_malloc(sizeof(struct ifatm), M_IFATM, M_WAITOK | M_ZERO);
+	ifatm = malloc(sizeof(struct ifatm), M_IFATM, M_WAITOK | M_ZERO);
 	ifatm->ifp = ifp;
 
 	return (ifatm);
@@ -473,7 +473,7 @@ static void
 atm_free(void *com, u_char type)
 {
 
-	bsd_free(com, M_IFATM);
+	free(com, M_IFATM);
 }
 
 static int

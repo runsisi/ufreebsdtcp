@@ -42,8 +42,8 @@
 #include <sys/bsd_refcount.h>
 
 struct sglist_seg {
-	bsd_vm_paddr_t	ss_paddr;
-	bsd_size_t		ss_len;
+	vm_paddr_t	ss_paddr;
+	size_t		ss_len;
 };
 
 struct sglist {
@@ -82,23 +82,23 @@ sglist_hold(struct sglist *sg)
 }
 
 struct sglist *sglist_alloc(int nsegs, int mflags);
-int	sglist_append(struct sglist *sg, void *buf, bsd_size_t len);
+int	sglist_append(struct sglist *sg, void *buf, size_t len);
 int	sglist_append_mbuf(struct sglist *sg, struct mbuf *m0);
-int	sglist_append_phys(struct sglist *sg, bsd_vm_paddr_t paddr,
-	    bsd_size_t len);
+int	sglist_append_phys(struct sglist *sg, vm_paddr_t paddr,
+	    size_t len);
 int	sglist_append_uio(struct sglist *sg, struct uio *uio);
-int	sglist_append_user(struct sglist *sg, void *buf, bsd_size_t len,
+int	sglist_append_user(struct sglist *sg, void *buf, size_t len,
 	    struct thread *td);
-struct sglist *sglist_build(void *buf, bsd_size_t len, int mflags);
+struct sglist *sglist_build(void *buf, size_t len, int mflags);
 struct sglist *sglist_clone(struct sglist *sg, int mflags);
-int	sglist_consume_uio(struct sglist *sg, struct uio *uio, bsd_size_t resid);
-int	sglist_count(void *buf, bsd_size_t len);
+int	sglist_consume_uio(struct sglist *sg, struct uio *uio, size_t resid);
+int	sglist_count(void *buf, size_t len);
 void	sglist_free(struct sglist *sg);
 int	sglist_join(struct sglist *first, struct sglist *second);
-bsd_size_t	sglist_length(struct sglist *sg);
+size_t	sglist_length(struct sglist *sg);
 int	sglist_slice(struct sglist *original, struct sglist **slice,
-	    bsd_size_t offset, bsd_size_t length, int mflags);
+	    size_t offset, size_t length, int mflags);
 int	sglist_split(struct sglist *original, struct sglist **head,
-	    bsd_size_t length, int mflags);
+	    size_t length, int mflags);
 
 #endif	/* !__SGLIST_H__ */

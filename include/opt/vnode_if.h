@@ -168,7 +168,7 @@ struct vop_open_args {
 	struct vop_generic_args a_gen;
 	struct vnode *a_vp;
 	int a_mode;
-	struct bsd_ucred *a_cred;
+	struct ucred *a_cred;
 	struct thread *a_td;
 	struct file *a_fp;
 };
@@ -181,7 +181,7 @@ int VOP_OPEN_APV(struct vop_vector *vop, struct vop_open_args *);
 static __inline int VOP_OPEN(
 	struct vnode *vp,
 	int mode,
-	struct bsd_ucred *cred,
+	struct ucred *cred,
 	struct thread *td,
 	struct file *fp)
 {
@@ -200,7 +200,7 @@ struct vop_close_args {
 	struct vop_generic_args a_gen;
 	struct vnode *a_vp;
 	int a_fflag;
-	struct bsd_ucred *a_cred;
+	struct ucred *a_cred;
 	struct thread *a_td;
 };
 
@@ -212,7 +212,7 @@ int VOP_CLOSE_APV(struct vop_vector *vop, struct vop_close_args *);
 static __inline int VOP_CLOSE(
 	struct vnode *vp,
 	int fflag,
-	struct bsd_ucred *cred,
+	struct ucred *cred,
 	struct thread *td)
 {
 	struct vop_close_args a;
@@ -228,8 +228,8 @@ static __inline int VOP_CLOSE(
 struct vop_access_args {
 	struct vop_generic_args a_gen;
 	struct vnode *a_vp;
-	bsd_accmode_t a_accmode;
-	struct bsd_ucred *a_cred;
+	accmode_t a_accmode;
+	struct ucred *a_cred;
 	struct thread *a_td;
 };
 
@@ -240,8 +240,8 @@ int VOP_ACCESS_APV(struct vop_vector *vop, struct vop_access_args *);
 
 static __inline int VOP_ACCESS(
 	struct vnode *vp,
-	bsd_accmode_t accmode,
-	struct bsd_ucred *cred,
+	accmode_t accmode,
+	struct ucred *cred,
 	struct thread *td)
 {
 	struct vop_access_args a;
@@ -257,8 +257,8 @@ static __inline int VOP_ACCESS(
 struct vop_accessx_args {
 	struct vop_generic_args a_gen;
 	struct vnode *a_vp;
-	bsd_accmode_t a_accmode;
-	struct bsd_ucred *a_cred;
+	accmode_t a_accmode;
+	struct ucred *a_cred;
 	struct thread *a_td;
 };
 
@@ -269,8 +269,8 @@ int VOP_ACCESSX_APV(struct vop_vector *vop, struct vop_accessx_args *);
 
 static __inline int VOP_ACCESSX(
 	struct vnode *vp,
-	bsd_accmode_t accmode,
-	struct bsd_ucred *cred,
+	accmode_t accmode,
+	struct ucred *cred,
 	struct thread *td)
 {
 	struct vop_accessx_args a;
@@ -287,7 +287,7 @@ struct vop_getattr_args {
 	struct vop_generic_args a_gen;
 	struct vnode *a_vp;
 	struct vattr *a_vap;
-	struct bsd_ucred *a_cred;
+	struct ucred *a_cred;
 };
 
 extern struct vnodeop_desc vop_getattr_desc;
@@ -298,7 +298,7 @@ int VOP_GETATTR_APV(struct vop_vector *vop, struct vop_getattr_args *);
 static __inline int VOP_GETATTR(
 	struct vnode *vp,
 	struct vattr *vap,
-	struct bsd_ucred *cred)
+	struct ucred *cred)
 {
 	struct vop_getattr_args a;
 
@@ -313,7 +313,7 @@ struct vop_setattr_args {
 	struct vop_generic_args a_gen;
 	struct vnode *a_vp;
 	struct vattr *a_vap;
-	struct bsd_ucred *a_cred;
+	struct ucred *a_cred;
 };
 
 extern struct vnodeop_desc vop_setattr_desc;
@@ -324,7 +324,7 @@ int VOP_SETATTR_APV(struct vop_vector *vop, struct vop_setattr_args *);
 static __inline int VOP_SETATTR(
 	struct vnode *vp,
 	struct vattr *vap,
-	struct bsd_ucred *cred)
+	struct ucred *cred)
 {
 	struct vop_setattr_args a;
 
@@ -360,7 +360,7 @@ struct vop_read_args {
 	struct vnode *a_vp;
 	struct uio *a_uio;
 	int a_ioflag;
-	struct bsd_ucred *a_cred;
+	struct ucred *a_cred;
 };
 
 extern struct vnodeop_desc vop_read_desc;
@@ -372,7 +372,7 @@ static __inline int VOP_READ(
 	struct vnode *vp,
 	struct uio *uio,
 	int ioflag,
-	struct bsd_ucred *cred)
+	struct ucred *cred)
 {
 	struct vop_read_args a;
 
@@ -389,7 +389,7 @@ struct vop_write_args {
 	struct vnode *a_vp;
 	struct uio *a_uio;
 	int a_ioflag;
-	struct bsd_ucred *a_cred;
+	struct ucred *a_cred;
 };
 
 extern struct vnodeop_desc vop_write_desc;
@@ -401,7 +401,7 @@ static __inline int VOP_WRITE(
 	struct vnode *vp,
 	struct uio *uio,
 	int ioflag,
-	struct bsd_ucred *cred)
+	struct ucred *cred)
 {
 	struct vop_write_args a;
 
@@ -419,7 +419,7 @@ struct vop_ioctl_args {
 	u_long a_command;
 	void *a_data;
 	int a_fflag;
-	struct bsd_ucred *a_cred;
+	struct ucred *a_cred;
 	struct thread *a_td;
 };
 
@@ -433,7 +433,7 @@ static __inline int VOP_IOCTL(
 	u_long command,
 	void *data,
 	int fflag,
-	struct bsd_ucred *cred,
+	struct ucred *cred,
 	struct thread *td)
 {
 	struct vop_ioctl_args a;
@@ -452,7 +452,7 @@ struct vop_poll_args {
 	struct vop_generic_args a_gen;
 	struct vnode *a_vp;
 	int a_events;
-	struct bsd_ucred *a_cred;
+	struct ucred *a_cred;
 	struct thread *a_td;
 };
 
@@ -464,7 +464,7 @@ int VOP_POLL_APV(struct vop_vector *vop, struct vop_poll_args *);
 static __inline int VOP_POLL(
 	struct vnode *vp,
 	int events,
-	struct bsd_ucred *cred,
+	struct ucred *cred,
 	struct thread *td)
 {
 	struct vop_poll_args a;
@@ -727,7 +727,7 @@ struct vop_readdir_args {
 	struct vop_generic_args a_gen;
 	struct vnode *a_vp;
 	struct uio *a_uio;
-	struct bsd_ucred *a_cred;
+	struct ucred *a_cred;
 	int *a_eofflag;
 	int *a_ncookies;
 	u_long **a_cookies;
@@ -741,7 +741,7 @@ int VOP_READDIR_APV(struct vop_vector *vop, struct vop_readdir_args *);
 static __inline int VOP_READDIR(
 	struct vnode *vp,
 	struct uio *uio,
-	struct bsd_ucred *cred,
+	struct ucred *cred,
 	int *eofflag,
 	int *ncookies,
 	u_long **cookies)
@@ -762,7 +762,7 @@ struct vop_readlink_args {
 	struct vop_generic_args a_gen;
 	struct vnode *a_vp;
 	struct uio *a_uio;
-	struct bsd_ucred *a_cred;
+	struct ucred *a_cred;
 };
 
 extern struct vnodeop_desc vop_readlink_desc;
@@ -773,7 +773,7 @@ int VOP_READLINK_APV(struct vop_vector *vop, struct vop_readlink_args *);
 static __inline int VOP_READLINK(
 	struct vnode *vp,
 	struct uio *uio,
-	struct bsd_ucred *cred)
+	struct ucred *cred)
 {
 	struct vop_readlink_args a;
 
@@ -885,9 +885,9 @@ static __inline int VOP_UNLOCK(
 struct vop_bmap_args {
 	struct vop_generic_args a_gen;
 	struct vnode *a_vp;
-	bsd_daddr_t a_bn;
+	daddr_t a_bn;
 	struct bufobj **a_bop;
-	bsd_daddr_t *a_bnp;
+	daddr_t *a_bnp;
 	int *a_runp;
 	int *a_runb;
 };
@@ -899,9 +899,9 @@ int VOP_BMAP_APV(struct vop_vector *vop, struct vop_bmap_args *);
 
 static __inline int VOP_BMAP(
 	struct vnode *vp,
-	bsd_daddr_t bn,
+	daddr_t bn,
 	struct bufobj **bop,
-	bsd_daddr_t *bnp,
+	daddr_t *bnp,
 	int *runp,
 	int *runb)
 {
@@ -987,7 +987,7 @@ struct vop_pathconf_args {
 	struct vop_generic_args a_gen;
 	struct vnode *a_vp;
 	int a_name;
-	bsd_register_t *a_retval;
+	register_t *a_retval;
 };
 
 extern struct vnodeop_desc vop_pathconf_desc;
@@ -998,7 +998,7 @@ int VOP_PATHCONF_APV(struct vop_vector *vop, struct vop_pathconf_args *);
 static __inline int VOP_PATHCONF(
 	struct vnode *vp,
 	int name,
-	bsd_register_t *retval)
+	register_t *retval)
 {
 	struct vop_pathconf_args a;
 
@@ -1014,7 +1014,7 @@ struct vop_advlock_args {
 	struct vnode *a_vp;
 	void *a_id;
 	int a_op;
-	struct bsd_flock *a_fl;
+	struct flock *a_fl;
 	int a_flags;
 };
 
@@ -1027,7 +1027,7 @@ static __inline int VOP_ADVLOCK(
 	struct vnode *vp,
 	void *id,
 	int op,
-	struct bsd_flock *fl,
+	struct flock *fl,
 	int flags)
 {
 	struct vop_advlock_args a;
@@ -1046,7 +1046,7 @@ struct vop_advlockasync_args {
 	struct vnode *a_vp;
 	void *a_id;
 	int a_op;
-	struct bsd_flock *a_fl;
+	struct flock *a_fl;
 	int a_flags;
 	struct task *a_task;
 	void **a_cookiep;
@@ -1061,7 +1061,7 @@ static __inline int VOP_ADVLOCKASYNC(
 	struct vnode *vp,
 	void *id,
 	int op,
-	struct bsd_flock *fl,
+	struct flock *fl,
 	int flags,
 	struct task *task,
 	void **cookiep)
@@ -1125,10 +1125,10 @@ static __inline int VOP_REALLOCBLKS(
 struct vop_getpages_args {
 	struct vop_generic_args a_gen;
 	struct vnode *a_vp;
-	bsd_vm_page_t *a_m;
+	vm_page_t *a_m;
 	int a_count;
 	int a_reqpage;
-	bsd_vm_ooffset_t a_offset;
+	vm_ooffset_t a_offset;
 };
 
 extern struct vnodeop_desc vop_getpages_desc;
@@ -1138,10 +1138,10 @@ int VOP_GETPAGES_APV(struct vop_vector *vop, struct vop_getpages_args *);
 
 static __inline int VOP_GETPAGES(
 	struct vnode *vp,
-	bsd_vm_page_t *m,
+	vm_page_t *m,
 	int count,
 	int reqpage,
-	bsd_vm_ooffset_t offset)
+	vm_ooffset_t offset)
 {
 	struct vop_getpages_args a;
 
@@ -1157,11 +1157,11 @@ static __inline int VOP_GETPAGES(
 struct vop_putpages_args {
 	struct vop_generic_args a_gen;
 	struct vnode *a_vp;
-	bsd_vm_page_t *a_m;
+	vm_page_t *a_m;
 	int a_count;
 	int a_sync;
 	int *a_rtvals;
-	bsd_vm_ooffset_t a_offset;
+	vm_ooffset_t a_offset;
 };
 
 extern struct vnodeop_desc vop_putpages_desc;
@@ -1171,11 +1171,11 @@ int VOP_PUTPAGES_APV(struct vop_vector *vop, struct vop_putpages_args *);
 
 static __inline int VOP_PUTPAGES(
 	struct vnode *vp,
-	bsd_vm_page_t *m,
+	vm_page_t *m,
 	int count,
 	int sync,
 	int *rtvals,
-	bsd_vm_ooffset_t offset)
+	vm_ooffset_t offset)
 {
 	struct vop_putpages_args a;
 
@@ -1194,7 +1194,7 @@ struct vop_getacl_args {
 	struct vnode *a_vp;
 	acl_type_t a_type;
 	struct acl *a_aclp;
-	struct bsd_ucred *a_cred;
+	struct ucred *a_cred;
 	struct thread *a_td;
 };
 
@@ -1207,7 +1207,7 @@ static __inline int VOP_GETACL(
 	struct vnode *vp,
 	acl_type_t type,
 	struct acl *aclp,
-	struct bsd_ucred *cred,
+	struct ucred *cred,
 	struct thread *td)
 {
 	struct vop_getacl_args a;
@@ -1226,7 +1226,7 @@ struct vop_setacl_args {
 	struct vnode *a_vp;
 	acl_type_t a_type;
 	struct acl *a_aclp;
-	struct bsd_ucred *a_cred;
+	struct ucred *a_cred;
 	struct thread *a_td;
 };
 
@@ -1239,7 +1239,7 @@ static __inline int VOP_SETACL(
 	struct vnode *vp,
 	acl_type_t type,
 	struct acl *aclp,
-	struct bsd_ucred *cred,
+	struct ucred *cred,
 	struct thread *td)
 {
 	struct vop_setacl_args a;
@@ -1258,7 +1258,7 @@ struct vop_aclcheck_args {
 	struct vnode *a_vp;
 	acl_type_t a_type;
 	struct acl *a_aclp;
-	struct bsd_ucred *a_cred;
+	struct ucred *a_cred;
 	struct thread *a_td;
 };
 
@@ -1271,7 +1271,7 @@ static __inline int VOP_ACLCHECK(
 	struct vnode *vp,
 	acl_type_t type,
 	struct acl *aclp,
-	struct bsd_ucred *cred,
+	struct ucred *cred,
 	struct thread *td)
 {
 	struct vop_aclcheck_args a;
@@ -1289,7 +1289,7 @@ struct vop_closeextattr_args {
 	struct vop_generic_args a_gen;
 	struct vnode *a_vp;
 	int a_commit;
-	struct bsd_ucred *a_cred;
+	struct ucred *a_cred;
 	struct thread *a_td;
 };
 
@@ -1301,7 +1301,7 @@ int VOP_CLOSEEXTATTR_APV(struct vop_vector *vop, struct vop_closeextattr_args *)
 static __inline int VOP_CLOSEEXTATTR(
 	struct vnode *vp,
 	int commit,
-	struct bsd_ucred *cred,
+	struct ucred *cred,
 	struct thread *td)
 {
 	struct vop_closeextattr_args a;
@@ -1320,8 +1320,8 @@ struct vop_getextattr_args {
 	int a_attrnamespace;
 	const char *a_name;
 	struct uio *a_uio;
-	bsd_size_t *a_size;
-	struct bsd_ucred *a_cred;
+	size_t *a_size;
+	struct ucred *a_cred;
 	struct thread *a_td;
 };
 
@@ -1335,8 +1335,8 @@ static __inline int VOP_GETEXTATTR(
 	int attrnamespace,
 	const char *name,
 	struct uio *uio,
-	bsd_size_t *size,
-	struct bsd_ucred *cred,
+	size_t *size,
+	struct ucred *cred,
 	struct thread *td)
 {
 	struct vop_getextattr_args a;
@@ -1357,8 +1357,8 @@ struct vop_listextattr_args {
 	struct vnode *a_vp;
 	int a_attrnamespace;
 	struct uio *a_uio;
-	bsd_size_t *a_size;
-	struct bsd_ucred *a_cred;
+	size_t *a_size;
+	struct ucred *a_cred;
 	struct thread *a_td;
 };
 
@@ -1371,8 +1371,8 @@ static __inline int VOP_LISTEXTATTR(
 	struct vnode *vp,
 	int attrnamespace,
 	struct uio *uio,
-	bsd_size_t *size,
-	struct bsd_ucred *cred,
+	size_t *size,
+	struct ucred *cred,
 	struct thread *td)
 {
 	struct vop_listextattr_args a;
@@ -1390,7 +1390,7 @@ static __inline int VOP_LISTEXTATTR(
 struct vop_openextattr_args {
 	struct vop_generic_args a_gen;
 	struct vnode *a_vp;
-	struct bsd_ucred *a_cred;
+	struct ucred *a_cred;
 	struct thread *a_td;
 };
 
@@ -1401,7 +1401,7 @@ int VOP_OPENEXTATTR_APV(struct vop_vector *vop, struct vop_openextattr_args *);
 
 static __inline int VOP_OPENEXTATTR(
 	struct vnode *vp,
-	struct bsd_ucred *cred,
+	struct ucred *cred,
 	struct thread *td)
 {
 	struct vop_openextattr_args a;
@@ -1418,7 +1418,7 @@ struct vop_deleteextattr_args {
 	struct vnode *a_vp;
 	int a_attrnamespace;
 	const char *a_name;
-	struct bsd_ucred *a_cred;
+	struct ucred *a_cred;
 	struct thread *a_td;
 };
 
@@ -1431,7 +1431,7 @@ static __inline int VOP_DELETEEXTATTR(
 	struct vnode *vp,
 	int attrnamespace,
 	const char *name,
-	struct bsd_ucred *cred,
+	struct ucred *cred,
 	struct thread *td)
 {
 	struct vop_deleteextattr_args a;
@@ -1451,7 +1451,7 @@ struct vop_setextattr_args {
 	int a_attrnamespace;
 	const char *a_name;
 	struct uio *a_uio;
-	struct bsd_ucred *a_cred;
+	struct ucred *a_cred;
 	struct thread *a_td;
 };
 
@@ -1465,7 +1465,7 @@ static __inline int VOP_SETEXTATTR(
 	int attrnamespace,
 	const char *name,
 	struct uio *uio,
-	struct bsd_ucred *cred,
+	struct ucred *cred,
 	struct thread *td)
 {
 	struct vop_setextattr_args a;
@@ -1484,7 +1484,7 @@ struct vop_setlabel_args {
 	struct vop_generic_args a_gen;
 	struct vnode *a_vp;
 	struct label *a_label;
-	struct bsd_ucred *a_cred;
+	struct ucred *a_cred;
 	struct thread *a_td;
 };
 
@@ -1496,7 +1496,7 @@ int VOP_SETLABEL_APV(struct vop_vector *vop, struct vop_setlabel_args *);
 static __inline int VOP_SETLABEL(
 	struct vnode *vp,
 	struct label *label,
-	struct bsd_ucred *cred,
+	struct ucred *cred,
 	struct thread *td)
 {
 	struct vop_setlabel_args a;
@@ -1536,7 +1536,7 @@ struct vop_vptocnp_args {
 	struct vop_generic_args a_gen;
 	struct vnode *a_vp;
 	struct vnode **a_vpp;
-	struct bsd_ucred *a_cred;
+	struct ucred *a_cred;
 	char *a_buf;
 	int *a_buflen;
 };
@@ -1549,7 +1549,7 @@ int VOP_VPTOCNP_APV(struct vop_vector *vop, struct vop_vptocnp_args *);
 static __inline int VOP_VPTOCNP(
 	struct vnode *vp,
 	struct vnode **vpp,
-	struct bsd_ucred *cred,
+	struct ucred *cred,
 	char *buf,
 	int *buflen)
 {
@@ -1567,8 +1567,8 @@ static __inline int VOP_VPTOCNP(
 struct vop_allocate_args {
 	struct vop_generic_args a_gen;
 	struct vnode *a_vp;
-	bsd_off_t *a_offset;
-	bsd_off_t *a_len;
+	off_t *a_offset;
+	off_t *a_len;
 };
 
 extern struct vnodeop_desc vop_allocate_desc;
@@ -1578,8 +1578,8 @@ int VOP_ALLOCATE_APV(struct vop_vector *vop, struct vop_allocate_args *);
 
 static __inline int VOP_ALLOCATE(
 	struct vnode *vp,
-	bsd_off_t *offset,
-	bsd_off_t *len)
+	off_t *offset,
+	off_t *len)
 {
 	struct vop_allocate_args a;
 
@@ -1593,8 +1593,8 @@ static __inline int VOP_ALLOCATE(
 struct vop_advise_args {
 	struct vop_generic_args a_gen;
 	struct vnode *a_vp;
-	bsd_off_t a_start;
-	bsd_off_t a_end;
+	off_t a_start;
+	off_t a_end;
 	int a_advice;
 };
 
@@ -1605,8 +1605,8 @@ int VOP_ADVISE_APV(struct vop_vector *vop, struct vop_advise_args *);
 
 static __inline int VOP_ADVISE(
 	struct vnode *vp,
-	bsd_off_t start,
-	bsd_off_t end,
+	off_t start,
+	off_t end,
 	int advice)
 {
 	struct vop_advise_args a;
@@ -1622,7 +1622,7 @@ static __inline int VOP_ADVISE(
 struct vop_unp_bind_args {
 	struct vop_generic_args a_gen;
 	struct vnode *a_vp;
-	struct bsd_socket *a_socket;
+	struct socket *a_socket;
 };
 
 extern struct vnodeop_desc vop_unp_bind_desc;
@@ -1632,7 +1632,7 @@ int VOP_UNP_BIND_APV(struct vop_vector *vop, struct vop_unp_bind_args *);
 
 static __inline int VOP_UNP_BIND(
 	struct vnode *vp,
-	struct bsd_socket *socket)
+	struct socket *socket)
 {
 	struct vop_unp_bind_args a;
 
@@ -1645,7 +1645,7 @@ static __inline int VOP_UNP_BIND(
 struct vop_unp_connect_args {
 	struct vop_generic_args a_gen;
 	struct vnode *a_vp;
-	struct bsd_socket **a_socket;
+	struct socket **a_socket;
 };
 
 extern struct vnodeop_desc vop_unp_connect_desc;
@@ -1655,7 +1655,7 @@ int VOP_UNP_CONNECT_APV(struct vop_vector *vop, struct vop_unp_connect_args *);
 
 static __inline int VOP_UNP_CONNECT(
 	struct vnode *vp,
-	struct bsd_socket **socket)
+	struct socket **socket)
 {
 	struct vop_unp_connect_args a;
 

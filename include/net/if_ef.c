@@ -30,15 +30,15 @@
 #include "opt_ipx.h"
 #include "opt_ef.h"
 
-#include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/sockio.h>
-#include <sys/malloc.h>
-#include <sys/mbuf.h>
-#include <sys/socket.h>
-#include <sys/syslog.h>
-#include <sys/kernel.h>
-#include <sys/module.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_sockio.h>
+#include <sys/bsd_malloc.h>
+#include <sys/bsd_mbuf.h>
+#include <sys/bsd_socket.h>
+#include <sys/bsd_syslog.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_module.h>
 
 #include <net/ethernet.h>
 #include <net/if_llc.h>
@@ -102,7 +102,7 @@ static int efcount;
 
 extern int (*ef_inputp)(struct ifnet*, struct ether_header *eh, struct mbuf *m);
 extern int (*ef_outputp)(struct ifnet *ifp, struct mbuf **mp,
-		struct bsd_sockaddr *dst, short *tp, int *hlen);
+		struct sockaddr *dst, short *tp, int *hlen);
 
 /*
 static void ef_reset (struct ifnet *);
@@ -114,7 +114,7 @@ static int ef_ioctl(struct ifnet *, u_long, caddr_t);
 static void ef_start(struct ifnet *);
 static int ef_input(struct ifnet*, struct ether_header *, struct mbuf *);
 static int ef_output(struct ifnet *ifp, struct mbuf **mp,
-		struct bsd_sockaddr *dst, short *tp, int *hlen);
+		struct sockaddr *dst, short *tp, int *hlen);
 
 static int ef_load(void);
 static int ef_unload(void);
@@ -392,7 +392,7 @@ ef_input(struct ifnet *ifp, struct ether_header *eh, struct mbuf *m)
 }
 
 static int
-ef_output(struct ifnet *ifp, struct mbuf **mp, struct bsd_sockaddr *dst, short *tp,
+ef_output(struct ifnet *ifp, struct mbuf **mp, struct sockaddr *dst, short *tp,
 	int *hlen)
 {
 	struct efnet *sc = (struct efnet*)ifp->if_softc;
@@ -457,7 +457,7 @@ ef_clone(struct ef_link *efl, int ft)
 	struct ifnet *eifp;
 	struct ifnet *ifp = efl->el_ifp;
 
-	efp = (struct efnet*)bsd_malloc(sizeof(struct efnet), M_IFADDR,
+	efp = (struct efnet*)malloc(sizeof(struct efnet), M_IFADDR,
 	    M_WAITOK | M_ZERO);
 	if (efp == NULL)
 		return ENOMEM;
@@ -465,7 +465,7 @@ ef_clone(struct ef_link *efl, int ft)
 	efp->ef_frametype = ft;
 	eifp = efp->ef_ifp = if_alloc(IFT_ETHER);
 	if (eifp == NULL) {
-		bsd_free(efp, M_IFADDR);
+		free(efp, M_IFADDR);
 		return (ENOSPC);
 	}
 	snprintf(eifp->if_xname, IFNAMSIZ,
@@ -508,7 +508,7 @@ ef_load(void)
 		TAILQ_FOREACH(ifp, &V_ifnet, if_link) {
 			if (ifp->if_type != IFT_ETHER) continue;
 			EFDEBUG("Found interface %s\n", ifp->if_xname);
-			efl = (struct ef_link*)bsd_malloc(sizeof(struct ef_link), 
+			efl = (struct ef_link*)malloc(sizeof(struct ef_link), 
 			    M_IFADDR, M_WAITOK | M_ZERO);
 			if (efl == NULL) {
 				error = ENOMEM;
@@ -547,9 +547,9 @@ ef_load(void)
 				if (efl->el_units[d]) {
 					if (efl->el_units[d]->ef_pifp != NULL)
 						if_free(efl->el_units[d]->ef_pifp);
-					bsd_free(efl->el_units[d], M_IFADDR);
+					free(efl->el_units[d], M_IFADDR);
 				}
-			bsd_free(efl, M_IFADDR);
+			free(efl, M_IFADDR);
 		}
 		return error;
 	}

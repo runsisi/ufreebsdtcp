@@ -133,9 +133,9 @@ struct cdg {
 	/* minimum measured rtt within prev rtt period */
 	int minrtt_in_prevrtt;
 	/* consecutive congestion episode counter */
-	bsd_uint32_t consec_cong_cnt;
+	uint32_t consec_cong_cnt;
 	/* when tracking a new reno type loss window */
-	bsd_uint32_t shadow_w;
+	uint32_t shadow_w;
 	/* maximum number of samples in the moving average queue */
 	int sample_q_size;
 	/* number of samples in the moving average queue */
@@ -209,13 +209,13 @@ static MALLOC_DEFINE(M_CDG, "cdg data",
 
 static int ertt_id;
 
-static VNET_DEFINE(bsd_uint32_t, cdg_alpha_inc);
-static VNET_DEFINE(bsd_uint32_t, cdg_beta_delay);
-static VNET_DEFINE(bsd_uint32_t, cdg_beta_loss);
-static VNET_DEFINE(bsd_uint32_t, cdg_smoothing_factor);
-static VNET_DEFINE(bsd_uint32_t, cdg_exp_backoff_scale);
-static VNET_DEFINE(bsd_uint32_t, cdg_consec_cong);
-static VNET_DEFINE(bsd_uint32_t, cdg_hold_backoff);
+static VNET_DEFINE(uint32_t, cdg_alpha_inc);
+static VNET_DEFINE(uint32_t, cdg_beta_delay);
+static VNET_DEFINE(uint32_t, cdg_beta_loss);
+static VNET_DEFINE(uint32_t, cdg_smoothing_factor);
+static VNET_DEFINE(uint32_t, cdg_exp_backoff_scale);
+static VNET_DEFINE(uint32_t, cdg_consec_cong);
+static VNET_DEFINE(uint32_t, cdg_hold_backoff);
 #define	V_cdg_alpha_inc		VNET(cdg_alpha_inc)
 #define	V_cdg_beta_delay	VNET(cdg_beta_delay)
 #define	V_cdg_beta_loss		VNET(cdg_beta_loss)
@@ -229,8 +229,8 @@ static int cdg_mod_init(void);
 static void cdg_conn_init(struct cc_var *ccv);
 static int cdg_cb_init(struct cc_var *ccv);
 static void cdg_cb_destroy(struct cc_var *ccv);
-static void cdg_cong_signal(struct cc_var *ccv, bsd_uint32_t signal_type);
-static void cdg_ack_received(struct cc_var *ccv, bsd_uint16_t ack_type);
+static void cdg_cong_signal(struct cc_var *ccv, uint32_t signal_type);
+static void cdg_ack_received(struct cc_var *ccv, uint16_t ack_type);
 
 struct cc_algo cdg_cc_algo = {
 	.name = "cdg",
@@ -287,7 +287,7 @@ cdg_cb_init(struct cc_var *ccv)
 {
 	struct cdg *cdg_data;
 
-	cdg_data = bsd_malloc(sizeof(struct cdg), M_CDG, M_NOWAIT);
+	cdg_data = malloc(sizeof(struct cdg), M_CDG, M_NOWAIT);
 	if (cdg_data == NULL)
 		return (ENOMEM);
 
@@ -346,7 +346,7 @@ cdg_cb_destroy(struct cc_var *ccv)
 		qds = qds_n;
 	}
 
-	bsd_free(ccv->cc_data, M_CDG);
+	free(ccv->cc_data, M_CDG);
 }
 
 static int
@@ -424,7 +424,7 @@ cdg_window_increase(struct cc_var *ccv, int new_measurement)
 }
 
 static void
-cdg_cong_signal(struct cc_var *ccv, bsd_uint32_t signal_type)
+cdg_cong_signal(struct cc_var *ccv, uint32_t signal_type)
 {
 	struct cdg *cdg_data = ccv->cc_data;
 
@@ -545,7 +545,7 @@ calc_moving_average(struct cdg *cdg_data, long qdiff_max, long qdiff_min)
 }
 
 static void
-cdg_ack_received(struct cc_var *ccv, bsd_uint16_t ack_type)
+cdg_ack_received(struct cc_var *ccv, uint16_t ack_type)
 {
 	struct cdg *cdg_data;
 	struct ertt *e_t;

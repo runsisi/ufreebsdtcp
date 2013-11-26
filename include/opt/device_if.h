@@ -26,7 +26,7 @@
 /** @brief Unique descriptor for the DEVICE_PROBE() method */
 extern struct kobjop_desc device_probe_desc;
 /** @brief A function implementing the DEVICE_PROBE() method */
-typedef int device_probe_t(bsd_device_t dev);
+typedef int device_probe_t(device_t dev);
 /**
  * @brief Probe to see if a device matches a driver.
  *
@@ -101,7 +101,7 @@ typedef int device_probe_t(bsd_device_t dev);
  * @see DEVICE_ATTACH(), pci_get_vendor(), pci_get_device()
  */
 
-static __inline int DEVICE_PROBE(bsd_device_t dev)
+static __inline int DEVICE_PROBE(device_t dev)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,device_probe);
@@ -111,7 +111,7 @@ static __inline int DEVICE_PROBE(bsd_device_t dev)
 /** @brief Unique descriptor for the DEVICE_IDENTIFY() method */
 extern struct kobjop_desc device_identify_desc;
 /** @brief A function implementing the DEVICE_IDENTIFY() method */
-typedef void device_identify_t(driver_t *driver, bsd_device_t parent);
+typedef void device_identify_t(driver_t *driver, device_t parent);
 /**
  * @brief Allow a device driver to detect devices not otherwise enumerated.
  *
@@ -138,7 +138,7 @@ typedef void device_identify_t(driver_t *driver, bsd_device_t parent);
  * @param parent	the parent device to use when adding new children
  */
 
-static __inline void DEVICE_IDENTIFY(driver_t *driver, bsd_device_t parent)
+static __inline void DEVICE_IDENTIFY(driver_t *driver, device_t parent)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(driver->ops,device_identify);
@@ -148,7 +148,7 @@ static __inline void DEVICE_IDENTIFY(driver_t *driver, bsd_device_t parent)
 /** @brief Unique descriptor for the DEVICE_ATTACH() method */
 extern struct kobjop_desc device_attach_desc;
 /** @brief A function implementing the DEVICE_ATTACH() method */
-typedef int device_attach_t(bsd_device_t dev);
+typedef int device_attach_t(device_t dev);
 /**
  * @brief Attach a device to a device driver
  *
@@ -173,7 +173,7 @@ typedef int device_attach_t(bsd_device_t dev);
  * @see DEVICE_PROBE()
  */
 
-static __inline int DEVICE_ATTACH(bsd_device_t dev)
+static __inline int DEVICE_ATTACH(device_t dev)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,device_attach);
@@ -183,7 +183,7 @@ static __inline int DEVICE_ATTACH(bsd_device_t dev)
 /** @brief Unique descriptor for the DEVICE_DETACH() method */
 extern struct kobjop_desc device_detach_desc;
 /** @brief A function implementing the DEVICE_DETACH() method */
-typedef int device_detach_t(bsd_device_t dev);
+typedef int device_detach_t(device_t dev);
 /**
  * @brief Detach a driver from a device.
  *
@@ -207,7 +207,7 @@ typedef int device_detach_t(bsd_device_t dev);
  * @see DEVICE_ATTACH()
  */
 
-static __inline int DEVICE_DETACH(bsd_device_t dev)
+static __inline int DEVICE_DETACH(device_t dev)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,device_detach);
@@ -217,7 +217,7 @@ static __inline int DEVICE_DETACH(bsd_device_t dev)
 /** @brief Unique descriptor for the DEVICE_SHUTDOWN() method */
 extern struct kobjop_desc device_shutdown_desc;
 /** @brief A function implementing the DEVICE_SHUTDOWN() method */
-typedef int device_shutdown_t(bsd_device_t dev);
+typedef int device_shutdown_t(device_t dev);
 /**
  * @brief Called during system shutdown.
  *
@@ -233,7 +233,7 @@ typedef int device_shutdown_t(bsd_device_t dev);
  * @endcode
  */
 
-static __inline int DEVICE_SHUTDOWN(bsd_device_t dev)
+static __inline int DEVICE_SHUTDOWN(device_t dev)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,device_shutdown);
@@ -243,7 +243,7 @@ static __inline int DEVICE_SHUTDOWN(bsd_device_t dev)
 /** @brief Unique descriptor for the DEVICE_SUSPEND() method */
 extern struct kobjop_desc device_suspend_desc;
 /** @brief A function implementing the DEVICE_SUSPEND() method */
-typedef int device_suspend_t(bsd_device_t dev);
+typedef int device_suspend_t(device_t dev);
 /**
  * @brief This is called by the power-management subsystem when a
  * suspend has been requested by the user or by some automatic
@@ -268,7 +268,7 @@ typedef int device_suspend_t(bsd_device_t dev);
  * @see DEVICE_RESUME()
  */
 
-static __inline int DEVICE_SUSPEND(bsd_device_t dev)
+static __inline int DEVICE_SUSPEND(device_t dev)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,device_suspend);
@@ -278,7 +278,7 @@ static __inline int DEVICE_SUSPEND(bsd_device_t dev)
 /** @brief Unique descriptor for the DEVICE_RESUME() method */
 extern struct kobjop_desc device_resume_desc;
 /** @brief A function implementing the DEVICE_RESUME() method */
-typedef int device_resume_t(bsd_device_t dev);
+typedef int device_resume_t(device_t dev);
 /**
  * @brief This is called when the system resumes after a suspend.
  *
@@ -298,7 +298,7 @@ typedef int device_resume_t(bsd_device_t dev);
  * @see DEVICE_SUSPEND()
  */
 
-static __inline int DEVICE_RESUME(bsd_device_t dev)
+static __inline int DEVICE_RESUME(device_t dev)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,device_resume);
@@ -308,7 +308,7 @@ static __inline int DEVICE_RESUME(bsd_device_t dev)
 /** @brief Unique descriptor for the DEVICE_QUIESCE() method */
 extern struct kobjop_desc device_quiesce_desc;
 /** @brief A function implementing the DEVICE_QUIESCE() method */
-typedef int device_quiesce_t(bsd_device_t dev);
+typedef int device_quiesce_t(device_t dev);
 /**
  * @brief This is called when the driver is asked to quiesce itself.
  *
@@ -332,7 +332,7 @@ typedef int device_quiesce_t(bsd_device_t dev);
  * @see DEVICE_DETACH()
  */
 
-static __inline int DEVICE_QUIESCE(bsd_device_t dev)
+static __inline int DEVICE_QUIESCE(device_t dev)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,device_quiesce);

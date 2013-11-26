@@ -30,14 +30,14 @@
  * $FreeBSD: release/9.2.0/sys/sys/time.h 247555 2013-03-01 17:10:43Z jhb $
  */
 
-#ifndef _BSD_SYS_TIME_H_
-#define _BSD_SYS_TIME_H_
+#ifndef _SYS_TIME_H_
+#define _SYS_TIME_H_
 
 #include <sys/_bsd_timeval.h>
 #include <sys/bsd_types.h>
 #include <sys/bsd_timespec.h>
 
-struct bsd_timezone {
+struct timezone {
 	int	tz_minuteswest;	/* minutes west of Greenwich */
 	int	tz_dsttime;	/* type of dst correction */
 };
@@ -50,15 +50,15 @@ struct bsd_timezone {
 #define	DST_CAN		6	/* Canada */
 
 #if __BSD_VISIBLE
-struct bsd_bintime {
-	bsd_time_t	sec;
-	bsd_uint64_t frac;
+struct bintime {
+	time_t	sec;
+	uint64_t frac;
 };
 
 static __inline void
-bintime_addx(struct bsd_bintime *bt, bsd_uint64_t x)
+bintime_addx(struct bintime *bt, uint64_t x)
 {
-	bsd_uint64_t u;
+	uint64_t u;
 
 	u = bt->frac;
 	bt->frac += x;
@@ -67,9 +67,9 @@ bintime_addx(struct bsd_bintime *bt, bsd_uint64_t x)
 }
 
 static __inline void
-bintime_add(struct bsd_bintime *bt, const struct bsd_bintime *bt2)
+bintime_add(struct bintime *bt, const struct bintime *bt2)
 {
-	bsd_uint64_t u;
+	uint64_t u;
 
 	u = bt->frac;
 	bt->frac += bt2->frac;
@@ -79,9 +79,9 @@ bintime_add(struct bsd_bintime *bt, const struct bsd_bintime *bt2)
 }
 
 static __inline void
-bintime_sub(struct bsd_bintime *bt, const struct bsd_bintime *bt2)
+bintime_sub(struct bintime *bt, const struct bintime *bt2)
 {
-	bsd_uint64_t u;
+	uint64_t u;
 
 	u = bt->frac;
 	bt->frac -= bt2->frac;
@@ -91,9 +91,9 @@ bintime_sub(struct bsd_bintime *bt, const struct bsd_bintime *bt2)
 }
 
 static __inline void
-bintime_mul(struct bsd_bintime *bt, u_int x)
+bintime_mul(struct bintime *bt, u_int x)
 {
-	bsd_uint64_t p1, p2;
+	uint64_t p1, p2;
 
 	p1 = (bt->frac & 0xffffffffull) * x;
 	p2 = (bt->frac >> 32) * x + (p1 >> 32);
@@ -124,37 +124,37 @@ bintime_mul(struct bsd_bintime *bt, u_int x)
  */
 
 static __inline void
-bintime2timespec(const struct bsd_bintime *bt, struct bsd_timespec *ts)
+bintime2timespec(const struct bintime *bt, struct timespec *ts)
 {
 
 	ts->tv_sec = bt->sec;
-	ts->tv_nsec = ((bsd_uint64_t)1000000000 * (bsd_uint32_t)(bt->frac >> 32)) >> 32;
+	ts->tv_nsec = ((uint64_t)1000000000 * (uint32_t)(bt->frac >> 32)) >> 32;
 }
 
 static __inline void
-timespec2bintime(const struct bsd_timespec *ts, struct bsd_bintime *bt)
+timespec2bintime(const struct timespec *ts, struct bintime *bt)
 {
 
 	bt->sec = ts->tv_sec;
 	/* 18446744073 = int(2^64 / 1000000000) */
-	bt->frac = ts->tv_nsec * (bsd_uint64_t)18446744073LL; 
+	bt->frac = ts->tv_nsec * (uint64_t)18446744073LL; 
 }
 
 static __inline void
-bintime2timeval(const struct bsd_bintime *bt, struct bsd_timeval *tv)
+bintime2timeval(const struct bintime *bt, struct timeval *tv)
 {
 
 	tv->tv_sec = bt->sec;
-	tv->tv_usec = ((bsd_uint64_t)1000000 * (bsd_uint32_t)(bt->frac >> 32)) >> 32;
+	tv->tv_usec = ((uint64_t)1000000 * (uint32_t)(bt->frac >> 32)) >> 32;
 }
 
 static __inline void
-timeval2bintime(const struct bsd_timeval *tv, struct bsd_bintime *bt)
+timeval2bintime(const struct timeval *tv, struct bintime *bt)
 {
 
 	bt->sec = tv->tv_sec;
 	/* 18446744073709 = int(2^64 / 1000000) */
-	bt->frac = tv->tv_usec * (bsd_uint64_t)18446744073709LL;
+	bt->frac = tv->tv_usec * (uint64_t)18446744073709LL;
 }
 #endif /* __BSD_VISIBLE */
 
@@ -231,19 +231,19 @@ timeval2bintime(const struct bsd_timeval *tv, struct bsd_bintime *bt)
  * Names of the interval timers, and structure
  * defining a timer setting.
  */
-#define	BSD_ITIMER_REAL	0
-#define	BSD_ITIMER_VIRTUAL	1
-#define	BSD_ITIMER_PROF	2
+#define	ITIMER_REAL	0
+#define	ITIMER_VIRTUAL	1
+#define	ITIMER_PROF	2
 
-struct bsd_itimerval {
-	struct	bsd_timeval it_interval;	/* timer interval */
-	struct	bsd_timeval it_value;	/* current value */
+struct itimerval {
+	struct	timeval it_interval;	/* timer interval */
+	struct	timeval it_value;	/* current value */
 };
 
 /*
  * Getkerninfo clock information structure
  */
-struct bsd_clockinfo {
+struct clockinfo {
 	int	hz;		/* clock frequency */
 	int	tick;		/* micro-seconds per hz tick */
 	int	spare;
@@ -278,15 +278,13 @@ struct bsd_clockinfo {
 /*
  * Kernel to clock driver interface.
  */
-void	inittodr(bsd_time_t base);
+void	inittodr(time_t base);
 void	resettodr(void);
 
-extern volatile bsd_time_t	time_second;
-#if 0	// runsisi AT hust.edu.cn @2013/11/20
-extern volatile bsd_time_t	time_uptime;
-#endif 	// ---------------------- @2013/11/20
-extern struct bsd_bintime boottimebin;
-extern struct bsd_timeval boottime;
+extern volatile time_t	time_second;
+extern volatile time_t	time_uptime;
+extern struct bintime boottimebin;
+extern struct timeval boottime;
 
 /*
  * Functions for looking at our clock: [get]{bin,nano,micro}[up]time()
@@ -310,30 +308,30 @@ extern struct bsd_timeval boottime;
  * 
  */
 
-void	binuptime(struct bsd_bintime *bt);
-void	nanouptime(struct bsd_timespec *tsp);
-void	microuptime(struct bsd_timeval *tvp);
+void	binuptime(struct bintime *bt);
+void	nanouptime(struct timespec *tsp);
+void	microuptime(struct timeval *tvp);
 
-void	bintime(struct bsd_bintime *bt);
-void	nanotime(struct bsd_timespec *tsp);
-void	microtime(struct bsd_timeval *tvp);
+void	bintime(struct bintime *bt);
+void	nanotime(struct timespec *tsp);
+void	microtime(struct timeval *tvp);
 
-void	getbinuptime(struct bsd_bintime *bt);
-void	getnanouptime(struct bsd_timespec *tsp);
-void	getmicrouptime(struct bsd_timeval *tvp);
+void	getbinuptime(struct bintime *bt);
+void	getnanouptime(struct timespec *tsp);
+void	getmicrouptime(struct timeval *tvp);
 
-void	getbintime(struct bsd_bintime *bt);
-void	getnanotime(struct bsd_timespec *tsp);
-void	getmicrotime(struct bsd_timeval *tvp);
+void	getbintime(struct bintime *bt);
+void	getnanotime(struct timespec *tsp);
+void	getmicrotime(struct timeval *tvp);
 
 /* Other functions */
-int	itimerdecr(struct bsd_itimerval *itp, int usec);
-int	itimerfix(struct bsd_timeval *tv);
-int	ppsratecheck(struct bsd_timeval *, int *, int);
-int	ratecheck(struct bsd_timeval *, const struct bsd_timeval *);
-void	timevaladd(struct bsd_timeval *t1, const struct bsd_timeval *t2);
-void	timevalsub(struct bsd_timeval *t1, const struct bsd_timeval *t2);
-int	tvtohz(struct bsd_timeval *tv);
+int	itimerdecr(struct itimerval *itp, int usec);
+int	itimerfix(struct timeval *tv);
+int	ppsratecheck(struct timeval *, int *, int);
+int	ratecheck(struct timeval *, const struct timeval *);
+void	timevaladd(struct timeval *t1, const struct timeval *t2);
+void	timevalsub(struct timeval *t1, const struct timeval *t2);
+int	tvtohz(struct timeval *tv);
 #else /* !_KERNEL */
 #include <time.h>
 
@@ -341,20 +339,20 @@ int	tvtohz(struct bsd_timeval *tv);
 #include <sys/bsd_select.h>
 
 __BEGIN_DECLS
-int	setitimer(int, const struct bsd_itimerval *, struct bsd_itimerval *);
-int	utimes(const char *, const struct bsd_timeval *);
+int	setitimer(int, const struct itimerval *, struct itimerval *);
+int	utimes(const char *, const struct timeval *);
 
 #if __BSD_VISIBLE
-int	adjtime(const struct bsd_timeval *, struct bsd_timeval *);
-int	futimes(int, const struct bsd_timeval *);
-int	futimesat(int, const char *, const struct bsd_timeval [2]);
-int	lutimes(const char *, const struct bsd_timeval *);
-int	settimeofday(const struct bsd_timeval *, const struct bsd_timezone *);
+int	adjtime(const struct timeval *, struct timeval *);
+int	futimes(int, const struct timeval *);
+int	futimesat(int, const char *, const struct timeval [2]);
+int	lutimes(const char *, const struct timeval *);
+int	settimeofday(const struct timeval *, const struct timezone *);
 #endif
 
 #if __XSI_VISIBLE
-int	getitimer(int, struct bsd_itimerval *);
-int	gettimeofday(struct bsd_timeval *, struct bsd_timezone *);
+int	getitimer(int, struct itimerval *);
+int	gettimeofday(struct timeval *, struct timezone *);
 #endif
 
 __END_DECLS

@@ -38,7 +38,7 @@
 #ifndef	_VM_SWAP_PAGER_H_
 #define	_VM_SWAP_PAGER_H_ 1
 
-typedef	bsd_int32_t	swblk_t;	/*
+typedef	int32_t	swblk_t;	/*
 				 * swap offset.  This is the type used to
 				 * address the "virtual swap device" and
 				 * therefore the maximum swap space is

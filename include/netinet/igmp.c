@@ -47,20 +47,20 @@
  * MULTICAST Revision: 3.5.1.4
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/netinet/igmp.c 249132 2013-04-05 08:22:11Z mav $");
 
-#include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/module.h>
-#include <sys/malloc.h>
-#include <sys/mbuf.h>
-#include <sys/socket.h>
-#include <sys/protosw.h>
-#include <sys/kernel.h>
-#include <sys/sysctl.h>
-#include <sys/ktr.h>
-#include <sys/condvar.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_module.h>
+#include <sys/bsd_malloc.h>
+#include <sys/bsd_mbuf.h>
+#include <sys/bsd_socket.h>
+#include <sys/bsd_protosw.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_sysctl.h>
+#include <sys/bsd_ktr.h>
+#include <sys/bsd_condvar.h>
 
 #include <net/if.h>
 #include <net/netisr.h>
@@ -75,9 +75,9 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/netinet/igmp.c 249132 2013-04-05 08:22:11Z
 #include <netinet/igmp.h>
 #include <netinet/igmp_var.h>
 
-#include <machine/in_cksum.h>
+#include <machine/bsd_in_cksum.h>
 
-#include <security/mac/mac_framework.h>
+//#include <security/mac/mac_framework.h>
 
 #ifndef KTR_IGMPV3
 #define KTR_IGMPV3 KTR_INET
@@ -92,20 +92,20 @@ static void	igmp_final_leave(struct in_multi *, struct igmp_ifinfo *);
 static int	igmp_handle_state_change(struct in_multi *,
 		    struct igmp_ifinfo *);
 static int	igmp_initial_join(struct in_multi *, struct igmp_ifinfo *);
-static int	igmp_input_v1_query(struct ifnet *, const struct bsd_ip *,
+static int	igmp_input_v1_query(struct ifnet *, const struct ip *,
 		    const struct igmp *);
-static int	igmp_input_v2_query(struct ifnet *, const struct bsd_ip *,
+static int	igmp_input_v2_query(struct ifnet *, const struct ip *,
 		    const struct igmp *);
-static int	igmp_input_v3_query(struct ifnet *, const struct bsd_ip *,
+static int	igmp_input_v3_query(struct ifnet *, const struct ip *,
 		    /*const*/ struct igmpv3 *);
 static int	igmp_input_v3_group_query(struct in_multi *,
 		    struct igmp_ifinfo *, int, /*const*/ struct igmpv3 *);
-static int	igmp_input_v1_report(struct ifnet *, /*const*/ struct bsd_ip *,
+static int	igmp_input_v1_report(struct ifnet *, /*const*/ struct ip *,
 		    /*const*/ struct igmp *);
-static int	igmp_input_v2_report(struct ifnet *, /*const*/ struct bsd_ip *,
+static int	igmp_input_v2_report(struct ifnet *, /*const*/ struct ip *,
 		    /*const*/ struct igmp *);
 static void	igmp_intr(struct mbuf *);
-static int	igmp_isgroupreported(const struct bsd_in_addr);
+static int	igmp_isgroupreported(const struct in_addr);
 static struct mbuf *
 		igmp_ra_alloc(void);
 #ifdef KTR
@@ -223,7 +223,7 @@ static VNET_DEFINE(struct igmpstat, igmpstat) = {
 	.igps_version = IGPS_VERSION_3,
 	.igps_len = sizeof(struct igmpstat),
 };
-static VNET_DEFINE(struct bsd_timeval, igmp_gsrdelay) = {10, 0};
+static VNET_DEFINE(struct timeval, igmp_gsrdelay) = {10, 0};
 
 #define	V_igi_head			VNET(igi_head)
 #define	V_igmpstat			VNET(igmpstat)
@@ -304,9 +304,9 @@ igmp_scrub_context(struct mbuf *m)
 
 #ifdef KTR
 static __inline char *
-inet_ntoa_haddr(bsd_in_addr_t haddr)
+inet_ntoa_haddr(in_addr_t haddr)
 {
-	struct bsd_in_addr ia;
+	struct in_addr ia;
 
 	ia.s_addr = htonl(haddr);
 	return (inet_ntoa(ia));
@@ -320,7 +320,7 @@ inet_ntoa_haddr(bsd_in_addr_t haddr)
  * VIMAGE: The assertion is there to make sure that we
  * actually called CURVNET_SET() with what's in the mbuf chain.
  */
-static __inline bsd_uint32_t
+static __inline uint32_t
 igmp_restore_context(struct mbuf *m)
 {
 
@@ -504,7 +504,7 @@ igmp_dispatch_queue(struct ifqueue *ifq, int limit, const int loop)
  * should be suppressed, or non-zero if reports should be issued.
  */
 static __inline int
-igmp_isgroupreported(const struct bsd_in_addr addr)
+igmp_isgroupreported(const struct in_addr addr)
 {
 
 	if (in_allhosts(addr) ||
@@ -567,7 +567,7 @@ igi_alloc_locked(/*const*/ struct ifnet *ifp)
 
 	IGMP_LOCK_ASSERT();
 
-	igi = bsd_malloc(sizeof(struct igmp_ifinfo), M_IGMP, M_NOWAIT|M_ZERO);
+	igi = malloc(sizeof(struct igmp_ifinfo), M_IGMP, M_NOWAIT|M_ZERO);
 	if (igi == NULL)
 		goto out;
 
@@ -690,7 +690,7 @@ igi_delete_locked(const struct ifnet *ifp)
 			    ("%s: there are dangling in_multi references",
 			    __func__));
 
-			bsd_free(igi, M_IGMP);
+			free(igi, M_IGMP);
 			return;
 		}
 	}
@@ -707,7 +707,7 @@ igi_delete_locked(const struct ifnet *ifp)
  * VIMAGE: The curvnet pointer is derived from the input ifp.
  */
 static int
-igmp_input_v1_query(struct ifnet *ifp, const struct bsd_ip *ip,
+igmp_input_v1_query(struct ifnet *ifp, const struct ip *ip,
     const struct igmp *igmp)
 {
 	struct ifmultiaddr	*ifma;
@@ -792,14 +792,14 @@ out_locked:
  * Process a received IGMPv2 general or group-specific query.
  */
 static int
-igmp_input_v2_query(struct ifnet *ifp, const struct bsd_ip *ip,
+igmp_input_v2_query(struct ifnet *ifp, const struct ip *ip,
     const struct igmp *igmp)
 {
 	struct ifmultiaddr	*ifma;
 	struct igmp_ifinfo	*igi;
 	struct in_multi		*inm;
 	int			 is_general_query;
-	bsd_uint16_t		 timer;
+	uint16_t		 timer;
 
 	is_general_query = 0;
 
@@ -943,15 +943,15 @@ igmp_v2_update_group(struct in_multi *inm, const int timer)
  * Return 0 if successful, otherwise an appropriate error code is returned.
  */
 static int
-igmp_input_v3_query(struct ifnet *ifp, const struct bsd_ip *ip,
+igmp_input_v3_query(struct ifnet *ifp, const struct ip *ip,
     /*const*/ struct igmpv3 *igmpv3)
 {
 	struct igmp_ifinfo	*igi;
 	struct in_multi		*inm;
 	int			 is_general_query;
-	bsd_uint32_t		 maxresp, nsrc, qqi;
-	bsd_uint16_t		 timer;
-	bsd_uint8_t			 qrv;
+	uint32_t		 maxresp, nsrc, qqi;
+	uint16_t		 timer;
+	uint8_t			 qrv;
 
 	is_general_query = 0;
 
@@ -1111,7 +1111,7 @@ igmp_input_v3_group_query(struct in_multi *inm, struct igmp_ifinfo *igi,
     int timer, /*const*/ struct igmpv3 *igmpv3)
 {
 	int			 retval;
-	bsd_uint16_t		 nsrc;
+	uint16_t		 nsrc;
 
 	IN_MULTI_LOCK_ASSERT();
 	IGMP_LOCK_ASSERT();
@@ -1180,10 +1180,10 @@ igmp_input_v3_group_query(struct in_multi *inm, struct igmp_ifinfo *igi,
 	 * m_getptr() to walk the chain.
 	 */
 	if (inm->inm_nsrc > 0) {
-		const struct bsd_in_addr	*ap;
+		const struct in_addr	*ap;
 		int			 i, nrecorded;
 
-		ap = (const struct bsd_in_addr *)(igmpv3 + 1);
+		ap = (const struct in_addr *)(igmpv3 + 1);
 		nrecorded = 0;
 		for (i = 0; i < nsrc; i++, ap++) {
 			retval = inm_record_source(inm, ap->s_addr);
@@ -1209,7 +1209,7 @@ igmp_input_v3_group_query(struct in_multi *inm, struct igmp_ifinfo *igi,
  * NOTE: 0.0.0.0 workaround breaks const correctness.
  */
 static int
-igmp_input_v1_report(struct ifnet *ifp, /*const*/ struct bsd_ip *ip,
+igmp_input_v1_report(struct ifnet *ifp, /*const*/ struct ip *ip,
     /*const*/ struct igmp *igmp)
 {
 	struct in_ifaddr *ia;
@@ -1317,7 +1317,7 @@ out_locked:
  * NOTE: 0.0.0.0 workaround breaks const correctness.
  */
 static int
-igmp_input_v2_report(struct ifnet *ifp, /*const*/ struct bsd_ip *ip,
+igmp_input_v2_report(struct ifnet *ifp, /*const*/ struct ip *ip,
     /*const*/ struct igmp *igmp)
 {
 	struct in_ifaddr *ia;
@@ -1429,7 +1429,7 @@ igmp_input(struct mbuf *m, int off)
 	int iphlen;
 	struct ifnet *ifp;
 	struct igmp *igmp;
-	struct bsd_ip *ip;
+	struct ip *ip;
 	int igmplen;
 	int minlen;
 	int queryver;
@@ -1440,7 +1440,7 @@ igmp_input(struct mbuf *m, int off)
 
 	IGMPSTAT_INC(igps_rcv_total);
 
-	bsd_ip = mtod(m, struct bsd_ip *);
+	ip = mtod(m, struct ip *);
 	iphlen = off;
 	igmplen = ip->ip_len;
 
@@ -1467,7 +1467,7 @@ igmp_input(struct mbuf *m, int off)
 		IGMPSTAT_INC(igps_rcv_tooshort);
 		return;
 	}
-	bsd_ip = mtod(m, struct bsd_ip *);
+	ip = mtod(m, struct ip *);
 
 	/*
 	 * Validate checksum.
@@ -1532,8 +1532,8 @@ igmp_input(struct mbuf *m, int off)
 
 		case IGMP_VERSION_3: {
 				struct igmpv3 *igmpv3;
-				bsd_uint16_t igmpv3len;
-				bsd_uint16_t srclen;
+				uint16_t igmpv3len;
+				uint16_t srclen;
 				int nsrc;
 
 				IGMPSTAT_INC(igps_rcv_v3_queries);
@@ -1542,8 +1542,8 @@ igmp_input(struct mbuf *m, int off)
 				 * Validate length based on source count.
 				 */
 				nsrc = ntohs(igmpv3->igmp_numsrc);
-				srclen = sizeof(struct bsd_in_addr) * nsrc;
-				if (nsrc * sizeof(bsd_in_addr_t) > srclen) {
+				srclen = sizeof(struct in_addr) * nsrc;
+				if (nsrc * sizeof(in_addr_t) > srclen) {
 					IGMPSTAT_INC(igps_rcv_tooshort);
 					return;
 				}
@@ -1559,7 +1559,7 @@ igmp_input(struct mbuf *m, int off)
 					IGMPSTAT_INC(igps_rcv_tooshort);
 					return;
 				}
-				igmpv3 = (struct igmpv3 *)(mtod(m, bsd_uint8_t *)
+				igmpv3 = (struct igmpv3 *)(mtod(m, uint8_t *)
 				    + iphlen);
 				if (igmp_input_v3_query(ifp, ip, igmpv3) != 0) {
 					m_freem(m);
@@ -2195,7 +2195,7 @@ igmp_v1v2_queue_report(struct in_multi *inm, const int type)
 {
 	struct ifnet		*ifp;
 	struct igmp		*igmp;
-	struct bsd_ip		*ip;
+	struct ip		*ip;
 	struct mbuf		*m;
 
 	IN_MULTI_LOCK_ASSERT();
@@ -2206,11 +2206,11 @@ igmp_v1v2_queue_report(struct in_multi *inm, const int type)
 	MGETHDR(m, M_DONTWAIT, MT_DATA);
 	if (m == NULL)
 		return (ENOMEM);
-	MH_ALIGN(m, sizeof(struct bsd_ip) + sizeof(struct igmp));
+	MH_ALIGN(m, sizeof(struct ip) + sizeof(struct igmp));
 
-	m->m_pkthdr.len = sizeof(struct bsd_ip) + sizeof(struct igmp);
+	m->m_pkthdr.len = sizeof(struct ip) + sizeof(struct igmp);
 
-	m->m_data += sizeof(struct bsd_ip);
+	m->m_data += sizeof(struct ip);
 	m->m_len = sizeof(struct igmp);
 
 	igmp = mtod(m, struct igmp *);
@@ -2220,12 +2220,12 @@ igmp_v1v2_queue_report(struct in_multi *inm, const int type)
 	igmp->igmp_cksum = 0;
 	igmp->igmp_cksum = in_cksum(m, sizeof(struct igmp));
 
-	m->m_data -= sizeof(struct bsd_ip);
-	m->m_len += sizeof(struct bsd_ip);
+	m->m_data -= sizeof(struct ip);
+	m->m_len += sizeof(struct ip);
 
-	bsd_ip = mtod(m, struct bsd_ip *);
+	ip = mtod(m, struct ip *);
 	ip->ip_tos = 0;
-	ip->ip_len = sizeof(struct bsd_ip) + sizeof(struct igmp);
+	ip->ip_len = sizeof(struct ip) + sizeof(struct igmp);
 	ip->ip_off = 0;
 	ip->ip_p = IPPROTO_IGMP;
 	ip->ip_src.s_addr = INADDR_ANY;
@@ -2655,8 +2655,8 @@ igmp_v3_enqueue_group_record(struct ifqueue *ifq, struct in_multi *inm,
 	int			 record_has_sources;
 	int			 now;
 	int			 type;
-	bsd_in_addr_t		 naddr;
-	bsd_uint8_t			 mode;
+	in_addr_t		 naddr;
+	uint8_t			 mode;
 
 	IN_MULTI_LOCK_ASSERT();
 
@@ -2747,7 +2747,7 @@ igmp_v3_enqueue_group_record(struct ifqueue *ifq, struct in_multi *inm,
 	 */
 	minrec0len = sizeof(struct igmp_grouprec);
 	if (record_has_sources)
-		minrec0len += sizeof(bsd_in_addr_t);
+		minrec0len += sizeof(in_addr_t);
 
 	CTR4(KTR_IGMPV3, "%s: queueing %s for %s/%s", __func__,
 	    igmp_rec_type_to_str(type), inet_ntoa(inm->inm_addr),
@@ -2768,7 +2768,7 @@ igmp_v3_enqueue_group_record(struct ifqueue *ifq, struct in_multi *inm,
 	    (m0->m_pkthdr.len + minrec0len) <
 	     (ifp->if_mtu - IGMP_LEADINGSPACE)) {
 		m0srcs = (ifp->if_mtu - m0->m_pkthdr.len -
-			    sizeof(struct igmp_grouprec)) / sizeof(bsd_in_addr_t);
+			    sizeof(struct igmp_grouprec)) / sizeof(in_addr_t);
 		m = m0;
 		CTR1(KTR_IGMPV3, "%s: use existing packet", __func__);
 	} else {
@@ -2778,7 +2778,7 @@ igmp_v3_enqueue_group_record(struct ifqueue *ifq, struct in_multi *inm,
 		}
 		m = NULL;
 		m0srcs = (ifp->if_mtu - IGMP_LEADINGSPACE -
-		    sizeof(struct igmp_grouprec)) / sizeof(bsd_in_addr_t);
+		    sizeof(struct igmp_grouprec)) / sizeof(in_addr_t);
 		if (!is_state_change && !is_group_query) {
 			m = m_getcl(M_DONTWAIT, MT_DATA, M_PKTHDR);
 			if (m)
@@ -2829,11 +2829,11 @@ igmp_v3_enqueue_group_record(struct ifqueue *ifq, struct in_multi *inm,
 	if (record_has_sources) {
 		if (m == m0) {
 			md = m_last(m);
-			pig = (struct igmp_grouprec *)(mtod(md, bsd_uint8_t *) +
+			pig = (struct igmp_grouprec *)(mtod(md, uint8_t *) +
 			    md->m_len - nbytes);
 		} else {
 			md = m_getptr(m, 0, &off);
-			pig = (struct igmp_grouprec *)(mtod(md, bsd_uint8_t *) +
+			pig = (struct igmp_grouprec *)(mtod(md, uint8_t *) +
 			    off);
 		}
 		msrcs = 0;
@@ -2854,14 +2854,14 @@ igmp_v3_enqueue_group_record(struct ifqueue *ifq, struct in_multi *inm,
 			}
 			CTR1(KTR_IGMPV3, "%s: append node", __func__);
 			naddr = htonl(ims->ims_haddr);
-			if (!m_append(m, sizeof(bsd_in_addr_t), (void *)&naddr)) {
+			if (!m_append(m, sizeof(in_addr_t), (void *)&naddr)) {
 				if (m != m0)
 					m_freem(m);
 				CTR1(KTR_IGMPV3, "%s: m_append() failed.",
 				    __func__);
 				return (-ENOMEM);
 			}
-			nbytes += sizeof(bsd_in_addr_t);
+			nbytes += sizeof(in_addr_t);
 			++msrcs;
 			if (msrcs == m0srcs)
 				break;
@@ -2869,7 +2869,7 @@ igmp_v3_enqueue_group_record(struct ifqueue *ifq, struct in_multi *inm,
 		CTR2(KTR_IGMPV3, "%s: msrcs is %d this packet", __func__,
 		    msrcs);
 		pig->ig_numsrc = htons(msrcs);
-		nbytes += (msrcs * sizeof(bsd_in_addr_t));
+		nbytes += (msrcs * sizeof(in_addr_t));
 	}
 
 	if (is_source_query && msrcs == 0) {
@@ -2917,7 +2917,7 @@ igmp_v3_enqueue_group_record(struct ifqueue *ifq, struct in_multi *inm,
 			return (-ENOMEM);
 		igmp_save_context(m, ifp);
 		md = m_getptr(m, 0, &off);
-		pig = (struct igmp_grouprec *)(mtod(md, bsd_uint8_t *) + off);
+		pig = (struct igmp_grouprec *)(mtod(md, uint8_t *) + off);
 		CTR1(KTR_IGMPV3, "%s: allocated next packet", __func__);
 
 		if (!m_append(m, sizeof(struct igmp_grouprec), (void *)&ig)) {
@@ -2930,7 +2930,7 @@ igmp_v3_enqueue_group_record(struct ifqueue *ifq, struct in_multi *inm,
 		nbytes += sizeof(struct igmp_grouprec);
 
 		m0srcs = (ifp->if_mtu - IGMP_LEADINGSPACE -
-		    sizeof(struct igmp_grouprec)) / sizeof(bsd_in_addr_t);
+		    sizeof(struct igmp_grouprec)) / sizeof(in_addr_t);
 
 		msrcs = 0;
 		RB_FOREACH_FROM(ims, ip_msource_tree, nims) {
@@ -2949,7 +2949,7 @@ igmp_v3_enqueue_group_record(struct ifqueue *ifq, struct in_multi *inm,
 			}
 			CTR1(KTR_IGMPV3, "%s: append node", __func__);
 			naddr = htonl(ims->ims_haddr);
-			if (!m_append(m, sizeof(bsd_in_addr_t), (void *)&naddr)) {
+			if (!m_append(m, sizeof(in_addr_t), (void *)&naddr)) {
 				if (m != m0)
 					m_freem(m);
 				CTR1(KTR_IGMPV3, "%s: m_append() failed.",
@@ -2961,7 +2961,7 @@ igmp_v3_enqueue_group_record(struct ifqueue *ifq, struct in_multi *inm,
 				break;
 		}
 		pig->ig_numsrc = htons(msrcs);
-		nbytes += (msrcs * sizeof(bsd_in_addr_t));
+		nbytes += (msrcs * sizeof(in_addr_t));
 
 		CTR1(KTR_IGMPV3, "%s: enqueueing next packet", __func__);
 		_IF_ENQUEUE(ifq, m);
@@ -3007,16 +3007,16 @@ static int
 igmp_v3_enqueue_filter_change(struct ifqueue *ifq, struct in_multi *inm)
 {
 	static const int MINRECLEN =
-	    sizeof(struct igmp_grouprec) + sizeof(bsd_in_addr_t);
+	    sizeof(struct igmp_grouprec) + sizeof(in_addr_t);
 	struct ifnet		*ifp;
 	struct igmp_grouprec	 ig;
 	struct igmp_grouprec	*pig;
 	struct ip_msource	*ims, *nims;
 	struct mbuf		*m, *m0, *md;
-	bsd_in_addr_t		 naddr;
+	in_addr_t		 naddr;
 	int			 m0srcs, nbytes, npbytes, off, rsrcs, schanged;
 	int			 nallow, nblock;
-	bsd_uint8_t			 mode, now, then;
+	uint8_t			 mode, now, then;
 	rectype_t		 crt, drt, nrt;
 
 	IN_MULTI_LOCK_ASSERT();
@@ -3057,7 +3057,7 @@ igmp_v3_enqueue_filter_change(struct ifqueue *ifq, struct in_multi *inm)
 				m = m0;
 				m0srcs = (ifp->if_mtu - m0->m_pkthdr.len -
 					    sizeof(struct igmp_grouprec)) /
-				    sizeof(bsd_in_addr_t);
+				    sizeof(in_addr_t);
 				CTR1(KTR_IGMPV3,
 				    "%s: use previous packet", __func__);
 			} else {
@@ -3078,7 +3078,7 @@ igmp_v3_enqueue_filter_change(struct ifqueue *ifq, struct in_multi *inm)
 				igmp_save_context(m, ifp);
 				m0srcs = (ifp->if_mtu - IGMP_LEADINGSPACE -
 				    sizeof(struct igmp_grouprec)) /
-				    sizeof(bsd_in_addr_t);
+				    sizeof(in_addr_t);
 				npbytes = 0;
 				CTR1(KTR_IGMPV3,
 				    "%s: allocated new packet", __func__);
@@ -3105,12 +3105,12 @@ igmp_v3_enqueue_filter_change(struct ifqueue *ifq, struct in_multi *inm)
 				md = m_getptr(m, npbytes -
 				    sizeof(struct igmp_grouprec), &off);
 				pig = (struct igmp_grouprec *)(mtod(md,
-				    bsd_uint8_t *) + off);
+				    uint8_t *) + off);
 			} else {
 				/* current packet; offset from last append */
 				md = m_last(m);
 				pig = (struct igmp_grouprec *)(mtod(md,
-				    bsd_uint8_t *) + md->m_len -
+				    uint8_t *) + md->m_len -
 				    sizeof(struct igmp_grouprec));
 			}
 			/*
@@ -3152,7 +3152,7 @@ igmp_v3_enqueue_filter_change(struct ifqueue *ifq, struct in_multi *inm)
 				} else if (crt != nrt)
 					continue;
 				naddr = htonl(ims->ims_haddr);
-				if (!m_append(m, sizeof(bsd_in_addr_t),
+				if (!m_append(m, sizeof(in_addr_t),
 				    (void *)&naddr)) {
 					if (m != m0)
 						m_freem(m);
@@ -3183,7 +3183,7 @@ igmp_v3_enqueue_filter_change(struct ifqueue *ifq, struct in_multi *inm)
 				}
 				continue;
 			}
-			npbytes += (rsrcs * sizeof(bsd_in_addr_t));
+			npbytes += (rsrcs * sizeof(in_addr_t));
 			if (crt == REC_ALLOW)
 				pig->ig_type = IGMP_ALLOW_NEW_SOURCES;
 			else if (crt == REC_BLOCK)
@@ -3392,7 +3392,7 @@ igmp_intr(struct mbuf *m)
 	struct ifnet		*ifp;
 	struct mbuf		*ipopts, *m0;
 	int			 error;
-	bsd_uint32_t		 ifindex;
+	uint32_t		 ifindex;
 
 	CTR2(KTR_IGMPV3, "%s: transmit %p", __func__, m);
 
@@ -3485,14 +3485,14 @@ static struct mbuf *
 igmp_v3_encap_report(struct ifnet *ifp, struct mbuf *m)
 {
 	struct igmp_report	*igmp;
-	struct bsd_ip		*ip;
+	struct ip		*ip;
 	int			 hdrlen, igmpreclen;
 
 	KASSERT((m->m_flags & M_PKTHDR),
 	    ("%s: mbuf chain %p is !M_PKTHDR", __func__, m));
 
 	igmpreclen = m_length(m, NULL);
-	hdrlen = sizeof(struct bsd_ip) + sizeof(struct igmp_report);
+	hdrlen = sizeof(struct ip) + sizeof(struct igmp_report);
 
 	if (m->m_flags & M_IGMPV3_HDR) {
 		igmpreclen -= hdrlen;
@@ -3505,8 +3505,8 @@ igmp_v3_encap_report(struct ifnet *ifp, struct mbuf *m)
 
 	CTR2(KTR_IGMPV3, "%s: igmpreclen is %d", __func__, igmpreclen);
 
-	m->m_data += sizeof(struct bsd_ip);
-	m->m_len -= sizeof(struct bsd_ip);
+	m->m_data += sizeof(struct ip);
+	m->m_len -= sizeof(struct ip);
 
 	igmp = mtod(m, struct igmp_report *);
 	igmp->ir_type = IGMP_v3_HOST_MEMBERSHIP_REPORT;
@@ -3517,10 +3517,10 @@ igmp_v3_encap_report(struct ifnet *ifp, struct mbuf *m)
 	igmp->ir_cksum = in_cksum(m, sizeof(struct igmp_report) + igmpreclen);
 	m->m_pkthdr.PH_vt.vt_nrecs = 0;
 
-	m->m_data -= sizeof(struct bsd_ip);
-	m->m_len += sizeof(struct bsd_ip);
+	m->m_data -= sizeof(struct ip);
+	m->m_len += sizeof(struct ip);
 
-	bsd_ip = mtod(m, struct bsd_ip *);
+	ip = mtod(m, struct ip *);
 	ip->ip_tos = IPTOS_PREC_INTERNETCONTROL;
 	ip->ip_len = hdrlen + igmpreclen;
 	ip->ip_off = IP_DF;

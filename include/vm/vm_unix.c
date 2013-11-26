@@ -42,18 +42,18 @@
  * Traditional sbrk/grow interface to VM
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/vm/vm_unix.c 245787 2013-01-22 12:05:53Z zont $");
 
-#include <sys/param.h>
-#include <sys/lock.h>
-#include <sys/mutex.h>
-#include <sys/proc.h>
-#include <sys/racct.h>
-#include <sys/resourcevar.h>
-#include <sys/sysent.h>
-#include <sys/sysproto.h>
-#include <sys/systm.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_lock.h>
+#include <sys/bsd_mutex.h>
+#include <sys/bsd_proc.h>
+#include <sys/bsd_racct.h>
+#include <sys/bsd_resourcevar.h>
+#include <sys/bsd_sysent.h>
+#include <sys/bsd_sysproto.h>
+#include <sys/bsd_systm.h>
 
 #include <vm/vm.h>
 #include <vm/vm_param.h>

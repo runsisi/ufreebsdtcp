@@ -30,7 +30,7 @@ typedef struct ntp_fp {
 } ntp_fp_t;
 
 typedef union pps_timeu {
-	struct bsd_timespec	tspec;
+	struct timespec	tspec;
 	ntp_fp_t	ntpfp;
 	unsigned long	longpad[3];
 } pps_timeu_t;
@@ -86,7 +86,7 @@ typedef struct {
 struct pps_fetch_args {
 	int tsformat;
 	pps_info_t	pps_info_buf;
-	struct bsd_timespec	timeout;
+	struct timespec	timeout;
 };
 
 struct pps_kcbind_args {
@@ -124,7 +124,7 @@ void pps_capture(struct pps_state *pps);
 void pps_event(struct pps_state *pps, int event);
 void pps_init(struct pps_state *pps);
 int pps_ioctl(unsigned long cmd, caddr_t data, struct pps_state *pps);
-void hardpps(struct bsd_timespec *tsp, long nsec);
+void hardpps(struct timespec *tsp, long nsec);
 
 #else /* !_KERNEL */
 
@@ -167,7 +167,7 @@ time_pps_getcap(pps_handle_t handle, int *mode)
 
 static __inline int
 time_pps_fetch(pps_handle_t handle, const int tsformat,
-	pps_info_t *ppsinfobuf, const struct bsd_timespec *timeout)
+	pps_info_t *ppsinfobuf, const struct timespec *timeout)
 {
 	int error;
 	struct pps_fetch_args arg;

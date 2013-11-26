@@ -53,7 +53,7 @@ int registered_toedevs;
  * Provide an opportunity for a TOE driver to offload.
  */
 int
-tcp_offload_connect(struct bsd_socket *so, struct bsd_sockaddr *nam)
+tcp_offload_connect(struct socket *so, struct sockaddr *nam)
 {
 	struct ifnet *ifp;
 	struct toedev *tod;

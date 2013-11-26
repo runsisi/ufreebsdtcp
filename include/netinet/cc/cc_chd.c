@@ -88,10 +88,10 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/netinet/cc/cc_chd.c 220592 2011-04-13 11:2
 /* Largest possible number returned by random(). */
 #define	RANDOM_MAX	INT_MAX
 
-static void	chd_ack_received(struct cc_var *ccv, bsd_uint16_t ack_type);
+static void	chd_ack_received(struct cc_var *ccv, uint16_t ack_type);
 static void	chd_cb_destroy(struct cc_var *ccv);
 static int	chd_cb_init(struct cc_var *ccv);
-static void	chd_cong_signal(struct cc_var *ccv, bsd_uint32_t signal_type);
+static void	chd_cong_signal(struct cc_var *ccv, uint32_t signal_type);
 static void	chd_conn_init(struct cc_var *ccv);
 static int	chd_mod_init(void);
 
@@ -116,11 +116,11 @@ struct chd {
 
 static int ertt_id;
 
-static VNET_DEFINE(bsd_uint32_t, chd_qmin) = 5;
-static VNET_DEFINE(bsd_uint32_t, chd_pmax) = 50;
-static VNET_DEFINE(bsd_uint32_t, chd_loss_fair) = 1;
-static VNET_DEFINE(bsd_uint32_t, chd_use_max) = 1;
-static VNET_DEFINE(bsd_uint32_t, chd_qthresh) = 20;
+static VNET_DEFINE(uint32_t, chd_qmin) = 5;
+static VNET_DEFINE(uint32_t, chd_pmax) = 50;
+static VNET_DEFINE(uint32_t, chd_loss_fair) = 1;
+static VNET_DEFINE(uint32_t, chd_use_max) = 1;
+static VNET_DEFINE(uint32_t, chd_qthresh) = 20;
 #define	V_chd_qthresh	VNET(chd_qthresh)
 #define	V_chd_qmin	VNET(chd_qmin)
 #define	V_chd_pmax	VNET(chd_pmax)
@@ -233,7 +233,7 @@ chd_window_increase(struct cc_var *ccv, int new_measurement)
  * ack_type == CC_ACK.
  */
 static void
-chd_ack_received(struct cc_var *ccv, bsd_uint16_t ack_type)
+chd_ack_received(struct cc_var *ccv, uint16_t ack_type)
 {
 	struct chd *chd_data;
 	struct ertt *e_t;
@@ -307,7 +307,7 @@ chd_cb_destroy(struct cc_var *ccv)
 {
 
 	if (ccv->cc_data != NULL)
-		bsd_free(ccv->cc_data, M_CHD);
+		free(ccv->cc_data, M_CHD);
 }
 
 static int
@@ -315,7 +315,7 @@ chd_cb_init(struct cc_var *ccv)
 {
 	struct chd *chd_data;
 
-	chd_data = bsd_malloc(sizeof(struct chd), M_CHD, M_NOWAIT);
+	chd_data = malloc(sizeof(struct chd), M_CHD, M_NOWAIT);
 	if (chd_data == NULL)
 		return (ENOMEM);
 
@@ -326,7 +326,7 @@ chd_cb_init(struct cc_var *ccv)
 }
 
 static void
-chd_cong_signal(struct cc_var *ccv, bsd_uint32_t signal_type)
+chd_cong_signal(struct cc_var *ccv, uint32_t signal_type)
 {
 	struct ertt *e_t;
 	struct chd *chd_data;
@@ -416,7 +416,7 @@ static int
 chd_loss_fair_handler(SYSCTL_HANDLER_ARGS)
 {
 	int error;
-	bsd_uint32_t new;
+	uint32_t new;
 
 	new = V_chd_loss_fair;
 	error = sysctl_handle_int(oidp, &new, 0, req);
@@ -434,7 +434,7 @@ static int
 chd_pmax_handler(SYSCTL_HANDLER_ARGS)
 {
 	int error;
-	bsd_uint32_t new;
+	uint32_t new;
 
 	new = V_chd_pmax;
 	error = sysctl_handle_int(oidp, &new, 0, req);
@@ -453,7 +453,7 @@ static int
 chd_qthresh_handler(SYSCTL_HANDLER_ARGS)
 {
 	int error;
-	bsd_uint32_t new;
+	uint32_t new;
 
 	new = V_chd_qthresh;
 	error = sysctl_handle_int(oidp, &new, 0, req);

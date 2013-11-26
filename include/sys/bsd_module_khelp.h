@@ -52,11 +52,11 @@ struct helper {
 	char			h_name[HELPER_NAME_MAXLEN];
 	uma_zone_t		h_zone;
 	struct hookinfo		*h_hooks;
-	bsd_uint32_t		h_nhooks;
-	bsd_uint32_t		h_classes;
-	bsd_int32_t			h_id;
-	volatile bsd_uint32_t	h_refcount;
-	bsd_uint16_t		h_flags;
+	uint32_t		h_nhooks;
+	uint32_t		h_classes;
+	int32_t			h_id;
+	volatile uint32_t	h_refcount;
+	uint16_t		h_flags;
 	TAILQ_ENTRY(helper)	h_next;
 };
 

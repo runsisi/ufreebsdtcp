@@ -12,19 +12,19 @@
 
 #include <sys/bsd_ipc.h>
 
-#ifndef _BSD_PID_T_DECLARED
-typedef	__bsd_pid_t		bsd_pid_t;
-#define	_BSD_PID_T_DECLARED
+#ifndef _PID_T_DECLARED
+typedef	__pid_t		pid_t;
+#define	_PID_T_DECLARED
 #endif
 
-#ifndef _BSD_SIZE_T_DECLARED
-typedef	__bsd_size_t	bsd_size_t;
-#define	_BSD_SIZE_T_DECLARED
+#ifndef _SIZE_T_DECLARED
+typedef	__size_t	size_t;
+#define	_SIZE_T_DECLARED
 #endif
 
-#ifndef _BSD_TIME_T_DECLARED
-typedef	__bsd_time_t	bsd_time_t;
-#define	_BSD_TIME_T_DECLARED
+#ifndef _TIME_T_DECLARED
+typedef	__time_t	time_t;
+#define	_TIME_T_DECLARED
 #endif
 
 #if defined(COMPAT_FREEBSD4) || defined(COMPAT_FREEBSD5) || \
@@ -33,9 +33,9 @@ struct semid_ds_old {
 	struct ipc_perm_old sem_perm;	/* operation permission struct */
 	struct sem	*sem_base;	/* pointer to first semaphore in set */
 	unsigned short	sem_nsems;	/* number of sems in set */
-	bsd_time_t		sem_otime;	/* last operation time */
+	time_t		sem_otime;	/* last operation time */
 	long		sem_pad1;	/* SVABI/386 says I need this here */
-	bsd_time_t		sem_ctime;	/* last change time */
+	time_t		sem_ctime;	/* last change time */
     					/* Times measured in secs since */
     					/* 00:00:00 GMT, Jan. 1, 1970 */
 	long		sem_pad2;	/* SVABI/386 says I need this here */
@@ -47,8 +47,8 @@ struct semid_ds {
 	struct ipc_perm	sem_perm;	/* operation permission struct */
 	struct sem	*sem_base;	/* pointer to first semaphore in set */
 	unsigned short	sem_nsems;	/* number of sems in set */
-	bsd_time_t		sem_otime;	/* last operation time */
-	bsd_time_t		sem_ctime;	/* last change time */
+	time_t		sem_otime;	/* last operation time */
+	time_t		sem_ctime;	/* last change time */
     					/* Times measured in secs since */
     					/* 00:00:00 GMT, Jan. 1, 1970 */
 };
@@ -144,8 +144,8 @@ __BEGIN_DECLS
 int semsys(int, ...);
 #endif
 int semctl(int, int, int, ...);
-int semget(bsd_key_t, int, int);
-int semop(int, struct sembuf *, bsd_size_t);
+int semget(key_t, int, int);
+int semop(int, struct sembuf *, size_t);
 __END_DECLS
 
 #endif /* !_KERNEL */

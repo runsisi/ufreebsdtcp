@@ -74,8 +74,8 @@
  * Data structure and control definitions for STP interfaces.
  */
 
-#include <sys/callout.h>
-#include <sys/queue.h>
+#include <sys/bsd_callout.h>
+#include <sys/bsd_queue.h>
 
 /* STP port states */
 #define	BSTP_IFSTATE_DISABLED	0
@@ -199,42 +199,42 @@ struct bstp_cb_ops {
 
 /* configuration bridge protocol data unit */
 struct bstp_cbpdu {
-	bsd_uint8_t		cbu_dsap;		/* LLC: destination sap */
-	bsd_uint8_t		cbu_ssap;		/* LLC: source sap */
-	bsd_uint8_t		cbu_ctl;		/* LLC: control */
-	bsd_uint16_t	cbu_protoid;		/* protocol id */
-	bsd_uint8_t		cbu_protover;		/* protocol version */
-	bsd_uint8_t		cbu_bpdutype;		/* message type */
-	bsd_uint8_t		cbu_flags;		/* flags (below) */
+	uint8_t		cbu_dsap;		/* LLC: destination sap */
+	uint8_t		cbu_ssap;		/* LLC: source sap */
+	uint8_t		cbu_ctl;		/* LLC: control */
+	uint16_t	cbu_protoid;		/* protocol id */
+	uint8_t		cbu_protover;		/* protocol version */
+	uint8_t		cbu_bpdutype;		/* message type */
+	uint8_t		cbu_flags;		/* flags (below) */
 
 	/* root id */
-	bsd_uint16_t	cbu_rootpri;		/* root priority */
-	bsd_uint8_t		cbu_rootaddr[6];	/* root address */
+	uint16_t	cbu_rootpri;		/* root priority */
+	uint8_t		cbu_rootaddr[6];	/* root address */
 
-	bsd_uint32_t	cbu_rootpathcost;	/* root path cost */
+	uint32_t	cbu_rootpathcost;	/* root path cost */
 
 	/* bridge id */
-	bsd_uint16_t	cbu_bridgepri;		/* bridge priority */
-	bsd_uint8_t		cbu_bridgeaddr[6];	/* bridge address */
+	uint16_t	cbu_bridgepri;		/* bridge priority */
+	uint8_t		cbu_bridgeaddr[6];	/* bridge address */
 
-	bsd_uint16_t	cbu_portid;		/* port id */
-	bsd_uint16_t	cbu_messageage;		/* current message age */
-	bsd_uint16_t	cbu_maxage;		/* maximum age */
-	bsd_uint16_t	cbu_hellotime;		/* hello time */
-	bsd_uint16_t	cbu_forwarddelay;	/* forwarding delay */
-	bsd_uint8_t		cbu_versionlen;		/* version 1 length */
+	uint16_t	cbu_portid;		/* port id */
+	uint16_t	cbu_messageage;		/* current message age */
+	uint16_t	cbu_maxage;		/* maximum age */
+	uint16_t	cbu_hellotime;		/* hello time */
+	uint16_t	cbu_forwarddelay;	/* forwarding delay */
+	uint8_t		cbu_versionlen;		/* version 1 length */
 } __packed;
 #define	BSTP_BPDU_STP_LEN	(3 + 35)	/* LLC + STP pdu */
 #define	BSTP_BPDU_RSTP_LEN	(3 + 36)	/* LLC + RSTP pdu */
 
 /* topology change notification bridge protocol data unit */
 struct bstp_tbpdu {
-	bsd_uint8_t		tbu_dsap;		/* LLC: destination sap */
-	bsd_uint8_t		tbu_ssap;		/* LLC: source sap */
-	bsd_uint8_t		tbu_ctl;		/* LLC: control */
-	bsd_uint16_t	tbu_protoid;		/* protocol id */
-	bsd_uint8_t		tbu_protover;		/* protocol version */
-	bsd_uint8_t		tbu_bpdutype;		/* message type */
+	uint8_t		tbu_dsap;		/* LLC: destination sap */
+	uint8_t		tbu_ssap;		/* LLC: source sap */
+	uint8_t		tbu_ctl;		/* LLC: control */
+	uint16_t	tbu_protoid;		/* protocol id */
+	uint8_t		tbu_protover;		/* protocol version */
+	uint8_t		tbu_bpdutype;		/* message type */
 } __packed;
 
 /*
@@ -247,49 +247,49 @@ struct bstp_timer {
 };
 
 struct bstp_pri_vector {
-	bsd_uint64_t		pv_root_id;
-	bsd_uint32_t		pv_cost;
-	bsd_uint64_t		pv_dbridge_id;
-	bsd_uint16_t		pv_dport_id;
-	bsd_uint16_t		pv_port_id;
+	uint64_t		pv_root_id;
+	uint32_t		pv_cost;
+	uint64_t		pv_dbridge_id;
+	uint16_t		pv_dport_id;
+	uint16_t		pv_port_id;
 };
 
 struct bstp_config_unit {
 	struct bstp_pri_vector	cu_pv;
-	bsd_uint16_t	cu_message_age;
-	bsd_uint16_t	cu_max_age;
-	bsd_uint16_t	cu_forward_delay;
-	bsd_uint16_t	cu_hello_time;
-	bsd_uint8_t		cu_message_type;
-	bsd_uint8_t		cu_topology_change_ack;
-	bsd_uint8_t		cu_topology_change;
-	bsd_uint8_t		cu_proposal;
-	bsd_uint8_t		cu_agree;
-	bsd_uint8_t		cu_learning;
-	bsd_uint8_t		cu_forwarding;
-	bsd_uint8_t		cu_role;
+	uint16_t	cu_message_age;
+	uint16_t	cu_max_age;
+	uint16_t	cu_forward_delay;
+	uint16_t	cu_hello_time;
+	uint8_t		cu_message_type;
+	uint8_t		cu_topology_change_ack;
+	uint8_t		cu_topology_change;
+	uint8_t		cu_proposal;
+	uint8_t		cu_agree;
+	uint8_t		cu_learning;
+	uint8_t		cu_forwarding;
+	uint8_t		cu_role;
 };
 
 struct bstp_tcn_unit {
-	bsd_uint8_t		tu_message_type;
+	uint8_t		tu_message_type;
 };
 
 struct bstp_port {
 	LIST_ENTRY(bstp_port)	bp_next;
 	struct ifnet		*bp_ifp;	/* parent if */
 	struct bstp_state	*bp_bs;
-	bsd_uint8_t			bp_active;
-	bsd_uint8_t			bp_protover;
-	bsd_uint32_t		bp_flags;
-	bsd_uint32_t		bp_path_cost;
-	bsd_uint16_t		bp_port_msg_age;
-	bsd_uint16_t		bp_port_max_age;
-	bsd_uint16_t		bp_port_fdelay;
-	bsd_uint16_t		bp_port_htime;
-	bsd_uint16_t		bp_desg_msg_age;
-	bsd_uint16_t		bp_desg_max_age;
-	bsd_uint16_t		bp_desg_fdelay;
-	bsd_uint16_t		bp_desg_htime;
+	uint8_t			bp_active;
+	uint8_t			bp_protover;
+	uint32_t		bp_flags;
+	uint32_t		bp_path_cost;
+	uint16_t		bp_port_msg_age;
+	uint16_t		bp_port_max_age;
+	uint16_t		bp_port_fdelay;
+	uint16_t		bp_port_htime;
+	uint16_t		bp_desg_msg_age;
+	uint16_t		bp_desg_max_age;
+	uint16_t		bp_desg_fdelay;
+	uint16_t		bp_desg_htime;
 	struct bstp_timer	bp_edge_delay_timer;
 	struct bstp_timer	bp_forward_delay_timer;
 	struct bstp_timer	bp_hello_timer;
@@ -301,29 +301,29 @@ struct bstp_port {
 	struct bstp_config_unit bp_msg_cu;
 	struct bstp_pri_vector	bp_desg_pv;
 	struct bstp_pri_vector	bp_port_pv;
-	bsd_uint16_t		bp_port_id;
-	bsd_uint8_t			bp_state;
-	bsd_uint8_t			bp_tcstate;
-	bsd_uint8_t			bp_role;
-	bsd_uint8_t			bp_infois;
-	bsd_uint8_t			bp_tc_ack;
-	bsd_uint8_t			bp_tc_prop;
-	bsd_uint8_t			bp_fdbflush;
-	bsd_uint8_t			bp_priority;
-	bsd_uint8_t			bp_ptp_link;
-	bsd_uint8_t			bp_agree;
-	bsd_uint8_t			bp_agreed;
-	bsd_uint8_t			bp_sync;
-	bsd_uint8_t			bp_synced;
-	bsd_uint8_t			bp_proposing;
-	bsd_uint8_t			bp_proposed;
-	bsd_uint8_t			bp_operedge;
-	bsd_uint8_t			bp_reroot;
-	bsd_uint8_t			bp_rcvdtc;
-	bsd_uint8_t			bp_rcvdtca;
-	bsd_uint8_t			bp_rcvdtcn;
-	bsd_uint32_t		bp_forward_transitions;
-	bsd_uint8_t			bp_txcount;
+	uint16_t		bp_port_id;
+	uint8_t			bp_state;
+	uint8_t			bp_tcstate;
+	uint8_t			bp_role;
+	uint8_t			bp_infois;
+	uint8_t			bp_tc_ack;
+	uint8_t			bp_tc_prop;
+	uint8_t			bp_fdbflush;
+	uint8_t			bp_priority;
+	uint8_t			bp_ptp_link;
+	uint8_t			bp_agree;
+	uint8_t			bp_agreed;
+	uint8_t			bp_sync;
+	uint8_t			bp_synced;
+	uint8_t			bp_proposing;
+	uint8_t			bp_proposed;
+	uint8_t			bp_operedge;
+	uint8_t			bp_reroot;
+	uint8_t			bp_rcvdtc;
+	uint8_t			bp_rcvdtca;
+	uint8_t			bp_rcvdtcn;
+	uint32_t		bp_forward_transitions;
+	uint8_t			bp_txcount;
 	struct task		bp_statetask;
 	struct task		bp_rtagetask;
 	struct task		bp_mediatask;
@@ -334,28 +334,28 @@ struct bstp_port {
  */
 struct bstp_state {
 	LIST_ENTRY(bstp_state)	bs_list;
-	bsd_uint8_t			bs_running;
+	uint8_t			bs_running;
 	struct mtx		bs_mtx;
 	struct bstp_pri_vector	bs_bridge_pv;
 	struct bstp_pri_vector	bs_root_pv;
 	struct bstp_port	*bs_root_port;
-	bsd_uint8_t			bs_protover;
-	bsd_uint16_t		bs_migration_delay;
-	bsd_uint16_t		bs_edge_delay;
-	bsd_uint16_t		bs_bridge_max_age;
-	bsd_uint16_t		bs_bridge_fdelay;
-	bsd_uint16_t		bs_bridge_htime;
-	bsd_uint16_t		bs_root_msg_age;
-	bsd_uint16_t		bs_root_max_age;
-	bsd_uint16_t		bs_root_fdelay;
-	bsd_uint16_t		bs_root_htime;
-	bsd_uint16_t		bs_hold_time;
-	bsd_uint16_t		bs_bridge_priority;
-	bsd_uint8_t			bs_txholdcount;
-	bsd_uint8_t			bs_allsynced;
+	uint8_t			bs_protover;
+	uint16_t		bs_migration_delay;
+	uint16_t		bs_edge_delay;
+	uint16_t		bs_bridge_max_age;
+	uint16_t		bs_bridge_fdelay;
+	uint16_t		bs_bridge_htime;
+	uint16_t		bs_root_msg_age;
+	uint16_t		bs_root_max_age;
+	uint16_t		bs_root_fdelay;
+	uint16_t		bs_root_htime;
+	uint16_t		bs_hold_time;
+	uint16_t		bs_bridge_priority;
+	uint8_t			bs_txholdcount;
+	uint8_t			bs_allsynced;
 	struct callout		bs_bstpcallout;	/* STP callout */
 	struct bstp_timer	bs_link_timer;
-	struct bsd_timeval		bs_last_tc_time;
+	struct timeval		bs_last_tc_time;
 	LIST_HEAD(, bstp_port)	bs_bplist;
 	bstp_state_cb_t		bs_state_cb;
 	bstp_rtage_cb_t		bs_rtage_cb;
@@ -368,7 +368,7 @@ struct bstp_state {
 #define	BSTP_UNLOCK(_bs)	mtx_unlock(&(_bs)->bs_mtx)
 #define	BSTP_LOCK_ASSERT(_bs)	mtx_assert(&(_bs)->bs_mtx, MA_OWNED)
 
-extern const bsd_uint8_t bstp_etheraddr[];
+extern const uint8_t bstp_etheraddr[];
 
 void	bstp_attach(struct bstp_state *, struct bstp_cb_ops *);
 void	bstp_detach(struct bstp_state *);
@@ -386,7 +386,7 @@ int	bstp_set_holdcount(struct bstp_state *, int);
 int	bstp_set_protocol(struct bstp_state *, int);
 int	bstp_set_priority(struct bstp_state *, int);
 int	bstp_set_port_priority(struct bstp_port *, int);
-int	bstp_set_path_cost(struct bstp_port *, bsd_uint32_t);
+int	bstp_set_path_cost(struct bstp_port *, uint32_t);
 int	bstp_set_edge(struct bstp_port *, int);
 int	bstp_set_autoedge(struct bstp_port *, int);
 int	bstp_set_ptp(struct bstp_port *, int);

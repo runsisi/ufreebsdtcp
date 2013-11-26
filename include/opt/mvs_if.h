@@ -17,9 +17,9 @@
 /** @brief Unique descriptor for the MVS_EDMA() method */
 extern struct kobjop_desc mvs_edma_desc;
 /** @brief A function implementing the MVS_EDMA() method */
-typedef void mvs_edma_t(bsd_device_t dev, bsd_device_t child, int mode);
+typedef void mvs_edma_t(device_t dev, device_t child, int mode);
 
-static __inline void MVS_EDMA(bsd_device_t dev, bsd_device_t child, int mode)
+static __inline void MVS_EDMA(device_t dev, device_t child, int mode)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,mvs_edma);

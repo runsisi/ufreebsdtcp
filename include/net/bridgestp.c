@@ -34,21 +34,21 @@
  * ISO/IEC 802.1D-2004, June 9, 2004.
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/net/bridgestp.c 236052 2012-05-26 07:43:17Z thompsa $");
 
-#include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/mbuf.h>
-#include <sys/socket.h>
-#include <sys/sockio.h>
-#include <sys/kernel.h>
-#include <sys/callout.h>
-#include <sys/module.h>
-#include <sys/proc.h>
-#include <sys/lock.h>
-#include <sys/mutex.h>
-#include <sys/taskqueue.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_mbuf.h>
+#include <sys/bsd_socket.h>
+#include <sys/bsd_sockio.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_callout.h>
+#include <sys/bsd_module.h>
+#include <sys/bsd_proc.h>
+#include <sys/bsd_lock.h>
+#include <sys/bsd_mutex.h>
+#include <sys/bsd_taskqueue.h>
 
 #include <net/if.h>
 #include <net/if_dl.h>
@@ -82,7 +82,7 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/net/bridgestp.c 236052 2012-05-26 07:43:17
 #define	INFO_SAME	0
 #define	INFO_WORSE	-1
 
-const bsd_uint8_t bstp_etheraddr[] = { 0x01, 0x80, 0xc2, 0x00, 0x00, 0x00 };
+const uint8_t bstp_etheraddr[] = { 0x01, 0x80, 0xc2, 0x00, 0x00, 0x00 };
 
 LIST_HEAD(, bstp_state) bstp_list;
 static struct mtx	bstp_list_mtx;
@@ -124,14 +124,14 @@ static void	bstp_set_port_tc(struct bstp_port *, int);
 static void	bstp_set_timer_tc(struct bstp_port *);
 static void	bstp_set_timer_msgage(struct bstp_port *);
 static int	bstp_rerooted(struct bstp_state *, struct bstp_port *);
-static bsd_uint32_t	bstp_calc_path_cost(struct bstp_port *);
+static uint32_t	bstp_calc_path_cost(struct bstp_port *);
 static void	bstp_notify_state(void *, int);
 static void	bstp_notify_rtage(void *, int);
 static void	bstp_ifupdstatus(void *, int);
 static void	bstp_enable_port(struct bstp_state *, struct bstp_port *);
 static void	bstp_disable_port(struct bstp_state *, struct bstp_port *);
 static void	bstp_tick(void *);
-static void	bstp_timer_start(struct bstp_timer *, bsd_uint16_t);
+static void	bstp_timer_start(struct bstp_timer *, uint16_t);
 static void	bstp_timer_stop(struct bstp_timer *);
 static void	bstp_timer_latch(struct bstp_timer *);
 static int	bstp_timer_dectest(struct bstp_timer *);
@@ -143,8 +143,8 @@ static void	bstp_migrate_delay_expiry(struct bstp_state *,
 		    struct bstp_port *);
 static void	bstp_edge_delay_expiry(struct bstp_state *,
 		    struct bstp_port *);
-static int	bstp_addr_cmp(const bsd_uint8_t *, const bsd_uint8_t *);
-static int	bstp_same_bridgeid(bsd_uint64_t, bsd_uint64_t);
+static int	bstp_addr_cmp(const uint8_t *, const uint8_t *);
+static int	bstp_same_bridgeid(uint64_t, uint64_t);
 static void	bstp_reinit(struct bstp_state *);
 
 static void
@@ -267,22 +267,22 @@ bstp_decode_bpdu(struct bstp_port *bp, struct bstp_cbpdu *cpdu,
 	int flags;
 
 	cu->cu_pv.pv_root_id =
-	    (((bsd_uint64_t)ntohs(cpdu->cbu_rootpri)) << 48) |
-	    (((bsd_uint64_t)cpdu->cbu_rootaddr[0]) << 40) |
-	    (((bsd_uint64_t)cpdu->cbu_rootaddr[1]) << 32) |
-	    (((bsd_uint64_t)cpdu->cbu_rootaddr[2]) << 24) |
-	    (((bsd_uint64_t)cpdu->cbu_rootaddr[3]) << 16) |
-	    (((bsd_uint64_t)cpdu->cbu_rootaddr[4]) << 8) |
-	    (((bsd_uint64_t)cpdu->cbu_rootaddr[5]) << 0);
+	    (((uint64_t)ntohs(cpdu->cbu_rootpri)) << 48) |
+	    (((uint64_t)cpdu->cbu_rootaddr[0]) << 40) |
+	    (((uint64_t)cpdu->cbu_rootaddr[1]) << 32) |
+	    (((uint64_t)cpdu->cbu_rootaddr[2]) << 24) |
+	    (((uint64_t)cpdu->cbu_rootaddr[3]) << 16) |
+	    (((uint64_t)cpdu->cbu_rootaddr[4]) << 8) |
+	    (((uint64_t)cpdu->cbu_rootaddr[5]) << 0);
 
 	cu->cu_pv.pv_dbridge_id =
-	    (((bsd_uint64_t)ntohs(cpdu->cbu_bridgepri)) << 48) |
-	    (((bsd_uint64_t)cpdu->cbu_bridgeaddr[0]) << 40) |
-	    (((bsd_uint64_t)cpdu->cbu_bridgeaddr[1]) << 32) |
-	    (((bsd_uint64_t)cpdu->cbu_bridgeaddr[2]) << 24) |
-	    (((bsd_uint64_t)cpdu->cbu_bridgeaddr[3]) << 16) |
-	    (((bsd_uint64_t)cpdu->cbu_bridgeaddr[4]) << 8) |
-	    (((bsd_uint64_t)cpdu->cbu_bridgeaddr[5]) << 0);
+	    (((uint64_t)ntohs(cpdu->cbu_bridgepri)) << 48) |
+	    (((uint64_t)cpdu->cbu_bridgeaddr[0]) << 40) |
+	    (((uint64_t)cpdu->cbu_bridgeaddr[1]) << 32) |
+	    (((uint64_t)cpdu->cbu_bridgeaddr[2]) << 24) |
+	    (((uint64_t)cpdu->cbu_bridgeaddr[3]) << 16) |
+	    (((uint64_t)cpdu->cbu_bridgeaddr[4]) << 8) |
+	    (((uint64_t)cpdu->cbu_bridgeaddr[5]) << 0);
 
 	cu->cu_pv.pv_cost = ntohl(cpdu->cbu_rootpathcost);
 	cu->cu_message_age = ntohs(cpdu->cbu_messageage);
@@ -452,7 +452,7 @@ bstp_input(struct bstp_port *bp, struct ifnet *ifp, struct mbuf *m)
 	struct bstp_state *bs = bp->bp_bs;
 	struct ether_header *eh;
 	struct bstp_tbpdu tpdu;
-	bsd_uint16_t len;
+	uint16_t len;
 
 	if (bp->bp_active == 0) {
 		m_freem(m);
@@ -1601,7 +1601,7 @@ bstp_set_port_priority(struct bstp_port *bp, int pri)
 }
 
 int
-bstp_set_path_cost(struct bstp_port *bp, bsd_uint32_t path_cost)
+bstp_set_path_cost(struct bstp_port *bp, uint32_t path_cost)
 {
 	struct bstp_state *bs = bp->bp_bs;
 
@@ -1687,11 +1687,11 @@ bstp_set_autoptp(struct bstp_port *bp, int set)
 /*
  * Calculate the path cost according to the link speed.
  */
-static bsd_uint32_t
+static uint32_t
 bstp_calc_path_cost(struct bstp_port *bp)
 {
 	struct ifnet *ifp = bp->bp_ifp;
-	bsd_uint32_t path_cost;
+	uint32_t path_cost;
 
 	/* If the priority has been manually set then retain the value */
 	if (bp->bp_flags & BSTP_PORT_ADMCOST)
@@ -1812,7 +1812,7 @@ bstp_ifupdstatus(void *arg, int pending)
 
 			/* Calc the cost if the link was down previously */
 			if (bp->bp_flags & BSTP_PORT_PNDCOST) {
-				bsd_uint32_t cost;
+				uint32_t cost;
 
 				cost = bstp_calc_path_cost(bp);
 				if (bp->bp_path_cost != cost) {
@@ -1910,7 +1910,7 @@ bstp_tick(void *arg)
 }
 
 static void
-bstp_timer_start(struct bstp_timer *t, bsd_uint16_t v)
+bstp_timer_start(struct bstp_timer *t, uint16_t v)
 {
 	t->value = v;
 	t->active = 1;
@@ -1986,7 +1986,7 @@ bstp_edge_delay_expiry(struct bstp_state *bs, struct bstp_port *bp)
 }
 
 static int
-bstp_addr_cmp(const bsd_uint8_t *a, const bsd_uint8_t *b)
+bstp_addr_cmp(const uint8_t *a, const uint8_t *b)
 {
 	int i, d;
 
@@ -2001,7 +2001,7 @@ bstp_addr_cmp(const bsd_uint8_t *a, const bsd_uint8_t *b)
  * compare the bridge address component of the bridgeid
  */
 static int
-bstp_same_bridgeid(bsd_uint64_t id1, bsd_uint64_t id2)
+bstp_same_bridgeid(uint64_t id1, uint64_t id2)
 {
 	u_char addr1[ETHER_ADDR_LEN];
 	u_char addr2[ETHER_ADDR_LEN];
@@ -2064,13 +2064,13 @@ bstp_reinit(struct bstp_state *bs)
 
 	e_addr = IF_LLADDR(mif);
 	bs->bs_bridge_pv.pv_dbridge_id =
-	    (((bsd_uint64_t)bs->bs_bridge_priority) << 48) |
-	    (((bsd_uint64_t)e_addr[0]) << 40) |
-	    (((bsd_uint64_t)e_addr[1]) << 32) |
-	    (((bsd_uint64_t)e_addr[2]) << 24) |
-	    (((bsd_uint64_t)e_addr[3]) << 16) |
-	    (((bsd_uint64_t)e_addr[4]) << 8) |
-	    (((bsd_uint64_t)e_addr[5]));
+	    (((uint64_t)bs->bs_bridge_priority) << 48) |
+	    (((uint64_t)e_addr[0]) << 40) |
+	    (((uint64_t)e_addr[1]) << 32) |
+	    (((uint64_t)e_addr[2]) << 24) |
+	    (((uint64_t)e_addr[3]) << 16) |
+	    (((uint64_t)e_addr[4]) << 8) |
+	    (((uint64_t)e_addr[5]));
 
 	bs->bs_bridge_pv.pv_root_id = bs->bs_bridge_pv.pv_dbridge_id;
 	bs->bs_bridge_pv.pv_cost = 0;
@@ -2093,7 +2093,7 @@ bstp_reinit(struct bstp_state *bs)
 disablestp:
 	/* Set the bridge and root id (lower bits) to zero */
 	bs->bs_bridge_pv.pv_dbridge_id =
-	    ((bsd_uint64_t)bs->bs_bridge_priority) << 48;
+	    ((uint64_t)bs->bs_bridge_priority) << 48;
 	bs->bs_bridge_pv.pv_root_id = bs->bs_bridge_pv.pv_dbridge_id;
 	bs->bs_root_pv = bs->bs_bridge_pv;
 	/* Disable any remaining ports, they will have no MAC address */

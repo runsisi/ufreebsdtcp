@@ -35,13 +35,13 @@
  * Mimics an Ethernet device so that VLANs can be attached to it etc.
  */
 
-#include <sys/param.h>		/* types, important constants */
-#include <sys/kernel.h>		/* SYSINIT for load-time initializations */
-#include <sys/malloc.h>		/* malloc(9) */
-#include <sys/module.h>		/* module(9) */
-#include <sys/mbuf.h>		/* mbuf(9) */
-#include <sys/socket.h>		/* struct ifreq */
-#include <sys/sockio.h>		/* socket ioctl's */
+#include <sys/bsd_param.h>		/* types, important constants */
+#include <sys/bsd_kernel.h>		/* SYSINIT for load-time initializations */
+#include <sys/bsd_malloc.h>		/* malloc(9) */
+#include <sys/bsd_module.h>		/* module(9) */
+#include <sys/bsd_mbuf.h>		/* mbuf(9) */
+#include <sys/bsd_socket.h>		/* struct ifreq */
+#include <sys/bsd_sockio.h>		/* socket ioctl's */
 /* #include <sys/systm.h> if you need printf(9) or other all-purpose globals */
 
 #include <net/bpf.h>		/* bpf(9) */
@@ -104,10 +104,10 @@ edsc_clone_create(struct if_clone *ifc, int unit, caddr_t params)
 	/*
 	 * Allocate soft and ifnet structures.  Link each to the other.
 	 */
-	sc = bsd_malloc(sizeof(struct edsc_softc), M_EDSC, M_WAITOK | M_ZERO);
+	sc = malloc(sizeof(struct edsc_softc), M_EDSC, M_WAITOK | M_ZERO);
 	ifp = sc->sc_ifp = if_alloc(IFT_ETHER);
 	if (ifp == NULL) {
-		bsd_free(sc, M_EDSC);
+		free(sc, M_EDSC);
 		return (ENOSPC);
 	}
 
@@ -182,7 +182,7 @@ edsc_clone_destroy(struct ifnet *ifp)
 	 * Free memory occupied by ifnet and softc.
 	 */
 	if_free(ifp);
-	bsd_free(sc, M_EDSC);
+	free(sc, M_EDSC);
 }
 
 /*

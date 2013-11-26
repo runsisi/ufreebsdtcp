@@ -29,17 +29,17 @@
  *	$KAME: route6.c,v 1.24 2001/03/14 03:07:05 itojun Exp $
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/netinet6/route6.c 250044 2013-04-29 10:52:45Z ae $");
 
 #include "opt_inet.h"
 #include "opt_inet6.h"
 
-#include <sys/param.h>
-#include <sys/mbuf.h>
-#include <sys/socket.h>
-#include <sys/systm.h>
-#include <sys/queue.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_mbuf.h>
+#include <sys/bsd_socket.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_queue.h>
 
 #include <net/if.h>
 

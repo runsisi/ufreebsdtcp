@@ -29,22 +29,22 @@
  *	$KAME: dest6.c,v 1.59 2003/07/11 13:21:16 t-momose Exp $
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/netinet6/dest6.c 250044 2013-04-29 10:52:45Z ae $");
 
 #include "opt_inet.h"
 #include "opt_inet6.h"
 
-#include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/malloc.h>
-#include <sys/mbuf.h>
-#include <sys/domain.h>
-#include <sys/protosw.h>
-#include <sys/socket.h>
-#include <sys/errno.h>
-#include <sys/time.h>
-#include <sys/kernel.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_malloc.h>
+#include <sys/bsd_mbuf.h>
+#include <sys/bsd_domain.h>
+#include <sys/bsd_protosw.h>
+#include <sys/bsd_socket.h>
+#include <sys/bsd_errno.h>
+#include <sys/bsd_time.h>
+#include <sys/bsd_kernel.h>
 
 #include <net/if.h>
 #include <net/route.h>
@@ -64,7 +64,7 @@ dest6_input(struct mbuf **mp, int *offp, int proto)
 	struct mbuf *m = *mp;
 	int off = *offp, dstoptlen, optlen;
 	struct ip6_dest *dstopts;
-	bsd_uint8_t *opt;
+	u_int8_t *opt;
 
 	/* validation of the length of the header */
 #ifndef PULLDOWN_TEST
@@ -87,7 +87,7 @@ dest6_input(struct mbuf **mp, int *offp, int proto)
 #endif
 	off += dstoptlen;
 	dstoptlen -= sizeof(struct ip6_dest);
-	opt = (bsd_uint8_t *)dstopts + sizeof(struct ip6_dest);
+	opt = (u_int8_t *)dstopts + sizeof(struct ip6_dest);
 
 	/* search header for all options. */
 	for (optlen = 0; dstoptlen > 0; dstoptlen -= optlen, opt += optlen) {
@@ -106,7 +106,7 @@ dest6_input(struct mbuf **mp, int *offp, int proto)
 			break;
 		default:		/* unknown option */
 			optlen = ip6_unknown_opt(opt, m,
-			    opt - mtod(m, bsd_uint8_t *));
+			    opt - mtod(m, u_int8_t *));
 			if (optlen == -1)
 				return (IPPROTO_DONE);
 			optlen += 2;

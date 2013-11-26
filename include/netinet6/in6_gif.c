@@ -29,24 +29,24 @@
  *	$KAME: in6_gif.c,v 1.49 2001/05/14 14:02:17 itojun Exp $
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/netinet6/in6_gif.c 250044 2013-04-29 10:52:45Z ae $");
 
 #include "opt_inet.h"
 #include "opt_inet6.h"
 
-#include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/socket.h>
-#include <sys/sockio.h>
-#include <sys/mbuf.h>
-#include <sys/errno.h>
-#include <sys/kernel.h>
-#include <sys/queue.h>
-#include <sys/syslog.h>
-#include <sys/sysctl.h>
-#include <sys/protosw.h>
-#include <sys/malloc.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_socket.h>
+#include <sys/bsd_sockio.h>
+#include <sys/bsd_mbuf.h>
+#include <sys/bsd_errno.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_queue.h>
+#include <sys/bsd_syslog.h>
+#include <sys/bsd_sysctl.h>
+#include <sys/bsd_protosw.h>
+#include <sys/bsd_malloc.h>
 
 #include <net/if.h>
 #include <net/route.h>
@@ -81,7 +81,7 @@ SYSCTL_VNET_INT(_net_inet6_ip6, IPV6CTL_GIF_HLIM, gifhlim, CTLFLAG_RW,
 static int gif_validate6(const struct ip6_hdr *, struct gif_softc *,
 			 struct ifnet *);
 
-extern  struct bsd_domain inet6domain;
+extern  struct domain inet6domain;
 struct ip6protosw in6_gif_protosw = {
 	.pr_type =	SOCK_RAW,
 	.pr_domain =	&inet6domain,
@@ -99,13 +99,13 @@ in6_gif_output(struct ifnet *ifp,
     struct mbuf *m)
 {
 	struct gif_softc *sc = ifp->if_softc;
-	struct bsd_sockaddr_in6 *dst = (struct bsd_sockaddr_in6 *)&sc->gif_ro6.ro_dst;
-	struct bsd_sockaddr_in6 *sin6_src = (struct bsd_sockaddr_in6 *)sc->gif_psrc;
-	struct bsd_sockaddr_in6 *sin6_dst = (struct bsd_sockaddr_in6 *)sc->gif_pdst;
+	struct sockaddr_in6 *dst = (struct sockaddr_in6 *)&sc->gif_ro6.ro_dst;
+	struct sockaddr_in6 *sin6_src = (struct sockaddr_in6 *)sc->gif_psrc;
+	struct sockaddr_in6 *sin6_dst = (struct sockaddr_in6 *)sc->gif_pdst;
 	struct ip6_hdr *ip6;
 	struct etherip_header eiphdr;
 	int error, len, proto;
-	bsd_uint8_t itos, otos;
+	u_int8_t itos, otos;
 
 	GIF_LOCK_ASSERT(sc);
 
@@ -120,7 +120,7 @@ in6_gif_output(struct ifnet *ifp,
 #ifdef INET
 	case AF_INET:
 	    {
-		struct bsd_ip *ip;
+		struct ip *ip;
 
 		proto = IPPROTO_IPV4;
 		if (m->m_len < sizeof(*ip)) {
@@ -128,7 +128,7 @@ in6_gif_output(struct ifnet *ifp,
 			if (!m)
 				return ENOBUFS;
 		}
-		bsd_ip = mtod(m, struct bsd_ip *);
+		ip = mtod(m, struct ip *);
 		itos = ip->ip_tos;
 		break;
 	    }
@@ -226,7 +226,7 @@ in6_gif_output(struct ifnet *ifp,
 	ip_ecn_ingress((ifp->if_flags & IFF_LINK1) ? ECN_ALLOWED : ECN_NOCARE,
 		       &otos, &itos);
 	ip6->ip6_flow &= ~htonl(0xff << 20);
-	ip6->ip6_flow |= htonl((bsd_uint32_t)otos << 20);
+	ip6->ip6_flow |= htonl((u_int32_t)otos << 20);
 
 	M_SETFIB(m, sc->gif_fibnum);
 
@@ -235,7 +235,7 @@ in6_gif_output(struct ifnet *ifp,
 		/* cache route doesn't match */
 		bzero(dst, sizeof(*dst));
 		dst->sin6_family = sin6_dst->sin6_family;
-		dst->sin6_len = sizeof(struct bsd_sockaddr_in6);
+		dst->sin6_len = sizeof(struct sockaddr_in6);
 		dst->sin6_addr = sin6_dst->sin6_addr;
 		if (sc->gif_ro6.ro_rt) {
 			RTFREE(sc->gif_ro6.ro_rt);
@@ -294,7 +294,7 @@ in6_gif_input(struct mbuf **mp, int *offp, int proto)
 	struct gif_softc *sc;
 	struct ip6_hdr *ip6;
 	int af = 0;
-	bsd_uint32_t otos;
+	u_int32_t otos;
 
 	ip6 = mtod(m, struct ip6_hdr *);
 
@@ -319,8 +319,8 @@ in6_gif_input(struct mbuf **mp, int *offp, int proto)
 #ifdef INET
 	case IPPROTO_IPV4:
 	    {
-		struct bsd_ip *ip;
-		bsd_uint8_t otos8;
+		struct ip *ip;
+		u_int8_t otos8;
 		af = AF_INET;
 		otos8 = (ntohl(otos) >> 20) & 0xff;
 		if (m->m_len < sizeof(*ip)) {
@@ -328,7 +328,7 @@ in6_gif_input(struct mbuf **mp, int *offp, int proto)
 			if (!m)
 				return IPPROTO_DONE;
 		}
-		bsd_ip = mtod(m, struct bsd_ip *);
+		ip = mtod(m, struct ip *);
 		if (ip_ecn_egress((gifp->if_flags & IFF_LINK1) ?
 				  ECN_ALLOWED : ECN_NOCARE,
 				  &otos8, &ip->ip_tos) == 0) {
@@ -379,10 +379,10 @@ static int
 gif_validate6(const struct ip6_hdr *ip6, struct gif_softc *sc,
     struct ifnet *ifp)
 {
-	struct bsd_sockaddr_in6 *src, *dst;
+	struct sockaddr_in6 *src, *dst;
 
-	src = (struct bsd_sockaddr_in6 *)sc->gif_psrc;
-	dst = (struct bsd_sockaddr_in6 *)sc->gif_pdst;
+	src = (struct sockaddr_in6 *)sc->gif_psrc;
+	dst = (struct sockaddr_in6 *)sc->gif_pdst;
 
 	/*
 	 * Check for address match.  Note that the check is for an incoming
@@ -397,16 +397,16 @@ gif_validate6(const struct ip6_hdr *ip6, struct gif_softc *sc,
 
 	/* ingress filters on outer source */
 	if ((GIF2IFP(sc)->if_flags & IFF_LINK2) == 0 && ifp) {
-		struct bsd_sockaddr_in6 sin6;
+		struct sockaddr_in6 sin6;
 		struct rtentry *rt;
 
 		bzero(&sin6, sizeof(sin6));
 		sin6.sin6_family = AF_INET6;
-		sin6.sin6_len = sizeof(struct bsd_sockaddr_in6);
+		sin6.sin6_len = sizeof(struct sockaddr_in6);
 		sin6.sin6_addr = ip6->ip6_src;
 		sin6.sin6_scope_id = 0; /* XXX */
 
-		rt = in6_rtalloc1((struct bsd_sockaddr *)&sin6, 0, 0UL,
+		rt = in6_rtalloc1((struct sockaddr *)&sin6, 0, 0UL,
 		    sc->gif_fibnum);
 		if (!rt || rt->rt_ifp != ifp) {
 #if 0

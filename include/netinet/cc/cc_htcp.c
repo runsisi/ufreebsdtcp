@@ -133,10 +133,10 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/netinet/cc/cc_htcp.c 220592 2011-04-13 11:
 	(((diff) / hz) * (((diff) << HTCP_ALPHA_INC_SHIFT) / (4 * hz))) \
 ) >> HTCP_ALPHA_INC_SHIFT)
 
-static void	htcp_ack_received(struct cc_var *ccv, bsd_uint16_t type);
+static void	htcp_ack_received(struct cc_var *ccv, uint16_t type);
 static void	htcp_cb_destroy(struct cc_var *ccv);
 static int	htcp_cb_init(struct cc_var *ccv);
-static void	htcp_cong_signal(struct cc_var *ccv, bsd_uint32_t type);
+static void	htcp_cong_signal(struct cc_var *ccv, uint32_t type);
 static int	htcp_mod_init(void);
 static void	htcp_post_recovery(struct cc_var *ccv);
 static void	htcp_recalc_alpha(struct cc_var *ccv);
@@ -187,7 +187,7 @@ struct cc_algo htcp_cc_algo = {
 };
 
 static void
-htcp_ack_received(struct cc_var *ccv, bsd_uint16_t type)
+htcp_ack_received(struct cc_var *ccv, uint16_t type)
 {
 	struct htcp *htcp_data;
 
@@ -238,7 +238,7 @@ htcp_cb_destroy(struct cc_var *ccv)
 {
 
 	if (ccv->cc_data != NULL)
-		bsd_free(ccv->cc_data, M_HTCP);
+		free(ccv->cc_data, M_HTCP);
 }
 
 static int
@@ -246,7 +246,7 @@ htcp_cb_init(struct cc_var *ccv)
 {
 	struct htcp *htcp_data;
 
-	htcp_data = bsd_malloc(sizeof(struct htcp), M_HTCP, M_NOWAIT);
+	htcp_data = malloc(sizeof(struct htcp), M_HTCP, M_NOWAIT);
 
 	if (htcp_data == NULL)
 		return (ENOMEM);
@@ -257,7 +257,7 @@ htcp_cb_init(struct cc_var *ccv)
 	htcp_data->maxrtt = TCPTV_SRTTBASE;
 	htcp_data->minrtt = TCPTV_SRTTBASE;
 	htcp_data->prev_cwnd = 0;
-	htcp_data->t_last_cong = V_ticks;
+	htcp_data->t_last_cong = ticks;
 
 	ccv->cc_data = htcp_data;
 
@@ -268,7 +268,7 @@ htcp_cb_init(struct cc_var *ccv)
  * Perform any necessary tasks before we enter congestion recovery.
  */
 static void
-htcp_cong_signal(struct cc_var *ccv, bsd_uint32_t type)
+htcp_cong_signal(struct cc_var *ccv, uint32_t type)
 {
 	struct htcp *htcp_data;
 
@@ -287,7 +287,7 @@ htcp_cong_signal(struct cc_var *ccv, bsd_uint32_t type)
 				    (htcp_data->maxrtt - htcp_data->minrtt) *
 				    95) / 100;
 				htcp_ssthresh_update(ccv);
-				htcp_data->t_last_cong = V_ticks;
+				htcp_data->t_last_cong = ticks;
 				htcp_data->prev_cwnd = CCV(ccv, snd_cwnd);
 			}
 			ENTER_RECOVERY(CCV(ccv, t_flags));
@@ -304,7 +304,7 @@ htcp_cong_signal(struct cc_var *ccv, bsd_uint32_t type)
 			    htcp_data->minrtt) * 95) / 100;
 			htcp_ssthresh_update(ccv);
 			CCV(ccv, snd_cwnd) = CCV(ccv, snd_ssthresh);
-			htcp_data->t_last_cong = V_ticks;
+			htcp_data->t_last_cong = ticks;
 			htcp_data->prev_cwnd = CCV(ccv, snd_cwnd);
 			ENTER_CONGRECOVERY(CCV(ccv, t_flags));
 		}
@@ -319,7 +319,7 @@ htcp_cong_signal(struct cc_var *ccv, bsd_uint32_t type)
 		 * congestion.
 		 */
 		if (CCV(ccv, t_rxtshift) >= 2)
-			htcp_data->t_last_cong = V_ticks;
+			htcp_data->t_last_cong = ticks;
 		break;
 	}
 }
@@ -376,7 +376,7 @@ htcp_recalc_alpha(struct cc_var *ccv)
 	int alpha, diff, now;
 
 	htcp_data = ccv->cc_data;
-	now = V_ticks;
+	now = ticks;
 
 	/*
 	 * If ticks has wrapped around (will happen approximately once every 49

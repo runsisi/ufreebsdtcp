@@ -28,8 +28,8 @@
  * $FreeBSD: release/9.2.0/sys/sys/poll.h 99710 2002-07-10 04:47:25Z mike $
  */
 
-#ifndef _BSD_SYS_POLL_H_
-#define	_BSD_SYS_POLL_H_
+#ifndef _SYS_POLL_H_
+#define	_SYS_POLL_H_
 
 #include <sys/bsd_cdefs.h>
 
@@ -37,12 +37,12 @@
  * This file is intended to be compatible with the traditional poll.h.
  */
 
-typedef	unsigned int	bsd_nfds_t;
+typedef	unsigned int	nfds_t;
 
 /*
  * This structure is passed as an array to poll(2).
  */
-struct bsd_pollfd {
+struct pollfd {
 	int	fd;		/* which file descriptor to poll */
 	short	events;		/* events we are interested in */
 	short	revents;	/* events found on return */
@@ -58,45 +58,45 @@ struct bsd_pollfd {
  * POLLIN includes all of normal, band and urgent data.  Most poll handlers
  * on FreeBSD only treat it as "normal" data.
  */
-#define	BSD_POLLIN		0x0001		/* any readable data available */
-#define	BSD_POLLPRI		0x0002		/* OOB/Urgent readable data */
-#define	BSD_POLLOUT		0x0004		/* file descriptor is writeable */
-#define	BSD_POLLRDNORM	0x0040		/* non-OOB/URG data available */
-#define	BSD_POLLWRNORM	BSD_POLLOUT		/* no write type differentiation */
-#define	BSD_POLLRDBAND	0x0080		/* OOB/Urgent readable data */
-#define	BSD_POLLWRBAND	0x0100		/* OOB/Urgent data can be written */
+#define	POLLIN		0x0001		/* any readable data available */
+#define	POLLPRI		0x0002		/* OOB/Urgent readable data */
+#define	POLLOUT		0x0004		/* file descriptor is writeable */
+#define	POLLRDNORM	0x0040		/* non-OOB/URG data available */
+#define	POLLWRNORM	POLLOUT		/* no write type differentiation */
+#define	POLLRDBAND	0x0080		/* OOB/Urgent readable data */
+#define	POLLWRBAND	0x0100		/* OOB/Urgent data can be written */
 
 #if __BSD_VISIBLE
 /* General FreeBSD extension (currently only supported for sockets): */
-#define	BSD_POLLINIGNEOF	0x2000		/* like POLLIN, except ignore EOF */
+#define	POLLINIGNEOF	0x2000		/* like POLLIN, except ignore EOF */
 #endif
 
 /*
  * These events are set if they occur regardless of whether they were
  * requested.
  */
-#define	BSD_POLLERR		0x0008		/* some poll error occurred */
-#define	BSD_POLLHUP		0x0010		/* file descriptor was "hung up" */
-#define	BSD_POLLNVAL	0x0020		/* requested events "invalid" */
+#define	POLLERR		0x0008		/* some poll error occurred */
+#define	POLLHUP		0x0010		/* file descriptor was "hung up" */
+#define	POLLNVAL	0x0020		/* requested events "invalid" */
 
 #if __BSD_VISIBLE
 
-#define	BSD_POLLSTANDARD	(BSD_POLLIN|BSD_POLLPRI|BSD_POLLOUT|BSD_POLLRDNORM|BSD_POLLRDBAND|\
-			 BSD_POLLWRBAND|BSD_POLLERR|BSD_POLLHUP|BSD_POLLNVAL)
+#define	POLLSTANDARD	(POLLIN|POLLPRI|POLLOUT|POLLRDNORM|POLLRDBAND|\
+			 POLLWRBAND|POLLERR|POLLHUP|POLLNVAL)
 
 /*
  * Request that poll() wait forever.
  * XXX in SYSV, this is defined in stropts.h, which is not included
  * by poll.h.
  */
-#define	BSD_INFTIM		(-1)
+#define	INFTIM		(-1)
 
 #endif
 
 #ifndef _KERNEL
 
 __BEGIN_DECLS
-int	poll(struct bsd_pollfd _pfd[], bsd_nfds_t _nfds, int _timeout);
+int	poll(struct pollfd _pfd[], nfds_t _nfds, int _timeout);
 __END_DECLS
 
 #endif /* !_KERNEL */

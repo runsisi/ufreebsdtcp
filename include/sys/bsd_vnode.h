@@ -108,7 +108,7 @@ struct vnode {
 	 * Filesystem instance stuff
 	 */
 	struct	mount *v_mount;			/* u ptr to vfs we are in */
-	BSD_TAILQ_ENTRY(vnode) v_nmntvnodes;	/* m vnodes for mount point */
+	TAILQ_ENTRY(vnode) v_nmntvnodes;	/* m vnodes for mount point */
 
 	/*
 	 * Type specific fields, only one applies to any given vnode.
@@ -116,7 +116,7 @@ struct vnode {
 	 */
 	union {
 		struct mount	*vu_mount;	/* v ptr to mountpoint (VDIR) */
-		struct bsd_socket	*vu_socket;	/* v unix domain net (VSOCK) */
+		struct socket	*vu_socket;	/* v unix domain net (VSOCK) */
 		struct cdev	*vu_cdev; 	/* v device (VCHR, VBLK) */
 		struct fifoinfo	*vu_fifoinfo;	/* v fifo (VFIFO) */
 	} v_un;
@@ -124,22 +124,22 @@ struct vnode {
 	/*
 	 * vfs_hash:  (mount + inode) -> vnode hash.
 	 */
-	BSD_LIST_ENTRY(vnode)	v_hashlist;
+	LIST_ENTRY(vnode)	v_hashlist;
 	u_int			v_hash;
 
 	/*
 	 * VFS_namecache stuff
 	 */
-	BSD_LIST_HEAD(, namecache) v_cache_src;	/* c Cache entries from us */
-	BSD_TAILQ_HEAD(, namecache) v_cache_dst;	/* c Cache entries to us */
+	LIST_HEAD(, namecache) v_cache_src;	/* c Cache entries from us */
+	TAILQ_HEAD(, namecache) v_cache_dst;	/* c Cache entries to us */
 	struct namecache *v_cache_dd;		/* c Cache entry for .. vnode */
 
 	/*
 	 * clustering stuff
 	 */
-	bsd_daddr_t	v_cstart;			/* v start block of cluster */
-	bsd_daddr_t	v_lasta;			/* v last allocation  */
-	bsd_daddr_t	v_lastw;			/* v last write  */
+	daddr_t	v_cstart;			/* v start block of cluster */
+	daddr_t	v_lasta;			/* v last allocation  */
+	daddr_t	v_lastw;			/* v last write  */
 	int	v_clen;				/* v length of cur. cluster */
 
 	/*
@@ -157,7 +157,7 @@ struct vnode {
 	/*
 	 * The machinery of being a vnode
 	 */
-	BSD_TAILQ_ENTRY(vnode) v_actfreelist;	/* f vnode active/free lists */
+	TAILQ_ENTRY(vnode) v_actfreelist;	/* f vnode active/free lists */
 	struct bufobj	v_bufobj;		/* * Buffer cache object */
 
 	/*
@@ -183,7 +183,7 @@ struct vnode {
  * Userland version of struct vnode, for sysctl.
  */
 struct xvnode {
-	bsd_size_t	xv_size;			/* sizeof(struct xvnode) */
+	size_t	xv_size;			/* sizeof(struct xvnode) */
 	void	*xv_vnode;			/* address of real vnode */
 	u_long	xv_flag;			/* vnode vflags */
 	int	xv_usecount;			/* reference count of users */
@@ -196,10 +196,10 @@ struct xvnode {
 	union {
 		void	*xvu_socket;		/* socket, if VSOCK */
 		void	*xvu_fifo;		/* fifo, if VFIFO */
-		bsd_dev_t	xvu_rdev;		/* maj/min, if VBLK/VCHR */
+		dev_t	xvu_rdev;		/* maj/min, if VBLK/VCHR */
 		struct {
-			bsd_dev_t	xvu_dev;	/* device, if VDIR/VREG/VLNK */
-			bsd_ino_t	xvu_ino;	/* id, if VDIR/VREG/VLNK */
+			dev_t	xvu_dev;	/* device, if VDIR/VREG/VLNK */
+			ino_t	xvu_ino;	/* id, if VDIR/VREG/VLNK */
 		} xv_uns;
 	} xv_un;
 };
@@ -260,21 +260,21 @@ struct vattr {
 	enum vtype	va_type;	/* vnode type (for create) */
 	u_short		va_mode;	/* files access mode and type */
 	short		va_nlink;	/* number of references to file */
-	bsd_uid_t		va_uid;		/* owner user id */
-	bsd_gid_t		va_gid;		/* owner group id */
-	bsd_dev_t		va_fsid;	/* filesystem id */
+	uid_t		va_uid;		/* owner user id */
+	gid_t		va_gid;		/* owner group id */
+	dev_t		va_fsid;	/* filesystem id */
 	long		va_fileid;	/* file id */
-	bsd_uquad_t	va_size;	/* file size in bytes */
+	u_quad_t	va_size;	/* file size in bytes */
 	long		va_blocksize;	/* blocksize preferred for i/o */
-	struct bsd_timespec	va_atime;	/* time of last access */
-	struct bsd_timespec	va_mtime;	/* time of last modification */
-	struct bsd_timespec	va_ctime;	/* time file changed */
-	struct bsd_timespec	va_birthtime;	/* time file created */
+	struct timespec	va_atime;	/* time of last access */
+	struct timespec	va_mtime;	/* time of last modification */
+	struct timespec	va_ctime;	/* time file changed */
+	struct timespec	va_birthtime;	/* time file created */
 	u_long		va_gen;		/* generation number of file */
 	u_long		va_flags;	/* flags defined for file */
-	bsd_dev_t		va_rdev;	/* device the special file represents */
-	bsd_uquad_t	va_bytes;	/* bytes of disk space held by file */
-	bsd_uquad_t	va_filerev;	/* file modification number */
+	dev_t		va_rdev;	/* device the special file represents */
+	u_quad_t	va_bytes;	/* bytes of disk space held by file */
+	u_quad_t	va_filerev;	/* file modification number */
 	u_int		va_vaflags;	/* operations flags, see below */
 	long		va_spare;	/* remain quad aligned */
 };
@@ -580,9 +580,9 @@ struct nameidata;
 struct ostat;
 struct thread;
 struct proc;
-struct bsd_stat;
+struct stat;
 struct nstat;
-struct bsd_ucred;
+struct ucred;
 struct uio;
 struct vattr;
 struct vnode;
@@ -591,19 +591,19 @@ struct vnode;
 #define	cache_enter(dvp, vp, cnp)					\
 	cache_enter_time(dvp, vp, cnp, NULL, NULL)
 void	cache_enter_time(struct vnode *dvp, struct vnode *vp,
-	    struct componentname *cnp, struct bsd_timespec *tsp,
-	    struct bsd_timespec *dtsp);
+	    struct componentname *cnp, struct timespec *tsp,
+	    struct timespec *dtsp);
 #define	cache_lookup(dvp, vpp, cnp)					\
 	cache_lookup_times(dvp, vpp, cnp, NULL, NULL)
 int	cache_lookup_times(struct vnode *dvp, struct vnode **vpp,
-	    struct componentname *cnp, struct bsd_timespec *tsp, int *ticksp);
+	    struct componentname *cnp, struct timespec *tsp, int *ticksp);
 void	cache_purge(struct vnode *vp);
 void	cache_purge_negative(struct vnode *vp);
 void	cache_purgevfs(struct mount *mp);
 int	change_dir(struct vnode *vp, struct thread *td);
 int	change_root(struct vnode *vp, struct thread *td);
-void	cvtstat(struct bsd_stat *st, struct ostat *ost);
-void	cvtnstat(struct bsd_stat *sb, struct nstat *nsb);
+void	cvtstat(struct stat *st, struct ostat *ost);
+void	cvtnstat(struct stat *sb, struct nstat *nsb);
 int	getnewvnode(const char *tag, struct mount *mp, struct vop_vector *vops,
 	    struct vnode **vpp);
 void	getnewvnode_reserve(u_int count);
@@ -611,9 +611,9 @@ void	getnewvnode_drop_reserve(void);
 int	insmntque1(struct vnode *vp, struct mount *mp,
 	    void (*dtr)(struct vnode *, void *), void *dtr_arg);
 int	insmntque(struct vnode *vp, struct mount *mp);
-bsd_uquad_t init_va_filerev(void);
+u_quad_t init_va_filerev(void);
 int	speedup_syncer(void);
-int	vn_vptocnp(struct vnode **vp, struct bsd_ucred *cred, char *buf,
+int	vn_vptocnp(struct vnode **vp, struct ucred *cred, char *buf,
 	    u_int *buflen);
 #define textvp_fullpath(p, rb, rfb) \
 	vn_fullpath(FIRST_THREAD_IN_PROC(p), (p)->p_textvp, rb, rfb)
@@ -626,15 +626,15 @@ struct vnode *
 int	vn_commname(struct vnode *vn, char *buf, u_int buflen);
 int	vn_path_to_global_path(struct thread *td, struct vnode *vp,
 	    char *path, u_int pathlen);
-int	vaccess(enum vtype type, bsd_mode_t file_mode, bsd_uid_t file_uid,
-	    bsd_gid_t file_gid, bsd_accmode_t accmode, struct bsd_ucred *cred,
+int	vaccess(enum vtype type, mode_t file_mode, uid_t file_uid,
+	    gid_t file_gid, accmode_t accmode, struct ucred *cred,
 	    int *privused);
-int	vaccess_acl_nfs4(enum vtype type, bsd_uid_t file_uid, bsd_gid_t file_gid,
-	    struct acl *aclp, bsd_accmode_t accmode, struct bsd_ucred *cred,
+int	vaccess_acl_nfs4(enum vtype type, uid_t file_uid, gid_t file_gid,
+	    struct acl *aclp, accmode_t accmode, struct ucred *cred,
 	    int *privused);
-int	vaccess_acl_posix1e(enum vtype type, bsd_uid_t file_uid,
-	    bsd_gid_t file_gid, struct acl *acl, bsd_accmode_t accmode,
-	    struct bsd_ucred *cred, int *privused);
+int	vaccess_acl_posix1e(enum vtype type, uid_t file_uid,
+	    gid_t file_gid, struct acl *acl, accmode_t accmode,
+	    struct ucred *cred, int *privused);
 void	vattr_null(struct vattr *vap);
 int	vcount(struct vnode *vp);
 void	vdrop(struct vnode *);
@@ -646,16 +646,16 @@ void	vhold(struct vnode *);
 void	vholdl(struct vnode *);
 void	vinactive(struct vnode *, struct thread *);
 int	vinvalbuf(struct vnode *vp, int save, int slpflag, int slptimeo);
-int	vtruncbuf(struct vnode *vp, struct bsd_ucred *cred, struct thread *td,
-	    bsd_off_t length, int blksize);
+int	vtruncbuf(struct vnode *vp, struct ucred *cred, struct thread *td,
+	    off_t length, int blksize);
 void	vunref(struct vnode *);
 void	vn_printf(struct vnode *vp, const char *fmt, ...) __printflike(2,3);
 #define vprint(label, vp) vn_printf((vp), "%s\n", (label))
 int	vrecycle(struct vnode *vp, struct thread *td);
-int	vn_bmap_seekhole(struct vnode *vp, u_long cmd, bsd_off_t *off,
-	    struct bsd_ucred *cred);
+int	vn_bmap_seekhole(struct vnode *vp, u_long cmd, off_t *off,
+	    struct ucred *cred);
 int	vn_close(struct vnode *vp,
-	    int flags, struct bsd_ucred *file_cred, struct thread *td);
+	    int flags, struct ucred *file_cred, struct thread *td);
 void	vn_finished_write(struct mount *mp);
 void	vn_finished_secondary_write(struct mount *mp);
 int	vn_isdisk(struct vnode *vp, int *errp);
@@ -663,21 +663,21 @@ int	_vn_lock(struct vnode *vp, int flags, char *file, int line);
 #define vn_lock(vp, flags) _vn_lock(vp, flags, __FILE__, __LINE__)
 int	vn_open(struct nameidata *ndp, int *flagp, int cmode, struct file *fp);
 int	vn_open_cred(struct nameidata *ndp, int *flagp, int cmode,
-	    u_int vn_open_flags, struct bsd_ucred *cred, struct file *fp);
-void	vn_pages_remove(struct vnode *vp, bsd_vm_pindex_t start, bsd_vm_pindex_t end);
+	    u_int vn_open_flags, struct ucred *cred, struct file *fp);
+void	vn_pages_remove(struct vnode *vp, vm_pindex_t start, vm_pindex_t end);
 int	vn_pollrecord(struct vnode *vp, struct thread *p, int events);
-int	vn_rdwr(enum bsd_uio_rw rw, struct vnode *vp, void *base,
-	    int len, bsd_off_t offset, enum bsd_uio_seg segflg, int ioflg,
-	    struct bsd_ucred *active_cred, struct bsd_ucred *file_cred, bsd_ssize_t *aresid,
+int	vn_rdwr(enum uio_rw rw, struct vnode *vp, void *base,
+	    int len, off_t offset, enum uio_seg segflg, int ioflg,
+	    struct ucred *active_cred, struct ucred *file_cred, ssize_t *aresid,
 	    struct thread *td);
-int	vn_rdwr_inchunks(enum bsd_uio_rw rw, struct vnode *vp, void *base,
-	    bsd_size_t len, bsd_off_t offset, enum bsd_uio_seg segflg, int ioflg,
-	    struct bsd_ucred *active_cred, struct bsd_ucred *file_cred, bsd_size_t *aresid,
+int	vn_rdwr_inchunks(enum uio_rw rw, struct vnode *vp, void *base,
+	    size_t len, off_t offset, enum uio_seg segflg, int ioflg,
+	    struct ucred *active_cred, struct ucred *file_cred, size_t *aresid,
 	    struct thread *td);
 int	vn_rlimit_fsize(const struct vnode *vn, const struct uio *uio,
 	    const struct thread *td);
-int	vn_stat(struct vnode *vp, struct bsd_stat *sb, struct bsd_ucred *active_cred,
-	    struct bsd_ucred *file_cred, struct thread *td);
+int	vn_stat(struct vnode *vp, struct stat *sb, struct ucred *active_cred,
+	    struct ucred *file_cred, struct thread *td);
 int	vn_start_write(struct vnode *vp, struct mount **mpp, int flags);
 int	vn_start_secondary_write(struct vnode *vp, struct mount **mpp,
 	    int flags);
@@ -688,11 +688,11 @@ int	vn_extattr_set(struct vnode *vp, int ioflg, int attrnamespace,
 	    const char *attrname, int buflen, char *buf, struct thread *td);
 int	vn_extattr_rm(struct vnode *vp, int ioflg, int attrnamespace,
 	    const char *attrname, struct thread *td);
-int	vn_vget_ino(struct vnode *vp, bsd_ino_t ino, int lkflags,
+int	vn_vget_ino(struct vnode *vp, ino_t ino, int lkflags,
 	    struct vnode **rvp);
 
 int	vn_io_fault_uiomove(char *data, int xfersize, struct uio *uio);
-int	vn_io_fault_pgmove(bsd_vm_page_t ma[], bsd_vm_offset_t offset, int xfersize,
+int	vn_io_fault_pgmove(vm_page_t ma[], vm_offset_t offset, int xfersize,
 	    struct uio *uio);
 
 #define	vn_rangelock_unlock(vp, cookie)					\
@@ -706,7 +706,7 @@ int	vn_io_fault_pgmove(bsd_vm_page_t ma[], bsd_vm_offset_t offset, int xfersize,
 	rangelock_wlock(&(vp)->v_rl, (start), (end), VI_MTX(vp))
 
 int	vfs_cache_lookup(struct vop_lookup_args *ap);
-void	vfs_timestamp(struct bsd_timespec *);
+void	vfs_timestamp(struct timespec *);
 void	vfs_write_resume(struct mount *mp);
 void	vfs_write_resume_flags(struct mount *mp, int flags);
 int	vfs_write_suspend(struct mount *mp);
@@ -795,7 +795,7 @@ void	vref(struct vnode *vp);
 int	vrefcnt(struct vnode *vp);
 void 	v_addpollinfo(struct vnode *vp);
 
-int vnode_create_vobject(struct vnode *vp, bsd_off_t size, struct thread *td);
+int vnode_create_vobject(struct vnode *vp, off_t size, struct thread *td);
 void vnode_destroy_vobject(struct vnode *vp);
 
 extern struct vop_vector fifo_specops;
@@ -820,20 +820,20 @@ void vfs_hash_rehash(struct vnode *vp, u_int hash);
 void vfs_hash_remove(struct vnode *vp);
 
 int vfs_kqfilter(struct vop_kqfilter_args *);
-void vfs_mark_atime(struct vnode *vp, struct bsd_ucred *cred);
+void vfs_mark_atime(struct vnode *vp, struct ucred *cred);
 struct dirent;
-int vfs_read_dirent(struct vop_readdir_args *ap, struct dirent *dp, bsd_off_t off);
+int vfs_read_dirent(struct vop_readdir_args *ap, struct dirent *dp, off_t off);
 
-int vfs_unixify_accmode(bsd_accmode_t *accmode);
+int vfs_unixify_accmode(accmode_t *accmode);
 
 void vfs_unp_reclaim(struct vnode *vp);
 
-int setfmode(struct thread *td, struct bsd_ucred *cred, struct vnode *vp, int mode);
-int setfown(struct thread *td, struct bsd_ucred *cred, struct vnode *vp, bsd_uid_t uid,
-    bsd_gid_t gid);
-int vn_chmod(struct file *fp, bsd_mode_t mode, struct bsd_ucred *active_cred,
+int setfmode(struct thread *td, struct ucred *cred, struct vnode *vp, int mode);
+int setfown(struct thread *td, struct ucred *cred, struct vnode *vp, uid_t uid,
+    gid_t gid);
+int vn_chmod(struct file *fp, mode_t mode, struct ucred *active_cred,
     struct thread *td);
-int vn_chown(struct file *fp, bsd_uid_t uid, bsd_gid_t gid, struct bsd_ucred *active_cred,
+int vn_chown(struct file *fp, uid_t uid, gid_t gid, struct ucred *active_cred,
     struct thread *td);
 
 #endif /* _KERNEL */

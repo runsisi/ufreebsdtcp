@@ -27,22 +27,22 @@
  * SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/net/bpf_zerocopy.c 240238 2012-09-08 16:40:18Z kib $");
 
 #include "opt_bpf.h"
 
-#include <sys/param.h>
-#include <sys/lock.h>
-#include <sys/malloc.h>
-#include <sys/mbuf.h>
-#include <sys/mutex.h>
-#include <sys/proc.h>
-#include <sys/sf_buf.h>
-#include <sys/socket.h>
-#include <sys/uio.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_lock.h>
+#include <sys/bsd_malloc.h>
+#include <sys/bsd_mbuf.h>
+#include <sys/bsd_mutex.h>
+#include <sys/bsd_proc.h>
+#include <sys/bsd_sf_buf.h>
+#include <sys/bsd_socket.h>
+#include <sys/bsd_uio.h>
 
-#include <machine/atomic.h>
+#include <machine/bsd_atomic.h>
 
 #include <net/if.h>
 #include <net/bpf.h>
@@ -91,8 +91,8 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/net/bpf_zerocopy.c 240238 2012-09-08 16:40
  * knows that the space is not available.
  */
 struct zbuf {
-	bsd_vm_offset_t	 zb_uaddr;	/* User address at time of setup. */
-	bsd_size_t		 zb_size;	/* Size of buffer, incl. header. */
+	vm_offset_t	 zb_uaddr;	/* User address at time of setup. */
+	size_t		 zb_size;	/* Size of buffer, incl. header. */
 	u_int		 zb_numpages;	/* Number of pages. */
 	int		 zb_flags;	/* Flags on zbuf. */
 	struct sf_buf	**zb_pages;	/* Pages themselves. */
@@ -110,7 +110,7 @@ struct zbuf {
  * Release a page we've previously wired.
  */
 static void
-zbuf_page_free(bsd_vm_page_t pp)
+zbuf_page_free(vm_page_t pp)
 {
 
 	vm_page_lock(pp);
@@ -126,7 +126,7 @@ zbuf_page_free(bsd_vm_page_t pp)
 static void
 zbuf_sfbuf_free(struct sf_buf *sf)
 {
-	bsd_vm_page_t pp;
+	vm_page_t pp;
 
 	pp = sf_buf_page(sf);
 	sf_buf_free(sf);
@@ -147,8 +147,8 @@ zbuf_free(struct zbuf *zb)
 		if (zb->zb_pages[i] != NULL)
 			zbuf_sfbuf_free(zb->zb_pages[i]);
 	}
-	bsd_free(zb->zb_pages, M_BPF);
-	bsd_free(zb, M_BPF);
+	free(zb->zb_pages, M_BPF);
+	free(zb, M_BPF);
 }
 
 /*
@@ -157,10 +157,10 @@ zbuf_free(struct zbuf *zb)
  * deadlock and use SFB_NOWAIT.
  */
 static struct sf_buf *
-zbuf_sfbuf_get(struct vm_map *map, bsd_vm_offset_t uaddr)
+zbuf_sfbuf_get(struct vm_map *map, vm_offset_t uaddr)
 {
 	struct sf_buf *sf;
-	bsd_vm_page_t pp;
+	vm_page_t pp;
 
 	if (vm_fault_quick_hold_pages(map, uaddr, PAGE_SIZE, VM_PROT_READ |
 	    VM_PROT_WRITE, &pp, 1) < 0)
@@ -182,7 +182,7 @@ zbuf_sfbuf_get(struct vm_map *map, bsd_vm_offset_t uaddr)
  * page alignment, size requirements, etc.
  */
 static int
-zbuf_setup(struct thread *td, bsd_vm_offset_t uaddr, bsd_size_t len,
+zbuf_setup(struct thread *td, vm_offset_t uaddr, size_t len,
     struct zbuf **zbp)
 {
 	struct zbuf *zb;
@@ -213,11 +213,11 @@ zbuf_setup(struct thread *td, bsd_vm_offset_t uaddr, bsd_size_t len,
 	 * Allocate the buffer and set up each page with is own sf_buf.
 	 */
 	error = 0;
-	zb = bsd_malloc(sizeof(*zb), M_BPF, M_ZERO | M_WAITOK);
+	zb = malloc(sizeof(*zb), M_BPF, M_ZERO | M_WAITOK);
 	zb->zb_uaddr = uaddr;
 	zb->zb_size = len;
 	zb->zb_numpages = len / PAGE_SIZE;
-	zb->zb_pages = bsd_malloc(sizeof(struct sf_buf *) *
+	zb->zb_pages = malloc(sizeof(struct sf_buf *) *
 	    zb->zb_numpages, M_BPF, M_ZERO | M_WAITOK);
 	map = &td->td_proc->p_vmspace->vm_map;
 	for (i = 0; i < zb->zb_numpages; i++) {
@@ -494,7 +494,7 @@ bpf_zerocopy_free(struct bpf_d *d)
  * Ioctl to return the maximum buffer size.
  */
 int
-bpf_zerocopy_ioctl_getzmax(struct thread *td, struct bpf_d *d, bsd_size_t *i)
+bpf_zerocopy_ioctl_getzmax(struct thread *td, struct bpf_d *d, size_t *i)
 {
 
 	KASSERT(d->bd_bufmode == BPF_BUFMODE_ZBUF,
@@ -556,11 +556,11 @@ bpf_zerocopy_ioctl_setzbuf(struct thread *td, struct bpf_d *d,
 	/*
 	 * Allocate new buffers.
 	 */
-	error = zbuf_setup(td, (bsd_vm_offset_t)bz->bz_bufa, bz->bz_buflen,
+	error = zbuf_setup(td, (vm_offset_t)bz->bz_bufa, bz->bz_buflen,
 	    &zba);
 	if (error)
 		return (error);
-	error = zbuf_setup(td, (bsd_vm_offset_t)bz->bz_bufb, bz->bz_buflen,
+	error = zbuf_setup(td, (vm_offset_t)bz->bz_bufb, bz->bz_buflen,
 	    &zbb);
 	if (error) {
 		zbuf_free(zba);

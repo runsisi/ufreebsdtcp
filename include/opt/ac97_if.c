@@ -10,16 +10,16 @@
  * See the source file for legal information
  */
 
-#include <sys/param.h>
-#include <sys/queue.h>
-#include <sys/kernel.h>
-#include <sys/kobj.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_queue.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_kobj.h>
 #include <dev/sound/pcm/sound.h>
 #include "ac97_if.h"
 
 
 
-	static bsd_uint32_t
+	static u_int32_t
 	ac97_noinit(kobj_t obj, void *devinfo)
 	{
 		return 1;

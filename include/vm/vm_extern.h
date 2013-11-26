@@ -40,53 +40,53 @@ struct vnode;
 #ifdef _KERNEL
 
 int kernacc(void *, int, int);
-bsd_vm_offset_t kmem_alloc(vm_map_t, bsd_vm_size_t);
-bsd_vm_offset_t kmem_alloc_attr(vm_map_t map, bsd_vm_size_t size, int flags,
-        bsd_vm_paddr_t low, bsd_vm_paddr_t high, bsd_vm_memattr_t memattr);
-bsd_vm_offset_t kmem_alloc_contig(vm_map_t map, bsd_vm_size_t size, int flags,
-        bsd_vm_paddr_t low, bsd_vm_paddr_t high, unsigned long alignment,
-    unsigned long boundary, bsd_vm_memattr_t memattr);
-bsd_vm_offset_t kmem_alloc_nofault(vm_map_t, bsd_vm_size_t);
-bsd_vm_offset_t kmem_alloc_nofault_space(vm_map_t, bsd_vm_size_t, int);
-bsd_vm_offset_t kmem_alloc_wait(vm_map_t, bsd_vm_size_t);
-void kmem_free(vm_map_t, bsd_vm_offset_t, bsd_vm_size_t);
-void kmem_free_wakeup(vm_map_t, bsd_vm_offset_t, bsd_vm_size_t);
-void kmem_init(bsd_vm_offset_t, bsd_vm_offset_t);
-bsd_vm_offset_t kmem_malloc(vm_map_t map, bsd_vm_size_t size, int flags);
-int kmem_back(vm_map_t, bsd_vm_offset_t, bsd_vm_size_t, int);
-vm_map_t kmem_suballoc(vm_map_t, bsd_vm_offset_t *, bsd_vm_offset_t *, bsd_vm_size_t,
-        bsd_boolean_t);
+vm_offset_t kmem_alloc(vm_map_t, vm_size_t);
+vm_offset_t kmem_alloc_attr(vm_map_t map, vm_size_t size, int flags,
+    vm_paddr_t low, vm_paddr_t high, vm_memattr_t memattr);
+vm_offset_t kmem_alloc_contig(vm_map_t map, vm_size_t size, int flags,
+    vm_paddr_t low, vm_paddr_t high, unsigned long alignment,
+    unsigned long boundary, vm_memattr_t memattr);
+vm_offset_t kmem_alloc_nofault(vm_map_t, vm_size_t);
+vm_offset_t kmem_alloc_nofault_space(vm_map_t, vm_size_t, int);
+vm_offset_t kmem_alloc_wait(vm_map_t, vm_size_t);
+void kmem_free(vm_map_t, vm_offset_t, vm_size_t);
+void kmem_free_wakeup(vm_map_t, vm_offset_t, vm_size_t);
+void kmem_init(vm_offset_t, vm_offset_t);
+vm_offset_t kmem_malloc(vm_map_t map, vm_size_t size, int flags);
+int kmem_back(vm_map_t, vm_offset_t, vm_size_t, int);
+vm_map_t kmem_suballoc(vm_map_t, vm_offset_t *, vm_offset_t *, vm_size_t,
+    boolean_t);
 void swapout_procs(int);
 int useracc(void *, int, int);
-int vm_fault(vm_map_t, bsd_vm_offset_t, vm_prot_t, int);
+int vm_fault(vm_map_t, vm_offset_t, vm_prot_t, int);
 void vm_fault_copy_entry(vm_map_t, vm_map_t, vm_map_entry_t, vm_map_entry_t,
-        bsd_vm_ooffset_t *);
+    vm_ooffset_t *);
 int vm_fault_disable_pagefaults(void);
 void vm_fault_enable_pagefaults(int save);
-int vm_fault_hold(vm_map_t map, bsd_vm_offset_t vaddr, vm_prot_t fault_type,
-    int fault_flags, bsd_vm_page_t *m_hold);
-int vm_fault_quick_hold_pages(vm_map_t map, bsd_vm_offset_t addr, bsd_vm_size_t len,
-    vm_prot_t prot, bsd_vm_page_t *ma, int max_count);
-void vm_fault_unwire(vm_map_t, bsd_vm_offset_t, bsd_vm_offset_t, bsd_boolean_t);
-int vm_fault_wire(vm_map_t, bsd_vm_offset_t, bsd_vm_offset_t, bsd_boolean_t);
+int vm_fault_hold(vm_map_t map, vm_offset_t vaddr, vm_prot_t fault_type,
+    int fault_flags, vm_page_t *m_hold);
+int vm_fault_quick_hold_pages(vm_map_t map, vm_offset_t addr, vm_size_t len,
+    vm_prot_t prot, vm_page_t *ma, int max_count);
+void vm_fault_unwire(vm_map_t, vm_offset_t, vm_offset_t, boolean_t);
+int vm_fault_wire(vm_map_t, vm_offset_t, vm_offset_t, boolean_t);
 int vm_forkproc(struct thread *, struct proc *, struct thread *, struct vmspace *, int);
 void vm_waitproc(struct proc *);
-int vm_mmap(vm_map_t, bsd_vm_offset_t *, bsd_vm_size_t, vm_prot_t, vm_prot_t, int, objtype_t, void *, bsd_vm_ooffset_t);
+int vm_mmap(vm_map_t, vm_offset_t *, vm_size_t, vm_prot_t, vm_prot_t, int, objtype_t, void *, vm_ooffset_t);
 int vm_mmap_to_errno(int rv);
 void vm_set_page_size(void);
-void vm_sync_icache(vm_map_t, bsd_vm_offset_t, bsd_vm_size_t);
-struct vmspace *vmspace_alloc(bsd_vm_offset_t, bsd_vm_offset_t);
-struct vmspace *vmspace_fork(struct vmspace *, bsd_vm_ooffset_t *);
-int vmspace_exec(struct proc *, bsd_vm_offset_t, bsd_vm_offset_t);
+void vm_sync_icache(vm_map_t, vm_offset_t, vm_size_t);
+struct vmspace *vmspace_alloc(vm_offset_t, vm_offset_t);
+struct vmspace *vmspace_fork(struct vmspace *, vm_ooffset_t *);
+int vmspace_exec(struct proc *, vm_offset_t, vm_offset_t);
 int vmspace_unshare(struct proc *);
 void vmspace_exit(struct thread *);
 struct vmspace *vmspace_acquire_ref(struct proc *);
 void vmspace_free(struct vmspace *);
 void vmspace_exitfree(struct proc *);
-void vnode_pager_setsize(struct vnode *, bsd_vm_ooffset_t);
-int vslock(void *, bsd_size_t);
-void vsunlock(void *, bsd_size_t);
-struct sf_buf *vm_imgact_map_page(vm_object_t object, bsd_vm_ooffset_t offset);
+void vnode_pager_setsize(struct vnode *, vm_ooffset_t);
+int vslock(void *, size_t);
+void vsunlock(void *, size_t);
+struct sf_buf *vm_imgact_map_page(vm_object_t object, vm_ooffset_t offset);
 void vm_imgact_unmap_page(struct sf_buf *sf);
 void vm_thread_dispose(struct thread *td);
 int vm_thread_new(struct thread *td, int pages);

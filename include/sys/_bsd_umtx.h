@@ -37,31 +37,31 @@ struct umtx {
 };
 
 struct umutex {
-	volatile __bsd_lwpid_t	m_owner;	/* Owner of the mutex */
-	__bsd_uint32_t		m_flags;	/* Flags of the mutex */
-	__bsd_uint32_t		m_ceilings[2];	/* Priority protect ceiling */
-	__bsd_uint32_t		m_spare[4];
+	volatile __lwpid_t	m_owner;	/* Owner of the mutex */
+	__uint32_t		m_flags;	/* Flags of the mutex */
+	__uint32_t		m_ceilings[2];	/* Priority protect ceiling */
+	__uint32_t		m_spare[4];
 };
 
 struct ucond {
-	volatile __bsd_uint32_t	c_has_waiters;	/* Has waiters in kernel */
-	__bsd_uint32_t		c_flags;	/* Flags of the condition variable */
-	__bsd_uint32_t              c_clockid;	/* Clock id */
-	__bsd_uint32_t              c_spare[1];	/* Spare space */
+	volatile __uint32_t	c_has_waiters;	/* Has waiters in kernel */
+	__uint32_t		c_flags;	/* Flags of the condition variable */
+	__uint32_t              c_clockid;	/* Clock id */
+	__uint32_t              c_spare[1];	/* Spare space */
 };
 
 struct urwlock {
-	volatile __bsd_int32_t	rw_state;
-	__bsd_uint32_t		rw_flags;
-	__bsd_uint32_t		rw_blocked_readers;
-	__bsd_uint32_t		rw_blocked_writers;
-	__bsd_uint32_t		rw_spare[4];
+	volatile __int32_t	rw_state;
+	__uint32_t		rw_flags;
+	__uint32_t		rw_blocked_readers;
+	__uint32_t		rw_blocked_writers;
+	__uint32_t		rw_spare[4];
 };
 
 struct _usem {
-	volatile __bsd_uint32_t	_has_waiters;
-	volatile __bsd_uint32_t	_count;
-	__bsd_uint32_t		_flags;
+	volatile __uint32_t	_has_waiters;
+	volatile __uint32_t	_count;
+	__uint32_t		_flags;
 };
 
 #endif /* !_SYS__UMTX_H_ */

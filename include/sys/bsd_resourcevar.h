@@ -53,7 +53,7 @@
 struct pstats {
 #define	pstat_startzero	p_cru
 	struct	rusage p_cru;		/* Stats for reaped children. */
-	struct	bsd_itimerval p_timer[3];	/* (j) Virtual-time timers. */
+	struct	itimerval p_timer[3];	/* (j) Virtual-time timers. */
 #define	pstat_endzero	pstat_startcopy
 
 #define	pstat_startcopy	p_prof
@@ -64,7 +64,7 @@ struct pstats {
 		u_long	pr_scale;	/* (c + j) PC scaling. */
 	} p_prof;
 #define	pstat_endcopy	p_start
-	struct	bsd_timeval p_start;	/* (b) Starting time. */
+	struct	timeval p_start;	/* (b) Starting time. */
 };
 
 #ifdef _KERNEL
@@ -93,13 +93,13 @@ struct racct;
  * (d) Locked by the ui_vmsize_mtx
  */
 struct uidinfo {
-	BSD_LIST_ENTRY(uidinfo) ui_hash;	/* (c) hash chain of uidinfos */
+	LIST_ENTRY(uidinfo) ui_hash;	/* (c) hash chain of uidinfos */
 	struct mtx ui_vmsize_mtx;
-	bsd_vm_ooffset_t ui_vmsize;		/* (d) swap reservation by uid */
+	vm_ooffset_t ui_vmsize;		/* (d) swap reservation by uid */
 	long	ui_sbsize;		/* (b) socket buffer space consumed */
 	long	ui_proccnt;		/* (b) number of processes */
 	long	ui_ptscnt;		/* (b) number of pseudo-terminals */
-	bsd_uid_t	ui_uid;			/* (a) uid */
+	uid_t	ui_uid;			/* (a) uid */
 	u_int	ui_ref;			/* (b) reference count */
 	struct racct *ui_racct;		/* (a) resource accounting */
 };
@@ -111,38 +111,38 @@ struct proc;
 struct rusage_ext;
 struct thread;
 
-void	 addupc_intr(struct thread *td, bsd_uintfptr_t pc, u_int ticks);
-void	 addupc_task(struct thread *td, bsd_uintfptr_t pc, u_int ticks);
-void	 calccru(struct proc *p, struct bsd_timeval *up, struct bsd_timeval *sp);
-void	 calcru(struct proc *p, struct bsd_timeval *up, struct bsd_timeval *sp);
-int	 chgproccnt(struct uidinfo *uip, int diff, bsd_rlim_t maxval);
+void	 addupc_intr(struct thread *td, uintfptr_t pc, u_int ticks);
+void	 addupc_task(struct thread *td, uintfptr_t pc, u_int ticks);
+void	 calccru(struct proc *p, struct timeval *up, struct timeval *sp);
+void	 calcru(struct proc *p, struct timeval *up, struct timeval *sp);
+int	 chgproccnt(struct uidinfo *uip, int diff, rlim_t maxval);
 int	 chgsbsize(struct uidinfo *uip, u_int *hiwat, u_int to,
-	    bsd_rlim_t maxval);
-int	 chgptscnt(struct uidinfo *uip, int diff, bsd_rlim_t maxval);
+	    rlim_t maxval);
+int	 chgptscnt(struct uidinfo *uip, int diff, rlim_t maxval);
 int	 fuswintr(void *base);
 int	 kern_proc_setrlimit(struct thread *td, struct proc *p, u_int which,
 	    struct rlimit *limp);
 struct plimit
 	*lim_alloc(void);
 void	 lim_copy(struct plimit *dst, struct plimit *src);
-bsd_rlim_t	 lim_cur(struct proc *p, int which);
+rlim_t	 lim_cur(struct proc *p, int which);
 void	 lim_fork(struct proc *p1, struct proc *p2);
 void	 lim_free(struct plimit *limp);
 struct plimit
 	*lim_hold(struct plimit *limp);
-bsd_rlim_t	 lim_max(struct proc *p, int which);
+rlim_t	 lim_max(struct proc *p, int which);
 void	 lim_rlimit(struct proc *p, int which, struct rlimit *rlp);
 void	 ruadd(struct rusage *ru, struct rusage_ext *rux, struct rusage *ru2,
 	    struct rusage_ext *rux2);
 void	 rucollect(struct rusage *ru, struct rusage *ru2);
 void	 rufetch(struct proc *p, struct rusage *ru);
-void	 rufetchcalc(struct proc *p, struct rusage *ru, struct bsd_timeval *up,
-	    struct bsd_timeval *sp);
+void	 rufetchcalc(struct proc *p, struct rusage *ru, struct timeval *up,
+	    struct timeval *sp);
 void	 rufetchtd(struct thread *td, struct rusage *ru);
 void	 ruxagg(struct proc *p, struct thread *td);
 int	 suswintr(void *base, int word);
 struct uidinfo
-	*uifind(bsd_uid_t uid);
+	*uifind(uid_t uid);
 void	 uifree(struct uidinfo *uip);
 void	 uihashinit(void);
 void	 uihold(struct uidinfo *uip);

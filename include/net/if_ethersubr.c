@@ -37,18 +37,18 @@
 #include "opt_netgraph.h"
 #include "opt_mbuf_profiling.h"
 
-#include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/kernel.h>
-#include <sys/lock.h>
-#include <sys/malloc.h>
-#include <sys/module.h>
-#include <sys/mbuf.h>
-#include <sys/random.h>
-#include <sys/rwlock.h>
-#include <sys/socket.h>
-#include <sys/sockio.h>
-#include <sys/sysctl.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_lock.h>
+#include <sys/bsd_malloc.h>
+#include <sys/bsd_module.h>
+#include <sys/bsd_mbuf.h>
+#include <sys/bsd_random.h>
+#include <sys/bsd_rwlock.h>
+#include <sys/bsd_socket.h>
+#include <sys/bsd_sockio.h>
+#include <sys/bsd_sysctl.h>
 
 #include <net/if.h>
 #include <net/if_arp.h>
@@ -85,7 +85,7 @@
 
 int (*ef_inputp)(struct ifnet*, struct ether_header *eh, struct mbuf *m);
 int (*ef_outputp)(struct ifnet *ifp, struct mbuf **mp,
-		struct bsd_sockaddr *dst, short *tp, int *hlen);
+		struct sockaddr *dst, short *tp, int *hlen);
 
 #ifdef NETATALK
 #include <netatalk/at.h>
@@ -99,7 +99,7 @@ extern u_char	at_org_code[3];
 extern u_char	aarp_org_code[3];
 #endif /* NETATALK */
 
-#include <security/mac/mac_framework.h>
+//#include <security/mac/mac_framework.h>
 
 #ifdef CTASSERT
 CTASSERT(sizeof (struct ether_header) == ETHER_ADDR_LEN * 2 + 2);
@@ -118,7 +118,7 @@ void	(*vlan_input_p)(struct ifnet *, struct mbuf *);
 /* if_bridge(4) support */
 struct mbuf *(*bridge_input_p)(struct ifnet *, struct mbuf *); 
 int	(*bridge_output_p)(struct ifnet *, struct mbuf *, 
-		struct bsd_sockaddr *, struct rtentry *);
+		struct sockaddr *, struct rtentry *);
 void	(*bridge_dn_p)(struct mbuf *, struct ifnet *);
 
 /* if_lagg(4) support */
@@ -127,8 +127,8 @@ struct mbuf *(*lagg_input_p)(struct ifnet *, struct mbuf *);
 static const u_char etherbroadcastaddr[ETHER_ADDR_LEN] =
 			{ 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 
-static	int ether_resolvemulti(struct ifnet *, struct bsd_sockaddr **,
-		struct bsd_sockaddr *);
+static	int ether_resolvemulti(struct ifnet *, struct sockaddr **,
+		struct sockaddr *);
 #ifdef VIMAGE
 static	void ether_reassign(struct ifnet *, struct vnet *, char *);
 #endif
@@ -157,7 +157,7 @@ static VNET_DEFINE(int, ether_ipfw);
  */
 int
 ether_output(struct ifnet *ifp, struct mbuf *m,
-	struct bsd_sockaddr *dst, struct route *ro)
+	struct sockaddr *dst, struct route *ro)
 {
 	short type;
 	int error = 0, hdrcmplt = 0;
@@ -983,7 +983,7 @@ ether_sprintf(const u_char *ap)
  * Perform common duties while attaching to interface list
  */
 void
-ether_ifattach(struct ifnet *ifp, const bsd_uint8_t *lla)
+ether_ifattach(struct ifnet *ifp, const u_int8_t *lla)
 {
 	int i;
 	struct ifaddr *ifa;
@@ -1070,13 +1070,13 @@ SYSCTL_VNET_INT(_net_link_ether, OID_AUTO, ipfw, CTLFLAG_RW,
  * of the little-endian crc32 generator, which is faster
  * than the double-loop.
  */
-bsd_uint32_t
-ether_crc32_le(const bsd_uint8_t *buf, bsd_size_t len)
+uint32_t
+ether_crc32_le(const uint8_t *buf, size_t len)
 {
-	bsd_size_t i;
-	bsd_uint32_t crc;
+	size_t i;
+	uint32_t crc;
 	int bit;
-	bsd_uint8_t data;
+	uint8_t data;
 
 	crc = 0xffffffff;	/* initial value */
 
@@ -1092,17 +1092,17 @@ ether_crc32_le(const bsd_uint8_t *buf, bsd_size_t len)
 	return (crc);
 }
 #else
-bsd_uint32_t
-ether_crc32_le(const bsd_uint8_t *buf, bsd_size_t len)
+uint32_t
+ether_crc32_le(const uint8_t *buf, size_t len)
 {
-	static const bsd_uint32_t crctab[] = {
+	static const uint32_t crctab[] = {
 		0x00000000, 0x1db71064, 0x3b6e20c8, 0x26d930ac,
 		0x76dc4190, 0x6b6b51f4, 0x4db26158, 0x5005713c,
 		0xedb88320, 0xf00f9344, 0xd6d6a3e8, 0xcb61b38c,
 		0x9b64c2b0, 0x86d3d2d4, 0xa00ae278, 0xbdbdf21c
 	};
-	bsd_size_t i;
-	bsd_uint32_t crc;
+	size_t i;
+	uint32_t crc;
 
 	crc = 0xffffffff;	/* initial value */
 
@@ -1116,13 +1116,13 @@ ether_crc32_le(const bsd_uint8_t *buf, bsd_size_t len)
 }
 #endif
 
-bsd_uint32_t
-ether_crc32_be(const bsd_uint8_t *buf, bsd_size_t len)
+uint32_t
+ether_crc32_be(const uint8_t *buf, size_t len)
 {
-	bsd_size_t i;
-	bsd_uint32_t crc, carry;
+	size_t i;
+	uint32_t crc, carry;
 	int bit;
-	bsd_uint8_t data;
+	uint8_t data;
 
 	crc = 0xffffffff;	/* initial value */
 
@@ -1189,9 +1189,9 @@ ether_ioctl(struct ifnet *ifp, u_long command, caddr_t data)
 
 	case SIOCGIFADDR:
 		{
-			struct bsd_sockaddr *sa;
+			struct sockaddr *sa;
 
-			sa = (struct bsd_sockaddr *) & ifr->ifr_data;
+			sa = (struct sockaddr *) & ifr->ifr_data;
 			bcopy(IF_LLADDR(ifp),
 			      (caddr_t) sa->sa_data, ETHER_ADDR_LEN);
 		}
@@ -1215,12 +1215,12 @@ ether_ioctl(struct ifnet *ifp, u_long command, caddr_t data)
 }
 
 static int
-ether_resolvemulti(struct ifnet *ifp, struct bsd_sockaddr **llsa,
-	struct bsd_sockaddr *sa)
+ether_resolvemulti(struct ifnet *ifp, struct sockaddr **llsa,
+	struct sockaddr *sa)
 {
 	struct sockaddr_dl *sdl;
 #ifdef INET
-	struct bsd_sockaddr_in *sin;
+	struct sockaddr_in *sin;
 #endif
 #ifdef INET6
 	struct sockaddr_in6 *sin6;
@@ -1241,10 +1241,10 @@ ether_resolvemulti(struct ifnet *ifp, struct bsd_sockaddr **llsa,
 
 #ifdef INET
 	case AF_INET:
-		sin = (struct bsd_sockaddr_in *)sa;
+		sin = (struct sockaddr_in *)sa;
 		if (!IN_MULTICAST(ntohl(sin->sin_addr.s_addr)))
 			return EADDRNOTAVAIL;
-		sdl = bsd_malloc(sizeof *sdl, M_IFMADDR,
+		sdl = malloc(sizeof *sdl, M_IFMADDR,
 		       M_NOWAIT|M_ZERO);
 		if (sdl == NULL)
 			return ENOMEM;
@@ -1255,7 +1255,7 @@ ether_resolvemulti(struct ifnet *ifp, struct bsd_sockaddr **llsa,
 		sdl->sdl_alen = ETHER_ADDR_LEN;
 		e_addr = LLADDR(sdl);
 		ETHER_MAP_IP_MULTICAST(&sin->sin_addr, e_addr);
-		*llsa = (struct bsd_sockaddr *)sdl;
+		*llsa = (struct sockaddr *)sdl;
 		return 0;
 #endif
 #ifdef INET6
@@ -1273,7 +1273,7 @@ ether_resolvemulti(struct ifnet *ifp, struct bsd_sockaddr **llsa,
 		}
 		if (!IN6_IS_ADDR_MULTICAST(&sin6->sin6_addr))
 			return EADDRNOTAVAIL;
-		sdl = bsd_malloc(sizeof *sdl, M_IFMADDR,
+		sdl = malloc(sizeof *sdl, M_IFMADDR,
 		       M_NOWAIT|M_ZERO);
 		if (sdl == NULL)
 			return (ENOMEM);
@@ -1284,7 +1284,7 @@ ether_resolvemulti(struct ifnet *ifp, struct bsd_sockaddr **llsa,
 		sdl->sdl_alen = ETHER_ADDR_LEN;
 		e_addr = LLADDR(sdl);
 		ETHER_MAP_IPV6_MULTICAST(&sin6->sin6_addr, e_addr);
-		*llsa = (struct bsd_sockaddr *)sdl;
+		*llsa = (struct sockaddr *)sdl;
 		return 0;
 #endif
 
@@ -1302,7 +1302,7 @@ ether_alloc(u_char type, struct ifnet *ifp)
 {
 	struct arpcom	*ac;
 	
-	ac = bsd_malloc(sizeof(struct arpcom), M_ARPCOM, M_WAITOK | M_ZERO);
+	ac = malloc(sizeof(struct arpcom), M_ARPCOM, M_WAITOK | M_ZERO);
 	ac->ac_ifp = ifp;
 
 	return (ac);
@@ -1312,7 +1312,7 @@ static void
 ether_free(void *com, u_char type)
 {
 
-	bsd_free(com, M_ARPCOM);
+	free(com, M_ARPCOM);
 }
 
 static int
@@ -1380,7 +1380,7 @@ ether_vlan_mtap(struct bpf_if *bp, struct mbuf *m, void *data, u_int dlen)
 }
 
 struct mbuf *
-ether_vlanencap(struct mbuf *m, bsd_uint16_t tag)
+ether_vlanencap(struct mbuf *m, uint16_t tag)
 {
 	struct ether_vlan_header *evl;
 

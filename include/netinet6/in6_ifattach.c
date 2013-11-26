@@ -29,19 +29,19 @@
  *	$KAME: in6_ifattach.c,v 1.118 2001/05/24 07:44:00 itojun Exp $
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/netinet6/in6_ifattach.c 253239 2013-07-12 01:52:31Z hrs $");
 
-#include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/malloc.h>
-#include <sys/socket.h>
-#include <sys/sockio.h>
-#include <sys/jail.h>
-#include <sys/kernel.h>
-#include <sys/proc.h>
-#include <sys/syslog.h>
-#include <sys/md5.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_malloc.h>
+#include <sys/bsd_socket.h>
+#include <sys/bsd_sockio.h>
+#include <sys/bsd_jail.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_proc.h>
+#include <sys/bsd_syslog.h>
+#include <sys/bsd_md5.h>
 
 #include <net/if.h>
 #include <net/if_dl.h>
@@ -81,9 +81,9 @@ VNET_DEFINE(struct callout, in6_tmpaddrtimer_ch);
 VNET_DECLARE(struct inpcbinfo, ripcbinfo);
 #define	V_ripcbinfo			VNET(ripcbinfo)
 
-static int get_rand_ifid(struct ifnet *, struct bsd_in6_addr *);
-static int generate_tmp_ifid(bsd_uint8_t *, const bsd_uint8_t *, bsd_uint8_t *);
-static int get_ifid(struct ifnet *, struct ifnet *, struct bsd_in6_addr *);
+static int get_rand_ifid(struct ifnet *, struct in6_addr *);
+static int generate_tmp_ifid(u_int8_t *, const u_int8_t *, u_int8_t *);
+static int get_ifid(struct ifnet *, struct ifnet *, struct in6_addr *);
 static int in6_ifattach_linklocal(struct ifnet *, struct ifnet *);
 static int in6_ifattach_loopback(struct ifnet *);
 static void in6_purgemaddrs(struct ifnet *);
@@ -109,11 +109,11 @@ static void in6_purgemaddrs(struct ifnet *);
  * in6 - upper 64bits are preserved
  */
 static int
-get_rand_ifid(struct ifnet *ifp, struct bsd_in6_addr *in6)
+get_rand_ifid(struct ifnet *ifp, struct in6_addr *in6)
 {
 	MD5_CTX ctxt;
 	struct prison *pr;
-	bsd_uint8_t digest[16];
+	u_int8_t digest[16];
 	int hostnamelen;
 
 	pr = curthread->td_ucred->cr_prison;
@@ -148,11 +148,11 @@ get_rand_ifid(struct ifnet *ifp, struct bsd_in6_addr *in6)
 }
 
 static int
-generate_tmp_ifid(bsd_uint8_t *seed0, const bsd_uint8_t *seed1, bsd_uint8_t *ret)
+generate_tmp_ifid(u_int8_t *seed0, const u_int8_t *seed1, u_int8_t *ret)
 {
 	MD5_CTX ctxt;
-	bsd_uint8_t seed[16], digest[16], nullbuf[8];
-	bsd_uint32_t val32;
+	u_int8_t seed[16], digest[16], nullbuf[8];
+	u_int32_t val32;
 
 	/* If there's no history, start with a random seed. */
 	bzero(nullbuf, sizeof(nullbuf));
@@ -233,14 +233,14 @@ generate_tmp_ifid(bsd_uint8_t *seed0, const bsd_uint8_t *seed1, bsd_uint8_t *ret
  * in6 - upper 64bits are preserved
  */
 int
-in6_get_hw_ifid(struct ifnet *ifp, struct bsd_in6_addr *in6)
+in6_get_hw_ifid(struct ifnet *ifp, struct in6_addr *in6)
 {
 	struct ifaddr *ifa;
 	struct sockaddr_dl *sdl;
-	bsd_uint8_t *addr;
-	bsd_size_t addrlen;
-	static bsd_uint8_t allzero[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
-	static bsd_uint8_t allone[8] =
+	u_int8_t *addr;
+	size_t addrlen;
+	static u_int8_t allzero[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+	static u_int8_t allone[8] =
 		{ 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 
 	IF_ADDR_RLOCK(ifp);
@@ -386,7 +386,7 @@ found:
  */
 static int
 get_ifid(struct ifnet *ifp0, struct ifnet *altifp,
-    struct bsd_in6_addr *in6)
+    struct in6_addr *in6)
 {
 	struct ifnet *ifp;
 
@@ -468,7 +468,7 @@ in6_ifattach_linklocal(struct ifnet *ifp, struct ifnet *altifp)
 	strncpy(ifra.ifra_name, if_name(ifp), sizeof(ifra.ifra_name));
 
 	ifra.ifra_addr.sin6_family = AF_INET6;
-	ifra.ifra_addr.sin6_len = sizeof(struct bsd_sockaddr_in6);
+	ifra.ifra_addr.sin6_len = sizeof(struct sockaddr_in6);
 	ifra.ifra_addr.sin6_addr.s6_addr32[0] = htonl(0xfe800000);
 	ifra.ifra_addr.sin6_addr.s6_addr32[1] = 0;
 	if ((ifp->if_flags & IFF_LOOPBACK) != 0) {
@@ -484,9 +484,9 @@ in6_ifattach_linklocal(struct ifnet *ifp, struct ifnet *altifp)
 	if (in6_setscope(&ifra.ifra_addr.sin6_addr, ifp, NULL))
 		return (-1);
 
-	ifra.ifra_prefixmask.sin6_len = sizeof(struct bsd_sockaddr_in6);
+	ifra.ifra_prefixmask.sin6_len = sizeof(struct sockaddr_in6);
 	ifra.ifra_prefixmask.sin6_family = AF_INET6;
-	ifra.ifra_prefixmask.sin6_addr = bsd_in6mask64;
+	ifra.ifra_prefixmask.sin6_addr = in6mask64;
 	/* link-local addresses should NEVER expire. */
 	ifra.ifra_lifetime.ia6t_vltime = ND6_INFINITE_LIFETIME;
 	ifra.ifra_lifetime.ia6t_pltime = ND6_INFINITE_LIFETIME;
@@ -533,7 +533,7 @@ in6_ifattach_linklocal(struct ifnet *ifp, struct ifnet *altifp)
 	/* apply the mask for safety. (nd6_prelist_add will apply it again) */
 	for (i = 0; i < 4; i++) {
 		pr0.ndpr_prefix.sin6_addr.s6_addr32[i] &=
-		    bsd_in6mask64.s6_addr32[i];
+		    in6mask64.s6_addr32[i];
 	}
 	/*
 	 * Initialize parameters.  The link-local prefix must always be
@@ -575,21 +575,21 @@ in6_ifattach_loopback(struct ifnet *ifp)
 	 */
 	strncpy(ifra.ifra_name, if_name(ifp), sizeof(ifra.ifra_name));
 
-	ifra.ifra_prefixmask.sin6_len = sizeof(struct bsd_sockaddr_in6);
+	ifra.ifra_prefixmask.sin6_len = sizeof(struct sockaddr_in6);
 	ifra.ifra_prefixmask.sin6_family = AF_INET6;
-	ifra.ifra_prefixmask.sin6_addr = bsd_in6mask128;
+	ifra.ifra_prefixmask.sin6_addr = in6mask128;
 
 	/*
 	 * Always initialize ia_dstaddr (= broadcast address) to loopback
 	 * address.  Follows IPv4 practice - see in_ifinit().
 	 */
-	ifra.ifra_dstaddr.sin6_len = sizeof(struct bsd_sockaddr_in6);
+	ifra.ifra_dstaddr.sin6_len = sizeof(struct sockaddr_in6);
 	ifra.ifra_dstaddr.sin6_family = AF_INET6;
-	ifra.ifra_dstaddr.sin6_addr = bsd_in6addr_loopback;
+	ifra.ifra_dstaddr.sin6_addr = in6addr_loopback;
 
-	ifra.ifra_addr.sin6_len = sizeof(struct bsd_sockaddr_in6);
+	ifra.ifra_addr.sin6_len = sizeof(struct sockaddr_in6);
 	ifra.ifra_addr.sin6_family = AF_INET6;
-	ifra.ifra_addr.sin6_addr = bsd_in6addr_loopback;
+	ifra.ifra_addr.sin6_addr = in6addr_loopback;
 
 	/* the loopback  address should NEVER expire. */
 	ifra.ifra_lifetime.ia6t_vltime = ND6_INFINITE_LIFETIME;
@@ -626,13 +626,13 @@ in6_ifattach_loopback(struct ifnet *ifp)
  */
 static int
 in6_nigroup0(struct ifnet *ifp, const char *name, int namelen,
-    struct bsd_in6_addr *in6, int oldmcprefix)
+    struct in6_addr *in6, int oldmcprefix)
 {
 	struct prison *pr;
 	const char *p;
 	u_char *q;
 	MD5_CTX ctxt;
-	bsd_uint8_t digest[16];
+	u_int8_t digest[16];
 	char l;
 	char n[64];	/* a single label must not exceed 63 chars */
 
@@ -697,7 +697,7 @@ in6_nigroup0(struct ifnet *ifp, const char *name, int namelen,
 
 int
 in6_nigroup(struct ifnet *ifp, const char *name, int namelen,
-    struct bsd_in6_addr *in6)
+    struct in6_addr *in6)
 {
 
 	return (in6_nigroup0(ifp, name, namelen, in6, 0));
@@ -705,7 +705,7 @@ in6_nigroup(struct ifnet *ifp, const char *name, int namelen,
 
 int
 in6_nigroup_oldmcprefix(struct ifnet *ifp, const char *name, int namelen,
-    struct bsd_in6_addr *in6)
+    struct in6_addr *in6)
 {
 
 	return (in6_nigroup0(ifp, name, namelen, in6, 1));
@@ -722,7 +722,7 @@ void
 in6_ifattach(struct ifnet *ifp, struct ifnet *altifp)
 {
 	struct in6_ifaddr *ia;
-	struct bsd_in6_addr in6;
+	struct in6_addr in6;
 
 	/* some of the interfaces are inherently not IPv6 capable */
 	switch (ifp->if_type) {
@@ -767,7 +767,7 @@ in6_ifattach(struct ifnet *ifp, struct ifnet *altifp)
 	if ((ifp->if_flags & IFF_LOOPBACK) != 0) {
 		struct ifaddr *ifa;
 
-		in6 = bsd_in6addr_loopback;
+		in6 = in6addr_loopback;
 		ifa = (struct ifaddr *)in6ifa_ifpwithaddr(ifp, &in6);
 		if (ifa == NULL) {
 			if (in6_ifattach_loopback(ifp) != 0)
@@ -788,7 +788,7 @@ in6_ifattach(struct ifnet *ifp, struct ifnet *altifp)
 			error = in6_ifattach_linklocal(ifp, altifp);
 #if 0
 			if (error)
-				bsd_log(LOG_NOTICE, "in6_ifattach_linklocal: "
+				log(LOG_NOTICE, "in6_ifattach_linklocal: "
 				    "failed to add a link-local addr to %s\n",
 				    if_name(ifp));
 #endif
@@ -813,7 +813,7 @@ in6_ifdetach(struct ifnet *ifp)
 	struct ifaddr *ifa, *next;
 	struct radix_node_head *rnh;
 	struct rtentry *rt;
-	struct bsd_sockaddr_in6 sin6;
+	struct sockaddr_in6 sin6;
 	struct in6_multi_mship *imm;
 
 	/* remove neighbor management table */
@@ -879,9 +879,9 @@ in6_ifdetach(struct ifnet *ifp)
 	 * These only get automatically installed for the default FIB.
 	 */
 	bzero(&sin6, sizeof(sin6));
-	sin6.sin6_len = sizeof(struct bsd_sockaddr_in6);
+	sin6.sin6_len = sizeof(struct sockaddr_in6);
 	sin6.sin6_family = AF_INET6;
-	sin6.sin6_addr = bsd_in6addr_linklocal_allnodes;
+	sin6.sin6_addr = in6addr_linklocal_allnodes;
 	if (in6_setscope(&sin6.sin6_addr, ifp, NULL))
 		/* XXX: should not fail */
 		return;
@@ -889,7 +889,7 @@ in6_ifdetach(struct ifnet *ifp)
 	rnh = rt_tables_get_rnh(RT_DEFAULT_FIB, AF_INET6);
 	if (rnh != NULL) {
 		RADIX_NODE_HEAD_LOCK(rnh);
-		rt = in6_rtalloc1((struct bsd_sockaddr *)&sin6, 0, RTF_RNH_LOCKED,
+		rt = in6_rtalloc1((struct sockaddr *)&sin6, 0, RTF_RNH_LOCKED,
 		    RT_DEFAULT_FIB);
 		if (rt) {
 			if (rt->rt_ifp == ifp)
@@ -901,10 +901,10 @@ in6_ifdetach(struct ifnet *ifp)
 }
 
 int
-in6_get_tmpifid(struct ifnet *ifp, bsd_uint8_t *retbuf,
-    const bsd_uint8_t *baseid, int generate)
+in6_get_tmpifid(struct ifnet *ifp, u_int8_t *retbuf,
+    const u_int8_t *baseid, int generate)
 {
-	bsd_uint8_t nullbuf[8];
+	u_int8_t nullbuf[8];
 	struct nd_ifinfo *ndi = ND_IFINFO(ifp);
 
 	bzero(nullbuf, sizeof(nullbuf));
@@ -930,7 +930,7 @@ in6_tmpaddrtimer(void *arg)
 {
 	CURVNET_SET((struct vnet *) arg);
 	struct nd_ifinfo *ndi;
-	bsd_uint8_t nullbuf[8];
+	u_int8_t nullbuf[8];
 	struct ifnet *ifp;
 
 	callout_reset(&V_in6_tmpaddrtimer_ch,

@@ -91,7 +91,7 @@ theoretical_cubic_k(double wmax_pkts)
 }
 
 static __inline unsigned long
-theoretical_cubic_cwnd(int ticks_since_cong, unsigned long wmax, bsd_uint32_t smss)
+theoretical_cubic_cwnd(int ticks_since_cong, unsigned long wmax, uint32_t smss)
 {
 	double C, wmax_pkts;
 
@@ -105,7 +105,7 @@ theoretical_cubic_cwnd(int ticks_since_cong, unsigned long wmax, bsd_uint32_t sm
 
 static __inline unsigned long
 theoretical_reno_cwnd(int ticks_since_cong, int rtt_ticks, unsigned long wmax,
-    bsd_uint32_t smss)
+    uint32_t smss)
 {
 
 	return ((wmax * 0.5) + ((ticks_since_cong / (float)rtt_ticks) * smss));
@@ -113,7 +113,7 @@ theoretical_reno_cwnd(int ticks_since_cong, int rtt_ticks, unsigned long wmax,
 
 static __inline unsigned long
 theoretical_tf_cwnd(int ticks_since_cong, int rtt_ticks, unsigned long wmax,
-    bsd_uint32_t smss)
+    uint32_t smss)
 {
 
 	return ((wmax * 0.8) + ((3 * 0.2) / (2 - 0.2) *
@@ -127,11 +127,11 @@ theoretical_tf_cwnd(int ticks_since_cong, int rtt_ticks, unsigned long wmax,
  * implementation of eqn 2 in the I-D. The method used
  * here is adapted from Apple Computer Technical Report #KT-32.
  */
-static __inline bsd_int64_t
+static __inline int64_t
 cubic_k(unsigned long wmax_pkts)
 {
-	bsd_int64_t s, K;
-	bsd_uint16_t p;
+	int64_t s, K;
+	uint16_t p;
 
 	K = s = 0;
 	p = 0;
@@ -164,14 +164,14 @@ cubic_k(unsigned long wmax_pkts)
  * XXXLAS: Characterise bounds for overflow.
  */
 static __inline unsigned long
-cubic_cwnd(int ticks_since_cong, unsigned long wmax, bsd_uint32_t smss, bsd_int64_t K)
+cubic_cwnd(int ticks_since_cong, unsigned long wmax, uint32_t smss, int64_t K)
 {
-	bsd_int64_t cwnd;
+	int64_t cwnd;
 
 	/* K is in fixed point form with CUBIC_SHIFT worth of precision. */
 
 	/* t - K, with CUBIC_SHIFT worth of precision. */
-	cwnd = ((bsd_int64_t)(ticks_since_cong << CUBIC_SHIFT) - (K * hz)) / hz;
+	cwnd = ((int64_t)(ticks_since_cong << CUBIC_SHIFT) - (K * hz)) / hz;
 
 	/* (t - K)^3, with CUBIC_SHIFT^3 worth of precision. */
 	cwnd *= (cwnd * cwnd);
@@ -197,7 +197,7 @@ cubic_cwnd(int ticks_since_cong, unsigned long wmax, bsd_uint32_t smss, bsd_int6
  */
 static __inline unsigned long
 reno_cwnd(int ticks_since_cong, int rtt_ticks, unsigned long wmax,
-    bsd_uint32_t smss)
+    uint32_t smss)
 {
 
 	/*
@@ -218,7 +218,7 @@ reno_cwnd(int ticks_since_cong, int rtt_ticks, unsigned long wmax,
  */
 static __inline unsigned long
 tf_cwnd(int ticks_since_cong, int rtt_ticks, unsigned long wmax,
-    bsd_uint32_t smss)
+    uint32_t smss)
 {
 
 	/* Equation 4 of I-D. */

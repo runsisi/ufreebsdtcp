@@ -50,22 +50,22 @@
 #include <sys/_bsd_types.h>
 
 #ifndef _GID_T_DECLARED
-typedef	__bsd_gid_t		bsd_gid_t;
+typedef	__gid_t		gid_t;
 #define	_GID_T_DECLARED
 #endif
 
 #ifndef _KEY_T_DECLARED
-typedef	__bsd_key_t		bsd_key_t;
+typedef	__key_t		key_t;
 #define	_KEY_T_DECLARED
 #endif
 
 #ifndef _MODE_T_DECLARED
-typedef	__bsd_mode_t	bsd_mode_t;
+typedef	__mode_t	mode_t;
 #define	_MODE_T_DECLARED
 #endif
 
 #ifndef _UID_T_DECLARED
-typedef	__bsd_uid_t		bsd_uid_t;
+typedef	__uid_t		uid_t;
 #define	_UID_T_DECLARED
 #endif
 
@@ -79,18 +79,18 @@ struct ipc_perm_old {
 	unsigned short	gid;	/* group id */
 	unsigned short	mode;	/* r/w permission */
 	unsigned short	seq;	/* sequence # (to generate unique ipcid) */
-	bsd_key_t		key;	/* user specified msg/sem/shm key */
+	key_t		key;	/* user specified msg/sem/shm key */
 };
 #endif
 
 struct ipc_perm {
-	bsd_uid_t		cuid;	/* creator user id */
-	bsd_gid_t		cgid;	/* creator group id */
-	bsd_uid_t		uid;	/* user id */
-	bsd_gid_t		gid;	/* group id */
-	bsd_mode_t		mode;	/* r/w permission */
+	uid_t		cuid;	/* creator user id */
+	gid_t		cgid;	/* creator group id */
+	uid_t		uid;	/* user id */
+	gid_t		gid;	/* group id */
+	mode_t		mode;	/* r/w permission */
 	unsigned short	seq;	/* sequence # (to generate unique ipcid) */
-	bsd_key_t		key;	/* user specified msg/sem/shm key */
+	key_t		key;	/* user specified msg/sem/shm key */
 };
 
 #if __BSD_VISIBLE
@@ -140,7 +140,7 @@ extern void (*shmexit_hook)(struct vmspace *);
 #else /* ! _KERNEL */
 
 __BEGIN_DECLS
-bsd_key_t	ftok(const char *, int);
+key_t	ftok(const char *, int);
 __END_DECLS
 
 #endif /* _KERNEL */

@@ -53,7 +53,7 @@ typedef u_int (*bpf_filter_func)(u_char *, u_int, u_int);
 typedef struct bpf_jit_filter {
 	/* The native filtering binary, in the form of a bpf_filter_func. */
 	bpf_filter_func	func;
-	bsd_size_t		size;
+	size_t		size;
 } bpf_jit_filter;
 
 /*

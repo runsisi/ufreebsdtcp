@@ -31,18 +31,18 @@
  * returned.
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/net/if_dead.c 199975 2009-11-30 21:25:57Z jhb $");
 
-#include <sys/param.h>
-#include <sys/mbuf.h>
-#include <sys/socket.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_mbuf.h>
+#include <sys/bsd_socket.h>
 
 #include <net/if.h>
 #include <net/if_var.h>
 
 static int
-ifdead_output(struct ifnet *ifp, struct mbuf *m, struct bsd_sockaddr *sa,
+ifdead_output(struct ifnet *ifp, struct mbuf *m, struct sockaddr *sa,
     struct route *ro)
 {
 
@@ -71,8 +71,8 @@ ifdead_ioctl(struct ifnet *ifp, u_long cmd, caddr_t data)
 }
 
 static int
-ifdead_resolvemulti(struct ifnet *ifp, struct bsd_sockaddr **llsa,
-    struct bsd_sockaddr *sa)
+ifdead_resolvemulti(struct ifnet *ifp, struct sockaddr **llsa,
+    struct sockaddr *sa)
 {
 
 	*llsa = NULL;

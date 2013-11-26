@@ -83,26 +83,26 @@
 
 struct vm_object {
 	struct mtx mtx;
-	BSD_TAILQ_ENTRY(vm_object) object_list; /* list of all objects */
-	BSD_LIST_HEAD(, vm_object) shadow_head; /* objects that this is a shadow for */
-	BSD_LIST_ENTRY(vm_object) shadow_list; /* chain of shadow objects */
-	BSD_TAILQ_HEAD(, vm_page) memq;	/* list of resident pages */
-	bsd_vm_page_t root;			/* root of the resident page splay tree */
-	bsd_vm_pindex_t size;		/* Object size */
+	TAILQ_ENTRY(vm_object) object_list; /* list of all objects */
+	LIST_HEAD(, vm_object) shadow_head; /* objects that this is a shadow for */
+	LIST_ENTRY(vm_object) shadow_list; /* chain of shadow objects */
+	TAILQ_HEAD(, vm_page) memq;	/* list of resident pages */
+	vm_page_t root;			/* root of the resident page splay tree */
+	vm_pindex_t size;		/* Object size */
 	int generation;			/* generation ID */
 	int ref_count;			/* How many refs?? */
 	int shadow_count;		/* how many objects that this is a shadow for */
-	bsd_vm_memattr_t memattr;		/* default memory attribute for pages */
+	vm_memattr_t memattr;		/* default memory attribute for pages */
 	objtype_t type;			/* type of pager */
 	u_short flags;			/* see below */
 	u_short pg_color;		/* (c) color of first page in obj */
 	u_short pad1;			/* Old pip counter */
 	int resident_page_count;	/* number of resident pages */
 	struct vm_object *backing_object; /* object that I'm a shadow of */
-	bsd_vm_ooffset_t backing_object_offset;/* Offset in backing object */
-	BSD_TAILQ_ENTRY(vm_object) pager_object_list; /* list of all objects of this pager type */
-	BSD_LIST_HEAD(, vm_reserv) rvq;	/* list of reservations */
-	bsd_vm_page_t cache;		/* root of the cache page splay tree */
+	vm_ooffset_t backing_object_offset;/* Offset in backing object */
+	TAILQ_ENTRY(vm_object) pager_object_list; /* list of all objects of this pager type */
+	LIST_HEAD(, vm_reserv) rvq;	/* list of reservations */
+	vm_page_t cache;		/* root of the cache page splay tree */
 	void *handle;
 	union {
 		/*
@@ -111,8 +111,8 @@ struct vm_object {
 		 *	vnp_size - current size of file
 		 */
 		struct {
-		    bsd_off_t vnp_size;
-		    bsd_vm_ooffset_t writemappings;
+			off_t vnp_size;
+			vm_ooffset_t writemappings;
 		} vnp;
 
 		/*
@@ -121,7 +121,7 @@ struct vm_object {
 		 *	devp_pglist - list of allocated pages
 		 */
 		struct {
-			BSD_TAILQ_HEAD(, vm_page) devp_pglist;
+			TAILQ_HEAD(, vm_page) devp_pglist;
 			struct cdev_pager_ops *ops;
 		} devp;
 
@@ -131,7 +131,7 @@ struct vm_object {
 		 *	sgp_pglist - list of allocated pages
 		 */
 		struct {
-			BSD_TAILQ_HEAD(, vm_page) sgp_pglist;
+			TAILQ_HEAD(, vm_page) sgp_pglist;
 		} sgp;
 
 		/*
@@ -145,8 +145,8 @@ struct vm_object {
 			int swp_bcount;
 		} swp;
 	} un_pager;
-	struct bsd_ucred *cred;
-	bsd_vm_ooffset_t charge;
+	struct ucred *cred;
+	vm_ooffset_t charge;
 	u_int paging_in_progress;	/* Paging (in or out) so don't collapse or destroy */
 };
 
@@ -177,7 +177,7 @@ struct vm_object {
 #define	OBJPR_CLEANONLY	0x1		/* Don't remove dirty pages. */
 #define	OBJPR_NOTMAPPED	0x2		/* Don't unmap pages. */
 
-BSD_TAILQ_HEAD(object_q, vm_object);
+TAILQ_HEAD(object_q, vm_object);
 
 extern struct object_q vm_object_list;	/* list of allocated objects */
 extern struct mtx vm_object_list_mtx;	/* lock for object list and count */
@@ -216,32 +216,32 @@ void vm_object_pip_wakeup(vm_object_t object);
 void vm_object_pip_wakeupn(vm_object_t object, short i);
 void vm_object_pip_wait(vm_object_t object, char *waitid);
 
-vm_object_t vm_object_allocate (objtype_t, bsd_vm_pindex_t);
-void _vm_object_allocate (objtype_t, bsd_vm_pindex_t, vm_object_t);
-bsd_boolean_t vm_object_coalesce(vm_object_t, bsd_vm_ooffset_t, bsd_vm_size_t, bsd_vm_size_t,
-        bsd_boolean_t);
+vm_object_t vm_object_allocate (objtype_t, vm_pindex_t);
+void _vm_object_allocate (objtype_t, vm_pindex_t, vm_object_t);
+boolean_t vm_object_coalesce(vm_object_t, vm_ooffset_t, vm_size_t, vm_size_t,
+   boolean_t);
 void vm_object_collapse (vm_object_t);
 void vm_object_deallocate (vm_object_t);
 void vm_object_destroy (vm_object_t);
 void vm_object_terminate (vm_object_t);
 void vm_object_set_writeable_dirty (vm_object_t);
 void vm_object_init (void);
-void vm_object_madvise(vm_object_t, bsd_vm_pindex_t, bsd_vm_pindex_t, int);
-void vm_object_page_cache(vm_object_t object, bsd_vm_pindex_t start,
-        bsd_vm_pindex_t end);
-bsd_boolean_t vm_object_page_clean(vm_object_t object, bsd_vm_ooffset_t start,
-        bsd_vm_ooffset_t end, int flags);
-void vm_object_page_remove(vm_object_t object, bsd_vm_pindex_t start,
-        bsd_vm_pindex_t end, int options);
-bsd_boolean_t vm_object_populate(vm_object_t, bsd_vm_pindex_t, bsd_vm_pindex_t);
-void vm_object_print(long addr, bsd_boolean_t have_addr, long count, char *modif);
+void vm_object_madvise(vm_object_t, vm_pindex_t, vm_pindex_t, int);
+void vm_object_page_cache(vm_object_t object, vm_pindex_t start,
+    vm_pindex_t end);
+boolean_t vm_object_page_clean(vm_object_t object, vm_ooffset_t start,
+    vm_ooffset_t end, int flags);
+void vm_object_page_remove(vm_object_t object, vm_pindex_t start,
+    vm_pindex_t end, int options);
+boolean_t vm_object_populate(vm_object_t, vm_pindex_t, vm_pindex_t);
+void vm_object_print(long addr, boolean_t have_addr, long count, char *modif);
 void vm_object_reference (vm_object_t);
 void vm_object_reference_locked(vm_object_t);
-int  vm_object_set_memattr(vm_object_t object, bsd_vm_memattr_t memattr);
-void vm_object_shadow (vm_object_t *, bsd_vm_ooffset_t *, bsd_vm_size_t);
+int  vm_object_set_memattr(vm_object_t object, vm_memattr_t memattr);
+void vm_object_shadow (vm_object_t *, vm_ooffset_t *, vm_size_t);
 void vm_object_split(vm_map_entry_t);
-bsd_boolean_t vm_object_sync(vm_object_t, bsd_vm_ooffset_t, bsd_vm_size_t, bsd_boolean_t,
-        bsd_boolean_t);
+boolean_t vm_object_sync(vm_object_t, vm_ooffset_t, vm_size_t, boolean_t,
+    boolean_t);
 #endif				/* _KERNEL */
 
 #endif				/* _VM_OBJECT_ */

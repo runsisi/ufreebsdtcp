@@ -64,7 +64,7 @@
  *	@(#)in_pcb.c	8.2 (Berkeley) 1/4/94
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/netinet6/in6_pcb.c 253281 2013-07-12 18:54:47Z trociny $");
 
 #include "opt_inet.h"
@@ -72,20 +72,20 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/netinet6/in6_pcb.c 253281 2013-07-12 18:54
 #include "opt_ipsec.h"
 #include "opt_pcbgroup.h"
 
-#include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/malloc.h>
-#include <sys/mbuf.h>
-#include <sys/domain.h>
-#include <sys/protosw.h>
-#include <sys/socket.h>
-#include <sys/socketvar.h>
-#include <sys/sockio.h>
-#include <sys/errno.h>
-#include <sys/time.h>
-#include <sys/priv.h>
-#include <sys/proc.h>
-#include <sys/jail.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_malloc.h>
+#include <sys/bsd_mbuf.h>
+#include <sys/bsd_domain.h>
+#include <sys/bsd_protosw.h>
+#include <sys/bsd_socket.h>
+#include <sys/bsd_socketvar.h>
+#include <sys/bsd_sockio.h>
+#include <sys/bsd_errno.h>
+#include <sys/bsd_time.h>
+#include <sys/bsd_priv.h>
+#include <sys/bsd_proc.h>
+#include <sys/bsd_jail.h>
 
 #include <vm/uma.h>
 
@@ -106,14 +106,14 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/netinet6/in6_pcb.c 253281 2013-07-12 18:54
 #include <netinet6/in6_pcb.h>
 #include <netinet6/scope6_var.h>
 
-struct	bsd_in6_addr zeroin6_addr;
+struct	in6_addr zeroin6_addr;
 
 int
-in6_pcbbind(register struct inpcb *inp, struct bsd_sockaddr *nam,
-    struct bsd_ucred *cred)
+in6_pcbbind(register struct inpcb *inp, struct sockaddr *nam,
+    struct ucred *cred)
 {
-	struct bsd_socket *so = inp->inp_socket;
-	struct bsd_sockaddr_in6 *sin6 = (struct bsd_sockaddr_in6 *)NULL;
+	struct socket *so = inp->inp_socket;
+	struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)NULL;
 	struct inpcbinfo *pcbinfo = inp->inp_pcbinfo;
 	u_short	lport = 0;
 	int error, lookupflags = 0;
@@ -133,7 +133,7 @@ in6_pcbbind(register struct inpcb *inp, struct bsd_sockaddr *nam,
 		    ((inp->inp_flags & IN6P_IPV6_V6ONLY) != 0))) != 0)
 			return (error);
 	} else {
-		sin6 = (struct bsd_sockaddr_in6 *)nam;
+		sin6 = (struct sockaddr_in6 *)nam;
 		if (nam->sa_len != sizeof(*sin6))
 			return (EINVAL);
 		/*
@@ -164,7 +164,7 @@ in6_pcbbind(register struct inpcb *inp, struct bsd_sockaddr *nam,
 			struct ifaddr *ifa;
 
 			sin6->sin6_port = 0;		/* yech... */
-			if ((ifa = ifa_ifwithaddr((struct bsd_sockaddr *)sin6)) ==
+			if ((ifa = ifa_ifwithaddr((struct sockaddr *)sin6)) ==
 			    NULL &&
 			    (inp->inp_flags & INP_BINDANY) == 0) {
 				return (EADDRNOTAVAIL);
@@ -214,7 +214,7 @@ in6_pcbbind(register struct inpcb *inp, struct bsd_sockaddr *nam,
 #ifdef INET
 				if ((inp->inp_flags & IN6P_IPV6_V6ONLY) == 0 &&
 				    IN6_IS_ADDR_UNSPECIFIED(&sin6->sin6_addr)) {
-					struct bsd_sockaddr_in sin;
+					struct sockaddr_in sin;
 
 					in6_sin6_2_sin(&sin, sin6);
 					t = in_pcblookup_local(pcbinfo,
@@ -251,7 +251,7 @@ in6_pcbbind(register struct inpcb *inp, struct bsd_sockaddr *nam,
 #ifdef INET
 			if ((inp->inp_flags & IN6P_IPV6_V6ONLY) == 0 &&
 			    IN6_IS_ADDR_UNSPECIFIED(&sin6->sin6_addr)) {
-				struct bsd_sockaddr_in sin;
+				struct sockaddr_in sin;
 
 				in6_sin6_2_sin(&sin, sin6);
 				t = in_pcblookup_local(pcbinfo, sin.sin_addr,
@@ -279,13 +279,13 @@ in6_pcbbind(register struct inpcb *inp, struct bsd_sockaddr *nam,
 	if (lport == 0) {
 		if ((error = in6_pcbsetport(&inp->in6p_laddr, inp, cred)) != 0) {
 			/* Undo an address bind that may have occurred. */
-			inp->in6p_laddr = bsd_in6addr_any;
+			inp->in6p_laddr = in6addr_any;
 			return (error);
 		}
 	} else {
 		inp->inp_lport = lport;
 		if (in_pcbinshash(inp) != 0) {
-			inp->in6p_laddr = bsd_in6addr_any;
+			inp->in6p_laddr = in6addr_any;
 			inp->inp_lport = 0;
 			return (EAGAIN);
 		}
@@ -305,14 +305,14 @@ in6_pcbbind(register struct inpcb *inp, struct bsd_sockaddr *nam,
  *   have forced minor changes in every protocol).
  */
 int
-in6_pcbladdr(register struct inpcb *inp, struct bsd_sockaddr *nam,
-    struct bsd_in6_addr *plocal_addr6)
+in6_pcbladdr(register struct inpcb *inp, struct sockaddr *nam,
+    struct in6_addr *plocal_addr6)
 {
-	register struct bsd_sockaddr_in6 *sin6 = (struct bsd_sockaddr_in6 *)nam;
+	register struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)nam;
 	int error = 0;
 	struct ifnet *ifp = NULL;
 	int scope_ambiguous = 0;
-	struct bsd_in6_addr in6a;
+	struct in6_addr in6a;
 
 	INP_WLOCK_ASSERT(inp);
 	INP_HASH_WLOCK_ASSERT(inp->inp_pcbinfo);	/* XXXRW: why? */
@@ -335,7 +335,7 @@ in6_pcbladdr(register struct inpcb *inp, struct bsd_sockaddr *nam,
 		 * use the loopback addr, e.g ::1.
 		 */
 		if (IN6_IS_ADDR_UNSPECIFIED(&sin6->sin6_addr))
-			sin6->sin6_addr = bsd_in6addr_loopback;
+			sin6->sin6_addr = in6addr_loopback;
 	}
 	if ((error = prison_remote_ip6(inp->inp_cred, &sin6->sin6_addr)) != 0)
 		return (error);
@@ -376,12 +376,12 @@ in6_pcbladdr(register struct inpcb *inp, struct bsd_sockaddr *nam,
  * then pick one.
  */
 int
-in6_pcbconnect_mbuf(register struct inpcb *inp, struct bsd_sockaddr *nam,
-    struct bsd_ucred *cred, struct mbuf *m)
+in6_pcbconnect_mbuf(register struct inpcb *inp, struct sockaddr *nam,
+    struct ucred *cred, struct mbuf *m)
 {
 	struct inpcbinfo *pcbinfo = inp->inp_pcbinfo;
-	register struct bsd_sockaddr_in6 *sin6 = (struct bsd_sockaddr_in6 *)nam;
-	struct bsd_in6_addr addr6;
+	register struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)nam;
+	struct in6_addr addr6;
 	int error;
 
 	INP_WLOCK_ASSERT(inp);
@@ -403,7 +403,7 @@ in6_pcbconnect_mbuf(register struct inpcb *inp, struct bsd_sockaddr *nam,
 	}
 	if (IN6_IS_ADDR_UNSPECIFIED(&inp->in6p_laddr)) {
 		if (inp->inp_lport == 0) {
-			error = in6_pcbbind(inp, (struct bsd_sockaddr *)0, cred);
+			error = in6_pcbbind(inp, (struct sockaddr *)0, cred);
 			if (error)
 				return (error);
 		}
@@ -423,7 +423,7 @@ in6_pcbconnect_mbuf(register struct inpcb *inp, struct bsd_sockaddr *nam,
 }
 
 int
-in6_pcbconnect(struct inpcb *inp, struct bsd_sockaddr *nam, struct bsd_ucred *cred)
+in6_pcbconnect(struct inpcb *inp, struct sockaddr *nam, struct ucred *cred)
 {
 
 	return (in6_pcbconnect_mbuf(inp, nam, cred, NULL));
@@ -443,12 +443,12 @@ in6_pcbdisconnect(struct inpcb *inp)
 	in_pcbrehash(inp);
 }
 
-struct bsd_sockaddr *
-in6_sockaddr(bsd_in_port_t port, struct bsd_in6_addr *addr_p)
+struct sockaddr *
+in6_sockaddr(in_port_t port, struct in6_addr *addr_p)
 {
-	struct bsd_sockaddr_in6 *sin6;
+	struct sockaddr_in6 *sin6;
 
-	sin6 = bsd_malloc(sizeof *sin6, M_SONAME, M_WAITOK);
+	sin6 = malloc(sizeof *sin6, M_SONAME, M_WAITOK);
 	bzero(sin6, sizeof *sin6);
 	sin6->sin6_family = AF_INET6;
 	sin6->sin6_len = sizeof(*sin6);
@@ -456,14 +456,14 @@ in6_sockaddr(bsd_in_port_t port, struct bsd_in6_addr *addr_p)
 	sin6->sin6_addr = *addr_p;
 	(void)sa6_recoverscope(sin6); /* XXX: should catch errors */
 
-	return (struct bsd_sockaddr *)sin6;
+	return (struct sockaddr *)sin6;
 }
 
-struct bsd_sockaddr *
-in6_v4mapsin6_sockaddr(bsd_in_port_t port, struct bsd_in_addr *addr_p)
+struct sockaddr *
+in6_v4mapsin6_sockaddr(in_port_t port, struct in_addr *addr_p)
 {
-	struct bsd_sockaddr_in sin;
-	struct bsd_sockaddr_in6 *sin6_p;
+	struct sockaddr_in sin;
+	struct sockaddr_in6 *sin6_p;
 
 	bzero(&sin, sizeof sin);
 	sin.sin_family = AF_INET;
@@ -471,19 +471,19 @@ in6_v4mapsin6_sockaddr(bsd_in_port_t port, struct bsd_in_addr *addr_p)
 	sin.sin_port = port;
 	sin.sin_addr = *addr_p;
 
-	sin6_p = bsd_malloc(sizeof *sin6_p, M_SONAME,
+	sin6_p = malloc(sizeof *sin6_p, M_SONAME,
 		M_WAITOK);
 	in6_sin_2_v4mapsin6(&sin, sin6_p);
 
-	return (struct bsd_sockaddr *)sin6_p;
+	return (struct sockaddr *)sin6_p;
 }
 
 int
-in6_getsockaddr(struct bsd_socket *so, struct bsd_sockaddr **nam)
+in6_getsockaddr(struct socket *so, struct sockaddr **nam)
 {
 	register struct inpcb *inp;
-	struct bsd_in6_addr addr;
-	bsd_in_port_t port;
+	struct in6_addr addr;
+	in_port_t port;
 
 	inp = sotoinpcb(so);
 	KASSERT(inp != NULL, ("in6_getsockaddr: inp == NULL"));
@@ -498,11 +498,11 @@ in6_getsockaddr(struct bsd_socket *so, struct bsd_sockaddr **nam)
 }
 
 int
-in6_getpeeraddr(struct bsd_socket *so, struct bsd_sockaddr **nam)
+in6_getpeeraddr(struct socket *so, struct sockaddr **nam)
 {
 	struct inpcb *inp;
-	struct bsd_in6_addr addr;
-	bsd_in_port_t port;
+	struct in6_addr addr;
+	in_port_t port;
 
 	inp = sotoinpcb(so);
 	KASSERT(inp != NULL, ("in6_getpeeraddr: inp == NULL"));
@@ -517,7 +517,7 @@ in6_getpeeraddr(struct bsd_socket *so, struct bsd_sockaddr **nam)
 }
 
 int
-in6_mapped_sockaddr(struct bsd_socket *so, struct bsd_sockaddr **nam)
+in6_mapped_sockaddr(struct socket *so, struct sockaddr **nam)
 {
 	struct	inpcb *inp;
 	int	error;
@@ -541,7 +541,7 @@ in6_mapped_sockaddr(struct bsd_socket *so, struct bsd_sockaddr **nam)
 }
 
 int
-in6_mapped_peeraddr(struct bsd_socket *so, struct bsd_sockaddr **nam)
+in6_mapped_peeraddr(struct socket *so, struct sockaddr **nam)
 {
 	struct	inpcb *inp;
 	int	error;
@@ -572,28 +572,28 @@ in6_mapped_peeraddr(struct bsd_socket *so, struct bsd_sockaddr **nam)
  * any errors for each matching socket.
  */
 void
-in6_pcbnotify(struct inpcbinfo *pcbinfo, struct bsd_sockaddr *dst,
-    u_int fport_arg, const struct bsd_sockaddr *src, u_int lport_arg,
+in6_pcbnotify(struct inpcbinfo *pcbinfo, struct sockaddr *dst,
+    u_int fport_arg, const struct sockaddr *src, u_int lport_arg,
     int cmd, void *cmdarg,
     struct inpcb *(*notify)(struct inpcb *, int))
 {
 	struct inpcb *inp, *inp_temp;
-	struct bsd_sockaddr_in6 sa6_src, *sa6_dst;
+	struct sockaddr_in6 sa6_src, *sa6_dst;
 	u_short	fport = fport_arg, lport = lport_arg;
-	bsd_uint32_t flowinfo;
+	u_int32_t flowinfo;
 	int errno;
 
 	if ((unsigned)cmd >= PRC_NCMDS || dst->sa_family != AF_INET6)
 		return;
 
-	sa6_dst = (struct bsd_sockaddr_in6 *)dst;
+	sa6_dst = (struct sockaddr_in6 *)dst;
 	if (IN6_IS_ADDR_UNSPECIFIED(&sa6_dst->sin6_addr))
 		return;
 
 	/*
 	 * note that src can be NULL when we get notify by local fragmentation.
 	 */
-	sa6_src = (src == NULL) ? bsd_sa6_any : *(const struct bsd_sockaddr_in6 *)src;
+	sa6_src = (src == NULL) ? sa6_any : *(const struct sockaddr_in6 *)src;
 	flowinfo = sa6_src.sin6_flowinfo;
 
 	/*
@@ -633,8 +633,8 @@ in6_pcbnotify(struct inpcbinfo *pcbinfo, struct bsd_sockaddr *dst,
 		if (cmd == PRC_MSGSIZE && (inp->inp_flags & IN6P_MTU) != 0 &&
 		    (IN6_IS_ADDR_UNSPECIFIED(&inp->in6p_faddr) ||
 		     IN6_ARE_ADDR_EQUAL(&inp->in6p_faddr, &sa6_dst->sin6_addr))) {
-			ip6_notify_pmtu(inp, (struct bsd_sockaddr_in6 *)dst,
-					(bsd_uint32_t *)cmdarg);
+			ip6_notify_pmtu(inp, (struct sockaddr_in6 *)dst,
+					(u_int32_t *)cmdarg);
 		}
 
 		/*
@@ -677,8 +677,8 @@ in6_pcbnotify(struct inpcbinfo *pcbinfo, struct bsd_sockaddr *dst,
  * hash lock.  No inpcb locks or references are acquired.
  */
 struct inpcb *
-in6_pcblookup_local(struct inpcbinfo *pcbinfo, struct bsd_in6_addr *laddr,
-    u_short lport, int lookupflags, struct bsd_ucred *cred)
+in6_pcblookup_local(struct inpcbinfo *pcbinfo, struct in6_addr *laddr,
+    u_short lport, int lookupflags, struct ucred *cred)
 {
 	register struct inpcb *inp;
 	int matchwild = 3, wildcard;
@@ -845,7 +845,7 @@ in6_rtchange(struct inpcb *inp, int errno)
  */
 static struct inpcb *
 in6_pcblookup_group(struct inpcbinfo *pcbinfo, struct inpcbgroup *pcbgroup,
-    struct bsd_in6_addr *faddr, u_int fport_arg, struct bsd_in6_addr *laddr,
+    struct in6_addr *faddr, u_int fport_arg, struct in6_addr *laddr,
     u_int lport_arg, int lookupflags, struct ifnet *ifp)
 {
 	struct inpcbhead *head;
@@ -978,8 +978,8 @@ found:
  * Lookup PCB in hash list.
  */
 struct inpcb *
-in6_pcblookup_hash_locked(struct inpcbinfo *pcbinfo, struct bsd_in6_addr *faddr,
-    u_int fport_arg, struct bsd_in6_addr *laddr, u_int lport_arg,
+in6_pcblookup_hash_locked(struct inpcbinfo *pcbinfo, struct in6_addr *faddr,
+    u_int fport_arg, struct in6_addr *laddr, u_int lport_arg,
     int lookupflags, struct ifnet *ifp)
 {
 	struct inpcbhead *head;
@@ -1100,8 +1100,8 @@ in6_pcblookup_hash_locked(struct inpcbinfo *pcbinfo, struct bsd_in6_addr *faddr,
  * INPLOOKUP_LOCKPCB).
  */
 static struct inpcb *
-in6_pcblookup_hash(struct inpcbinfo *pcbinfo, struct bsd_in6_addr *faddr,
-    u_int fport, struct bsd_in6_addr *laddr, u_int lport, int lookupflags,
+in6_pcblookup_hash(struct inpcbinfo *pcbinfo, struct in6_addr *faddr,
+    u_int fport, struct in6_addr *laddr, u_int lport, int lookupflags,
     struct ifnet *ifp)
 {
 	struct inpcb *inp;
@@ -1134,8 +1134,8 @@ in6_pcblookup_hash(struct inpcbinfo *pcbinfo, struct bsd_in6_addr *faddr,
  * Possibly more of this logic should be in in6_pcbgroup.c.
  */
 struct inpcb *
-in6_pcblookup(struct inpcbinfo *pcbinfo, struct bsd_in6_addr *faddr, u_int fport,
-    struct bsd_in6_addr *laddr, u_int lport, int lookupflags, struct ifnet *ifp)
+in6_pcblookup(struct inpcbinfo *pcbinfo, struct in6_addr *faddr, u_int fport,
+    struct in6_addr *laddr, u_int lport, int lookupflags, struct ifnet *ifp)
 {
 #if defined(PCBGROUP)
 	struct inpcbgroup *pcbgroup;
@@ -1159,8 +1159,8 @@ in6_pcblookup(struct inpcbinfo *pcbinfo, struct bsd_in6_addr *faddr, u_int fport
 }
 
 struct inpcb *
-in6_pcblookup_mbuf(struct inpcbinfo *pcbinfo, struct bsd_in6_addr *faddr,
-    u_int fport, struct bsd_in6_addr *laddr, u_int lport, int lookupflags,
+in6_pcblookup_mbuf(struct inpcbinfo *pcbinfo, struct in6_addr *faddr,
+    u_int fport, struct in6_addr *laddr, u_int lport, int lookupflags,
     struct ifnet *ifp, struct mbuf *m)
 {
 #ifdef PCBGROUP
@@ -1190,7 +1190,7 @@ in6_pcblookup_mbuf(struct inpcbinfo *pcbinfo, struct bsd_in6_addr *faddr,
 }
 
 void
-init_sin6(struct bsd_sockaddr_in6 *sin6, struct mbuf *m)
+init_sin6(struct sockaddr_in6 *sin6, struct mbuf *m)
 {
 	struct ip6_hdr *ip;
 

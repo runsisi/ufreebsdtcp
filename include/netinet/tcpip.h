@@ -38,7 +38,7 @@
  */
 struct tcpiphdr {
 	struct	ipovly ti_i;		/* overlaid ip structure */
-	struct	bsd_tcphdr ti_t;		/* tcp header */
+	struct	tcphdr ti_t;		/* tcp header */
 };
 #define	ti_x1		ti_i.ih_x1
 #define	ti_pr		ti_i.ih_pr

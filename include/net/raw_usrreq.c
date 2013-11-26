@@ -31,19 +31,19 @@
  * $FreeBSD: release/9.2.0/sys/net/raw_usrreq.c 225970 2011-10-04 11:35:18Z bz $
  */
 
-#include <sys/param.h>
-#include <sys/kernel.h>
-#include <sys/lock.h>
-#include <sys/malloc.h>
-#include <sys/mbuf.h>
-#include <sys/mutex.h>
-#include <sys/priv.h>
-#include <sys/protosw.h>
-#include <sys/signalvar.h>
-#include <sys/socket.h>
-#include <sys/socketvar.h>
-#include <sys/sx.h>
-#include <sys/systm.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_lock.h>
+#include <sys/bsd_malloc.h>
+#include <sys/bsd_mbuf.h>
+#include <sys/bsd_mutex.h>
+#include <sys/bsd_priv.h>
+#include <sys/bsd_protosw.h>
+#include <sys/bsd_signalvar.h>
+#include <sys/bsd_socket.h>
+#include <sys/bsd_socketvar.h>
+#include <sys/bsd_sx.h>
+#include <sys/bsd_systm.h>
 
 #include <net/if.h>
 #include <net/raw_cb.h>
@@ -69,19 +69,19 @@ raw_init(void)
  * Raw protocol interface.
  */
 void
-raw_input(struct mbuf *m0, struct bsd_sockproto *proto, struct bsd_sockaddr *src)
+raw_input(struct mbuf *m0, struct sockproto *proto, struct sockaddr *src)
 {
 
 	return (raw_input_ext(m0, proto, src, NULL));
 }
 
 void
-raw_input_ext(struct mbuf *m0, struct bsd_sockproto *proto, struct bsd_sockaddr *src,
+raw_input_ext(struct mbuf *m0, struct sockproto *proto, struct sockaddr *src,
     raw_input_cb_fn cb)
 {
 	struct rawcb *rp;
 	struct mbuf *m = m0;
-	struct bsd_socket *last;
+	struct socket *last;
 
 	last = 0;
 	mtx_lock(&rawcb_mtx);
@@ -120,7 +120,7 @@ raw_input_ext(struct mbuf *m0, struct bsd_sockproto *proto, struct bsd_sockaddr 
 
 /*ARGSUSED*/
 void
-raw_ctlinput(int cmd, struct bsd_sockaddr *arg, void *dummy)
+raw_ctlinput(int cmd, struct sockaddr *arg, void *dummy)
 {
 
 	if (cmd < 0 || cmd >= PRC_NCMDS)
@@ -129,7 +129,7 @@ raw_ctlinput(int cmd, struct bsd_sockaddr *arg, void *dummy)
 }
 
 static void
-raw_uabort(struct bsd_socket *so)
+raw_uabort(struct socket *so)
 {
 
 	KASSERT(sotorawcb(so) != NULL, ("raw_uabort: rp == NULL"));
@@ -138,7 +138,7 @@ raw_uabort(struct bsd_socket *so)
 }
 
 static void
-raw_uclose(struct bsd_socket *so)
+raw_uclose(struct socket *so)
 {
 
 	KASSERT(sotorawcb(so) != NULL, ("raw_uabort: rp == NULL"));
@@ -149,7 +149,7 @@ raw_uclose(struct bsd_socket *so)
 /* pru_accept is EOPNOTSUPP */
 
 static int
-raw_uattach(struct bsd_socket *so, int proto, struct thread *td)
+raw_uattach(struct socket *so, int proto, struct thread *td)
 {
 	int error;
 
@@ -168,14 +168,14 @@ raw_uattach(struct bsd_socket *so, int proto, struct thread *td)
 }
 
 static int
-raw_ubind(struct bsd_socket *so, struct bsd_sockaddr *nam, struct thread *td)
+raw_ubind(struct socket *so, struct sockaddr *nam, struct thread *td)
 {
 
 	return (EINVAL);
 }
 
 static int
-raw_uconnect(struct bsd_socket *so, struct bsd_sockaddr *nam, struct thread *td)
+raw_uconnect(struct socket *so, struct sockaddr *nam, struct thread *td)
 {
 
 	return (EINVAL);
@@ -185,7 +185,7 @@ raw_uconnect(struct bsd_socket *so, struct bsd_sockaddr *nam, struct thread *td)
 /* pru_control is EOPNOTSUPP */
 
 static void
-raw_udetach(struct bsd_socket *so)
+raw_udetach(struct socket *so)
 {
 	struct rawcb *rp = sotorawcb(so);
 
@@ -195,7 +195,7 @@ raw_udetach(struct bsd_socket *so)
 }
 
 static int
-raw_udisconnect(struct bsd_socket *so)
+raw_udisconnect(struct socket *so)
 {
 
 	KASSERT(sotorawcb(so) != NULL, ("raw_udisconnect: rp == NULL"));
@@ -206,7 +206,7 @@ raw_udisconnect(struct bsd_socket *so)
 /* pru_listen is EOPNOTSUPP */
 
 static int
-raw_upeeraddr(struct bsd_socket *so, struct bsd_sockaddr **nam)
+raw_upeeraddr(struct socket *so, struct sockaddr **nam)
 {
 
 	KASSERT(sotorawcb(so) != NULL, ("raw_upeeraddr: rp == NULL"));
@@ -218,7 +218,7 @@ raw_upeeraddr(struct bsd_socket *so, struct bsd_sockaddr **nam)
 /* pru_rcvoob is EOPNOTSUPP */
 
 static int
-raw_usend(struct bsd_socket *so, int flags, struct mbuf *m, struct bsd_sockaddr *nam,
+raw_usend(struct socket *so, int flags, struct mbuf *m, struct sockaddr *nam,
     struct mbuf *control, struct thread *td)
 {
 
@@ -241,7 +241,7 @@ raw_usend(struct bsd_socket *so, int flags, struct mbuf *m, struct bsd_sockaddr 
 /* pru_sense is null */
 
 static int
-raw_ushutdown(struct bsd_socket *so)
+raw_ushutdown(struct socket *so)
 {
 
 	KASSERT(sotorawcb(so) != NULL, ("raw_ushutdown: rp == NULL"));
@@ -251,7 +251,7 @@ raw_ushutdown(struct bsd_socket *so)
 }
 
 static int
-raw_usockaddr(struct bsd_socket *so, struct bsd_sockaddr **nam)
+raw_usockaddr(struct socket *so, struct sockaddr **nam)
 {
 
 	KASSERT(sotorawcb(so) != NULL, ("raw_usockaddr: rp == NULL"));

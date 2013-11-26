@@ -66,7 +66,7 @@
  * $OpenBSD: ip_id.c,v 1.6 2002/03/15 18:19:52 millert Exp $
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/netinet6/ip6_id.c 174510 2007-12-10 16:03:40Z obrien $");
 
 /*
@@ -89,11 +89,11 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/netinet6/ip6_id.c 174510 2007-12-10 16:03:
  * This avoids reuse issues caused by reseeding.
  */
 
-#include <sys/types.h>
-#include <sys/param.h>
-#include <sys/kernel.h>
-#include <sys/socket.h>
-#include <sys/libkern.h>
+#include <sys/bsd_types.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_socket.h>
+#include <sys/bsd_libkern.h>
 
 #include <net/if.h>
 #include <net/route.h>
@@ -108,20 +108,20 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/netinet6/ip6_id.c 174510 2007-12-10 16:03:
 struct randomtab {
 	const int	ru_bits; /* resulting bits */
 	const long	ru_out;	/* Time after wich will be reseeded */
-	const bsd_uint32_t ru_max;	/* Uniq cycle, avoid blackjack prediction */
-	const bsd_uint32_t ru_gen;	/* Starting generator */
-	const bsd_uint32_t ru_n;	/* ru_n: prime, ru_n - 1: product of pfacts[] */
-	const bsd_uint32_t ru_agen; /* determine ru_a as ru_agen^(2*rand) */
-	const bsd_uint32_t ru_m;	/* ru_m = 2^x*3^y */
-	const bsd_uint32_t pfacts[4];	/* factors of ru_n */
+	const u_int32_t ru_max;	/* Uniq cycle, avoid blackjack prediction */
+	const u_int32_t ru_gen;	/* Starting generator */
+	const u_int32_t ru_n;	/* ru_n: prime, ru_n - 1: product of pfacts[] */
+	const u_int32_t ru_agen; /* determine ru_a as ru_agen^(2*rand) */
+	const u_int32_t ru_m;	/* ru_m = 2^x*3^y */
+	const u_int32_t pfacts[4];	/* factors of ru_n */
 
-	bsd_uint32_t ru_counter;
-	bsd_uint32_t ru_msb;
+	u_int32_t ru_counter;
+	u_int32_t ru_msb;
 
-	bsd_uint32_t ru_x;
-	bsd_uint32_t ru_seed, ru_seed2;
-	bsd_uint32_t ru_a, ru_b;
-	bsd_uint32_t ru_g;
+	u_int32_t ru_x;
+	u_int32_t ru_seed, ru_seed2;
+	u_int32_t ru_a, ru_b;
+	u_int32_t ru_g;
 	long ru_reseed;
 };
 
@@ -147,18 +147,18 @@ static struct randomtab randomtab_20 = {
 	{ 2, 3, 14563, 0 },	/* factors of ru_n */
 };
 
-static bsd_uint32_t pmod(bsd_uint32_t, bsd_uint32_t, bsd_uint32_t);
+static u_int32_t pmod(u_int32_t, u_int32_t, u_int32_t);
 static void initid(struct randomtab *);
-static bsd_uint32_t randomid(struct randomtab *);
+static u_int32_t randomid(struct randomtab *);
 
 /*
  * Do a fast modular exponation, returned value will be in the range
  * of 0 - (mod-1)
  */
-static bsd_uint32_t
-pmod(bsd_uint32_t gen, bsd_uint32_t expo, bsd_uint32_t mod)
+static u_int32_t
+pmod(u_int32_t gen, u_int32_t expo, u_int32_t mod)
 {
-	bsd_uint64_t s, t, u;
+	u_int64_t s, t, u;
 
 	s = 1;
 	t = gen;
@@ -184,7 +184,7 @@ pmod(bsd_uint32_t gen, bsd_uint32_t expo, bsd_uint32_t mod)
 static void
 initid(struct randomtab *p)
 {
-	bsd_uint32_t j, i;
+	u_int32_t j, i;
 	int noprime = 1;
 
 	p->ru_x = arc4random() % p->ru_m;
@@ -225,11 +225,11 @@ initid(struct randomtab *p)
 	p->ru_msb = p->ru_msb ? 0 : (1U << (p->ru_bits - 1));
 }
 
-static bsd_uint32_t
+static u_int32_t
 randomid(struct randomtab *p)
 {
 	int i, n;
-	bsd_uint32_t tmp;
+	u_int32_t tmp;
 
 	if (p->ru_counter >= p->ru_max || time_second > p->ru_reseed)
 		initid(p);
@@ -243,7 +243,7 @@ randomid(struct randomtab *p)
 
 	for (i = 0; i <= n; i++) {
 		/* Linear Congruential Generator */
-		p->ru_x = (bsd_uint32_t)((bsd_uint64_t)p->ru_a * p->ru_x + p->ru_b) % p->ru_m;
+		p->ru_x = (u_int32_t)((u_int64_t)p->ru_a * p->ru_x + p->ru_b) % p->ru_m;
 	}
 
 	p->ru_counter += i;
@@ -252,14 +252,14 @@ randomid(struct randomtab *p)
 	    p->ru_msb;
 }
 
-bsd_uint32_t
+u_int32_t
 ip6_randomid(void)
 {
 
 	return randomid(&randomtab_32);
 }
 
-bsd_uint32_t
+u_int32_t
 ip6_randomflowlabel(void)
 {
 

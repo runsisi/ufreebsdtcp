@@ -81,17 +81,17 @@
  */
 struct ifatm_mib {
 	/* configuration data */
-	bsd_uint8_t		device;		/* type of card */
+	uint8_t		device;		/* type of card */
 	u_char		esi[6];		/* end system identifier (MAC) */
-	bsd_uint32_t	serial;		/* card serial number */
-	bsd_uint32_t	hw_version;	/* card version */
-	bsd_uint32_t	sw_version;	/* firmware version (if any) */
-	bsd_uint32_t	pcr;		/* supported peak cell rate */
-	bsd_uint32_t	media;		/* physical media */
-	bsd_uint8_t		vpi_bits;	/* number of used bits in VPI field */
-	bsd_uint8_t		vci_bits;	/* number of used bits in VCI field */
-	bsd_uint16_t	max_vpcs;	/* maximum number of VPCs */
-	bsd_uint32_t	max_vccs;	/* maximum number of VCCs */
+	uint32_t	serial;		/* card serial number */
+	uint32_t	hw_version;	/* card version */
+	uint32_t	sw_version;	/* firmware version (if any) */
+	uint32_t	pcr;		/* supported peak cell rate */
+	uint32_t	media;		/* physical media */
+	uint8_t		vpi_bits;	/* number of used bits in VPI field */
+	uint8_t		vci_bits;	/* number of used bits in VCI field */
+	uint16_t	max_vpcs;	/* maximum number of VPCs */
+	uint32_t	max_vccs;	/* maximum number of VCCs */
 };
 
 /*
@@ -101,18 +101,18 @@ struct ifatm_mib {
  * Keep in sync with ng_atm.h
  */
 struct atmio_tparam {
-	bsd_uint32_t	pcr;	/* 24bit: Peak Cell Rate */
-	bsd_uint32_t	scr;	/* 24bit: VBR Sustainable Cell Rate */
-	bsd_uint32_t	mbs;	/* 24bit: VBR Maximum burst size */
-	bsd_uint32_t	mcr;	/* 24bit: ABR/VBR/UBR+MCR MCR */
-	bsd_uint32_t	icr;	/* 24bit: ABR ICR */
-	bsd_uint32_t	tbe;	/* 24bit: ABR TBE (1...2^24-1) */
-	bsd_uint8_t		nrm;	/*  3bit: ABR Nrm */
-	bsd_uint8_t		trm;	/*  3bit: ABR Trm */
-	bsd_uint16_t	adtf;	/* 10bit: ABR ADTF */
-	bsd_uint8_t		rif;	/*  4bit: ABR RIF */
-	bsd_uint8_t		rdf;	/*  4bit: ABR RDF */
-	bsd_uint8_t		cdf;	/*  3bit: ABR CDF */
+	uint32_t	pcr;	/* 24bit: Peak Cell Rate */
+	uint32_t	scr;	/* 24bit: VBR Sustainable Cell Rate */
+	uint32_t	mbs;	/* 24bit: VBR Maximum burst size */
+	uint32_t	mcr;	/* 24bit: ABR/VBR/UBR+MCR MCR */
+	uint32_t	icr;	/* 24bit: ABR ICR */
+	uint32_t	tbe;	/* 24bit: ABR TBE (1...2^24-1) */
+	uint8_t		nrm;	/*  3bit: ABR Nrm */
+	uint8_t		trm;	/*  3bit: ABR Trm */
+	uint16_t	adtf;	/* 10bit: ABR ADTF */
+	uint8_t		rif;	/*  4bit: ABR RIF */
+	uint8_t		rdf;	/*  4bit: ABR RDF */
+	uint8_t		cdf;	/*  3bit: ABR CDF */
 };
 
 /*
@@ -121,13 +121,13 @@ struct atmio_tparam {
  * Keep in sync with ng_atm.h
  */
 struct atmio_vcc {
-	bsd_uint16_t	flags;		/* VCC flags */
-	bsd_uint16_t	vpi;
-	bsd_uint16_t	vci;
-	bsd_uint16_t	rmtu;		/* maximum receive PDU */
-	bsd_uint16_t	tmtu;		/* maximum transmit PDU */
-	bsd_uint8_t		aal;		/* aal type */
-	bsd_uint8_t		traffic;	/* traffic type */
+	uint16_t	flags;		/* VCC flags */
+	uint16_t	vpi;
+	uint16_t	vci;
+	uint16_t	rmtu;		/* maximum receive PDU */
+	uint16_t	tmtu;		/* maximum transmit PDU */
+	uint8_t		aal;		/* aal type */
+	uint8_t		traffic;	/* traffic type */
 	struct atmio_tparam tparam;	/* traffic parameters */
 };
 
@@ -157,7 +157,7 @@ struct atmio_vcc {
  * Keep in sync with ng_atm.h
  */
 struct atmio_vcctable {
-	bsd_uint32_t	count;		/* number of vccs */
+	uint32_t	count;		/* number of vccs */
 	struct atmio_vcc vccs[0];	/* array of VCCs */
 };
 
@@ -196,8 +196,8 @@ struct atmio_openvcc {
 };
 
 struct atmio_closevcc {
-	bsd_uint16_t	vpi;
-	bsd_uint16_t	vci;
+	uint16_t	vpi;
+	uint16_t	vci;
 };
 
 #if defined(__NetBSD__) || defined(__OpenBSD__) || defined(__bsdi__)
@@ -210,7 +210,7 @@ struct atmio_closevcc {
  * pseudo header for packet transmission
  */
 struct atm_pseudohdr {
-	bsd_uint8_t		atm_ph[4];	/* flags+VPI+VCI1(msb)+VCI2(lsb) */
+	uint8_t		atm_ph[4];	/* flags+VPI+VCI1(msb)+VCI2(lsb) */
 };
 
 #define	ATM_PH_FLAGS(X)	((X)->atm_ph[0])
@@ -244,8 +244,8 @@ struct atm_pseudohdr {
  */
 #define	ATMLLC_HDR "\252\252\3\0\0\0"
 struct atmllc {
-	bsd_uint8_t		llchdr[6];	/* aa.aa.03.00.00.00 */
-	bsd_uint8_t		type[2];	/* "ethernet" type */
+	uint8_t		llchdr[6];	/* aa.aa.03.00.00.00 */
+	uint8_t		type[2];	/* "ethernet" type */
 };
 
 /* ATM_LLC macros: note type code in host byte order */
@@ -265,8 +265,8 @@ struct atmllc {
 #define	ATMEV_ACR_CHANGED	0x0004	/* ABR ACR has changed */
 
 struct atmev_flow_control {
-	bsd_uint16_t	vpi;		/* channel that is changed */
-	bsd_uint16_t	vci;
+	uint16_t	vpi;		/* channel that is changed */
+	uint16_t	vci;
 	u_int		busy : 1;	/* != 0 -> ATM layer busy */
 };
 
@@ -276,15 +276,15 @@ struct atmev_ifstate_changed {
 };
 
 struct atmev_vcc_changed {
-	bsd_uint16_t	vpi;		/* channel that is changed */
-	bsd_uint16_t	vci;
+	uint16_t	vpi;		/* channel that is changed */
+	uint16_t	vci;
 	u_int		up : 1;		/* 1 - created, 0 - deleted */
 };
 
 struct atmev_acr_changed {
-	bsd_uint16_t	vpi;		/* channel that is changed */
-	bsd_uint16_t	vci;
-	bsd_uint32_t	acr;		/* new ACR */
+	uint16_t	vpi;		/* channel that is changed */
+	uint16_t	vci;
+	uint32_t	acr;		/* new ACR */
 };
 
 #ifdef _KERNEL
@@ -292,7 +292,7 @@ void	atm_ifattach(struct ifnet *);
 void	atm_ifdetach(struct ifnet *);
 void	atm_input(struct ifnet *, struct atm_pseudohdr *,
 	    struct mbuf *, void *);
-int	atm_output(struct ifnet *, struct mbuf *, struct bsd_sockaddr *, 
+int	atm_output(struct ifnet *, struct mbuf *, struct sockaddr *, 
 	    struct route *);
 struct atmio_vcctable *atm_getvccs(struct atmio_vcc **, u_int, u_int,
 	    struct mtx *, int);

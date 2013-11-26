@@ -56,7 +56,7 @@ typedef int (*linker_function_name_callback_t)(const char *, void *);
 typedef struct linker_symval {
     const char*		name;
     caddr_t		value;
-    bsd_size_t		size;
+    size_t		size;
 } linker_symval_t;
 
 typedef int (*linker_function_nameval_callback_t)(linker_file_t, int, linker_symval_t *, void *);
@@ -78,7 +78,7 @@ struct linker_file {
     char*		pathname;	/* file name with full path */
     int			id;		/* unique id */
     caddr_t		address;	/* load address */
-    bsd_size_t		size;		/* size of file */
+    size_t		size;		/* size of file */
     int			ndeps;		/* number of dependencies */
     linker_file_t*	deps;		/* list of dependencies */
     STAILQ_HEAD(, common_symbol) common; /* list of common symbols */
@@ -94,8 +94,8 @@ struct linker_file {
     int			fbt_nentries;	/* number of fbt entries created. */
     void		*sdt_probes;
     int			sdt_nentries;
-    bsd_size_t		sdt_nprobes;
-    bsd_size_t		sdt_size;
+    size_t		sdt_nprobes;
+    size_t		sdt_size;
 };
 
 /*
@@ -238,7 +238,7 @@ extern vm_offset_t	preload_addr_relocate;
 extern caddr_t		preload_metadata;
 
 extern void *		preload_fetch_addr(caddr_t _mod);
-extern bsd_size_t		preload_fetch_size(caddr_t _mod);
+extern size_t		preload_fetch_size(caddr_t _mod);
 extern caddr_t		preload_search_by_name(const char *_name);
 extern caddr_t		preload_search_by_type(const char *_type);
 extern caddr_t		preload_search_next_name(caddr_t _base);
@@ -303,7 +303,7 @@ struct kld_file_stat_1 {
     int		refs;
     int		id;
     caddr_t	address;	/* load address */
-    bsd_size_t	size;		/* size in bytes */
+    size_t	size;		/* size in bytes */
 };
 #endif /* _KERNEL */
 
@@ -313,7 +313,7 @@ struct kld_file_stat {
     int		refs;
     int		id;
     caddr_t	address;	/* load address */
-    bsd_size_t	size;		/* size in bytes */
+    size_t	size;		/* size in bytes */
     char        pathname[MAXPATHLEN];
 };
 
@@ -321,7 +321,7 @@ struct kld_sym_lookup {
     int		version;	/* set to sizeof(struct kld_sym_lookup) */
     char	*symname;	/* Symbol name we are looking up */
     u_long	symvalue;
-    bsd_size_t	symsize;
+    size_t	symsize;
 };
 #define KLDSYM_LOOKUP	1
 
@@ -333,7 +333,7 @@ struct kld_sym_lookup {
 
 #ifndef _KERNEL
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 
 __BEGIN_DECLS
 int	kldload(const char* _file);

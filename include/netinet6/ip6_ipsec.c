@@ -27,24 +27,24 @@
  * SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/netinet6/ip6_ipsec.c 250044 2013-04-29 10:52:45Z ae $");
 
 #include "opt_inet.h"
 #include "opt_inet6.h"
 #include "opt_ipsec.h"
 
-#include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/kernel.h>
-#include <sys/mac.h>
-#include <sys/malloc.h>
-#include <sys/mbuf.h>
-#include <sys/protosw.h>
-#include <sys/socket.h>
-#include <sys/socketvar.h>
-#include <sys/sysctl.h>
-#include <sys/syslog.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_mac.h>
+#include <sys/bsd_malloc.h>
+#include <sys/bsd_mbuf.h>
+#include <sys/bsd_protosw.h>
+#include <sys/bsd_socket.h>
+#include <sys/bsd_socketvar.h>
+#include <sys/bsd_sysctl.h>
+#include <sys/bsd_syslog.h>
 
 #include <net/if.h>
 #include <net/route.h>
@@ -59,7 +59,7 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/netinet6/ip6_ipsec.c 250044 2013-04-29 10:
 #include <netinet/ip_var.h>
 #include <netinet/ip_options.h>
 
-#include <machine/in_cksum.h>
+#include <machine/bsd_in_cksum.h>
 
 #ifdef IPSEC
 #include <netipsec/ipsec.h>
@@ -76,7 +76,7 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/netinet6/ip6_ipsec.c 250044 2013-04-29 10:
 #include <netinet6/ip6_ipsec.h>
 #include <netinet6/ip6_var.h>
 
-extern	struct bsd_protosw inet6sw[];
+extern	struct protosw inet6sw[];
 
 
 #ifdef INET6 

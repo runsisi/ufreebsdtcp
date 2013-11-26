@@ -78,21 +78,17 @@
 static __inline u_int
 tcp_ts_getticks(void)
 {
-    #if 0	// runsisi AT hust.edu.cn @2013/11/06
-    struct bsd_timeval tv;
-    u_long ms;
+	struct timeval tv;
+	u_long ms;
 
-    /*
-     * getmicrouptime() should be good enough for any 1-1000ms granularity.
-     * Do not use getmicrotime() here as it might break nfsroot/tcp.
-     */
-    getmicrouptime(&tv);
-    ms = tv.tv_sec * 1000 + tv.tv_usec / 1000;
+	/*
+	 * getmicrouptime() should be good enough for any 1-1000ms granularity.
+	 * Do not use getmicrotime() here as it might break nfsroot/tcp.
+	 */
+	getmicrouptime(&tv);
+	ms = tv.tv_sec * 1000 + tv.tv_usec / 1000;
 
-    return (ms);
-    #endif 	// ---------------------- @2013/11/06
-
-    return V_ticks;
+	return (ms);
 }
 #endif /* _KERNEL */
 

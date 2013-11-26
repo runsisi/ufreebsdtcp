@@ -17,9 +17,9 @@
 /** @brief Unique descriptor for the POWER_ENABLE_SOCKET() method */
 extern struct kobjop_desc power_enable_socket_desc;
 /** @brief A function implementing the POWER_ENABLE_SOCKET() method */
-typedef int power_enable_socket_t(bsd_device_t dev, bsd_device_t child);
+typedef int power_enable_socket_t(device_t dev, device_t child);
 
-static __inline int POWER_ENABLE_SOCKET(bsd_device_t dev, bsd_device_t child)
+static __inline int POWER_ENABLE_SOCKET(device_t dev, device_t child)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,power_enable_socket);
@@ -29,9 +29,9 @@ static __inline int POWER_ENABLE_SOCKET(bsd_device_t dev, bsd_device_t child)
 /** @brief Unique descriptor for the POWER_DISABLE_SOCKET() method */
 extern struct kobjop_desc power_disable_socket_desc;
 /** @brief A function implementing the POWER_DISABLE_SOCKET() method */
-typedef int power_disable_socket_t(bsd_device_t dev, bsd_device_t child);
+typedef int power_disable_socket_t(device_t dev, device_t child);
 
-static __inline int POWER_DISABLE_SOCKET(bsd_device_t dev, bsd_device_t child)
+static __inline int POWER_DISABLE_SOCKET(device_t dev, device_t child)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,power_disable_socket);

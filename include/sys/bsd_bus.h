@@ -61,16 +61,16 @@ typedef enum device_state {
  * @brief Device information exported to userspace.
  */
 struct u_device {
-	bsd_uintptr_t	dv_handle;
-	bsd_uintptr_t	dv_parent;
+	uintptr_t	dv_handle;
+	uintptr_t	dv_parent;
 
 	char		dv_name[32];		/**< @brief Name of device in tree. */
 	char		dv_desc[32];		/**< @brief Driver description */
 	char		dv_drivername[32];	/**< @brief Driver name */
 	char		dv_pnpinfo[128];	/**< @brief Plug and play info */
 	char		dv_location[128];	/**< @brief Where is the device? */
-	bsd_uint32_t	dv_devflags;		/**< @brief API Flags for device */
-	bsd_uint16_t	dv_flags;		/**< @brief flags for dev date */
+	uint32_t	dv_devflags;		/**< @brief API Flags for device */
+	uint16_t	dv_flags;		/**< @brief flags for dev date */
 	device_state_t	dv_state;		/**< @brief State of attachment */
 	/* XXX more driver info? */
 };
@@ -85,7 +85,7 @@ struct u_device {
  * hook to send the message.  However, devctl_queue_data is also
  * included in case devctl_notify isn't sufficiently general.
  */
-bsd_boolean_t devctl_process_running(void);
+boolean_t devctl_process_running(void);
 void devctl_notify_f(const char *__system, const char *__subsystem,
     const char *__type, const char *__data, int __flags);
 void devctl_notify(const char *__system, const char *__subsystem,
@@ -235,7 +235,7 @@ struct	resource;
  * @brief An entry for a single resource in a resource list.
  */
 struct resource_list_entry {
-	BSD_STAILQ_ENTRY(resource_list_entry) link;
+	STAILQ_ENTRY(resource_list_entry) link;
 	int	type;			/**< @brief type argument to alloc_resource */
 	int	rid;			/**< @brief resource identifier */
 	int	flags;			/**< @brief resource flags */
@@ -244,7 +244,7 @@ struct resource_list_entry {
 	u_long	end;			/**< @brief end of resource range */
 	u_long	count;			/**< @brief count within range */
 };
-BSD_STAILQ_HEAD(resource_list, resource_list_entry);
+STAILQ_HEAD(resource_list, resource_list_entry);
 
 #define	RLE_RESERVED		0x0001	/* Reserved by the parent bus. */
 #define	RLE_ALLOCATED		0x0002	/* Reserved resource is allocated. */
@@ -269,21 +269,21 @@ void	resource_list_delete(struct resource_list *rl,
 			     int type, int rid);
 struct resource *
 	resource_list_alloc(struct resource_list *rl,
-			    bsd_device_t bus, bsd_device_t child,
+			    device_t bus, device_t child,
 			    int type, int *rid,
 			    u_long start, u_long end,
 			    u_long count, u_int flags);
 int	resource_list_release(struct resource_list *rl,
-			      bsd_device_t bus, bsd_device_t child,
+			      device_t bus, device_t child,
 			      int type, int rid, struct resource *res);
 struct resource *
 	resource_list_reserve(struct resource_list *rl,
-			      bsd_device_t bus, bsd_device_t child,
+			      device_t bus, device_t child,
 			      int type, int *rid,
 			      u_long start, u_long end,
 			      u_long count, u_int flags);
 int	resource_list_unreserve(struct resource_list *rl,
-				bsd_device_t bus, bsd_device_t child,
+				device_t bus, device_t child,
 				int type, int rid);
 void	resource_list_purge(struct resource_list *rl);
 int	resource_list_print_type(struct resource_list *rl,
@@ -293,7 +293,7 @@ int	resource_list_print_type(struct resource_list *rl,
 /*
  * The root bus, to which all top-level busses are attached.
  */
-extern bsd_device_t root_bus;
+extern device_t root_bus;
 extern devclass_t root_devclass;
 void	root_bus_configure(void);
 
@@ -301,67 +301,67 @@ void	root_bus_configure(void);
  * Useful functions for implementing busses.
  */
 
-int	bus_generic_activate_resource(bsd_device_t dev, bsd_device_t child, int type,
+int	bus_generic_activate_resource(device_t dev, device_t child, int type,
 				      int rid, struct resource *r);
-bsd_device_t
-	bus_generic_add_child(bsd_device_t dev, u_int order, const char *name,
+device_t
+	bus_generic_add_child(device_t dev, u_int order, const char *name,
 			      int unit);
-int	bus_generic_adjust_resource(bsd_device_t bus, bsd_device_t child, int type,
+int	bus_generic_adjust_resource(device_t bus, device_t child, int type,
 				    struct resource *r, u_long start,
 				    u_long end);
 struct resource *
-	bus_generic_alloc_resource(bsd_device_t bus, bsd_device_t child, int type,
+	bus_generic_alloc_resource(device_t bus, device_t child, int type,
 				   int *rid, u_long start, u_long end,
 				   u_long count, u_int flags);
-int	bus_generic_attach(bsd_device_t dev);
-int	bus_generic_bind_intr(bsd_device_t dev, bsd_device_t child,
+int	bus_generic_attach(device_t dev);
+int	bus_generic_bind_intr(device_t dev, device_t child,
 			      struct resource *irq, int cpu);
-int	bus_generic_child_present(bsd_device_t dev, bsd_device_t child);
-int	bus_generic_config_intr(bsd_device_t, int, enum intr_trigger,
+int	bus_generic_child_present(device_t dev, device_t child);
+int	bus_generic_config_intr(device_t, int, enum intr_trigger,
 				enum intr_polarity);
-int	bus_generic_describe_intr(bsd_device_t dev, bsd_device_t child,
+int	bus_generic_describe_intr(device_t dev, device_t child,
 				  struct resource *irq, void *cookie,
 				  const char *descr);
-int	bus_generic_deactivate_resource(bsd_device_t dev, bsd_device_t child, int type,
+int	bus_generic_deactivate_resource(device_t dev, device_t child, int type,
 					int rid, struct resource *r);
-int	bus_generic_detach(bsd_device_t dev);
-void	bus_generic_driver_added(bsd_device_t dev, driver_t *driver);
+int	bus_generic_detach(device_t dev);
+void	bus_generic_driver_added(device_t dev, driver_t *driver);
 bus_dma_tag_t
-	bus_generic_get_dma_tag(bsd_device_t dev, bsd_device_t child);
+	bus_generic_get_dma_tag(device_t dev, device_t child);
 struct resource_list *
-	bus_generic_get_resource_list (bsd_device_t, bsd_device_t);
-void	bus_generic_new_pass(bsd_device_t dev);
-int	bus_print_child_header(bsd_device_t dev, bsd_device_t child);
-int	bus_print_child_footer(bsd_device_t dev, bsd_device_t child);
-int	bus_generic_print_child(bsd_device_t dev, bsd_device_t child);
-int	bus_generic_probe(bsd_device_t dev);
-int	bus_generic_read_ivar(bsd_device_t dev, bsd_device_t child, int which,
-			      bsd_uintptr_t *result);
-int	bus_generic_release_resource(bsd_device_t bus, bsd_device_t child,
+	bus_generic_get_resource_list (device_t, device_t);
+void	bus_generic_new_pass(device_t dev);
+int	bus_print_child_header(device_t dev, device_t child);
+int	bus_print_child_footer(device_t dev, device_t child);
+int	bus_generic_print_child(device_t dev, device_t child);
+int	bus_generic_probe(device_t dev);
+int	bus_generic_read_ivar(device_t dev, device_t child, int which,
+			      uintptr_t *result);
+int	bus_generic_release_resource(device_t bus, device_t child,
 				     int type, int rid, struct resource *r);
-int	bus_generic_resume(bsd_device_t dev);
-int	bus_generic_setup_intr(bsd_device_t dev, bsd_device_t child,
+int	bus_generic_resume(device_t dev);
+int	bus_generic_setup_intr(device_t dev, device_t child,
 			       struct resource *irq, int flags,
 			       driver_filter_t *filter, driver_intr_t *intr, 
 			       void *arg, void **cookiep);
 
 struct resource *
-	bus_generic_rl_alloc_resource (bsd_device_t, bsd_device_t, int, int *,
+	bus_generic_rl_alloc_resource (device_t, device_t, int, int *,
 				       u_long, u_long, u_long, u_int);
-void	bus_generic_rl_delete_resource (bsd_device_t, bsd_device_t, int, int);
-int	bus_generic_rl_get_resource (bsd_device_t, bsd_device_t, int, int, u_long *,
+void	bus_generic_rl_delete_resource (device_t, device_t, int, int);
+int	bus_generic_rl_get_resource (device_t, device_t, int, int, u_long *,
 				     u_long *);
-int	bus_generic_rl_set_resource (bsd_device_t, bsd_device_t, int, int, u_long,
+int	bus_generic_rl_set_resource (device_t, device_t, int, int, u_long,
 				     u_long);
-int	bus_generic_rl_release_resource (bsd_device_t, bsd_device_t, int, int,
+int	bus_generic_rl_release_resource (device_t, device_t, int, int,
 					 struct resource *);
 
-int	bus_generic_shutdown(bsd_device_t dev);
-int	bus_generic_suspend(bsd_device_t dev);
-int	bus_generic_teardown_intr(bsd_device_t dev, bsd_device_t child,
+int	bus_generic_shutdown(device_t dev);
+int	bus_generic_suspend(device_t dev);
+int	bus_generic_teardown_intr(device_t dev, device_t child,
 				  struct resource *irq, void *cookie);
-int	bus_generic_write_ivar(bsd_device_t dev, bsd_device_t child, int which,
-			       bsd_uintptr_t value);
+int	bus_generic_write_ivar(device_t dev, device_t child, int which,
+			       uintptr_t value);
 
 /*
  * Wrapper functions for the BUS_*_RESOURCE methods to make client code
@@ -374,45 +374,45 @@ struct resource_spec {
 	int	flags;
 };
 
-int	bus_alloc_resources(bsd_device_t dev, struct resource_spec *rs,
+int	bus_alloc_resources(device_t dev, struct resource_spec *rs,
 			    struct resource **res);
-void	bus_release_resources(bsd_device_t dev, const struct resource_spec *rs,
+void	bus_release_resources(device_t dev, const struct resource_spec *rs,
 			      struct resource **res);
 
-int	bus_adjust_resource(bsd_device_t child, int type, struct resource *r,
+int	bus_adjust_resource(device_t child, int type, struct resource *r,
 			    u_long start, u_long end);
-struct	resource *bus_alloc_resource(bsd_device_t dev, int type, int *rid,
+struct	resource *bus_alloc_resource(device_t dev, int type, int *rid,
 				     u_long start, u_long end, u_long count,
 				     u_int flags);
-int	bus_activate_resource(bsd_device_t dev, int type, int rid,
+int	bus_activate_resource(device_t dev, int type, int rid,
 			      struct resource *r);
-int	bus_deactivate_resource(bsd_device_t dev, int type, int rid,
+int	bus_deactivate_resource(device_t dev, int type, int rid,
 				struct resource *r);
-bus_dma_tag_t bus_get_dma_tag(bsd_device_t dev);
-int	bus_release_resource(bsd_device_t dev, int type, int rid,
+bus_dma_tag_t bus_get_dma_tag(device_t dev);
+int	bus_release_resource(device_t dev, int type, int rid,
 			     struct resource *r);
-int	bus_free_resource(bsd_device_t dev, int type, struct resource *r);
-int	bus_setup_intr(bsd_device_t dev, struct resource *r, int flags,
+int	bus_free_resource(device_t dev, int type, struct resource *r);
+int	bus_setup_intr(device_t dev, struct resource *r, int flags,
 		       driver_filter_t filter, driver_intr_t handler, 
 		       void *arg, void **cookiep);
-int	bus_teardown_intr(bsd_device_t dev, struct resource *r, void *cookie);
-int	bus_bind_intr(bsd_device_t dev, struct resource *r, int cpu);
-int	bus_describe_intr(bsd_device_t dev, struct resource *irq, void *cookie,
+int	bus_teardown_intr(device_t dev, struct resource *r, void *cookie);
+int	bus_bind_intr(device_t dev, struct resource *r, int cpu);
+int	bus_describe_intr(device_t dev, struct resource *irq, void *cookie,
 			  const char *fmt, ...);
-int	bus_set_resource(bsd_device_t dev, int type, int rid,
+int	bus_set_resource(device_t dev, int type, int rid,
 			 u_long start, u_long count);
-int	bus_get_resource(bsd_device_t dev, int type, int rid,
+int	bus_get_resource(device_t dev, int type, int rid,
 			 u_long *startp, u_long *countp);
-u_long	bus_get_resource_start(bsd_device_t dev, int type, int rid);
-u_long	bus_get_resource_count(bsd_device_t dev, int type, int rid);
-void	bus_delete_resource(bsd_device_t dev, int type, int rid);
-int	bus_child_present(bsd_device_t child);
-int	bus_child_pnpinfo_str(bsd_device_t child, char *buf, bsd_size_t buflen);
-int	bus_child_location_str(bsd_device_t child, char *buf, bsd_size_t buflen);
-void	bus_enumerate_hinted_children(bsd_device_t bus);
+u_long	bus_get_resource_start(device_t dev, int type, int rid);
+u_long	bus_get_resource_count(device_t dev, int type, int rid);
+void	bus_delete_resource(device_t dev, int type, int rid);
+int	bus_child_present(device_t child);
+int	bus_child_pnpinfo_str(device_t child, char *buf, size_t buflen);
+int	bus_child_location_str(device_t child, char *buf, size_t buflen);
+void	bus_enumerate_hinted_children(device_t bus);
 
 static __inline struct resource *
-bus_alloc_resource_any(bsd_device_t dev, int type, int *rid, u_int flags)
+bus_alloc_resource_any(device_t dev, int type, int *rid, u_int flags)
 {
 	return (bus_alloc_resource(dev, type, rid, 0ul, ~0ul, 1, flags));
 }
@@ -420,56 +420,56 @@ bus_alloc_resource_any(bsd_device_t dev, int type, int *rid, u_int flags)
 /*
  * Access functions for device.
  */
-bsd_device_t	device_add_child(bsd_device_t dev, const char *name, int unit);
-bsd_device_t	device_add_child_ordered(bsd_device_t dev, u_int order,
+device_t	device_add_child(device_t dev, const char *name, int unit);
+device_t	device_add_child_ordered(device_t dev, u_int order,
 					 const char *name, int unit);
-void	device_busy(bsd_device_t dev);
-int	device_delete_child(bsd_device_t dev, bsd_device_t child);
-int	device_delete_children(bsd_device_t dev);
-int	device_attach(bsd_device_t dev);
-int	device_detach(bsd_device_t dev);
-void	device_disable(bsd_device_t dev);
-void	device_enable(bsd_device_t dev);
-bsd_device_t	device_find_child(bsd_device_t dev, const char *classname,
+void	device_busy(device_t dev);
+int	device_delete_child(device_t dev, device_t child);
+int	device_delete_children(device_t dev);
+int	device_attach(device_t dev);
+int	device_detach(device_t dev);
+void	device_disable(device_t dev);
+void	device_enable(device_t dev);
+device_t	device_find_child(device_t dev, const char *classname,
 				  int unit);
-const char	*device_get_desc(bsd_device_t dev);
-devclass_t	device_get_devclass(bsd_device_t dev);
-driver_t	*device_get_driver(bsd_device_t dev);
-bsd_uint32_t	device_get_flags(bsd_device_t dev);
-bsd_device_t	device_get_parent(bsd_device_t dev);
-int	device_get_children(bsd_device_t dev, bsd_device_t **listp, int *countp);
-void	*device_get_ivars(bsd_device_t dev);
-void	device_set_ivars(bsd_device_t dev, void *ivars);
-const	char *device_get_name(bsd_device_t dev);
-const	char *device_get_nameunit(bsd_device_t dev);
-void	*device_get_softc(bsd_device_t dev);
-device_state_t	device_get_state(bsd_device_t dev);
-int	device_get_unit(bsd_device_t dev);
-struct sysctl_ctx_list *device_get_sysctl_ctx(bsd_device_t dev);
-struct sysctl_oid *device_get_sysctl_tree(bsd_device_t dev);
-int	device_is_alive(bsd_device_t dev);	/* did probe succeed? */
-int	device_is_attached(bsd_device_t dev);	/* did attach succeed? */
-int	device_is_enabled(bsd_device_t dev);
-int	device_is_quiet(bsd_device_t dev);
-int	device_print_prettyname(bsd_device_t dev);
-int	device_printf(bsd_device_t dev, const char *, ...) __printflike(2, 3);
-int	device_probe(bsd_device_t dev);
-int	device_probe_and_attach(bsd_device_t dev);
-int	device_probe_child(bsd_device_t bus, bsd_device_t dev);
-int	device_quiesce(bsd_device_t dev);
-void	device_quiet(bsd_device_t dev);
-void	device_set_desc(bsd_device_t dev, const char* desc);
-void	device_set_desc_copy(bsd_device_t dev, const char* desc);
-int	device_set_devclass(bsd_device_t dev, const char *classname);
-int	device_set_driver(bsd_device_t dev, driver_t *driver);
-void	device_set_flags(bsd_device_t dev, bsd_uint32_t flags);
-void	device_set_softc(bsd_device_t dev, void *softc);
+const char	*device_get_desc(device_t dev);
+devclass_t	device_get_devclass(device_t dev);
+driver_t	*device_get_driver(device_t dev);
+u_int32_t	device_get_flags(device_t dev);
+device_t	device_get_parent(device_t dev);
+int	device_get_children(device_t dev, device_t **listp, int *countp);
+void	*device_get_ivars(device_t dev);
+void	device_set_ivars(device_t dev, void *ivars);
+const	char *device_get_name(device_t dev);
+const	char *device_get_nameunit(device_t dev);
+void	*device_get_softc(device_t dev);
+device_state_t	device_get_state(device_t dev);
+int	device_get_unit(device_t dev);
+struct sysctl_ctx_list *device_get_sysctl_ctx(device_t dev);
+struct sysctl_oid *device_get_sysctl_tree(device_t dev);
+int	device_is_alive(device_t dev);	/* did probe succeed? */
+int	device_is_attached(device_t dev);	/* did attach succeed? */
+int	device_is_enabled(device_t dev);
+int	device_is_quiet(device_t dev);
+int	device_print_prettyname(device_t dev);
+int	device_printf(device_t dev, const char *, ...) __printflike(2, 3);
+int	device_probe(device_t dev);
+int	device_probe_and_attach(device_t dev);
+int	device_probe_child(device_t bus, device_t dev);
+int	device_quiesce(device_t dev);
+void	device_quiet(device_t dev);
+void	device_set_desc(device_t dev, const char* desc);
+void	device_set_desc_copy(device_t dev, const char* desc);
+int	device_set_devclass(device_t dev, const char *classname);
+int	device_set_driver(device_t dev, driver_t *driver);
+void	device_set_flags(device_t dev, u_int32_t flags);
+void	device_set_softc(device_t dev, void *softc);
 void	device_free_softc(void *softc);
-void	device_claim_softc(bsd_device_t dev);
-int	device_set_unit(bsd_device_t dev, int unit);	/* XXX DONT USE XXX */
-int	device_shutdown(bsd_device_t dev);
-void	device_unbusy(bsd_device_t dev);
-void	device_verbose(bsd_device_t dev);
+void	device_claim_softc(device_t dev);
+int	device_set_unit(device_t dev, int unit);	/* XXX DONT USE XXX */
+int	device_shutdown(device_t dev);
+void	device_unbusy(device_t dev);
+void	device_verbose(device_t dev);
 
 /*
  * Access functions for devclass.
@@ -480,9 +480,9 @@ devclass_t	devclass_create(const char *classname);
 int		devclass_delete_driver(devclass_t busclass, driver_t *driver);
 devclass_t	devclass_find(const char *classname);
 const char	*devclass_get_name(devclass_t dc);
-bsd_device_t	devclass_get_device(devclass_t dc, int unit);
+device_t	devclass_get_device(devclass_t dc, int unit);
 void	*devclass_get_softc(devclass_t dc, int unit);
-int	devclass_get_devices(devclass_t dc, bsd_device_t **listp, int *countp);
+int	devclass_get_devices(devclass_t dc, device_t **listp, int *countp);
 int	devclass_get_drivers(devclass_t dc, driver_t ***listp, int *countp);
 int	devclass_get_count(devclass_t dc);
 int	devclass_get_maxunit(devclass_t dc);

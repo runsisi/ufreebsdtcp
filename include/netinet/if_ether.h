@@ -93,8 +93,8 @@ struct sockaddr_inarp {
 	u_char	sin_len;
 	u_char	sin_family;
 	u_short sin_port;
-	struct	bsd_in_addr sin_addr;
-	struct	bsd_in_addr sin_srcaddr;
+	struct	in_addr sin_addr;
+	struct	in_addr sin_srcaddr;
 	u_short	sin_tos;
 	u_short	sin_other;
 #define SIN_PROXY 1
@@ -113,7 +113,7 @@ struct llentry;
 struct ifaddr;
 
 int	arpresolve(struct ifnet *ifp, struct rtentry *rt,
-		    struct mbuf *m, struct bsd_sockaddr *dst, u_char *desten,
+		    struct mbuf *m, struct sockaddr *dst, u_char *desten,
 		    struct llentry **lle);
 void	arp_ifinit(struct ifnet *, struct ifaddr *);
 void	arp_ifinit2(struct ifnet *, struct ifaddr *, u_char *);

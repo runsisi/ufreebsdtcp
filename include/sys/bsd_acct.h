@@ -39,7 +39,7 @@
 #define _SYS_ACCT_H_
 
 #ifdef _KERNEL
-#define float bsd_uint32_t
+#define float uint32_t
 #endif
 
 #define AC_COMM_LEN 16
@@ -51,24 +51,24 @@
  */
 
 struct acctv2 {
-    bsd_uint8_t   ac_zero;		/* zero identifies new version */
-    bsd_uint8_t   ac_version;		/* record version number */
-    bsd_uint16_t  ac_len;		/* record length */
+	uint8_t   ac_zero;		/* zero identifies new version */
+	uint8_t   ac_version;		/* record version number */
+	uint16_t  ac_len;		/* record length */
 
 	char	  ac_comm[AC_COMM_LEN];	/* command name */
 	float	  ac_utime;		/* user time */
 	float	  ac_stime;		/* system time */
 	float	  ac_etime;		/* elapsed time */
-	bsd_time_t	  ac_btime;		/* starting time */
-	bsd_uid_t	  ac_uid;		/* user id */
-	bsd_gid_t	  ac_gid;		/* group id */
+	time_t	  ac_btime;		/* starting time */
+	uid_t	  ac_uid;		/* user id */
+	gid_t	  ac_gid;		/* group id */
 	float	  ac_mem;		/* average memory usage */
 	float	  ac_io;		/* count of IO blocks */
-	__bsd_dev_t   ac_tty;		/* controlling tty */
+	__dev_t   ac_tty;		/* controlling tty */
 
-	bsd_uint16_t  ac_len2;		/* record length */
+	uint16_t  ac_len2;		/* record length */
 	union {
-		__bsd_dev_t	  ac_align;	/* force v1 compatible alignment */
+		__dev_t	  ac_align;	/* force v1 compatible alignment */
 
 #define	AFORK	0x01			/* forked but not exec'ed */
 /* ASU is no longer supported */
@@ -78,7 +78,7 @@ struct acctv2 {
 #define	AXSIG	0x10			/* killed by a signal */
 #define ANVER	0x20			/* new record version */
 
-		bsd_uint8_t   ac_flag;	/* accounting flags */
+		uint8_t   ac_flag;	/* accounting flags */
 	} ac_trailer;
 
 #define ac_flagx ac_trailer.ac_flag
@@ -93,20 +93,20 @@ struct acctv2 {
  * Units are 1/AHZV1 seconds.
  */
 
-typedef bsd_uint16_t comp_t;
+typedef uint16_t comp_t;
 
 struct acctv1 {
 	char	  ac_comm[AC_COMM_LEN];	/* command name */
 	comp_t	  ac_utime;		/* user time */
 	comp_t	  ac_stime;		/* system time */
 	comp_t	  ac_etime;		/* elapsed time */
-	bsd_time_t	  ac_btime;		/* starting time */
-	bsd_uid_t	  ac_uid;		/* user id */
-	bsd_gid_t	  ac_gid;		/* group id */
-	bsd_uint16_t  ac_mem;		/* average memory usage */
+	time_t	  ac_btime;		/* starting time */
+	uid_t	  ac_uid;		/* user id */
+	gid_t	  ac_gid;		/* group id */
+	uint16_t  ac_mem;		/* average memory usage */
 	comp_t	  ac_io;		/* count of IO blocks */
-	__bsd_dev_t   ac_tty;		/* controlling tty */
-	bsd_uint8_t   ac_flag;		/* accounting flags */
+	__dev_t   ac_tty;		/* controlling tty */
+	uint8_t   ac_flag;		/* accounting flags */
 };
 
 /*

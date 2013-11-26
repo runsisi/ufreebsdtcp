@@ -41,7 +41,7 @@
  * don't know who uses this.
  */
 struct arc_addr {
-	bsd_uint8_t  arc_addr_octet[1];
+	u_int8_t  arc_addr_octet[1];
 } __packed;
 
 /*
@@ -49,22 +49,22 @@ struct arc_addr {
  * as given to interface code.
  */
 struct	arc_header {
-	bsd_uint8_t  arc_shost;
-	bsd_uint8_t  arc_dhost;
-	bsd_uint8_t  arc_type;
+	u_int8_t  arc_shost;
+	u_int8_t  arc_dhost;
+	u_int8_t  arc_type;
 	/*
 	 * only present for newstyle encoding with LL fragmentation.
 	 * Don't use sizeof(anything), use ARC_HDR{,NEW}LEN instead.
 	 */
-	bsd_uint8_t  arc_flag;
-	bsd_uint16_t arc_seqid;
+	u_int8_t  arc_flag;
+	u_int16_t arc_seqid;
 
 	/*
 	 * only present in exception packets (arc_flag == 0xff)
 	 */
-	bsd_uint8_t  arc_type2;	/* same as arc_type */
-	bsd_uint8_t  arc_flag2;	/* real flag value */
-	bsd_uint16_t arc_seqid2;	/* real seqid value */
+	u_int8_t  arc_type2;	/* same as arc_type */
+	u_int8_t  arc_flag2;	/* real flag value */
+	u_int16_t arc_seqid2;	/* real seqid value */
 } __packed;
 
 #define	ARC_ADDR_LEN		1
@@ -104,36 +104,36 @@ struct	arc_header {
 struct	arccom {
 	struct	  ifnet *ac_ifp;	/* network-visible interface */
 
-	bsd_uint16_t ac_seqid;		/* seq. id used by PHDS encap. */
+	u_int16_t ac_seqid;		/* seq. id used by PHDS encap. */
 
-	bsd_uint8_t  arc_shost;
-	bsd_uint8_t  arc_dhost;
-	bsd_uint8_t  arc_type;
+	u_int8_t  arc_shost;
+	u_int8_t  arc_dhost;
+	u_int8_t  arc_type;
 
-	bsd_uint8_t  dummy0;
-	bsd_uint16_t dummy1;
+	u_int8_t  dummy0;
+	u_int16_t dummy1;
 	int sflag, fsflag, rsflag;
 	struct mbuf *curr_frag;
 
 	struct ac_frag {
-		bsd_uint8_t  af_maxflag;	/* from first packet */
-		bsd_uint8_t  af_lastseen;	/* last split flag seen */
-		bsd_uint16_t af_seqid;
+		u_int8_t  af_maxflag;	/* from first packet */
+		u_int8_t  af_lastseen;	/* last split flag seen */
+		u_int16_t af_seqid;
 		struct mbuf *af_packet;
 	} ac_fragtab[256];		/* indexed by sender ll address */
 };
 
 #ifdef _KERNEL
-extern bsd_uint8_t arcbroadcastaddr;
+extern u_int8_t arcbroadcastaddr;
 extern int arc_ipmtu;	/* XXX new ip only, no RFC 1051! */
 
-void	arc_ifattach(struct ifnet *, bsd_uint8_t);
+void	arc_ifattach(struct ifnet *, u_int8_t);
 void	arc_ifdetach(struct ifnet *);
-void	arc_storelladdr(struct ifnet *, bsd_uint8_t);
-int	arc_isphds(bsd_uint8_t);
+void	arc_storelladdr(struct ifnet *, u_int8_t);
+int	arc_isphds(u_int8_t);
 void	arc_input(struct ifnet *, struct mbuf *);
 int	arc_output(struct ifnet *, struct mbuf *,
-	    struct bsd_sockaddr *, struct route *);
+	    struct sockaddr *, struct route *);
 int	arc_ioctl(struct ifnet *, u_long, caddr_t);
 
 void		arc_frag_init(struct ifnet *);

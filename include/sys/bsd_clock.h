@@ -73,9 +73,9 @@ struct clocktime {
 	long	nsec;			/* nano seconds */
 };
 
-int clock_ct_to_ts(struct clocktime *, struct bsd_timespec *);
-void clock_ts_to_ct(struct bsd_timespec *, struct clocktime *);
-void clock_register(bsd_device_t, long);
+int clock_ct_to_ts(struct clocktime *, struct timespec *);
+void clock_ts_to_ct(struct timespec *, struct clocktime *);
+void clock_register(device_t, long);
 
 /*
  * BCD to decimal and decimal to BCD.
@@ -90,8 +90,8 @@ void clock_register(bsd_device_t, long);
 /* Traditional POSIX base year */
 #define	POSIX_BASE_YEAR	1970
 
-void timespec2fattime(struct bsd_timespec *tsp, int utc, bsd_uint16_t *ddp, bsd_uint16_t *dtp, bsd_uint8_t *dhp);
-void fattime2timespec(unsigned dd, unsigned dt, unsigned dh, int utc, struct bsd_timespec *tsp);
+void timespec2fattime(struct timespec *tsp, int utc, u_int16_t *ddp, u_int16_t *dtp, u_int8_t *dhp);
+void fattime2timespec(unsigned dd, unsigned dt, unsigned dh, int utc, struct timespec *tsp);
 
 #endif /* _KERNEL */
 

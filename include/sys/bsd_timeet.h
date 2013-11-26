@@ -45,7 +45,7 @@
 
 struct eventtimer;
 typedef int et_start_t(struct eventtimer *et,
-    struct bsd_bintime *first, struct bsd_bintime *period);
+    struct bintime *first, struct bintime *period);
 typedef int et_stop_t(struct eventtimer *et);
 typedef void et_event_cb_t(struct eventtimer *et, void *arg);
 typedef int et_deregister_cb_t(struct eventtimer *et, void *arg);
@@ -68,10 +68,10 @@ struct eventtimer {
 		 * another timecounter. Higher means better.
 		 */
 	int			et_active;
-	bsd_uint64_t		et_frequency;
+	u_int64_t		et_frequency;
 		/* Base frequency in Hz. */
-	struct bsd_bintime		et_min_period;
-	struct bsd_bintime		et_max_period;
+	struct bintime		et_min_period;
+	struct bintime		et_max_period;
 	et_start_t		*et_start;
 	et_stop_t		*et_stop;
 	et_event_cb_t		*et_event_cb;
@@ -94,7 +94,7 @@ struct eventtimer *et_find(const char *name, int check, int want);
 int	et_init(struct eventtimer *et, et_event_cb_t *event,
     et_deregister_cb_t *deregister, void *arg);
 int	et_start(struct eventtimer *et,
-    struct bsd_bintime *first, struct bsd_bintime *period);
+    struct bintime *first, struct bintime *period);
 int	et_stop(struct eventtimer *et);
 int	et_ban(struct eventtimer *et);
 int	et_free(struct eventtimer *et);

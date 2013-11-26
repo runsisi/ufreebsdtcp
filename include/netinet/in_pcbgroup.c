@@ -27,19 +27,19 @@
  * SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 
 __FBSDID("$FreeBSD: release/9.2.0/sys/netinet/in_pcbgroup.c 222748 2011-06-06 12:55:02Z rwatson $");
 
 #include "opt_inet6.h"
 
-#include <sys/param.h>
-#include <sys/lock.h>
-#include <sys/malloc.h>
-#include <sys/mbuf.h>
-#include <sys/mutex.h>
-#include <sys/smp.h>
-#include <sys/socketvar.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_lock.h>
+#include <sys/bsd_malloc.h>
+#include <sys/bsd_mbuf.h>
+#include <sys/bsd_mutex.h>
+#include <sys/bsd_smp.h>
+#include <sys/bsd_socketvar.h>
 
 #include <netinet/in.h>
 #include <netinet/in_pcb.h>
@@ -133,7 +133,7 @@ in_pcbgroup_init(struct inpcbinfo *pcbinfo, u_int hashfields,
 	numpcbgroups = mp_ncpus;
 
 	pcbinfo->ipi_hashfields = hashfields;
-	pcbinfo->ipi_pcbgroups = bsd_malloc(numpcbgroups *
+	pcbinfo->ipi_pcbgroups = malloc(numpcbgroups *
 	    sizeof(*pcbinfo->ipi_pcbgroups), M_PCB, M_WAITOK | M_ZERO);
 	pcbinfo->ipi_npcbgroups = numpcbgroups;
 	pcbinfo->ipi_wildbase = hashinit(hash_nelements, M_PCB,
@@ -171,7 +171,7 @@ in_pcbgroup_destroy(struct inpcbinfo *pcbinfo)
 		    pcbgroup->ipg_hashmask);
 	}
 	hashdestroy(pcbinfo->ipi_wildbase, M_PCB, pcbinfo->ipi_wildmask);
-	bsd_free(pcbinfo->ipi_pcbgroups, M_PCB);
+	free(pcbinfo->ipi_pcbgroups, M_PCB);
 	pcbinfo->ipi_pcbgroups = NULL;
 	pcbinfo->ipi_npcbgroups = 0;
 	pcbinfo->ipi_hashfields = 0;
@@ -182,7 +182,7 @@ in_pcbgroup_destroy(struct inpcbinfo *pcbinfo)
  * index.
  */
 static __inline u_int
-in_pcbgroup_getbucket(struct inpcbinfo *pcbinfo, bsd_uint32_t hash)
+in_pcbgroup_getbucket(struct inpcbinfo *pcbinfo, uint32_t hash)
 {
 
 	return (hash % pcbinfo->ipi_npcbgroups);
@@ -193,7 +193,7 @@ in_pcbgroup_getbucket(struct inpcbinfo *pcbinfo, bsd_uint32_t hash)
  * information is insufficient to identify the pcbgroup.
  */
 struct inpcbgroup *
-in_pcbgroup_byhash(struct inpcbinfo *pcbinfo, u_int hashtype, bsd_uint32_t hash)
+in_pcbgroup_byhash(struct inpcbinfo *pcbinfo, u_int hashtype, uint32_t hash)
 {
 
 	return (NULL);
@@ -208,10 +208,10 @@ in_pcbgroup_bymbuf(struct inpcbinfo *pcbinfo, struct mbuf *m)
 }
 
 struct inpcbgroup *
-in_pcbgroup_bytuple(struct inpcbinfo *pcbinfo, struct bsd_in_addr laddr,
-    u_short lport, struct bsd_in_addr faddr, u_short fport)
+in_pcbgroup_bytuple(struct inpcbinfo *pcbinfo, struct in_addr laddr,
+    u_short lport, struct in_addr faddr, u_short fport)
 {
-	bsd_uint32_t hash;
+	uint32_t hash;
 
 	switch (pcbinfo->ipi_hashfields) {
 	case IPI_HASHFIELDS_4TUPLE:
@@ -314,7 +314,7 @@ in_pcbgroup_update_internal(struct inpcbinfo *pcbinfo,
 {
 	struct inpcbgroup *oldpcbgroup;
 	struct inpcbhead *pcbhash;
-	bsd_uint32_t hashkey_faddr;
+	uint32_t hashkey_faddr;
 
 	INP_WLOCK_ASSERT(inp);
 

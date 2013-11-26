@@ -57,7 +57,7 @@ struct tap_softc {
 
 	u_int8_t 	ether_addr[ETHER_ADDR_LEN]; /* ether addr of the remote side */
 
-	bsd_pid_t		 tap_pid;		/* PID of process to open    */
+	pid_t		 tap_pid;		/* PID of process to open    */
 	struct sigio	*tap_sigio;		/* information for async I/O */
 	struct selinfo	 tap_rsel;		/* read select               */
 

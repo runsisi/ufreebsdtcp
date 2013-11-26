@@ -44,15 +44,15 @@ struct loginclass;
  * priv(9) interface should be used to check for privilege.
  */
 #if defined(_KERNEL) || defined(_WANT_UCRED)
-struct bsd_ucred {
+struct ucred {
 	u_int	cr_ref;			/* reference count */
 #define	cr_startcopy cr_uid
-	bsd_uid_t	cr_uid;			/* effective user id */
-	bsd_uid_t	cr_ruid;		/* real user id */
-	bsd_uid_t	cr_svuid;		/* saved user id */
+	uid_t	cr_uid;			/* effective user id */
+	uid_t	cr_ruid;		/* real user id */
+	uid_t	cr_svuid;		/* saved user id */
 	int	cr_ngroups;		/* number of groups */
-	bsd_gid_t	cr_rgid;		/* real group id */
-	bsd_gid_t	cr_svgid;		/* saved group id */
+	gid_t	cr_rgid;		/* real group id */
+	gid_t	cr_svgid;		/* saved group id */
 	struct uidinfo	*cr_uidinfo;	/* per euid resource consumption */
 	struct uidinfo	*cr_ruidinfo;	/* per ruid resource consumption */
 	struct prison	*cr_prison;	/* jail(2) */
@@ -62,7 +62,7 @@ struct bsd_ucred {
 #define	cr_endcopy	cr_label
 	struct label	*cr_label;	/* MAC label */
 	struct auditinfo_addr	cr_audit;	/* Audit properties. */
-	bsd_gid_t	*cr_groups;		/* groups */
+	gid_t	*cr_groups;		/* groups */
 	int	cr_agroups;		/* Available groups */
 };
 #define	NOCRED	((struct ucred *)0)	/* no credential available */
@@ -81,9 +81,9 @@ struct bsd_ucred {
  */
 struct xucred {
 	u_int	cr_version;		/* structure layout version */
-	bsd_uid_t	cr_uid;			/* effective user id */
+	uid_t	cr_uid;			/* effective user id */
 	short	cr_ngroups;		/* number of groups */
-	bsd_gid_t	cr_groups[XU_NGROUPS];	/* groups */
+	gid_t	cr_groups[XU_NGROUPS];	/* groups */
 	void	*_cr_unused1;		/* compatibility with old ucred */
 };
 #define	XUCRED_VERSION	0
@@ -95,23 +95,23 @@ struct xucred {
 struct proc;
 struct thread;
 
-void	change_egid(struct bsd_ucred *newcred, bsd_gid_t egid);
-void	change_euid(struct bsd_ucred *newcred, struct uidinfo *euip);
-void	change_rgid(struct bsd_ucred *newcred, bsd_gid_t rgid);
-void	change_ruid(struct bsd_ucred *newcred, struct uidinfo *ruip);
-void	change_svgid(struct bsd_ucred *newcred, bsd_gid_t svgid);
-void	change_svuid(struct bsd_ucred *newcred, bsd_uid_t svuid);
-void	crcopy(struct bsd_ucred *dest, struct bsd_ucred *src);
-struct bsd_ucred	*crcopysafe(struct proc *p, struct bsd_ucred *cr);
-struct bsd_ucred	*crdup(struct bsd_ucred *cr);
+void	change_egid(struct ucred *newcred, gid_t egid);
+void	change_euid(struct ucred *newcred, struct uidinfo *euip);
+void	change_rgid(struct ucred *newcred, gid_t rgid);
+void	change_ruid(struct ucred *newcred, struct uidinfo *ruip);
+void	change_svgid(struct ucred *newcred, gid_t svgid);
+void	change_svuid(struct ucred *newcred, uid_t svuid);
+void	crcopy(struct ucred *dest, struct ucred *src);
+struct ucred	*crcopysafe(struct proc *p, struct ucred *cr);
+struct ucred	*crdup(struct ucred *cr);
 void	cred_update_thread(struct thread *td);
-void	crfree(struct bsd_ucred *cr);
-struct bsd_ucred	*crget(void);
-struct bsd_ucred	*crhold(struct bsd_ucred *cr);
-int	crshared(struct bsd_ucred *cr);
-void	cru2x(struct bsd_ucred *cr, struct xucred *xcr);
-void	crsetgroups(struct bsd_ucred *cr, int n, bsd_gid_t *groups);
-int	groupmember(bsd_gid_t gid, struct bsd_ucred *cred);
+void	crfree(struct ucred *cr);
+struct ucred	*crget(void);
+struct ucred	*crhold(struct ucred *cr);
+int	crshared(struct ucred *cr);
+void	cru2x(struct ucred *cr, struct xucred *xcr);
+void	crsetgroups(struct ucred *cr, int n, gid_t *groups);
+int	groupmember(gid_t gid, struct ucred *cred);
 #endif /* _KERNEL */
 
 #endif /* !_SYS_UCRED_H_ */

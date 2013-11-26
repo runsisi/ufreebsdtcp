@@ -35,7 +35,7 @@
 #include <sys/bsd_queue.h>
 
 struct eventhandler_entry {
-	BSD_TAILQ_ENTRY(eventhandler_entry)	ee_link;
+	TAILQ_ENTRY(eventhandler_entry)	ee_link;
 	int				ee_priority;
 #define	EHE_DEAD_PRIORITY	(-1)
 	void				*ee_arg;
@@ -55,8 +55,8 @@ struct eventhandler_list {
 #define EHL_INITTED	(1<<0)
 	u_int				el_runcount;
 	struct mtx			el_lock;
-	BSD_TAILQ_ENTRY(eventhandler_list)	el_link;
-	BSD_TAILQ_HEAD(,eventhandler_entry)	el_entries;
+	TAILQ_ENTRY(eventhandler_list)	el_link;
+	TAILQ_HEAD(,eventhandler_entry)	el_entries;
 };
 
 typedef struct eventhandler_entry	*eventhandler_tag;
@@ -79,7 +79,7 @@ typedef struct eventhandler_entry	*eventhandler_tag;
 	KASSERT((list)->el_runcount > 0,				\
 	    ("eventhandler_invoke: runcount overflow"));		\
 	CTR0(KTR_EVH, "eventhandler_invoke(\"" __STRING(name) "\")");	\
-	BSD_TAILQ_FOREACH(_ep, &((list)->el_entries), ee_link) {		\
+	TAILQ_FOREACH(_ep, &((list)->el_entries), ee_link) {		\
 		if (_ep->ee_priority != EHE_DEAD_PRIORITY) {		\
 			EHL_UNLOCK((list));				\
 			_t = (struct eventhandler_entry_ ## name *)_ep;	\
@@ -141,9 +141,9 @@ do {									\
 	if ((_el = eventhandler_find_list(#name)) != NULL)		\
 		eventhandler_deregister(_el, tag);			\
 } while(0)
+	
 
-
-eventhandler_tag eventhandler_register(struct eventhandler_list *list,
+eventhandler_tag eventhandler_register(struct eventhandler_list *list, 
 	    const char *name, void *func, void *arg, int priority);
 void	eventhandler_deregister(struct eventhandler_list *list,
 	    eventhandler_tag tag);
@@ -194,8 +194,8 @@ EVENTHANDLER_DECLARE(mountroot, mountroot_handler_t);
 
 /* VLAN state change events */
 struct ifnet;
-typedef void (*vlan_config_fn)(void *, struct ifnet *, bsd_uint16_t);
-typedef void (*vlan_unconfig_fn)(void *, struct ifnet *, bsd_uint16_t);
+typedef void (*vlan_config_fn)(void *, struct ifnet *, uint16_t);
+typedef void (*vlan_unconfig_fn)(void *, struct ifnet *, uint16_t);
 EVENTHANDLER_DECLARE(vlan_config, vlan_config_fn);
 EVENTHANDLER_DECLARE(vlan_unconfig, vlan_unconfig_fn);
 

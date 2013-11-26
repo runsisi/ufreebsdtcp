@@ -48,7 +48,7 @@ struct inpcb;
  * possibly intercept the packet.
  */
 struct packet_filter_hook {
-        BSD_TAILQ_ENTRY(packet_filter_hook) pfil_link;
+        TAILQ_ENTRY(packet_filter_hook) pfil_link;
 	int	(*pfil_func)(void *, struct mbuf **, struct ifnet *, int,
 		    struct inpcb *);
 	void	*pfil_arg;
@@ -59,7 +59,7 @@ struct packet_filter_hook {
 #define PFIL_WAITOK	0x00000004
 #define PFIL_ALL	(PFIL_IN|PFIL_OUT)
 
-typedef	BSD_TAILQ_HEAD(pfil_list, packet_filter_hook) pfil_list_t;
+typedef	TAILQ_HEAD(pfil_list, packet_filter_hook) pfil_list_t;
 
 #define	PFIL_TYPE_AF		1	/* key is AF_* type */
 #define	PFIL_TYPE_IFNET		2	/* key is ifnet pointer */
@@ -69,22 +69,18 @@ struct pfil_head {
 	pfil_list_t	ph_out;
 	int		ph_type;
 	int		ph_nhooks;
-#if 0	// runsisi AT hust.edu.cn @2013/11/07
 #if defined( __linux__ ) || defined( _WIN32 )
-    rwlock_t	ph_mtx;
+	rwlock_t	ph_mtx;
 #else
-#endif 	// ---------------------- @2013/11/07
 	struct rmlock	ph_lock;
-#if 0	// runsisi AT hust.edu.cn @2013/11/07
 #endif
-#endif 	// ---------------------- @2013/11/07
 	union {
 		u_long		phu_val;
 		void		*phu_ptr;
 	} ph_un;
 #define	ph_af		ph_un.phu_val
 #define	ph_ifnet	ph_un.phu_ptr
-	BSD_LIST_ENTRY(pfil_head) ph_list;
+	LIST_ENTRY(pfil_head) ph_list;
 };
 
 int	pfil_add_hook(int (*func)(void *, struct mbuf **, struct ifnet *,
@@ -115,9 +111,9 @@ pfil_hook_get(int dir, struct pfil_head *ph)
 {
 
 	if (dir == PFIL_IN)
-		return (BSD_TAILQ_FIRST(&ph->ph_in));
+		return (TAILQ_FIRST(&ph->ph_in));
 	else if (dir == PFIL_OUT)
-		return (BSD_TAILQ_FIRST(&ph->ph_out));
+		return (TAILQ_FIRST(&ph->ph_out));
 	else
 		return (NULL);
 }

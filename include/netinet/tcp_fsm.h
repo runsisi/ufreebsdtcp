@@ -77,23 +77,23 @@
 
 #ifdef	TCPOUTFLAGS
 /*
- * Flags used when sending segments in tcp_output.  Basic flags (BSD_TH_RST,
- * BSD_TH_ACK,BSD_TH_SYN,BSD_TH_FIN) are totally determined by state, with the proviso
- * that BSD_TH_FIN is sent only if all data queued for output is included in the
+ * Flags used when sending segments in tcp_output.  Basic flags (TH_RST,
+ * TH_ACK,TH_SYN,TH_FIN) are totally determined by state, with the proviso
+ * that TH_FIN is sent only if all data queued for output is included in the
  * segment.
  */
 static u_char	tcp_outflags[TCP_NSTATES] = {
-	BSD_TH_RST|BSD_TH_ACK,		/* 0, CLOSED */
+	TH_RST|TH_ACK,		/* 0, CLOSED */
 	0,			/* 1, LISTEN */
-	BSD_TH_SYN,			/* 2, SYN_SENT */
-	BSD_TH_SYN|BSD_TH_ACK,		/* 3, SYN_RECEIVED */
-	BSD_TH_ACK,			/* 4, ESTABLISHED */
-	BSD_TH_ACK,			/* 5, CLOSE_WAIT */
-	BSD_TH_FIN|BSD_TH_ACK,		/* 6, FIN_WAIT_1 */
-	BSD_TH_FIN|BSD_TH_ACK,		/* 7, CLOSING */
-	BSD_TH_FIN|BSD_TH_ACK,		/* 8, LAST_ACK */
-	BSD_TH_ACK,			/* 9, FIN_WAIT_2 */
-	BSD_TH_ACK,			/* 10, TIME_WAIT */
+	TH_SYN,			/* 2, SYN_SENT */
+	TH_SYN|TH_ACK,		/* 3, SYN_RECEIVED */
+	TH_ACK,			/* 4, ESTABLISHED */
+	TH_ACK,			/* 5, CLOSE_WAIT */
+	TH_FIN|TH_ACK,		/* 6, FIN_WAIT_1 */
+	TH_FIN|TH_ACK,		/* 7, CLOSING */
+	TH_FIN|TH_ACK,		/* 8, LAST_ACK */
+	TH_ACK,			/* 9, FIN_WAIT_2 */
+	TH_ACK,			/* 10, TIME_WAIT */
 };	
 #endif
 

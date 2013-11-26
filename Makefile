@@ -12,9 +12,17 @@ TARGET := $(ROOT_DIR)/libbsdtcp.a
 
 INC_DIRS := $(ROOT_DIR)/include \
 			$(ROOT_DIR)/include/opt \
+			$(ROOT_DIR)/include/amd64 \
+			$(ROOT_DIR)/include/x86 \
+			$(ROOT_DIR)/include/contrib/altq \
 			$(CODE_DIR)/dps/pub/include \
 
-SRC_DIRS := $(ROOT_DIR)/source
+SRC_DIRS := $(ROOT_DIR)/source/kern \
+			$(ROOT_DIR)/source/libkern \
+			$(ROOT_DIR)/source/net \
+			$(ROOT_DIR)/source/netinet \
+			$(ROOT_DIR)/source/netinet/cc \
+			$(ROOT_DIR)/source/vm
 
 INCS := $(addprefix -I, $(INC_DIRS))
 SRCS := $(foreach dir, $(SRC_DIRS), $(wildcard $(dir)/*.c))

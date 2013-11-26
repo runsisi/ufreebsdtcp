@@ -33,8 +33,8 @@
  * $FreeBSD: release/9.2.0/sys/sys/cdefs.h 242893 2012-11-11 12:21:51Z ed $
  */
 
-#ifndef	_BSD_SYS_CDEFS_H_
-#define	_BSD_SYS_CDEFS_H_
+#ifndef	_SYS_CDEFS_H_
+#define	_SYS_CDEFS_H_
 
 #if defined(__cplusplus)
 #define	__BEGIN_DECLS	extern "C" {
@@ -126,9 +126,9 @@
  * first.  It is only available with ANSI C.
  */
 #if defined(__STDC__) || defined(__cplusplus)
-#define	__BSD_P(protos)	protos		/* full-blown ANSI C */
-#define	__BSD_CONCAT1(x,y)	x ## y
-#define	__BSD_CONCAT(x,y)	__BSD_CONCAT1(x,y)
+#define	__P(protos)	protos		/* full-blown ANSI C */
+#define	__CONCAT1(x,y)	x ## y
+#define	__CONCAT(x,y)	__CONCAT1(x,y)
 #define	__STRING(x)	#x		/* stringify without expanding x */
 #define	__XSTRING(x)	__STRING(x)	/* expand x, then stringify */
 
@@ -144,8 +144,8 @@
 #endif /* !__cplusplus */
 
 #else	/* !(__STDC__ || __cplusplus) */
-#define	__BSD_P(protos)	()		/* traditional C preprocessor */
-#define	__BSD_CONCAT(x,y)	x/**/y
+#define	__P(protos)	()		/* traditional C preprocessor */
+#define	__CONCAT(x,y)	x/**/y
 #define	__STRING(x)	"x"
 
 #if !defined(__CC_SUPPORTS___INLINE)
@@ -182,7 +182,7 @@
 #ifdef lint
 #define	__dead2
 #define	__pure2
-#define	__bsd_unused
+#define	__unused
 #define	__packed
 #define	__aligned(x)
 #define	__section(x)
@@ -190,18 +190,18 @@
 #if !__GNUC_PREREQ__(2, 5) && !defined(__INTEL_COMPILER)
 #define	__dead2
 #define	__pure2
-#define	__bsd_unused
+#define	__unused
 #endif
 #if __GNUC__ == 2 && __GNUC_MINOR__ >= 5 && __GNUC_MINOR__ < 7 && !defined(__INTEL_COMPILER)
 #define	__dead2		__attribute__((__noreturn__))
 #define	__pure2		__attribute__((__const__))
-#define	__bsd_unused
+#define	__unused
 /* XXX Find out what to do for __packed, __aligned and __section */
 #endif
 #if __GNUC_PREREQ__(2, 7)
 #define	__dead2		__attribute__((__noreturn__))
 #define	__pure2		__attribute__((__const__))
-#define	__bsd_unused	__attribute__((__unused__))
+#define	__unused	__attribute__((__unused__))
 #define	__used		__attribute__((__used__))
 #define	__packed	__attribute__((__packed__))
 #define	__aligned(x)	__attribute__((__aligned__(x)))
@@ -210,7 +210,7 @@
 #if defined(__INTEL_COMPILER)
 #define __dead2		__attribute__((__noreturn__))
 #define __pure2		__attribute__((__const__))
-#define __bsd_unused	__attribute__((__unused__))
+#define __unused	__attribute__((__unused__))
 #define __used		__attribute__((__used__))
 #define __packed	__attribute__((__packed__))
 #define __aligned(x)	__attribute__((__aligned__(x)))
@@ -219,7 +219,7 @@
 #endif
 
 #if !__GNUC_PREREQ__(2, 95)
-#define	__alignof(x)	__bsd_offsetof(struct { char __a; x __b; }, __b)
+#define	__alignof(x)	__offsetof(struct { char __a; x __b; }, __b)
 #endif
 
 /*
@@ -268,41 +268,41 @@
 #endif
 
 #if __GNUC_PREREQ__(2, 96)
-#define	__bsd_malloc_like	__attribute__((__malloc__))
-#define	__bsd_pure		__attribute__((__pure__))
+#define	__malloc_like	__attribute__((__malloc__))
+#define	__pure		__attribute__((__pure__))
 #else
-#define	__bsd_malloc_like
-#define	__bsd_pure
+#define	__malloc_like
+#define	__pure
 #endif
 
 #if __GNUC_PREREQ__(3, 1) || (defined(__INTEL_COMPILER) && __INTEL_COMPILER >= 800)
-#define	__bsd_always_inline	__attribute__((__always_inline__))
+#define	__always_inline	__attribute__((__always_inline__))
 #else
-#define	__bsd_always_inline
+#define	__always_inline
 #endif
 
 #if __GNUC_PREREQ__(3, 1)
-#define	__bsd_noinline	__attribute__ ((__noinline__))
+#define	__noinline	__attribute__ ((__noinline__))
 #else
-#define	__bsd_noinline
+#define	__noinline
 #endif
 
 #if __GNUC_PREREQ__(3, 3)
-#define __bsd_nonnull(x)	__attribute__((__nonnull__(x)))
+#define __nonnull(x)	__attribute__((__nonnull__(x)))
 #else
-#define __bsd_nonnull(x)
+#define __nonnull(x)
 #endif
 
 #if __GNUC_PREREQ__(3, 4)
-#define	__bsd_fastcall	__attribute__((__fastcall__))
+#define	__fastcall	__attribute__((__fastcall__))
 #else
-#define	__bsd_fastcall
+#define	__fastcall
 #endif
 
 #if __GNUC_PREREQ__(4, 1)
-#define	__bsd_returns_twice	__attribute__((__returns_twice__))
+#define	__returns_twice	__attribute__((__returns_twice__))
 #else
-#define	__bsd_returns_twice
+#define	__returns_twice
 #endif
 
 /* XXX: should use `#if __STDC_VERSION__ < 199901'. */
@@ -388,20 +388,20 @@
  * require it.
  */
 #if __GNUC_PREREQ__(4, 1)
-#define __bsd_offsetof(type, field)	 __builtin_offsetof(type, field)
+#define __offsetof(type, field)	 __builtin_offsetof(type, field)
 #else
 #ifndef __cplusplus
-#define	__bsd_offsetof(type, field) \
-	((__bsd_size_t)(__bsd_uintptr_t)((const volatile void *)&((type *)0)->field))
+#define	__offsetof(type, field) \
+	((__size_t)(__uintptr_t)((const volatile void *)&((type *)0)->field))
 #else
-#define __bsd_offsetof(type, field)					\
-  (__offsetof__ (reinterpret_cast <__bsd_size_t>			\
+#define __offsetof(type, field)					\
+  (__offsetof__ (reinterpret_cast <__size_t>			\
                  (&reinterpret_cast <const volatile char &>	\
                   (static_cast<type *> (0)->field))))
 #endif
 #endif
-#define	__bsd_rangeof(type, start, end) \
-	(__bsd_offsetof(type, end) - __bsd_offsetof(type, start))
+#define	__rangeof(type, start, end) \
+	(__offsetof(type, end) - __offsetof(type, start))
 
 /*
  * Given the pointer x to the member m of the struct s, return
@@ -410,13 +410,13 @@
  * compatible with member m.
  */
 #if __GNUC_PREREQ__(3, 1)
-#define	__bsd_containerof(x, s, m) ({					\
+#define	__containerof(x, s, m) ({					\
 	const volatile __typeof(((s *)0)->m) *__x = (x);		\
-	__DEQUALIFY(s *, (const volatile char *)__x - __bsd_offsetof(s, m));\
+	__DEQUALIFY(s *, (const volatile char *)__x - __offsetof(s, m));\
 })
 #else
-#define	__bsd_containerof(x, s, m)						\
-	__DEQUALIFY(s *, (const volatile char *)(x) - __bsd_offsetof(s, m))
+#define	__containerof(x, s, m)						\
+	__DEQUALIFY(s *, (const volatile char *)(x) - __offsetof(s, m))
 #endif
 
 /*
@@ -495,7 +495,7 @@
  * version, then it should generate some harmless declaration, such as:
  *    #define __IDSTRING(name,string)	struct __hack
  */
-#define	__IDSTRING(name,string)	static const char name[] __bsd_unused = string
+#define	__IDSTRING(name,string)	static const char name[] __unused = string
 #endif
 
 /*
@@ -506,7 +506,7 @@
  */
 #ifndef	__FBSDID
 #if !defined(lint) && !defined(STRIP_FBSDID)
-#define	__FBSDID(s)	__IDSTRING(__BSD_CONCAT(__rcsid_,__LINE__),s)
+#define	__FBSDID(s)	__IDSTRING(__CONCAT(__rcsid_,__LINE__),s)
 #else
 #define	__FBSDID(s)	struct __hack
 #endif
@@ -514,7 +514,7 @@
 
 #ifndef	__RCSID
 #ifndef	NO__RCSID
-#define	__RCSID(s)	__IDSTRING(__BSD_CONCAT(__rcsid_,__LINE__),s)
+#define	__RCSID(s)	__IDSTRING(__CONCAT(__rcsid_,__LINE__),s)
 #else
 #define	__RCSID(s)	struct __hack
 #endif
@@ -522,7 +522,7 @@
 
 #ifndef	__RCSID_SOURCE
 #ifndef	NO__RCSID_SOURCE
-#define	__RCSID_SOURCE(s)	__IDSTRING(__BSD_CONCAT(__rcsid_source_,__LINE__),s)
+#define	__RCSID_SOURCE(s)	__IDSTRING(__CONCAT(__rcsid_source_,__LINE__),s)
 #else
 #define	__RCSID_SOURCE(s)	struct __hack
 #endif
@@ -530,7 +530,7 @@
 
 #ifndef	__SCCSID
 #ifndef	NO__SCCSID
-#define	__SCCSID(s)	__IDSTRING(__BSD_CONCAT(__sccsid_,__LINE__),s)
+#define	__SCCSID(s)	__IDSTRING(__CONCAT(__sccsid_,__LINE__),s)
 #else
 #define	__SCCSID(s)	struct __hack
 #endif
@@ -538,22 +538,22 @@
 
 #ifndef	__COPYRIGHT
 #ifndef	NO__COPYRIGHT
-#define	__COPYRIGHT(s)	__IDSTRING(__BSD_CONCAT(__copyright_,__LINE__),s)
+#define	__COPYRIGHT(s)	__IDSTRING(__CONCAT(__copyright_,__LINE__),s)
 #else
 #define	__COPYRIGHT(s)	struct __hack
 #endif
 #endif
 
 #ifndef	__DECONST
-#define	__DECONST(type, var)	((type)(__bsd_uintptr_t)(const void *)(var))
+#define	__DECONST(type, var)	((type)(__uintptr_t)(const void *)(var))
 #endif
 
 #ifndef	__DEVOLATILE
-#define	__DEVOLATILE(type, var)	((type)(__bsd_uintptr_t)(volatile void *)(var))
+#define	__DEVOLATILE(type, var)	((type)(__uintptr_t)(volatile void *)(var))
 #endif
 
 #ifndef	__DEQUALIFY
-#define	__DEQUALIFY(type, var)	((type)(__bsd_uintptr_t)(const volatile void *)(var))
+#define	__DEQUALIFY(type, var)	((type)(__uintptr_t)(const volatile void *)(var))
 #endif
 
 /*-
@@ -580,65 +580,65 @@
  */
 
 /* Deal with IEEE Std. 1003.1-1990, in which _POSIX_C_SOURCE == 1. */
-//#if defined(_POSIX_C_SOURCE) && _POSIX_C_SOURCE == 1
-//#undef _POSIX_C_SOURCE		/* Probably illegal, but beyond caring now. */
-//#define	_POSIX_C_SOURCE		199009
-//#endif
-//
-///* Deal with IEEE Std. 1003.2-1992, in which _POSIX_C_SOURCE == 2. */
-//#if defined(_POSIX_C_SOURCE) && _POSIX_C_SOURCE == 2
-//#undef _POSIX_C_SOURCE
-//#define	_POSIX_C_SOURCE		199209
-//#endif
-//
-///* Deal with various X/Open Portability Guides and Single UNIX Spec. */
-//#ifdef _XOPEN_SOURCE
-//#if _XOPEN_SOURCE - 0 >= 700
-//#define	__XSI_VISIBLE		700
-//#undef _POSIX_C_SOURCE
-//#define	_POSIX_C_SOURCE		200809
-//#elif _XOPEN_SOURCE - 0 >= 600
-//#define	__XSI_VISIBLE		600
-//#undef _POSIX_C_SOURCE
-//#define	_POSIX_C_SOURCE		200112
-//#elif _XOPEN_SOURCE - 0 >= 500
-//#define	__XSI_VISIBLE		500
-//#undef _POSIX_C_SOURCE
-//#define	_POSIX_C_SOURCE		199506
-//#endif
-//#endif
+#if defined(_POSIX_C_SOURCE) && _POSIX_C_SOURCE == 1
+#undef _POSIX_C_SOURCE		/* Probably illegal, but beyond caring now. */
+#define	_POSIX_C_SOURCE		199009
+#endif
+
+/* Deal with IEEE Std. 1003.2-1992, in which _POSIX_C_SOURCE == 2. */
+#if defined(_POSIX_C_SOURCE) && _POSIX_C_SOURCE == 2
+#undef _POSIX_C_SOURCE
+#define	_POSIX_C_SOURCE		199209
+#endif
+
+/* Deal with various X/Open Portability Guides and Single UNIX Spec. */
+#ifdef _XOPEN_SOURCE
+#if _XOPEN_SOURCE - 0 >= 700
+#define	__XSI_VISIBLE		700
+#undef _POSIX_C_SOURCE
+#define	_POSIX_C_SOURCE		200809
+#elif _XOPEN_SOURCE - 0 >= 600
+#define	__XSI_VISIBLE		600
+#undef _POSIX_C_SOURCE
+#define	_POSIX_C_SOURCE		200112
+#elif _XOPEN_SOURCE - 0 >= 500
+#define	__XSI_VISIBLE		500
+#undef _POSIX_C_SOURCE
+#define	_POSIX_C_SOURCE		199506
+#endif
+#endif
 
 /*
  * Deal with all versions of POSIX.  The ordering relative to the tests above is
  * important.
  */
-//#if defined(_POSIX_SOURCE) && !defined(_POSIX_C_SOURCE)
-//#define	_POSIX_C_SOURCE		198808
-//#endif
-//#ifdef _POSIX_C_SOURCE
-//#if _POSIX_C_SOURCE >= 200809
-//#define	__POSIX_VISIBLE		200809
-//#define	__ISO_C_VISIBLE		1999
-//#elif _POSIX_C_SOURCE >= 200112
-//#define	__POSIX_VISIBLE		200112
-//#define	__ISO_C_VISIBLE		1999
-//#elif _POSIX_C_SOURCE >= 199506
-//#define	__POSIX_VISIBLE		199506
-//#define	__ISO_C_VISIBLE		1990
-//#elif _POSIX_C_SOURCE >= 199309
-//#define	__POSIX_VISIBLE		199309
-//#define	__ISO_C_VISIBLE		1990
-//#elif _POSIX_C_SOURCE >= 199209
-//#define	__POSIX_VISIBLE		199209
-//#define	__ISO_C_VISIBLE		1990
-//#elif _POSIX_C_SOURCE >= 199009
-//#define	__POSIX_VISIBLE		199009
-//#define	__ISO_C_VISIBLE		1990
-//#else
-//#define	__POSIX_VISIBLE		198808
-//#define	__ISO_C_VISIBLE		0
-//#endif /* _POSIX_C_SOURCE */
-//#else
+#if defined(_POSIX_SOURCE) && !defined(_POSIX_C_SOURCE)
+#define	_POSIX_C_SOURCE		198808
+#endif
+#ifdef _POSIX_C_SOURCE
+#if _POSIX_C_SOURCE >= 200809
+#define	__POSIX_VISIBLE		200809
+#define	__ISO_C_VISIBLE		1999
+#elif _POSIX_C_SOURCE >= 200112
+#define	__POSIX_VISIBLE		200112
+#define	__ISO_C_VISIBLE		1999
+#elif _POSIX_C_SOURCE >= 199506
+#define	__POSIX_VISIBLE		199506
+#define	__ISO_C_VISIBLE		1990
+#elif _POSIX_C_SOURCE >= 199309
+#define	__POSIX_VISIBLE		199309
+#define	__ISO_C_VISIBLE		1990
+#elif _POSIX_C_SOURCE >= 199209
+#define	__POSIX_VISIBLE		199209
+#define	__ISO_C_VISIBLE		1990
+#elif _POSIX_C_SOURCE >= 199009
+#define	__POSIX_VISIBLE		199009
+#define	__ISO_C_VISIBLE		1990
+#else
+#define	__POSIX_VISIBLE		198808
+#define	__ISO_C_VISIBLE		0
+#endif /* _POSIX_C_SOURCE */
+#else
 /*-
  * Deal with _ANSI_SOURCE:
  * If it is defined, and no other compilation environment is explicitly
@@ -651,23 +651,23 @@
  * _POSIX_C_SOURCE, we will assume that it wants the broader compilation
  * environment (and in fact we will never get here).
  */
-//#if defined(_ANSI_SOURCE)	/* Hide almost everything. */
-//#define	__POSIX_VISIBLE		0
-//#define	__XSI_VISIBLE		0
-//#define	__BSD_VISIBLE		0
-//#define	__ISO_C_VISIBLE		1990
-//#elif defined(_C99_SOURCE)	/* Localism to specify strict C99 env. */
-//#define	__POSIX_VISIBLE		0
-//#define	__XSI_VISIBLE		0
-//#define	__BSD_VISIBLE		0
-//#define	__ISO_C_VISIBLE		1999
-//#else				/* Default environment: show everything. */
+#if defined(_ANSI_SOURCE)	/* Hide almost everything. */
+#define	__POSIX_VISIBLE		0
+#define	__XSI_VISIBLE		0
+#define	__BSD_VISIBLE		0
+#define	__ISO_C_VISIBLE		1990
+#elif defined(_C99_SOURCE)	/* Localism to specify strict C99 env. */
+#define	__POSIX_VISIBLE		0
+#define	__XSI_VISIBLE		0
+#define	__BSD_VISIBLE		0
+#define	__ISO_C_VISIBLE		1999
+#else				/* Default environment: show everything. */
 #define	__POSIX_VISIBLE		200809
 #define	__XSI_VISIBLE		700
 #define	__BSD_VISIBLE		1
 #define	__ISO_C_VISIBLE		1999
-//#endif
-//#endif
+#endif
+#endif
 
 #ifndef	__has_feature
 #define	__has_feature(x) 0

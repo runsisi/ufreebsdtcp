@@ -66,11 +66,11 @@ static __inline int FEEDER_GET(struct pcm_feeder* feeder, int what)
 extern struct kobjop_desc feeder_feed_desc;
 /** @brief A function implementing the FEEDER_FEED() method */
 typedef int feeder_feed_t(struct pcm_feeder* feeder, struct pcm_channel* c,
-                          bsd_uint8_t* buffer, bsd_uint32_t count, void* source);
+                          u_int8_t* buffer, u_int32_t count, void* source);
 
 static __inline int FEEDER_FEED(struct pcm_feeder* feeder,
-                                struct pcm_channel* c, bsd_uint8_t* buffer,
-                                bsd_uint32_t count, void* source)
+                                struct pcm_channel* c, u_int8_t* buffer,
+                                u_int32_t count, void* source)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)feeder)->ops,feeder_feed);

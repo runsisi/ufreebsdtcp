@@ -58,8 +58,8 @@ extern	void (*ng_gif_detach_p)(struct ifnet *ifp);
 struct gif_softc {
 	struct ifnet	*gif_ifp;
 	struct mtx	gif_mtx;
-	struct bsd_sockaddr	*gif_psrc; /* Physical src addr */
-	struct bsd_sockaddr	*gif_pdst; /* Physical dst addr */
+	struct sockaddr	*gif_psrc; /* Physical src addr */
+	struct sockaddr	*gif_pdst; /* Physical dst addr */
 	union {
 		struct route  gifscr_ro;    /* xxx */
 #ifdef INET6
@@ -103,7 +103,7 @@ struct etherip_header {
 	u_int	eip_ver:4,	/* version */
 		eip_resvl:4;	/* reserved */
 #endif
-	bsd_uint8_t eip_resvh;	/* reserved */
+	u_int8_t eip_resvh;	/* reserved */
 } __packed;
 
 #define ETHERIP_VERSION			0x3
@@ -112,10 +112,10 @@ struct etherip_header {
 
 /* Prototypes */
 void gif_input(struct mbuf *, int, struct ifnet *);
-int gif_output(struct ifnet *, struct mbuf *, struct bsd_sockaddr *,
+int gif_output(struct ifnet *, struct mbuf *, struct sockaddr *,
 	       struct route *);
 int gif_ioctl(struct ifnet *, u_long, caddr_t);
-int gif_set_tunnel(struct ifnet *, struct bsd_sockaddr *, struct bsd_sockaddr *);
+int gif_set_tunnel(struct ifnet *, struct sockaddr *, struct sockaddr *);
 void gif_delete_tunnel(struct ifnet *);
 int gif_encapcheck(const struct mbuf *, int, int, void *);
 #endif /* _KERNEL */

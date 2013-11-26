@@ -10,18 +10,18 @@
  * See the source file for legal information
  */
 
-#include <sys/param.h>
-#include <sys/queue.h>
-#include <sys/kernel.h>
-#include <sys/kobj.h>
-#include <sys/param.h>
-#include <sys/lock.h>
-#include <sys/malloc.h>
-#include <sys/mutex.h>
-#include <sys/sbuf.h>
-#include <sys/bus.h>
-#include <machine/bus.h>
-#include <sys/systm.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_queue.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_kobj.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_lock.h>
+#include <sys/bsd_malloc.h>
+#include <sys/bsd_mutex.h>
+#include <sys/bsd_sbuf.h>
+#include <sys/bsd_bus.h>
+#include <machine/bsd_bus.h>
+#include <sys/bsd_systm.h>
 #include <geom/geom.h>
 #include <geom/raid/g_raid.h>
 #include "g_raid_tr_if.h"

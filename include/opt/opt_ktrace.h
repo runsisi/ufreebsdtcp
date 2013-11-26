@@ -1,1 +1,1 @@
-#define KTRACE 0
+#define KTRACE 1

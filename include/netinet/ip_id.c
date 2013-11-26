@@ -25,7 +25,7 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/netinet/ip_id.c 185571 2008-12-02 21:37:28Z bz $");
 
 /*
@@ -74,24 +74,24 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/netinet/ip_id.c 185571 2008-12-02 21:37:28
  * enabled.
  */
 
-#include <sys/types.h>
-#include <sys/malloc.h>
-#include <sys/param.h>
-#include <sys/time.h>
-#include <sys/kernel.h>
-#include <sys/libkern.h>
-#include <sys/lock.h>
-#include <sys/mutex.h>
-#include <sys/random.h>
-#include <sys/systm.h>
-#include <sys/sysctl.h>
+#include <sys/bsd_types.h>
+#include <sys/bsd_malloc.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_time.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_libkern.h>
+#include <sys/bsd_lock.h>
+#include <sys/bsd_mutex.h>
+#include <sys/bsd_random.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_sysctl.h>
 #include <netinet/in.h>
 #include <netinet/ip_var.h>
-#include <sys/bitstring.h>
+#include <sys/bsd_bitstring.h>
 
 static MALLOC_DEFINE(M_IPID, "ipid", "randomized ip id state");
 
-static bsd_uint16_t 	*id_array = NULL;
+static u_int16_t 	*id_array = NULL;
 static bitstr_t		*id_bits = NULL;
 static int		 array_ptr = 0;
 static int		 array_size = 8192;
@@ -145,33 +145,33 @@ ip_initid(void)
 	mtx_assert(&ip_id_mtx, MA_OWNED);
 
 	if (id_array != NULL) {
-		bsd_free(id_array, M_IPID);
-		bsd_free(id_bits, M_IPID);
+		free(id_array, M_IPID);
+		free(id_bits, M_IPID);
 	}
 	random_id_collisions = 0;
 	random_id_total = 0;
 	array_ptr = 0;
-	id_array = (bsd_uint16_t *) bsd_malloc(array_size * sizeof(bsd_uint16_t),
+	id_array = (u_int16_t *) malloc(array_size * sizeof(u_int16_t),
 	    M_IPID, M_NOWAIT | M_ZERO);
-	id_bits = (bitstr_t *) bsd_malloc(bitstr_size(65536), M_IPID,
+	id_bits = (bitstr_t *) malloc(bitstr_size(65536), M_IPID,
 	    M_NOWAIT | M_ZERO);
 	if (id_array == NULL || id_bits == NULL) {
 		/* Neither or both. */
 		if (id_array != NULL) {
-			bsd_free(id_array, M_IPID);
+			free(id_array, M_IPID);
 			id_array = NULL;
 		}
 		if (id_bits != NULL) {
-			bsd_free(id_bits, M_IPID);
+			free(id_bits, M_IPID);
 			id_bits = NULL;
 		}
 	}
 }
 
-bsd_uint16_t
+u_int16_t
 ip_randomid(void)
 {
-	bsd_uint16_t new_id;
+	u_int16_t new_id;
 
 	mtx_lock(&ip_id_mtx);
 	if (id_array == NULL)

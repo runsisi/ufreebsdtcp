@@ -63,23 +63,23 @@
  *	@(#)igmp.c	8.1 (Berkeley) 7/19/93
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/netinet6/mld6.c 249132 2013-04-05 08:22:11Z mav $");
 
 #include "opt_inet.h"
 #include "opt_inet6.h"
 
-#include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/mbuf.h>
-#include <sys/socket.h>
-#include <sys/protosw.h>
-#include <sys/sysctl.h>
-#include <sys/kernel.h>
-#include <sys/callout.h>
-#include <sys/malloc.h>
-#include <sys/module.h>
-#include <sys/ktr.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_mbuf.h>
+#include <sys/bsd_socket.h>
+#include <sys/bsd_protosw.h>
+#include <sys/bsd_sysctl.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_callout.h>
+#include <sys/bsd_malloc.h>
+#include <sys/bsd_module.h>
+#include <sys/bsd_ktr.h>
 
 #include <net/if.h>
 #include <net/route.h>
@@ -95,7 +95,7 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/netinet6/mld6.c 249132 2013-04-05 08:22:11
 #include <netinet6/mld6.h>
 #include <netinet6/mld6_var.h>
 
-#include <security/mac/mac_framework.h>
+//#include <security/mac/mac_framework.h>
 
 #ifndef KTR_MLD
 #define KTR_MLD KTR_INET6
@@ -204,7 +204,7 @@ static MALLOC_DEFINE(M_MLD, "mld", "mld state");
 /*
  * VIMAGE-wide globals.
  */
-static VNET_DEFINE(struct bsd_timeval, mld_gsrdelay) = {10, 0};
+static VNET_DEFINE(struct timeval, mld_gsrdelay) = {10, 0};
 static VNET_DEFINE(LIST_HEAD(, mld_ifinfo), mli_head);
 static VNET_DEFINE(int, interface_timers_running6);
 static VNET_DEFINE(int, state_change_timers_running6);
@@ -295,7 +295,7 @@ mld_scrub_context(struct mbuf *m)
  * VIMAGE: The assertion is there to make sure that we
  * actually called CURVNET_SET() with what's in the mbuf chain.
  */
-static __inline bsd_uint32_t
+static __inline uint32_t
 mld_restore_context(struct mbuf *m)
 {
 
@@ -435,7 +435,7 @@ mld_dispatch_queue(struct ifqueue *ifq, int limit)
  * should be suppressed, or non-zero if reports should be issued.
  */
 static __inline int
-mld_is_addr_reported(const struct bsd_in6_addr *addr)
+mld_is_addr_reported(const struct in6_addr *addr)
 {
 
 	KASSERT(IN6_IS_ADDR_MULTICAST(addr), ("%s: not multicast", __func__));
@@ -444,9 +444,9 @@ mld_is_addr_reported(const struct bsd_in6_addr *addr)
 		return (0);
 
 	if (IPV6_ADDR_MC_SCOPE(addr) == IPV6_ADDR_SCOPE_LINKLOCAL) {
-		struct bsd_in6_addr tmp = *addr;
+		struct in6_addr tmp = *addr;
 		in6_clearscope(&tmp);
-		if (IN6_ARE_ADDR_EQUAL(&tmp, &bsd_in6addr_linklocal_allnodes))
+		if (IN6_ARE_ADDR_EQUAL(&tmp, &in6addr_linklocal_allnodes))
 			return (0);
 	}
 
@@ -489,7 +489,7 @@ mli_alloc_locked(/*const*/ struct ifnet *ifp)
 
 	MLD_LOCK_ASSERT();
 
-	mli = bsd_malloc(sizeof(struct mld_ifinfo), M_MLD, M_NOWAIT|M_ZERO);
+	mli = malloc(sizeof(struct mld_ifinfo), M_MLD, M_NOWAIT|M_ZERO);
 	if (mli == NULL)
 		goto out;
 
@@ -607,7 +607,7 @@ mli_delete_locked(const struct ifnet *ifp)
 			    ("%s: there are dangling in_multi references",
 			    __func__));
 
-			bsd_free(mli, M_MLD);
+			free(mli, M_MLD);
 			return;
 		}
 	}
@@ -631,7 +631,7 @@ mld_v1_input_query(struct ifnet *ifp, const struct ip6_hdr *ip6,
 	struct mld_ifinfo	*mli;
 	struct in6_multi	*inm;
 	int			 is_general_query;
-	bsd_uint16_t		 timer;
+	uint16_t		 timer;
 #ifdef KTR
 	char			 ip6tbuf[INET6_ADDRSTRLEN];
 #endif
@@ -665,11 +665,11 @@ mld_v1_input_query(struct ifnet *ifp, const struct ip6_hdr *ip6,
 		 * MLDv1 General Query.
 		 * If this was not sent to the all-nodes group, ignore it.
 		 */
-		struct bsd_in6_addr		 dst;
+		struct in6_addr		 dst;
 
 		dst = ip6->ip6_dst;
 		in6_clearscope(&dst);
-		if (!IN6_ARE_ADDR_EQUAL(&dst, &bsd_in6addr_linklocal_allnodes))
+		if (!IN6_ARE_ADDR_EQUAL(&dst, &in6addr_linklocal_allnodes))
 			return (EINVAL);
 		is_general_query = 1;
 	} else {
@@ -807,10 +807,10 @@ mld_v2_input_query(struct ifnet *ifp, const struct ip6_hdr *ip6,
 	struct mld_ifinfo	*mli;
 	struct mldv2_query	*mld;
 	struct in6_multi	*inm;
-	bsd_uint32_t		 maxdelay, nsrc, qqi;
+	uint32_t		 maxdelay, nsrc, qqi;
 	int			 is_general_query;
-	bsd_uint16_t		 timer;
-	bsd_uint8_t			 qrv;
+	uint16_t		 timer;
+	uint8_t			 qrv;
 #ifdef KTR
 	char			 ip6tbuf[INET6_ADDRSTRLEN];
 #endif
@@ -830,7 +830,7 @@ mld_v2_input_query(struct ifnet *ifp, const struct ip6_hdr *ip6,
 
 	CTR2(KTR_MLD, "input v2 query on ifp %p(%s)", ifp, ifp->if_xname);
 
-	mld = (struct mldv2_query *)(mtod(m, bsd_uint8_t *) + off);
+	mld = (struct mldv2_query *)(mtod(m, uint8_t *) + off);
 
 	maxdelay = ntohs(mld->mld_maxdelay);	/* in 1/10ths of a second */
 	if (maxdelay >= 32768) {
@@ -858,7 +858,7 @@ mld_v2_input_query(struct ifnet *ifp, const struct ip6_hdr *ip6,
 	if (nsrc > MLD_MAX_GS_SOURCES)
 		return (EMSGSIZE);
 	if (icmp6len < sizeof(struct mldv2_query) +
-	    (nsrc * sizeof(struct bsd_in6_addr)))
+	    (nsrc * sizeof(struct in6_addr)))
 		return (EMSGSIZE);
 
 	/*
@@ -981,13 +981,13 @@ mld_v2_process_group_query(struct in6_multi *inm, struct mld_ifinfo *mli,
 {
 	struct mldv2_query	*mld;
 	int			 retval;
-	bsd_uint16_t		 nsrc;
+	uint16_t		 nsrc;
 
 	IN6_MULTI_LOCK_ASSERT();
 	MLD_LOCK_ASSERT();
 
 	retval = 0;
-	mld = (struct mldv2_query *)(mtod(m0, bsd_uint8_t *) + off);
+	mld = (struct mldv2_query *)(mtod(m0, uint8_t *) + off);
 
 	switch (inm->in6m_state) {
 	case MLD_NOT_MEMBER:
@@ -1049,7 +1049,7 @@ mld_v2_process_group_query(struct in6_multi *inm, struct mld_ifinfo *mli,
 	 */
 	if (inm->in6m_nsrc > 0) {
 		struct mbuf		*m;
-		bsd_uint8_t			*sp;
+		uint8_t			*sp;
 		int			 i, nrecorded;
 		int			 soff;
 
@@ -1057,13 +1057,13 @@ mld_v2_process_group_query(struct in6_multi *inm, struct mld_ifinfo *mli,
 		soff = off + sizeof(struct mldv2_query);
 		nrecorded = 0;
 		for (i = 0; i < nsrc; i++) {
-			sp = mtod(m, bsd_uint8_t *) + soff;
+			sp = mtod(m, uint8_t *) + soff;
 			retval = in6m_record_source(inm,
-			    (const struct bsd_in6_addr *)sp);
+			    (const struct in6_addr *)sp);
 			if (retval < 0)
 				break;
 			nrecorded += retval;
-			soff += sizeof(struct bsd_in6_addr);
+			soff += sizeof(struct in6_addr);
 			if (soff >= m->m_len) {
 				soff = soff - m->m_len;
 				m = m->m_next;
@@ -1094,7 +1094,7 @@ static int
 mld_v1_input_report(struct ifnet *ifp, const struct ip6_hdr *ip6,
     /*const*/ struct mld_hdr *mld)
 {
-	struct bsd_in6_addr		 src, dst;
+	struct in6_addr		 src, dst;
 	struct in6_ifaddr	*ia;
 	struct in6_multi	*inm;
 #ifdef KTR
@@ -1254,7 +1254,7 @@ mld_input(struct mbuf *m, int off, int icmp6len)
 	ip6 = mtod(m, struct ip6_hdr *);
 
 	/* Pullup to appropriate size. */
-	mld = (struct mld_hdr *)(mtod(m, bsd_uint8_t *) + off);
+	mld = (struct mld_hdr *)(mtod(m, uint8_t *) + off);
 	if (mld->mld_type == MLD_LISTENER_QUERY &&
 	    icmp6len >= sizeof(struct mldv2_query)) {
 		mldlen = sizeof(struct mldv2_query);
@@ -1828,7 +1828,7 @@ mld_v1_transmit_report(struct in6_multi *in6m, const int type)
 	ip6->ip6_vfc &= ~IPV6_VERSION_MASK;
 	ip6->ip6_vfc |= IPV6_VERSION;
 	ip6->ip6_nxt = IPPROTO_ICMPV6;
-	ip6->ip6_src = ia ? ia->ia_addr.sin6_addr : bsd_in6addr_any;
+	ip6->ip6_src = ia ? ia->ia_addr.sin6_addr : in6addr_any;
 	ip6->ip6_dst = in6m->in6m_addr;
 
 	md->m_len = sizeof(struct mld_hdr);
@@ -2295,7 +2295,7 @@ mld_v2_enqueue_group_record(struct ifqueue *ifq, struct in6_multi *inm,
 	int			 record_has_sources;
 	int			 now;
 	int			 type;
-	bsd_uint8_t			 mode;
+	uint8_t			 mode;
 #ifdef KTR
 	char			 ip6tbuf[INET6_ADDRSTRLEN];
 #endif
@@ -2412,7 +2412,7 @@ mld_v2_enqueue_group_record(struct ifqueue *ifq, struct in6_multi *inm,
 	 */
 	minrec0len = sizeof(struct mldv2_record);
 	if (record_has_sources)
-		minrec0len += sizeof(struct bsd_in6_addr);
+		minrec0len += sizeof(struct in6_addr);
 
 	CTR4(KTR_MLD, "%s: queueing %s for %s/%s", __func__,
 	    mld_rec_type_to_str(type),
@@ -2435,7 +2435,7 @@ mld_v2_enqueue_group_record(struct ifqueue *ifq, struct in6_multi *inm,
 	     (ifp->if_mtu - MLD_MTUSPACE)) {
 		m0srcs = (ifp->if_mtu - m0->m_pkthdr.len -
 			    sizeof(struct mldv2_record)) /
-			    sizeof(struct bsd_in6_addr);
+			    sizeof(struct in6_addr);
 		m = m0;
 		CTR1(KTR_MLD, "%s: use existing packet", __func__);
 	} else {
@@ -2445,7 +2445,7 @@ mld_v2_enqueue_group_record(struct ifqueue *ifq, struct in6_multi *inm,
 		}
 		m = NULL;
 		m0srcs = (ifp->if_mtu - MLD_MTUSPACE -
-		    sizeof(struct mldv2_record)) / sizeof(struct bsd_in6_addr);
+		    sizeof(struct mldv2_record)) / sizeof(struct in6_addr);
 		if (!is_state_change && !is_group_query)
 			m = m_getcl(M_DONTWAIT, MT_DATA, M_PKTHDR);
 		if (m == NULL)
@@ -2494,11 +2494,11 @@ mld_v2_enqueue_group_record(struct ifqueue *ifq, struct in6_multi *inm,
 	if (record_has_sources) {
 		if (m == m0) {
 			md = m_last(m);
-			pmr = (struct mldv2_record *)(mtod(md, bsd_uint8_t *) +
+			pmr = (struct mldv2_record *)(mtod(md, uint8_t *) +
 			    md->m_len - nbytes);
 		} else {
 			md = m_getptr(m, 0, &off);
-			pmr = (struct mldv2_record *)(mtod(md, bsd_uint8_t *) +
+			pmr = (struct mldv2_record *)(mtod(md, uint8_t *) +
 			    off);
 		}
 		msrcs = 0;
@@ -2520,7 +2520,7 @@ mld_v2_enqueue_group_record(struct ifqueue *ifq, struct in6_multi *inm,
 				continue;
 			}
 			CTR1(KTR_MLD, "%s: append node", __func__);
-			if (!m_append(m, sizeof(struct bsd_in6_addr),
+			if (!m_append(m, sizeof(struct in6_addr),
 			    (void *)&ims->im6s_addr)) {
 				if (m != m0)
 					m_freem(m);
@@ -2528,7 +2528,7 @@ mld_v2_enqueue_group_record(struct ifqueue *ifq, struct in6_multi *inm,
 				    __func__);
 				return (-ENOMEM);
 			}
-			nbytes += sizeof(struct bsd_in6_addr);
+			nbytes += sizeof(struct in6_addr);
 			++msrcs;
 			if (msrcs == m0srcs)
 				break;
@@ -2536,7 +2536,7 @@ mld_v2_enqueue_group_record(struct ifqueue *ifq, struct in6_multi *inm,
 		CTR2(KTR_MLD, "%s: msrcs is %d this packet", __func__,
 		    msrcs);
 		pmr->mr_numsrc = htons(msrcs);
-		nbytes += (msrcs * sizeof(struct bsd_in6_addr));
+		nbytes += (msrcs * sizeof(struct in6_addr));
 	}
 
 	if (is_source_query && msrcs == 0) {
@@ -2579,7 +2579,7 @@ mld_v2_enqueue_group_record(struct ifqueue *ifq, struct in6_multi *inm,
 			return (-ENOMEM);
 		mld_save_context(m, ifp);
 		md = m_getptr(m, 0, &off);
-		pmr = (struct mldv2_record *)(mtod(md, bsd_uint8_t *) + off);
+		pmr = (struct mldv2_record *)(mtod(md, uint8_t *) + off);
 		CTR1(KTR_MLD, "%s: allocated next packet", __func__);
 
 		if (!m_append(m, sizeof(struct mldv2_record), (void *)&mr)) {
@@ -2592,7 +2592,7 @@ mld_v2_enqueue_group_record(struct ifqueue *ifq, struct in6_multi *inm,
 		nbytes += sizeof(struct mldv2_record);
 
 		m0srcs = (ifp->if_mtu - MLD_MTUSPACE -
-		    sizeof(struct mldv2_record)) / sizeof(struct bsd_in6_addr);
+		    sizeof(struct mldv2_record)) / sizeof(struct in6_addr);
 
 		msrcs = 0;
 		RB_FOREACH_FROM(ims, ip6_msource_tree, nims) {
@@ -2611,7 +2611,7 @@ mld_v2_enqueue_group_record(struct ifqueue *ifq, struct in6_multi *inm,
 				continue;
 			}
 			CTR1(KTR_MLD, "%s: append node", __func__);
-			if (!m_append(m, sizeof(struct bsd_in6_addr),
+			if (!m_append(m, sizeof(struct in6_addr),
 			    (void *)&ims->im6s_addr)) {
 				if (m != m0)
 					m_freem(m);
@@ -2624,7 +2624,7 @@ mld_v2_enqueue_group_record(struct ifqueue *ifq, struct in6_multi *inm,
 				break;
 		}
 		pmr->mr_numsrc = htons(msrcs);
-		nbytes += (msrcs * sizeof(struct bsd_in6_addr));
+		nbytes += (msrcs * sizeof(struct in6_addr));
 
 		CTR1(KTR_MLD, "%s: enqueueing next packet", __func__);
 		_IF_ENQUEUE(ifq, m);
@@ -2670,7 +2670,7 @@ static int
 mld_v2_enqueue_filter_change(struct ifqueue *ifq, struct in6_multi *inm)
 {
 	static const int MINRECLEN =
-	    sizeof(struct mldv2_record) + sizeof(struct bsd_in6_addr);
+	    sizeof(struct mldv2_record) + sizeof(struct in6_addr);
 	struct ifnet		*ifp;
 	struct mldv2_record	 mr;
 	struct mldv2_record	*pmr;
@@ -2678,7 +2678,7 @@ mld_v2_enqueue_filter_change(struct ifqueue *ifq, struct in6_multi *inm)
 	struct mbuf		*m, *m0, *md;
 	int			 m0srcs, nbytes, npbytes, off, rsrcs, schanged;
 	int			 nallow, nblock;
-	bsd_uint8_t			 mode, now, then;
+	uint8_t			 mode, now, then;
 	rectype_t		 crt, drt, nrt;
 #ifdef KTR
 	char			 ip6tbuf[INET6_ADDRSTRLEN];
@@ -2722,7 +2722,7 @@ mld_v2_enqueue_filter_change(struct ifqueue *ifq, struct in6_multi *inm)
 				m = m0;
 				m0srcs = (ifp->if_mtu - m0->m_pkthdr.len -
 					    sizeof(struct mldv2_record)) /
-					    sizeof(struct bsd_in6_addr);
+					    sizeof(struct in6_addr);
 				CTR1(KTR_MLD,
 				    "%s: use previous packet", __func__);
 			} else {
@@ -2738,7 +2738,7 @@ mld_v2_enqueue_filter_change(struct ifqueue *ifq, struct in6_multi *inm)
 				mld_save_context(m, ifp);
 				m0srcs = (ifp->if_mtu - MLD_MTUSPACE -
 				    sizeof(struct mldv2_record)) /
-				    sizeof(struct bsd_in6_addr);
+				    sizeof(struct in6_addr);
 				npbytes = 0;
 				CTR1(KTR_MLD,
 				    "%s: allocated new packet", __func__);
@@ -2766,12 +2766,12 @@ mld_v2_enqueue_filter_change(struct ifqueue *ifq, struct in6_multi *inm)
 				md = m_getptr(m, npbytes -
 				    sizeof(struct mldv2_record), &off);
 				pmr = (struct mldv2_record *)(mtod(md,
-				    bsd_uint8_t *) + off);
+				    uint8_t *) + off);
 			} else {
 				/* current packet; offset from last append */
 				md = m_last(m);
 				pmr = (struct mldv2_record *)(mtod(md,
-				    bsd_uint8_t *) + md->m_len -
+				    uint8_t *) + md->m_len -
 				    sizeof(struct mldv2_record));
 			}
 			/*
@@ -2814,7 +2814,7 @@ mld_v2_enqueue_filter_change(struct ifqueue *ifq, struct in6_multi *inm)
 					crt = nrt;
 				} else if (crt != nrt)
 					continue;
-				if (!m_append(m, sizeof(struct bsd_in6_addr),
+				if (!m_append(m, sizeof(struct in6_addr),
 				    (void *)&ims->im6s_addr)) {
 					if (m != m0)
 						m_freem(m);
@@ -2845,7 +2845,7 @@ mld_v2_enqueue_filter_change(struct ifqueue *ifq, struct in6_multi *inm)
 				}
 				continue;
 			}
-			npbytes += (rsrcs * sizeof(struct bsd_in6_addr));
+			npbytes += (rsrcs * sizeof(struct in6_addr));
 			if (crt == REC_ALLOW)
 				pmr->mr_type = MLD_ALLOW_NEW_SOURCES;
 			else if (crt == REC_BLOCK)
@@ -3056,7 +3056,7 @@ mld_dispatch_packet(struct mbuf *m)
 	int			 error;
 	int			 off;
 	int			 type;
-	bsd_uint32_t		 ifindex;
+	uint32_t		 ifindex;
 
 	CTR2(KTR_MLD, "%s: transmit %p", __func__, m);
 
@@ -3118,7 +3118,7 @@ mld_dispatch_packet(struct mbuf *m)
 	 * so we can bump the stats.
 	 */
 	md = m_getptr(m0, sizeof(struct ip6_hdr), &off);
-	mld = (struct mld_hdr *)(mtod(md, bsd_uint8_t *) + off);
+	mld = (struct mld_hdr *)(mtod(md, uint8_t *) + off);
 	type = mld->mld_type;
 
 	error = ip6_output(m0, &mld_po, NULL, IPV6_UNSPECSRC, &im6o,
@@ -3194,10 +3194,10 @@ mld_v2_encap_report(struct ifnet *ifp, struct mbuf *m)
 	ip6->ip6_vfc &= ~IPV6_VERSION_MASK;
 	ip6->ip6_vfc |= IPV6_VERSION;
 	ip6->ip6_nxt = IPPROTO_ICMPV6;
-	ip6->ip6_src = ia ? ia->ia_addr.sin6_addr : bsd_in6addr_any;
+	ip6->ip6_src = ia ? ia->ia_addr.sin6_addr : in6addr_any;
 	if (ia != NULL)
 		ifa_free(&ia->ia_ifa);
-	ip6->ip6_dst = bsd_in6addr_linklocal_allv2routers;
+	ip6->ip6_dst = in6addr_linklocal_allv2routers;
 	/* scope ID will be set in netisr */
 
 	mld = (struct mldv2_report *)(ip6 + 1);

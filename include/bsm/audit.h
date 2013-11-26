@@ -168,23 +168,23 @@
 
 __BEGIN_DECLS
 
-typedef	bsd_uid_t		au_id_t;
-typedef	bsd_pid_t		au_asid_t;
-typedef	bsd_uint16_t	au_event_t;
-typedef	bsd_uint16_t	au_emod_t;
-typedef	bsd_uint32_t	au_class_t;
-typedef	bsd_uint64_t	au_asflgs_t __attribute__ ((aligned (8)));
+typedef	uid_t		au_id_t;
+typedef	pid_t		au_asid_t;
+typedef	u_int16_t	au_event_t;
+typedef	u_int16_t	au_emod_t;
+typedef	u_int32_t	au_class_t;
+typedef	u_int64_t	au_asflgs_t __attribute__ ((aligned (8)));
 
 struct au_tid {
-	bsd_dev_t		port;
-	bsd_uint32_t	machine;
+	dev_t		port;
+	u_int32_t	machine;
 };
 typedef	struct au_tid	au_tid_t;
 
 struct au_tid_addr {
-	bsd_dev_t		at_port;
-	bsd_uint32_t	at_type;
-	bsd_uint32_t	at_addr[4];
+	dev_t		at_port;
+	u_int32_t	at_type;
+	u_int32_t	at_addr[4];
 };
 typedef	struct au_tid_addr	au_tid_addr_t;
 
@@ -212,7 +212,7 @@ struct auditinfo_addr {
 typedef	struct auditinfo_addr	auditinfo_addr_t;
 
 struct auditpinfo {
-	bsd_pid_t		ap_pid;		/* ID of target process. */
+	pid_t		ap_pid;		/* ID of target process. */
 	au_id_t		ap_auid;	/* Audit user ID. */
 	au_mask_t	ap_mask;	/* Audit masks. */
 	au_tid_t	ap_termid;	/* Terminal ID. */
@@ -221,7 +221,7 @@ struct auditpinfo {
 typedef	struct auditpinfo	auditpinfo_t;
 
 struct auditpinfo_addr {
-	bsd_pid_t		ap_pid;		/* ID of target process. */
+	pid_t		ap_pid;		/* ID of target process. */
 	au_id_t		ap_auid;	/* Audit user ID. */
 	au_mask_t	ap_mask;	/* Audit masks. */
 	au_tid_addr_t	ap_termid;	/* Terminal ID. */
@@ -287,8 +287,8 @@ typedef	struct audit_stat	au_stat_t;
  * Structure for the audit file statistics.
  */
 struct audit_fstat {
-	bsd_uint64_t	af_filesz;
-	bsd_uint64_t	af_currsz;
+	u_int64_t	af_filesz;
+	u_int64_t	af_currsz;
 };
 typedef	struct audit_fstat	au_fstat_t;
 

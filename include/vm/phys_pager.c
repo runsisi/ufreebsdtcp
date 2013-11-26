@@ -23,18 +23,18 @@
  * SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/vm/phys_pager.c 217265 2011-01-11 13:59:06Z jhb $");
 
-#include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/conf.h>
-#include <sys/kernel.h>
-#include <sys/lock.h>
-#include <sys/proc.h>
-#include <sys/mutex.h>
-#include <sys/mman.h>
-#include <sys/sysctl.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_conf.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_lock.h>
+#include <sys/bsd_proc.h>
+#include <sys/bsd_mutex.h>
+#include <sys/bsd_mman.h>
+#include <sys/bsd_sysctl.h>
 
 #include <vm/vm.h>
 #include <vm/vm_object.h>
@@ -59,7 +59,7 @@ phys_pager_init(void)
  */
 static vm_object_t
 phys_pager_alloc(void *handle, vm_ooffset_t size, vm_prot_t prot,
-    vm_ooffset_t foff, struct bsd_ucred *cred)
+    vm_ooffset_t foff, struct ucred *cred)
 {
 	vm_object_t object, object1;
 	vm_pindex_t pindex;

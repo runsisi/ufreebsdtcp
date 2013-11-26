@@ -38,45 +38,45 @@ void	 syncache_init(void);
 #ifdef VIMAGE
 void	syncache_destroy(void);
 #endif
-void	 syncache_unreach(struct in_conninfo *, struct bsd_tcphdr *);
+void	 syncache_unreach(struct in_conninfo *, struct tcphdr *);
 int	 syncache_expand(struct in_conninfo *, struct tcpopt *,
-	     struct bsd_tcphdr *, struct bsd_socket **, struct mbuf *);
+	     struct tcphdr *, struct socket **, struct mbuf *);
 void	 syncache_add(struct in_conninfo *, struct tcpopt *,
-	     struct bsd_tcphdr *, struct inpcb *, struct bsd_socket **, struct mbuf *);
+	     struct tcphdr *, struct inpcb *, struct socket **, struct mbuf *);
 void	 tcp_offload_syncache_add(struct in_conninfo *, struct tcpopt *,
-	     struct bsd_tcphdr *, struct inpcb *, struct bsd_socket **, void *, void *);
-void	 syncache_chkrst(struct in_conninfo *, struct bsd_tcphdr *);
+	     struct tcphdr *, struct inpcb *, struct socket **, void *, void *);
+void	 syncache_chkrst(struct in_conninfo *, struct tcphdr *);
 void	 syncache_badack(struct in_conninfo *);
 int	 syncache_pcbcount(void);
 int	 syncache_pcblist(struct sysctl_req *req, int max_pcbs, int *pcbs_exported);
 
 struct syncache {
-	BSD_TAILQ_ENTRY(syncache)	sc_hash;
+	TAILQ_ENTRY(syncache)	sc_hash;
 	struct		in_conninfo sc_inc;	/* addresses */
 	int		sc_rxttime;		/* retransmit time */
-	bsd_uint16_t	sc_rxmits;		/* retransmit counter */
-	bsd_uint32_t	sc_tsreflect;		/* timestamp to reflect */
-	bsd_uint32_t	sc_ts;			/* our timestamp to send */
-	bsd_uint32_t	sc_tsoff;		/* ts offset w/ syncookies */
-	bsd_uint32_t	sc_flowlabel;		/* IPv6 flowlabel */
+	u_int16_t	sc_rxmits;		/* retransmit counter */
+	u_int32_t	sc_tsreflect;		/* timestamp to reflect */
+	u_int32_t	sc_ts;			/* our timestamp to send */
+	u_int32_t	sc_tsoff;		/* ts offset w/ syncookies */
+	u_int32_t	sc_flowlabel;		/* IPv6 flowlabel */
 	tcp_seq		sc_irs;			/* seq from peer */
 	tcp_seq		sc_iss;			/* our ISS */
 	struct		mbuf *sc_ipopts;	/* source route */
-	bsd_uint16_t	sc_peer_mss;		/* peer's MSS */
-	bsd_uint16_t	sc_wnd;			/* advertised window */
-	bsd_uint8_t	sc_ip_ttl;		/* IPv4 TTL */
-	bsd_uint8_t	sc_ip_tos;		/* IPv4 TOS */
-	bsd_uint8_t	sc_requested_s_scale:4,
+	u_int16_t	sc_peer_mss;		/* peer's MSS */
+	u_int16_t	sc_wnd;			/* advertised window */
+	u_int8_t	sc_ip_ttl;		/* IPv4 TTL */
+	u_int8_t	sc_ip_tos;		/* IPv4 TOS */
+	u_int8_t	sc_requested_s_scale:4,
 			sc_requested_r_scale:4;
-	bsd_uint16_t	sc_flags;
+	u_int16_t	sc_flags;
 #if defined(TCP_OFFLOAD) || !defined(TCP_OFFLOAD_DISABLE)
 	struct toedev	*sc_tod;		/* entry added by this TOE */
 	void		*sc_todctx;		/* TOE driver context */
 #endif
 	struct label	*sc_label;		/* MAC label reference */
-	struct bsd_ucred	*sc_cred;		/* cred cache for jail checks */
+	struct ucred	*sc_cred;		/* cred cache for jail checks */
 
-	bsd_uint32_t	sc_spare[2];		/* UTO */
+	u_int32_t	sc_spare[2];		/* UTO */
 };
 
 /*
@@ -97,13 +97,13 @@ struct syncache {
 struct syncache_head {
 	struct vnet	*sch_vnet;
 	struct mtx	sch_mtx;
-	BSD_TAILQ_HEAD(sch_head, syncache)	sch_bucket;
+	TAILQ_HEAD(sch_head, syncache)	sch_bucket;
 	struct callout	sch_timer;
 	int		sch_nextc;
 	u_int		sch_length;
 	u_int		sch_oddeven;
-	bsd_uint32_t	sch_secbits_odd[SYNCOOKIE_SECRET_SIZE];
-	bsd_uint32_t	sch_secbits_even[SYNCOOKIE_SECRET_SIZE];
+	u_int32_t	sch_secbits_odd[SYNCOOKIE_SECRET_SIZE];
+	u_int32_t	sch_secbits_even[SYNCOOKIE_SECRET_SIZE];
 	u_int		sch_reseed;		/* time_uptime, seconds */
 };
 

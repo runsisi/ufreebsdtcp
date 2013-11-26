@@ -33,14 +33,14 @@
 #include "opt_inet.h"
 #include "opt_inet6.h"
 
-#include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/kernel.h>
-#include <sys/malloc.h>
-#include <sys/mbuf.h>
-#include <sys/module.h>
-#include <sys/socket.h>
-#include <sys/sockio.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_malloc.h>
+#include <sys/bsd_mbuf.h>
+#include <sys/bsd_module.h>
+#include <sys/bsd_socket.h>
+#include <sys/bsd_sockio.h>
 
 #include <net/if.h>
 #include <net/netisr.h>
@@ -61,7 +61,7 @@
 #include <netinet6/nd6.h>
 #endif
 
-#include <security/mac/mac_framework.h>
+//#include <security/mac/mac_framework.h>
 
 static MALLOC_DEFINE(M_FWCOM, "fw_com", "firewire interface internals");
 
@@ -75,7 +75,7 @@ struct fw_hwaddr firewire_broadcastaddr = {
 };
 
 static int
-firewire_output(struct ifnet *ifp, struct mbuf *m, struct bsd_sockaddr *dst,
+firewire_output(struct ifnet *ifp, struct mbuf *m, struct sockaddr *dst,
     struct route *ro)
 {
 	struct fw_com *fc = IFP2FWC(ifp);
@@ -83,8 +83,8 @@ firewire_output(struct ifnet *ifp, struct mbuf *m, struct bsd_sockaddr *dst,
 	struct m_tag *mtag;
 	union fw_encap *enc;
 	struct fw_hwaddr *destfw;
-	bsd_uint8_t speed;
-	bsd_uint16_t psize, fsize, dsize;
+	uint8_t speed;
+	uint16_t psize, fsize, dsize;
 	struct mbuf *mtail;
 	int unicast, dgl, foff;
 	static int next_dgl;
@@ -218,18 +218,18 @@ firewire_output(struct ifnet *ifp, struct mbuf *m, struct bsd_sockaddr *dst,
 		psize = min(512 << speed, 2 << destfw->sender_max_rec);
 	} else {
 		speed = 0;
-		psize = 512 - 2*sizeof(bsd_uint32_t);
+		psize = 512 - 2*sizeof(uint32_t);
 	}
 
 	/*
 	 * Next, we encapsulate, possibly fragmenting the original
 	 * datagram if it won't fit into a single packet.
 	 */
-	if (m->m_pkthdr.len <= psize - sizeof(bsd_uint32_t)) {
+	if (m->m_pkthdr.len <= psize - sizeof(uint32_t)) {
 		/*
 		 * No fragmentation is necessary.
 		 */
-		M_PREPEND(m, sizeof(bsd_uint32_t), M_DONTWAIT);
+		M_PREPEND(m, sizeof(uint32_t), M_DONTWAIT);
 		if (!m) {
 			error = ENOBUFS;
 			goto bad;
@@ -251,7 +251,7 @@ firewire_output(struct ifnet *ifp, struct mbuf *m, struct bsd_sockaddr *dst,
 		 * Fragment the datagram, making sure to leave enough
 		 * space for the encapsulation header in each packet.
 		 */
-		fsize = psize - 2*sizeof(bsd_uint32_t);
+		fsize = psize - 2*sizeof(uint32_t);
 		dgl = next_dgl++;
 		dsize = m->m_pkthdr.len;
 		foff = 0;
@@ -271,7 +271,7 @@ firewire_output(struct ifnet *ifp, struct mbuf *m, struct bsd_sockaddr *dst,
 			 * Add our encapsulation header to this
 			 * fragment and hand it off to the link.
 			 */
-			M_PREPEND(m, 2*sizeof(bsd_uint32_t), M_DONTWAIT);
+			M_PREPEND(m, 2*sizeof(uint32_t), M_DONTWAIT);
 			if (!m) {
 				error = ENOBUFS;
 				goto bad;
@@ -296,7 +296,7 @@ firewire_output(struct ifnet *ifp, struct mbuf *m, struct bsd_sockaddr *dst,
 				enc->nextfrag.fragment_offset = foff;
 				enc->nextfrag.dgl = dgl;
 			}
-			foff += m->m_pkthdr.len - 2*sizeof(bsd_uint32_t);
+			foff += m->m_pkthdr.len - 2*sizeof(uint32_t);
 
 			/*
 			 * Byte swap the encapsulation header manually.
@@ -331,7 +331,7 @@ firewire_input_fragment(struct fw_com *fc, struct mbuf *m, int src)
 	struct mbuf *mf, *mprev;
 	int dsize;
 	int fstart, fend, start, end, islast;
-	bsd_uint32_t id;
+	uint32_t id;
 
 	/*
 	 * Find an existing reassembly buffer or create a new one.
@@ -342,7 +342,7 @@ firewire_input_fragment(struct fw_com *fc, struct mbuf *m, int src)
 		if (r->fr_id == id)
 			break;
 	if (!r) {
-		r = bsd_malloc(sizeof(struct fw_reass), M_TEMP, M_NOWAIT);
+		r = malloc(sizeof(struct fw_reass), M_TEMP, M_NOWAIT);
 		if (!r) {
 			m_freem(m);
 			return 0;
@@ -360,7 +360,7 @@ firewire_input_fragment(struct fw_com *fc, struct mbuf *m, int src)
 		fstart = 0;
 	else
 		fstart = enc->nextfrag.fragment_offset;
-	fend = fstart + m->m_pkthdr.len - 2*sizeof(bsd_uint32_t);
+	fend = fstart + m->m_pkthdr.len - 2*sizeof(uint32_t);
 	dsize = enc->nextfrag.datagram_size;
 	islast = (enc->nextfrag.lf == FW_ENCAP_LAST);
 
@@ -377,7 +377,7 @@ firewire_input_fragment(struct fw_com *fc, struct mbuf *m, int src)
 			start = 0;
 		else
 			start = enc->nextfrag.fragment_offset;
-		end = start + mf->m_pkthdr.len - 2*sizeof(bsd_uint32_t);
+		end = start + mf->m_pkthdr.len - 2*sizeof(uint32_t);
 		if ((fstart < end && fend > start) ||
 		    (islast && enc->nextfrag.lf == FW_ENCAP_LAST)) {
 			/*
@@ -422,25 +422,25 @@ firewire_input_fragment(struct fw_com *fc, struct mbuf *m, int src)
 			start = 0;
 		else
 			start = enc->nextfrag.fragment_offset;
-		end = start + mprev->m_pkthdr.len - 2*sizeof(bsd_uint32_t);
+		end = start + mprev->m_pkthdr.len - 2*sizeof(uint32_t);
 		while (end == fstart) {
 			/*
 			 * Strip off the encap header from m and
 			 * append it to mprev, freeing m.
 			 */
-			m_adj(m, 2*sizeof(bsd_uint32_t));
+			m_adj(m, 2*sizeof(uint32_t));
 			mprev->m_nextpkt = m->m_nextpkt;
 			mprev->m_pkthdr.len += m->m_pkthdr.len;
 			m_cat(mprev, m);
 
-			if (mprev->m_pkthdr.len == dsize + 1 + 2*sizeof(bsd_uint32_t)) {
+			if (mprev->m_pkthdr.len == dsize + 1 + 2*sizeof(uint32_t)) {
 				/*
 				 * We have assembled a complete packet
 				 * we must be finished. Make sure we have
 				 * merged the whole chain.
 				 */
 				STAILQ_REMOVE(&fc->fc_frags, r, fw_reass, fr_link);
-				bsd_free(r, M_TEMP);
+				free(r, M_TEMP);
 				m = mprev->m_nextpkt;
 				while (m) {
 					mf = m->m_nextpkt;
@@ -464,7 +464,7 @@ firewire_input_fragment(struct fw_com *fc, struct mbuf *m, int src)
 				else
 					fstart = enc->nextfrag.fragment_offset;
 				fend = fstart + m->m_pkthdr.len
-				    - 2*sizeof(bsd_uint32_t);
+				    - 2*sizeof(uint32_t);
 			} else {
 				break;
 			}
@@ -489,7 +489,7 @@ bad:
 }
 
 void
-firewire_input(struct ifnet *ifp, struct mbuf *m, bsd_uint16_t src)
+firewire_input(struct ifnet *ifp, struct mbuf *m, uint16_t src)
 {
 	struct fw_com *fc = IFP2FWC(ifp);
 	union fw_encap *enc;
@@ -501,13 +501,13 @@ firewire_input(struct ifnet *ifp, struct mbuf *m, bsd_uint16_t src)
 	 * appropriately. We de-encapsulate the IP packet and pass it
 	 * up the line after handling link-level fragmentation.
 	 */
-	if (m->m_pkthdr.len < sizeof(bsd_uint32_t)) {
+	if (m->m_pkthdr.len < sizeof(uint32_t)) {
 		if_printf(ifp, "discarding frame without "
 		    "encapsulation header (len %u pkt len %u)\n",
 		    m->m_len, m->m_pkthdr.len);
 	}
 
-	m = m_pullup(m, sizeof(bsd_uint32_t));
+	m = m_pullup(m, sizeof(uint32_t));
 	if (m == NULL)
 		return;
 	enc = mtod(m, union fw_encap *);
@@ -518,7 +518,7 @@ firewire_input(struct ifnet *ifp, struct mbuf *m, bsd_uint16_t src)
 	enc->ul[0] = ntohl(enc->ul[0]);
 
 	if (enc->unfrag.lf != 0) {
-		m = m_pullup(m, 2*sizeof(bsd_uint32_t));
+		m = m_pullup(m, 2*sizeof(uint32_t));
 		if (!m)
 			return;
 		enc = mtod(m, union fw_encap *);
@@ -528,10 +528,10 @@ firewire_input(struct ifnet *ifp, struct mbuf *m, bsd_uint16_t src)
 			return;
 		enc = mtod(m, union fw_encap *);
 		type = enc->firstfrag.ether_type;
-		m_adj(m, 2*sizeof(bsd_uint32_t));
+		m_adj(m, 2*sizeof(uint32_t));
 	} else {
 		type = enc->unfrag.ether_type;
-		m_adj(m, sizeof(bsd_uint32_t));
+		m_adj(m, sizeof(uint32_t));
 	}
 
 	if (m->m_pkthdr.rcvif == NULL) {
@@ -657,9 +657,9 @@ firewire_ioctl(struct ifnet *ifp, u_long command, caddr_t data)
 
 	case SIOCGIFADDR:
 		{
-			struct bsd_sockaddr *sa;
+			struct sockaddr *sa;
 
-			sa = (struct bsd_sockaddr *) & ifr->ifr_data;
+			sa = (struct sockaddr *) & ifr->ifr_data;
 			bcopy(&IFP2FWC(ifp)->fc_hwaddr,
 			    (caddr_t) sa->sa_data, sizeof(struct fw_hwaddr));
 		}
@@ -683,11 +683,11 @@ firewire_ioctl(struct ifnet *ifp, u_long command, caddr_t data)
 }
 
 static int
-firewire_resolvemulti(struct ifnet *ifp, struct bsd_sockaddr **llsa,
-    struct bsd_sockaddr *sa)
+firewire_resolvemulti(struct ifnet *ifp, struct sockaddr **llsa,
+    struct sockaddr *sa)
 {
 #ifdef INET
-	struct bsd_sockaddr_in *sin;
+	struct sockaddr_in *sin;
 #endif
 #ifdef INET6
 	struct sockaddr_in6 *sin6;
@@ -703,7 +703,7 @@ firewire_resolvemulti(struct ifnet *ifp, struct bsd_sockaddr **llsa,
 
 #ifdef INET
 	case AF_INET:
-		sin = (struct bsd_sockaddr_in *)sa;
+		sin = (struct sockaddr_in *)sa;
 		if (!IN_MULTICAST(ntohl(sin->sin_addr.s_addr)))
 			return EADDRNOTAVAIL;
 		*llsa = 0;
@@ -770,7 +770,7 @@ firewire_ifattach(struct ifnet *ifp, struct fw_hwaddr *llc)
 	    sizeof(struct fw_hwaddr));
 
 	if_printf(ifp, "Firewire address: %8D @ 0x%04x%08x, %s, maxrec %d\n",
-	    (bsd_uint8_t *) &llc->sender_unique_ID_hi, ":",
+	    (uint8_t *) &llc->sender_unique_ID_hi, ":",
 	    ntohs(llc->sender_unicast_FIFO_hi),
 	    ntohl(llc->sender_unicast_FIFO_lo),
 	    speeds[llc->sspd],
@@ -801,7 +801,7 @@ firewire_busreset(struct ifnet *ifp)
 			r->fr_frags = m->m_nextpkt;
 			m_freem(m);
 		}
-		bsd_free(r, M_TEMP);
+		free(r, M_TEMP);
 	}
 }
 
@@ -810,7 +810,7 @@ firewire_alloc(u_char type, struct ifnet *ifp)
 {
 	struct fw_com	*fc;
 
-	fc = bsd_malloc(sizeof(struct fw_com), M_FWCOM, M_WAITOK | M_ZERO);
+	fc = malloc(sizeof(struct fw_com), M_FWCOM, M_WAITOK | M_ZERO);
 	fc->fc_ifp = ifp;
 
 	return (fc);
@@ -820,7 +820,7 @@ static void
 firewire_free(void *com, u_char type)
 {
 
-	bsd_free(com, M_FWCOM);
+	free(com, M_FWCOM);
 }
 
 static int

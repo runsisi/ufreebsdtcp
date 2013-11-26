@@ -21,10 +21,10 @@ struct cf_setting;
 /** @brief Unique descriptor for the CPUFREQ_SET() method */
 extern struct kobjop_desc cpufreq_set_desc;
 /** @brief A function implementing the CPUFREQ_SET() method */
-typedef int cpufreq_set_t(bsd_device_t dev, const struct cf_level *level,
+typedef int cpufreq_set_t(device_t dev, const struct cf_level *level,
                           int priority);
 
-static __inline int CPUFREQ_SET(bsd_device_t dev, const struct cf_level *level,
+static __inline int CPUFREQ_SET(device_t dev, const struct cf_level *level,
                                 int priority)
 {
 	kobjop_t _m;
@@ -35,9 +35,9 @@ static __inline int CPUFREQ_SET(bsd_device_t dev, const struct cf_level *level,
 /** @brief Unique descriptor for the CPUFREQ_GET() method */
 extern struct kobjop_desc cpufreq_get_desc;
 /** @brief A function implementing the CPUFREQ_GET() method */
-typedef int cpufreq_get_t(bsd_device_t dev, struct cf_level *level);
+typedef int cpufreq_get_t(device_t dev, struct cf_level *level);
 
-static __inline int CPUFREQ_GET(bsd_device_t dev, struct cf_level *level)
+static __inline int CPUFREQ_GET(device_t dev, struct cf_level *level)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,cpufreq_get);
@@ -47,9 +47,9 @@ static __inline int CPUFREQ_GET(bsd_device_t dev, struct cf_level *level)
 /** @brief Unique descriptor for the CPUFREQ_LEVELS() method */
 extern struct kobjop_desc cpufreq_levels_desc;
 /** @brief A function implementing the CPUFREQ_LEVELS() method */
-typedef int cpufreq_levels_t(bsd_device_t dev, struct cf_level *levels, int *count);
+typedef int cpufreq_levels_t(device_t dev, struct cf_level *levels, int *count);
 
-static __inline int CPUFREQ_LEVELS(bsd_device_t dev, struct cf_level *levels,
+static __inline int CPUFREQ_LEVELS(device_t dev, struct cf_level *levels,
                                    int *count)
 {
 	kobjop_t _m;
@@ -60,9 +60,9 @@ static __inline int CPUFREQ_LEVELS(bsd_device_t dev, struct cf_level *levels,
 /** @brief Unique descriptor for the CPUFREQ_DRV_SET() method */
 extern struct kobjop_desc cpufreq_drv_set_desc;
 /** @brief A function implementing the CPUFREQ_DRV_SET() method */
-typedef int cpufreq_drv_set_t(bsd_device_t dev, const struct cf_setting *set);
+typedef int cpufreq_drv_set_t(device_t dev, const struct cf_setting *set);
 
-static __inline int CPUFREQ_DRV_SET(bsd_device_t dev, const struct cf_setting *set)
+static __inline int CPUFREQ_DRV_SET(device_t dev, const struct cf_setting *set)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,cpufreq_drv_set);
@@ -72,9 +72,9 @@ static __inline int CPUFREQ_DRV_SET(bsd_device_t dev, const struct cf_setting *s
 /** @brief Unique descriptor for the CPUFREQ_DRV_GET() method */
 extern struct kobjop_desc cpufreq_drv_get_desc;
 /** @brief A function implementing the CPUFREQ_DRV_GET() method */
-typedef int cpufreq_drv_get_t(bsd_device_t dev, struct cf_setting *set);
+typedef int cpufreq_drv_get_t(device_t dev, struct cf_setting *set);
 
-static __inline int CPUFREQ_DRV_GET(bsd_device_t dev, struct cf_setting *set)
+static __inline int CPUFREQ_DRV_GET(device_t dev, struct cf_setting *set)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,cpufreq_drv_get);
@@ -84,10 +84,10 @@ static __inline int CPUFREQ_DRV_GET(bsd_device_t dev, struct cf_setting *set)
 /** @brief Unique descriptor for the CPUFREQ_DRV_SETTINGS() method */
 extern struct kobjop_desc cpufreq_drv_settings_desc;
 /** @brief A function implementing the CPUFREQ_DRV_SETTINGS() method */
-typedef int cpufreq_drv_settings_t(bsd_device_t dev, struct cf_setting *sets,
+typedef int cpufreq_drv_settings_t(device_t dev, struct cf_setting *sets,
                                    int *count);
 
-static __inline int CPUFREQ_DRV_SETTINGS(bsd_device_t dev, struct cf_setting *sets,
+static __inline int CPUFREQ_DRV_SETTINGS(device_t dev, struct cf_setting *sets,
                                          int *count)
 {
 	kobjop_t _m;
@@ -98,9 +98,9 @@ static __inline int CPUFREQ_DRV_SETTINGS(bsd_device_t dev, struct cf_setting *se
 /** @brief Unique descriptor for the CPUFREQ_DRV_TYPE() method */
 extern struct kobjop_desc cpufreq_drv_type_desc;
 /** @brief A function implementing the CPUFREQ_DRV_TYPE() method */
-typedef int cpufreq_drv_type_t(bsd_device_t dev, int *type);
+typedef int cpufreq_drv_type_t(device_t dev, int *type);
 
-static __inline int CPUFREQ_DRV_TYPE(bsd_device_t dev, int *type)
+static __inline int CPUFREQ_DRV_TYPE(device_t dev, int *type)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,cpufreq_drv_type);

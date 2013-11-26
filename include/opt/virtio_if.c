@@ -10,16 +10,16 @@
  * See the source file for legal information
  */
 
-#include <sys/param.h>
-#include <sys/queue.h>
-#include <sys/kernel.h>
-#include <sys/kobj.h>
-#include <sys/bus.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_queue.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_kobj.h>
+#include <sys/bsd_bus.h>
 #include "virtio_if.h"
 
 
 static int
-virtio_default_config_change(bsd_device_t dev)
+virtio_default_config_change(device_t dev)
 {
 	return (0);
 }

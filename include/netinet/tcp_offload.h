@@ -36,7 +36,7 @@
 
 extern int registered_toedevs;
 
-int  tcp_offload_connect(struct bsd_socket *, struct bsd_sockaddr *);
+int  tcp_offload_connect(struct socket *, struct sockaddr *);
 void tcp_offload_listen_start(struct tcpcb *);
 void tcp_offload_listen_stop(struct tcpcb *);
 void tcp_offload_input(struct tcpcb *, struct mbuf *);

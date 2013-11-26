@@ -25,7 +25,7 @@
  * SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/vm/sg_pager.c 240238 2012-09-08 16:40:18Z kib $");
 
 /*
@@ -33,10 +33,10 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/vm/sg_pager.c 240238 2012-09-08 16:40:18Z 
  * a scatter/gather list of physical address ranges.
  */
 
-#include <sys/param.h>
-#include <sys/lock.h>
-#include <sys/mutex.h>
-#include <sys/sglist.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_lock.h>
+#include <sys/bsd_mutex.h>
+#include <sys/bsd_sglist.h>
 #include <vm/vm.h>
 #include <vm/vm_param.h>
 #include <vm/vm_object.h>
@@ -45,7 +45,7 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/vm/sg_pager.c 240238 2012-09-08 16:40:18Z 
 #include <vm/uma.h>
 
 static vm_object_t sg_pager_alloc(void *, vm_ooffset_t, vm_prot_t,
-    vm_ooffset_t, struct bsd_ucred *);
+    vm_ooffset_t, struct ucred *);
 static void sg_pager_dealloc(vm_object_t);
 static int sg_pager_getpages(vm_object_t, vm_page_t *, int, int);
 static void sg_pager_putpages(vm_object_t, vm_page_t *, int, 
@@ -63,7 +63,7 @@ struct pagerops sgpagerops = {
 
 static vm_object_t
 sg_pager_alloc(void *handle, vm_ooffset_t size, vm_prot_t prot,
-    vm_ooffset_t foff, struct bsd_ucred *cred)
+    vm_ooffset_t foff, struct ucred *cred)
 {
 	struct sglist *sg;
 	vm_object_t object;

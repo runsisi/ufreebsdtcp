@@ -101,21 +101,21 @@ struct vm_map_entry {
 	struct vm_map_entry *next;	/* next entry */
 	struct vm_map_entry *left;	/* left child in binary search tree */
 	struct vm_map_entry *right;	/* right child in binary search tree */
-	bsd_vm_offset_t start;		/* start address */
-	bsd_vm_offset_t end;		/* end address */
-	bsd_vm_offset_t avail_ssize;	/* amt can grow if this is a stack */
-	bsd_vm_size_t adj_free;		/* amount of adjacent free space */
-	bsd_vm_size_t max_free;		/* max free space in subtree */
+	vm_offset_t start;		/* start address */
+	vm_offset_t end;		/* end address */
+	vm_offset_t avail_ssize;	/* amt can grow if this is a stack */
+	vm_size_t adj_free;		/* amount of adjacent free space */
+	vm_size_t max_free;		/* max free space in subtree */
 	union vm_map_object object;	/* object I point to */
-	bsd_vm_ooffset_t offset;		/* offset into object */
+	vm_ooffset_t offset;		/* offset into object */
 	vm_eflags_t eflags;		/* map entry flags */
 	vm_prot_t protection;		/* protection code */
 	vm_prot_t max_protection;	/* maximum protection */
 	vm_inherit_t inheritance;	/* inheritance */
-	bsd_uint8_t read_ahead;		/* pages in the read-ahead window */
+	uint8_t read_ahead;		/* pages in the read-ahead window */
 	int wired_count;		/* can be paged if = 0 */
-	bsd_vm_pindex_t next_read;		/* index of the next sequential read */
-	struct bsd_ucred *cred;		/* tmp storage for creator ref */
+	vm_pindex_t next_read;		/* index of the next sequential read */
+	struct ucred *cred;		/* tmp storage for creator ref */
 };
 
 #define MAP_ENTRY_NOSYNC		0x0001
@@ -180,7 +180,7 @@ struct vm_map {
 	struct sx lock;			/* Lock for map data */
 	struct mtx system_mtx;
 	int nentries;			/* Number of entries */
-	bsd_vm_size_t size;			/* virtual size */
+	vm_size_t size;			/* virtual size */
 	u_int timestamp;		/* Version number */
 	u_char needs_wakeup;
 	u_char system_map;		/* (c) Am I a system map? */
@@ -199,13 +199,13 @@ struct vm_map {
 #define	MAP_BUSY_WAKEUP		0x02
 
 #ifdef	_KERNEL
-static __inline bsd_vm_offset_t
+static __inline vm_offset_t
 vm_map_max(const struct vm_map *map)
 {
 	return (map->max_offset);
 }
 
-static __inline bsd_vm_offset_t
+static __inline vm_offset_t
 vm_map_min(const struct vm_map *map)
 {
 	return (map->min_offset);
@@ -233,10 +233,10 @@ vm_map_modflags(vm_map_t map, vm_flags_t set, vm_flags_t clear)
 struct vmspace {
 	struct vm_map vm_map;	/* VM address map */
 	struct shmmap_state *vm_shm;	/* SYS5 shared memory private data XXX */
-	bsd_segsz_t vm_swrss;	/* resident set size before last swap */
-	bsd_segsz_t vm_tsize;	/* text size (pages) XXX */
-	bsd_segsz_t vm_dsize;	/* data size (pages) XXX */
-	bsd_segsz_t vm_ssize;	/* stack size (pages) */
+	segsz_t vm_swrss;	/* resident set size before last swap */
+	segsz_t vm_tsize;	/* text size (pages) XXX */
+	segsz_t vm_dsize;	/* data size (pages) XXX */
+	segsz_t vm_ssize;	/* stack size (pages) */
 	caddr_t vm_taddr;	/* (c) user virtual address of text */
 	caddr_t vm_daddr;	/* (c) user virtual address of data */
 	caddr_t vm_maxsaddr;	/* user VA at max stack growth */
@@ -359,38 +359,38 @@ long vmspace_resident_count(struct vmspace *vmspace);
 #define VM_MAP_WIRE_WRITE	4	/* Validate writable. */
 
 #ifdef _KERNEL
-bsd_boolean_t vm_map_check_protection (vm_map_t, bsd_vm_offset_t, bsd_vm_offset_t, vm_prot_t);
-vm_map_t vm_map_create(pmap_t, bsd_vm_offset_t, bsd_vm_offset_t);
-int vm_map_delete(vm_map_t, bsd_vm_offset_t, bsd_vm_offset_t);
-int vm_map_find(vm_map_t, vm_object_t, bsd_vm_ooffset_t, bsd_vm_offset_t *, bsd_vm_size_t,
+boolean_t vm_map_check_protection (vm_map_t, vm_offset_t, vm_offset_t, vm_prot_t);
+vm_map_t vm_map_create(pmap_t, vm_offset_t, vm_offset_t);
+int vm_map_delete(vm_map_t, vm_offset_t, vm_offset_t);
+int vm_map_find(vm_map_t, vm_object_t, vm_ooffset_t, vm_offset_t *, vm_size_t,
     int, vm_prot_t, vm_prot_t, int);
-int vm_map_fixed(vm_map_t, vm_object_t, bsd_vm_ooffset_t, bsd_vm_offset_t, bsd_vm_size_t,
+int vm_map_fixed(vm_map_t, vm_object_t, vm_ooffset_t, vm_offset_t, vm_size_t,
     vm_prot_t, vm_prot_t, int);
-int vm_map_findspace (vm_map_t, bsd_vm_offset_t, bsd_vm_size_t, bsd_vm_offset_t *);
-int vm_map_inherit (vm_map_t, bsd_vm_offset_t, bsd_vm_offset_t, vm_inherit_t);
-void vm_map_init(vm_map_t, pmap_t, bsd_vm_offset_t, bsd_vm_offset_t);
-int vm_map_insert (vm_map_t, vm_object_t, bsd_vm_ooffset_t, bsd_vm_offset_t, bsd_vm_offset_t, vm_prot_t, vm_prot_t, int);
-int vm_map_lookup (vm_map_t *, bsd_vm_offset_t, vm_prot_t, vm_map_entry_t *, vm_object_t *,
-        bsd_vm_pindex_t *, vm_prot_t *, bsd_boolean_t *);
-int vm_map_lookup_locked(vm_map_t *, bsd_vm_offset_t, vm_prot_t, vm_map_entry_t *, vm_object_t *,
-        bsd_vm_pindex_t *, vm_prot_t *, bsd_boolean_t *);
+int vm_map_findspace (vm_map_t, vm_offset_t, vm_size_t, vm_offset_t *);
+int vm_map_inherit (vm_map_t, vm_offset_t, vm_offset_t, vm_inherit_t);
+void vm_map_init(vm_map_t, pmap_t, vm_offset_t, vm_offset_t);
+int vm_map_insert (vm_map_t, vm_object_t, vm_ooffset_t, vm_offset_t, vm_offset_t, vm_prot_t, vm_prot_t, int);
+int vm_map_lookup (vm_map_t *, vm_offset_t, vm_prot_t, vm_map_entry_t *, vm_object_t *,
+    vm_pindex_t *, vm_prot_t *, boolean_t *);
+int vm_map_lookup_locked(vm_map_t *, vm_offset_t, vm_prot_t, vm_map_entry_t *, vm_object_t *,
+    vm_pindex_t *, vm_prot_t *, boolean_t *);
 void vm_map_lookup_done (vm_map_t, vm_map_entry_t);
-bsd_boolean_t vm_map_lookup_entry (vm_map_t, bsd_vm_offset_t, vm_map_entry_t *);
-void vm_map_pmap_enter(vm_map_t map, bsd_vm_offset_t addr, vm_prot_t prot,
-    vm_object_t object, bsd_vm_pindex_t pindex, bsd_vm_size_t size, int flags);
-int vm_map_protect (vm_map_t, bsd_vm_offset_t, bsd_vm_offset_t, vm_prot_t, bsd_boolean_t);
-int vm_map_remove (vm_map_t, bsd_vm_offset_t, bsd_vm_offset_t);
+boolean_t vm_map_lookup_entry (vm_map_t, vm_offset_t, vm_map_entry_t *);
+void vm_map_pmap_enter(vm_map_t map, vm_offset_t addr, vm_prot_t prot,
+    vm_object_t object, vm_pindex_t pindex, vm_size_t size, int flags);
+int vm_map_protect (vm_map_t, vm_offset_t, vm_offset_t, vm_prot_t, boolean_t);
+int vm_map_remove (vm_map_t, vm_offset_t, vm_offset_t);
 void vm_map_startup (void);
-int vm_map_submap (vm_map_t, bsd_vm_offset_t, bsd_vm_offset_t, vm_map_t);
-int vm_map_sync(vm_map_t, bsd_vm_offset_t, bsd_vm_offset_t, bsd_boolean_t, bsd_boolean_t);
-int vm_map_madvise (vm_map_t, bsd_vm_offset_t, bsd_vm_offset_t, int);
+int vm_map_submap (vm_map_t, vm_offset_t, vm_offset_t, vm_map_t);
+int vm_map_sync(vm_map_t, vm_offset_t, vm_offset_t, boolean_t, boolean_t);
+int vm_map_madvise (vm_map_t, vm_offset_t, vm_offset_t, int);
 void vm_map_simplify_entry (vm_map_t, vm_map_entry_t);
 void vm_init2 (void);
-int vm_map_stack (vm_map_t, bsd_vm_offset_t, bsd_vm_size_t, vm_prot_t, vm_prot_t, int);
-int vm_map_growstack (struct proc *p, bsd_vm_offset_t addr);
-int vm_map_unwire(vm_map_t map, bsd_vm_offset_t start, bsd_vm_offset_t end,
+int vm_map_stack (vm_map_t, vm_offset_t, vm_size_t, vm_prot_t, vm_prot_t, int);
+int vm_map_growstack (struct proc *p, vm_offset_t addr);
+int vm_map_unwire(vm_map_t map, vm_offset_t start, vm_offset_t end,
     int flags);
-int vm_map_wire(vm_map_t map, bsd_vm_offset_t start, bsd_vm_offset_t end,
+int vm_map_wire(vm_map_t map, vm_offset_t start, vm_offset_t end,
     int flags);
 long vmspace_swap_count(struct vmspace *vmspace);
 #endif				/* _KERNEL */

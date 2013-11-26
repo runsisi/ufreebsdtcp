@@ -42,13 +42,13 @@
 #define _NETINET6_PIM6_VAR_H_
 
 struct pim6stat {
-	bsd_uquad_t pim6s_rcv_total;	/* total PIM messages received	*/
-	bsd_uquad_t pim6s_rcv_tooshort;	/* received with too few bytes	*/
-	bsd_uquad_t pim6s_rcv_badsum;	/* received with bad checksum	*/
-	bsd_uquad_t pim6s_rcv_badversion;	/* received bad PIM version	*/
-	bsd_uquad_t pim6s_rcv_registers;	/* received registers		*/
-	bsd_uquad_t pim6s_rcv_badregisters; /* received invalid registers	*/
-	bsd_uquad_t pim6s_snd_registers;	/* sent registers		*/
+	u_quad_t pim6s_rcv_total;	/* total PIM messages received	*/
+	u_quad_t pim6s_rcv_tooshort;	/* received with too few bytes	*/
+	u_quad_t pim6s_rcv_badsum;	/* received with bad checksum	*/
+	u_quad_t pim6s_rcv_badversion;	/* received bad PIM version	*/
+	u_quad_t pim6s_rcv_registers;	/* received registers		*/
+	u_quad_t pim6s_rcv_badregisters; /* received invalid registers	*/
+	u_quad_t pim6s_snd_registers;	/* sent registers		*/
 };
 
 #if (defined(KERNEL)) || (defined(_KERNEL))

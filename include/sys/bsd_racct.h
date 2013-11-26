@@ -42,7 +42,7 @@
 
 struct proc;
 struct rctl_rule_link;
-struct bsd_ucred;
+struct ucred;
 
 /*
  * Resources.
@@ -137,19 +137,19 @@ extern int racct_types[];
  * This structure must be filled with zeroes initially.
  */
 struct racct {
-	bsd_int64_t				r_resources[RACCT_MAX + 1];
-	BSD_LIST_HEAD(, rctl_rule_link)	r_rule_links;
+	int64_t				r_resources[RACCT_MAX + 1];
+	LIST_HEAD(, rctl_rule_link)	r_rule_links;
 };
 
-int	racct_add(struct proc *p, int resource, bsd_uint64_t amount);
-void	racct_add_cred(struct bsd_ucred *cred, int resource, bsd_uint64_t amount);
-void	racct_add_force(struct proc *p, int resource, bsd_uint64_t amount);
-int	racct_set(struct proc *p, int resource, bsd_uint64_t amount);
-void	racct_set_force(struct proc *p, int resource, bsd_uint64_t amount);
-void	racct_sub(struct proc *p, int resource, bsd_uint64_t amount);
-void	racct_sub_cred(struct bsd_ucred *cred, int resource, bsd_uint64_t amount);
-bsd_uint64_t	racct_get_limit(struct proc *p, int resource);
-bsd_uint64_t	racct_get_available(struct proc *p, int resource);
+int	racct_add(struct proc *p, int resource, uint64_t amount);
+void	racct_add_cred(struct ucred *cred, int resource, uint64_t amount);
+void	racct_add_force(struct proc *p, int resource, uint64_t amount);
+int	racct_set(struct proc *p, int resource, uint64_t amount);
+void	racct_set_force(struct proc *p, int resource, uint64_t amount);
+void	racct_sub(struct proc *p, int resource, uint64_t amount);
+void	racct_sub_cred(struct ucred *cred, int resource, uint64_t amount);
+uint64_t	racct_get_limit(struct proc *p, int resource);
+uint64_t	racct_get_available(struct proc *p, int resource);
 
 void	racct_create(struct racct **racctp);
 void	racct_destroy(struct racct **racctp);
@@ -158,8 +158,8 @@ int	racct_proc_fork(struct proc *parent, struct proc *child);
 void	racct_proc_fork_done(struct proc *child);
 void	racct_proc_exit(struct proc *p);
 
-void	racct_proc_ucred_changed(struct proc *p, struct bsd_ucred *oldcred,
-	    struct bsd_ucred *newcred);
+void	racct_proc_ucred_changed(struct proc *p, struct ucred *oldcred,
+	    struct ucred *newcred);
 void	racct_move(struct racct *dest, struct racct *src);
 
 #endif /* !_RACCT_H_ */

@@ -72,19 +72,19 @@ typedef	u_int32_t	u_daddr_t;	/* unsigned disk address */
 
 typedef struct blmeta {
 	union {
-	    bsd_daddr_t	bmu_avail;	/* space available under us	*/
+	    daddr_t	bmu_avail;	/* space available under us	*/
 	    u_daddr_t	bmu_bitmap;	/* bitmap if we are a leaf	*/
 	} u;
-	bsd_daddr_t		bm_bighint;	/* biggest contiguous block hint*/
+	daddr_t		bm_bighint;	/* biggest contiguous block hint*/
 } blmeta_t;
 
 typedef struct blist {
-	bsd_daddr_t		bl_blocks;	/* area of coverage		*/
-	bsd_daddr_t		bl_radix;	/* coverage radix		*/
-	bsd_daddr_t		bl_skip;	/* starting skip		*/
-	bsd_daddr_t		bl_free;	/* number of free blocks	*/
+	daddr_t		bl_blocks;	/* area of coverage		*/
+	daddr_t		bl_radix;	/* coverage radix		*/
+	daddr_t		bl_skip;	/* starting skip		*/
+	daddr_t		bl_free;	/* number of free blocks	*/
 	blmeta_t	*bl_root;	/* root of radix tree		*/
-	bsd_daddr_t		bl_rootblks;	/* daddr_t blks allocated for tree */
+	daddr_t		bl_rootblks;	/* daddr_t blks allocated for tree */
 } *blist_t;
 
 #define BLIST_META_RADIX	16
@@ -92,13 +92,13 @@ typedef struct blist {
 
 #define BLIST_MAX_ALLOC		BLIST_BMAP_RADIX
 
-extern blist_t blist_create(bsd_daddr_t blocks, int flags);
+extern blist_t blist_create(daddr_t blocks, int flags);
 extern void blist_destroy(blist_t blist);
-extern bsd_daddr_t blist_alloc(blist_t blist, bsd_daddr_t count);
-extern void blist_free(blist_t blist, bsd_daddr_t blkno, bsd_daddr_t count);
-extern int blist_fill(blist_t bl, bsd_daddr_t blkno, bsd_daddr_t count);
+extern daddr_t blist_alloc(blist_t blist, daddr_t count);
+extern void blist_free(blist_t blist, daddr_t blkno, daddr_t count);
+extern int blist_fill(blist_t bl, daddr_t blkno, daddr_t count);
 extern void blist_print(blist_t blist);
-extern void blist_resize(blist_t *pblist, bsd_daddr_t count, int freenew, int flags);
+extern void blist_resize(blist_t *pblist, daddr_t count, int freenew, int flags);
 
 #endif	/* _SYS_BLIST_H_ */
 

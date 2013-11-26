@@ -87,10 +87,10 @@ struct txseginfo {
 	/* Segment sequence number. */
 	tcp_seq		seq;
 	/* Time stamp indicating when the packet was sent. */
-	bsd_uint32_t	tx_ts;
+	uint32_t	tx_ts;
 	/* Last received receiver ts (if the TCP option is used). */
-	bsd_uint32_t	rx_ts;
-	bsd_uint32_t	flags;
+	uint32_t	rx_ts;
+	uint32_t	flags;
 	TAILQ_ENTRY (txseginfo) txsegi_lnk;
 };
 
@@ -135,7 +135,7 @@ struct hookinfo ertt_hooks[] = {
  */
 static void inline
 marked_packet_rtt(struct txseginfo *txsi, struct ertt *e_t, struct tcpcb *tp,
-    bsd_uint32_t *pmeasurenext, int *pmeasurenext_len, int *prtt_bytes_adjust,
+    uint32_t *pmeasurenext, int *pmeasurenext_len, int *prtt_bytes_adjust,
     int mflag)
 {
 
@@ -197,12 +197,12 @@ ertt_packet_measurement_hook(int hhook_type, int hhook_id, void *udata,
 {
 	struct ertt *e_t;
 	struct tcpcb *tp;
-	struct bsd_tcphdr *th;
+	struct tcphdr *th;
 	struct tcpopt *to;
 	struct tcp_hhook_data *thdp;
 	struct txseginfo *txsi;
 	int acked, measurenext_len, multiack, new_sacked_bytes, rtt_bytes_adjust;
-	bsd_uint32_t measurenext, rts;
+	uint32_t measurenext, rts;
 	tcp_seq ack;
 
 	KASSERT(ctx_data != NULL, ("%s: ctx_data is NULL!", __func__));
@@ -431,7 +431,7 @@ ertt_add_tx_segment_info_hook(int hhook_type, int hhook_id, void *udata,
 {
 	struct ertt *e_t;
 	struct tcpcb *tp;
-	struct bsd_tcphdr *th;
+	struct tcphdr *th;
 	struct tcpopt *to;
 	struct tcp_hhook_data *thdp;
 	struct txseginfo *txsi;

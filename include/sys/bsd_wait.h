@@ -142,19 +142,19 @@ typedef enum
 #include <sys/bsd_types.h>
 
 __BEGIN_DECLS
-struct __bsd_siginfo;
-bsd_pid_t	wait(int *);
-bsd_pid_t	waitpid(bsd_pid_t, int *, int);
+struct __siginfo;
+pid_t	wait(int *);
+pid_t	waitpid(pid_t, int *, int);
 #if __POSIX_VISIBLE >= 200112
-int	waitid(idtype_t, bsd_id_t, struct __bsd_siginfo *, int);
+int	waitid(idtype_t, id_t, struct __siginfo *, int);
 #endif
 #if __BSD_VISIBLE
 struct rusage;
 struct __wrusage;
-bsd_pid_t	wait3(int *, int, struct rusage *);
-bsd_pid_t	wait4(bsd_pid_t, int *, int, struct rusage *);
-bsd_pid_t	wait6(idtype_t, bsd_id_t, int *, int, struct __wrusage *,
-	    struct __bsd_siginfo *);
+pid_t	wait3(int *, int, struct rusage *);
+pid_t	wait4(pid_t, int *, int, struct rusage *);
+pid_t	wait6(idtype_t, id_t, int *, int, struct __wrusage *,
+	    struct __siginfo *);
 #endif
 __END_DECLS
 #endif /* !_KERNEL */

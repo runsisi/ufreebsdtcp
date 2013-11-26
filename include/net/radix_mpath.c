@@ -33,18 +33,18 @@
  * PROPERTIES.
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/net/radix_mpath.c 225163 2011-08-25 04:31:20Z qingli $");
 
 #include "opt_inet.h"
 #include "opt_inet6.h"
 
-#include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/malloc.h>
-#include <sys/socket.h>
-#include <sys/domain.h>
-#include <sys/syslog.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_malloc.h>
+#include <sys/bsd_socket.h>
+#include <sys/bsd_domain.h>
+#include <sys/bsd_syslog.h>
 #include <net/radix.h>
 #include <net/radix_mpath.h>
 #include <net/route.h>
@@ -54,7 +54,7 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/net/radix_mpath.c 225163 2011-08-25 04:31:
 /*
  * give some jitter to hash, to avoid synchronization between routers
  */
-static bsd_uint32_t hashjitter;
+static uint32_t hashjitter;
 
 int
 rn_mpath_capable(struct radix_node_head *rnh)
@@ -77,10 +77,10 @@ rn_mpath_next(struct radix_node *rn)
 		return NULL;
 }
 
-bsd_uint32_t
+uint32_t
 rn_mpath_count(struct radix_node *rn)
 {
-	bsd_uint32_t i = 0;
+	uint32_t i = 0;
 	struct rtentry *rt;
 	
 	while (rn != NULL) {
@@ -92,7 +92,7 @@ rn_mpath_count(struct radix_node *rn)
 }
 
 struct rtentry *
-rt_mpath_matchgate(struct rtentry *rt, struct bsd_sockaddr *gate)
+rt_mpath_matchgate(struct rtentry *rt, struct sockaddr *gate)
 {
 	struct radix_node *rn;
 
@@ -154,7 +154,7 @@ rt_mpath_deldup(struct rtentry *headrt, struct rtentry *rt)
  */
 int
 rt_mpath_conflict(struct radix_node_head *rnh, struct rtentry *rt,
-    struct bsd_sockaddr *netmask)
+    struct sockaddr *netmask)
 {
 	struct radix_node *rn, *rn1;
 	struct rtentry *rt1;
@@ -256,12 +256,12 @@ different:
 }
 
 void
-rtalloc_mpath_fib(struct route *ro, bsd_uint32_t hash, u_int fibnum)
+rtalloc_mpath_fib(struct route *ro, uint32_t hash, u_int fibnum)
 {
 	struct radix_node *rn0, *rn;
-	bsd_uint32_t n;
+	u_int32_t n;
 	struct rtentry *rt;
-	bsd_int64_t weight;
+	int64_t weight;
 
 	/*
 	 * XXX we don't attempt to lookup cached route again; what should
@@ -287,7 +287,7 @@ rtalloc_mpath_fib(struct route *ro, bsd_uint32_t hash, u_int fibnum)
 	/* gw selection by Modulo-N Hash (RFC2991) XXX need improvement? */
 	hash += hashjitter;
 	hash %= n;
-	for (weight = bsd_abs((bsd_int32_t)hash), rt = ro->ro_rt;
+	for (weight = abs((int32_t)hash), rt = ro->ro_rt;
 	     weight >= rt->rt_rmx.rmx_weight && rn; 
 	     weight -= rt->rt_rmx.rmx_weight) {
 		

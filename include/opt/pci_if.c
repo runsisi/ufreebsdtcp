@@ -10,16 +10,16 @@
  * See the source file for legal information
  */
 
-#include <sys/param.h>
-#include <sys/queue.h>
-#include <sys/kernel.h>
-#include <sys/kobj.h>
-#include <sys/bus.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_queue.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_kobj.h>
+#include <sys/bsd_bus.h>
 #include "pci_if.h"
 
 
 static int
-null_msi_count(bsd_device_t dev, bsd_device_t child)
+null_msi_count(device_t dev, device_t child)
 {
 	return (0);
 }

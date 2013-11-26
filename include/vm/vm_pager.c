@@ -63,17 +63,17 @@
  *	for builtin pagers.
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/vm/vm_pager.c 236925 2012-06-11 21:25:20Z kib $");
 
-#include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/kernel.h>
-#include <sys/vnode.h>
-#include <sys/bio.h>
-#include <sys/buf.h>
-#include <sys/ucred.h>
-#include <sys/malloc.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_vnode.h>
+#include <sys/bsd_bio.h>
+#include <sys/bsd_buf.h>
+#include <sys/bsd_ucred.h>
+#include <sys/bsd_malloc.h>
 
 #include <vm/vm.h>
 #include <vm/vm_param.h>
@@ -86,7 +86,7 @@ int cluster_pbuf_freecnt = -1;	/* unlimited to begin with */
 
 static int dead_pager_getpages(vm_object_t, vm_page_t *, int, int);
 static vm_object_t dead_pager_alloc(void *, vm_ooffset_t, vm_prot_t,
-    vm_ooffset_t, struct bsd_ucred *);
+    vm_ooffset_t, struct ucred *);
 static void dead_pager_putpages(vm_object_t, vm_page_t *, int, int, int *);
 static boolean_t dead_pager_haspage(vm_object_t, vm_pindex_t, int *, int *);
 static void dead_pager_dealloc(vm_object_t);
@@ -103,7 +103,7 @@ dead_pager_getpages(obj, ma, count, req)
 
 static vm_object_t
 dead_pager_alloc(void *handle, vm_ooffset_t size, vm_prot_t prot,
-    vm_ooffset_t off, struct bsd_ucred *cred)
+    vm_ooffset_t off, struct ucred *cred)
 {
 	return NULL;
 }
@@ -227,7 +227,7 @@ vm_pager_bufferinit()
  */
 vm_object_t
 vm_pager_allocate(objtype_t type, void *handle, vm_ooffset_t size,
-    vm_prot_t prot, vm_ooffset_t off, struct bsd_ucred *cred)
+    vm_prot_t prot, vm_ooffset_t off, struct ucred *cred)
 {
 	vm_object_t ret;
 	struct pagerops *ops;

@@ -40,7 +40,7 @@
 #include <sys/_bsd_lock.h>
 #include <sys/_bsd_sx.h>
 
-struct bsd_flock;
+struct flock;
 struct vop_advlock_args;
 struct vop_advlockasync_args;
 
@@ -71,8 +71,8 @@ LIST_HEAD(lockf_edge_list, lockf_edge);
 struct lockf_entry {
 	short	lf_flags;	    /* (c) Semantics: F_POSIX, F_FLOCK, F_WAIT */
 	short	lf_type;	    /* (s) Lock type: F_RDLCK, F_WRLCK */
-	bsd_off_t	lf_start;	    /* (s) Byte # of the start of the lock */
-	bsd_off_t	lf_end;		    /* (s) Byte # of the end of the lock (OFF_MAX=EOF) */
+	off_t	lf_start;	    /* (s) Byte # of the start of the lock */
+	off_t	lf_end;		    /* (s) Byte # of the end of the lock (OFF_MAX=EOF) */
 	struct	lock_owner *lf_owner; /* (c) Owner of the lock */
 	struct	vnode *lf_vnode;    /* (c) File being locked (only valid for active lock) */
 	struct	inode *lf_inode;    /* (c) Back pointer to the inode */
@@ -120,10 +120,10 @@ struct lockf {
 };
 LIST_HEAD(lockf_list, lockf);
 
-typedef int lf_iterator(struct vnode *, struct bsd_flock *, void *);
+typedef int lf_iterator(struct vnode *, struct flock *, void *);
 
-int	 lf_advlock(struct vop_advlock_args *, struct lockf **, bsd_uquad_t);
-int	 lf_advlockasync(struct vop_advlockasync_args *, struct lockf **, bsd_uquad_t);
+int	 lf_advlock(struct vop_advlock_args *, struct lockf **, u_quad_t);
+int	 lf_advlockasync(struct vop_advlockasync_args *, struct lockf **, u_quad_t);
 void	 lf_purgelocks(struct vnode *vp, struct lockf **statep);
 int	 lf_iteratelocks_sysid(int sysid, lf_iterator *, void *);
 int	 lf_iteratelocks_vnode(struct vnode *vp, lf_iterator *, void *);

@@ -164,18 +164,18 @@
 #endif
 
 #ifndef _MODE_T_DECLARED
-typedef	__bsd_mode_t	bsd_mode_t;
+typedef	__mode_t	mode_t;
 #define	_MODE_T_DECLARED
 #endif
 
 #ifndef _OFF_T_DECLARED
-typedef	__bsd_off_t		bsd_off_t;
+typedef	__off_t		off_t;
 #define	_OFF_T_DECLARED
 #endif
 
-#ifndef _BSD_SIZE_T_DECLARED
-typedef	__bsd_size_t	bsd_size_t;
-#define	_BSD_SIZE_T_DECLARED
+#ifndef _SIZE_T_DECLARED
+typedef	__size_t	size_t;
+#define	_SIZE_T_DECLARED
 #endif
 
 #if defined(_KERNEL) || defined(_WANT_FILE)
@@ -184,12 +184,12 @@ typedef	__bsd_size_t	bsd_size_t;
 struct file;
 
 struct shmfd {
-	bsd_size_t		shm_size;
+	size_t		shm_size;
 	vm_object_t	shm_object;
 	int		shm_refs;
 	uid_t		shm_uid;
 	gid_t		shm_gid;
-	bsd_mode_t		shm_mode;
+	mode_t		shm_mode;
 	int		shm_kmappings;
 
 	/*
@@ -209,9 +209,9 @@ struct shmfd {
 #ifdef _KERNEL
 int	shm_mmap(struct shmfd *shmfd, vm_size_t objsize, vm_ooffset_t foff,
 	    vm_object_t *obj);
-int	shm_map(struct file *fp, bsd_size_t size, bsd_off_t offset, void **memp);
-int	shm_unmap(struct file *fp, void *mem, bsd_size_t size);
-void	shm_path(struct shmfd *shmfd, char *path, bsd_size_t size);
+int	shm_map(struct file *fp, size_t size, off_t offset, void **memp);
+int	shm_unmap(struct file *fp, void *mem, size_t size);
+void	shm_path(struct shmfd *shmfd, char *path, size_t size);
 
 #else /* !_KERNEL */
 
@@ -221,27 +221,27 @@ __BEGIN_DECLS
  * posix_typed_mem_open().
  */
 #if __BSD_VISIBLE
-int	getpagesizes(bsd_size_t *, int);
-int	madvise(void *, bsd_size_t, int);
-int	mincore(const void *, bsd_size_t, char *);
-int	minherit(void *, bsd_size_t, int);
+int	getpagesizes(size_t *, int);
+int	madvise(void *, size_t, int);
+int	mincore(const void *, size_t, char *);
+int	minherit(void *, size_t, int);
 #endif
-int	mlock(const void *, bsd_size_t);
+int	mlock(const void *, size_t);
 #ifndef _MMAP_DECLARED
 #define	_MMAP_DECLARED
-void *	mmap(void *, bsd_size_t, int, int, int, bsd_off_t);
+void *	mmap(void *, size_t, int, int, int, off_t);
 #endif
-int	mprotect(const void *, bsd_size_t, int);
-int	msync(void *, bsd_size_t, int);
-int	munlock(const void *, bsd_size_t);
-int	munmap(void *, bsd_size_t);
+int	mprotect(const void *, size_t, int);
+int	msync(void *, size_t, int);
+int	munlock(const void *, size_t);
+int	munmap(void *, size_t);
 #if __POSIX_VISIBLE >= 200112
-int	posix_madvise(void *, bsd_size_t, int);
+int	posix_madvise(void *, size_t, int);
 #endif
 #if __POSIX_VISIBLE >= 199309
 int	mlockall(int);
 int	munlockall(void);
-int	shm_open(const char *, int, bsd_mode_t);
+int	shm_open(const char *, int, mode_t);
 int	shm_unlink(const char *);
 #endif
 __END_DECLS

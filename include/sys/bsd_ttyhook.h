@@ -41,13 +41,13 @@ struct tty;
  */
 
 typedef int th_rint_t(struct tty *tp, char c, int flags);
-typedef bsd_size_t th_rint_bypass_t(struct tty *tp, const void *buf, bsd_size_t len);
+typedef size_t th_rint_bypass_t(struct tty *tp, const void *buf, size_t len);
 typedef void th_rint_done_t(struct tty *tp);
-typedef bsd_size_t th_rint_poll_t(struct tty *tp);
+typedef size_t th_rint_poll_t(struct tty *tp);
 
-typedef bsd_size_t th_getc_inject_t(struct tty *tp, void *buf, bsd_size_t len);
-typedef void th_getc_capture_t(struct tty *tp, const void *buf, bsd_size_t len);
-typedef bsd_size_t th_getc_poll_t(struct tty *tp);
+typedef size_t th_getc_inject_t(struct tty *tp, void *buf, size_t len);
+typedef void th_getc_capture_t(struct tty *tp, const void *buf, size_t len);
+typedef size_t th_getc_poll_t(struct tty *tp);
 
 typedef void th_close_t(struct tty *tp);
 
@@ -82,8 +82,8 @@ ttyhook_rint(struct tty *tp, char c, int flags)
 	return tp->t_hook->th_rint(tp, c, flags);
 }
 
-static __inline bsd_size_t
-ttyhook_rint_bypass(struct tty *tp, const void *buf, bsd_size_t len)
+static __inline size_t
+ttyhook_rint_bypass(struct tty *tp, const void *buf, size_t len)
 {
 	tty_lock_assert(tp, MA_OWNED);
 	MPASS(!tty_gone(tp));
@@ -100,7 +100,7 @@ ttyhook_rint_done(struct tty *tp)
 	tp->t_hook->th_rint_done(tp);
 }
 
-static __inline bsd_size_t
+static __inline size_t
 ttyhook_rint_poll(struct tty *tp)
 {
 	tty_lock_assert(tp, MA_OWNED);
@@ -109,8 +109,8 @@ ttyhook_rint_poll(struct tty *tp)
 	return tp->t_hook->th_rint_poll(tp);
 }
 
-static __inline bsd_size_t
-ttyhook_getc_inject(struct tty *tp, void *buf, bsd_size_t len)
+static __inline size_t
+ttyhook_getc_inject(struct tty *tp, void *buf, size_t len)
 {
 	tty_lock_assert(tp, MA_OWNED);
 	MPASS(!tty_gone(tp));
@@ -119,7 +119,7 @@ ttyhook_getc_inject(struct tty *tp, void *buf, bsd_size_t len)
 }
 
 static __inline void
-ttyhook_getc_capture(struct tty *tp, const void *buf, bsd_size_t len)
+ttyhook_getc_capture(struct tty *tp, const void *buf, size_t len)
 {
 	tty_lock_assert(tp, MA_OWNED);
 	MPASS(!tty_gone(tp));
@@ -127,7 +127,7 @@ ttyhook_getc_capture(struct tty *tp, const void *buf, bsd_size_t len)
 	tp->t_hook->th_getc_capture(tp, buf, len);
 }
 
-static __inline bsd_size_t
+static __inline size_t
 ttyhook_getc_poll(struct tty *tp)
 {
 	tty_lock_assert(tp, MA_OWNED);

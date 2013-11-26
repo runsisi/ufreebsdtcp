@@ -29,7 +29,7 @@
 #ifndef _SYS_EVENT_H_
 #define _SYS_EVENT_H_
 
-#include <sys/bsd_queue.h>
+#include <sys/bsd_queue.h> 
 
 #define EVFILT_READ		(-1)
 #define EVFILT_WRITE		(-2)
@@ -55,11 +55,11 @@
 } while(0)
 
 struct kevent {
-	bsd_uintptr_t	ident;		/* identifier for this event */
+	uintptr_t	ident;		/* identifier for this event */
 	short		filter;		/* filter for event */
 	u_short		flags;
 	u_int		fflags;
-	bsd_intptr_t	data;
+	intptr_t	data;
 	void		*udata;		/* opaque user data identifier */
 };
 
@@ -132,9 +132,9 @@ struct kevent {
 #define	NOTE_CHILD	0x00000004		/* am a child process */
 
 struct knote;
-BSD_SLIST_HEAD(klist, knote);
+SLIST_HEAD(klist, knote);
 struct kqueue;
-BSD_SLIST_HEAD(kqlist, kqueue);
+SLIST_HEAD(kqlist, kqueue);
 struct knlist {
 	struct	klist	kl_list;
 	void    (*kl_lock)(void *);	/* lock function */
@@ -170,7 +170,7 @@ MALLOC_DECLARE(M_KQUEUE);
 #define NOTE_SIGNAL	0x08000000
 
 /*
- * Hint values for the optional f_touch event filter.  If f_touch is not set
+ * Hint values for the optional f_touch event filter.  If f_touch is not set 
  * to NULL and f_isfd is zero the f_touch filter will be called with the type
  * argument set to EVENT_REGISTER during a kevent() system call.  It is also
  * called under the same conditions with the type argument set to EVENT_PROCESS
@@ -194,10 +194,10 @@ struct filterops {
  * kn_sfflags, kn_sdata, and kn_kevent are protected by the knlist lock.
  */
 struct knote {
-	BSD_SLIST_ENTRY(knote)	kn_link;	/* for kq */
-	BSD_SLIST_ENTRY(knote)	kn_selnext;	/* for struct selinfo */
+	SLIST_ENTRY(knote)	kn_link;	/* for kq */
+	SLIST_ENTRY(knote)	kn_selnext;	/* for struct selinfo */
 	struct			knlist *kn_knlist;	/* f_attach populated */
-	BSD_TAILQ_ENTRY(knote)	kn_tqe;
+	TAILQ_ENTRY(knote)	kn_tqe;
 	struct			kqueue *kn_kq;	/* which queue we are on */
 	struct 			kevent kn_kevent;
 	int			kn_status;	/* protected by kq lock */
@@ -210,12 +210,12 @@ struct knote {
 #define KN_KQUEUE	0x40			/* this knote belongs to a kq */
 #define KN_HASKQLOCK	0x80			/* for _inevent */
 	int			kn_sfflags;	/* saved filter flags */
-	bsd_intptr_t		kn_sdata;	/* saved data field */
+	intptr_t		kn_sdata;	/* saved data field */
 	union {
 		struct		file *p_fp;	/* file data pointer */
 		struct		proc *p_proc;	/* proc pointer */
 		struct		aiocblist *p_aio;	/* AIO job pointer */
-		struct		aioliojob *p_lio;	/* LIO job pointer */
+		struct		aioliojob *p_lio;	/* LIO job pointer */ 
 	} kn_ptr;
 	struct			filterops *kn_fop;
 	void			*kn_hook;
@@ -264,14 +264,14 @@ extern int	kqueue_del_filteropts(int filt);
 
 #else 	/* !_KERNEL */
 
-#include <sys/cdefs.h>
-struct bsd_timespec;
+#include <sys/bsd_cdefs.h>
+struct timespec;
 
 __BEGIN_DECLS
 int     kqueue(void);
 int     kevent(int kq, const struct kevent *changelist, int nchanges,
 	    struct kevent *eventlist, int nevents,
-	    const struct bsd_timespec *timeout);
+	    const struct timespec *timeout);
 __END_DECLS
 
 #endif /* !_KERNEL */

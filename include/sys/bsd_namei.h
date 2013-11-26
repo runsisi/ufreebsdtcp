@@ -41,9 +41,9 @@ struct componentname {
 	 * Arguments to lookup.
 	 */
 	u_long	cn_nameiop;	/* namei operation */
-	bsd_uint64_t cn_flags;	/* flags to namei */
+	u_int64_t cn_flags;	/* flags to namei */
 	struct	thread *cn_thread;/* thread requesting lookup */
-	struct	bsd_ucred *cn_cred;	/* credentials */
+	struct	ucred *cn_cred;	/* credentials */
 	int	cn_lkflags;	/* Lock flags LK_EXCLUSIVE or LK_SHARED */
 	/*
 	 * Shared between lookup and commit routines.
@@ -62,8 +62,8 @@ struct nameidata {
 	 * Arguments to namei/lookup.
 	 */
 	const	char *ni_dirp;		/* pathname pointer */
-	enum	bsd_uio_seg ni_segflg;	/* location of pathname */
-	bsd_cap_rights_t ni_rightsneeded;	/* rights required to look up vnode */
+	enum	uio_seg ni_segflg;	/* location of pathname */
+	cap_rights_t ni_rightsneeded;	/* rights required to look up vnode */
 	/*
 	 * Arguments to lookup.
 	 */
@@ -75,7 +75,7 @@ struct nameidata {
 	/*
 	 * Results: returned from namei
 	 */
-	bsd_cap_rights_t ni_baserights;	/* rights the *at base has (or -1) */
+	cap_rights_t ni_baserights;	/* rights the *at base has (or -1) */
 	/*
 	 * Results: returned from/manipulated by lookup
 	 */
@@ -84,7 +84,7 @@ struct nameidata {
 	/*
 	 * Shared between namei and lookup/commit routines.
 	 */
-	bsd_size_t	ni_pathlen;		/* remaining chars in path */
+	size_t	ni_pathlen;		/* remaining chars in path */
 	char	*ni_next;		/* next location in pathname */
 	u_int	ni_loopcnt;		/* count of symlinks encountered */
 	/*
@@ -168,11 +168,11 @@ struct nameidata {
 static __inline void
 NDINIT_ALL(struct nameidata *ndp,
 	u_long op, u_long flags,
-	enum bsd_uio_seg segflg,
+	enum uio_seg segflg,
 	const char *namep,
 	int dirfd,
 	struct vnode *startdir,
-	bsd_cap_rights_t rights,
+	cap_rights_t rights,
 	struct thread *td)
 {
 	ndp->ni_cnd.cn_nameiop = op;

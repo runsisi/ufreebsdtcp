@@ -24,21 +24,21 @@
  * SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/netinet6/send.c 249132 2013-04-05 08:22:11Z mav $");
 
-#include <sys/param.h>
-#include <sys/kernel.h>
-#include <sys/mbuf.h>
-#include <sys/module.h>
-#include <sys/priv.h>
-#include <sys/protosw.h>
-#include <sys/systm.h>
-#include <sys/socket.h>
-#include <sys/sockstate.h>
-#include <sys/sockbuf.h>
-#include <sys/socketvar.h>
-#include <sys/types.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_mbuf.h>
+#include <sys/bsd_module.h>
+#include <sys/bsd_priv.h>
+#include <sys/bsd_protosw.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_socket.h>
+#include <sys/bsd_sockstate.h>
+#include <sys/bsd_sockbuf.h>
+#include <sys/bsd_socketvar.h>
+#include <sys/bsd_types.h>
 
 #include <net/route.h>
 #include <net/if.h>
@@ -60,7 +60,7 @@ static MALLOC_DEFINE(M_SEND, "send", "Secure Neighbour Discovery");
 /*
  * The socket used to communicate with the SeND daemon.
  */
-static VNET_DEFINE(struct bsd_socket *, send_so);
+static VNET_DEFINE(struct socket *, send_so);
 #define	V_send_so	VNET(send_so)
 
 u_long	send_sendspace	= 8 * (1024 + sizeof(struct sockaddr_send));
@@ -73,7 +73,7 @@ struct mtx	send_mtx;
 #define SEND_LOCK_DESTROY()     mtx_destroy(&send_mtx)
 
 static int
-send_attach(struct bsd_socket *so, int proto, struct thread *td)
+send_attach(struct socket *so, int proto, struct thread *td)
 {
 	int error;
 
@@ -109,7 +109,7 @@ static int
 send_output(struct mbuf *m, struct ifnet *ifp, int direction)
 {
 	struct ip6_hdr *ip6;
-	struct bsd_sockaddr_in6 dst;
+	struct sockaddr_in6 dst;
 	struct icmp6_hdr *icmp6;
 	int icmp6len;
 
@@ -188,7 +188,7 @@ send_output(struct mbuf *m, struct ifnet *ifp, int direction)
 		 * if now needed?
 		 */
 		int error;
-		error = ((*ifp->if_output)(ifp, m, (struct bsd_sockaddr *)&dst,
+		error = ((*ifp->if_output)(ifp, m, (struct sockaddr *)&dst,
 		    NULL));
 		if (error)
 			error = ENOENT;
@@ -206,7 +206,7 @@ send_output(struct mbuf *m, struct ifnet *ifp, int direction)
  * input path.
  */
 static int
-send_send(struct bsd_socket *so, int flags, struct mbuf *m, struct bsd_sockaddr *nam,
+send_send(struct socket *so, int flags, struct mbuf *m, struct sockaddr *nam,
     struct mbuf *control, struct thread *td)
 {
 	struct sockaddr_send *sendsrc;
@@ -234,7 +234,7 @@ err:
 }
 
 static void
-send_close(struct bsd_socket *so)
+send_close(struct socket *so)
 {
 
 	SEND_LOCK();
@@ -281,7 +281,7 @@ send_input(struct mbuf *m, struct ifnet *ifp, int direction, int msglen __unused
 	 */
 	SOCKBUF_LOCK(&V_send_so->so_rcv);
 	if (sbappendaddr_locked(&V_send_so->so_rcv,
-	    (struct bsd_sockaddr *)&sendsrc, m, NULL) == 0) {
+	    (struct sockaddr *)&sendsrc, m, NULL) == 0) {
 		SOCKBUF_UNLOCK(&V_send_so->so_rcv);
 		/* XXX stats. */
 		m_freem(m);
@@ -298,7 +298,7 @@ struct pr_usrreqs send_usrreqs = {
 	.pru_send =		send_send,
 	.pru_detach =		send_close
 };
-struct bsd_protosw send_protosw = {
+struct protosw send_protosw = {
 	.pr_type =		SOCK_RAW,
 	.pr_flags =		PR_ATOMIC|PR_ADDR,
 	.pr_protocol =		IPPROTO_SEND,

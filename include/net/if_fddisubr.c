@@ -41,14 +41,14 @@
 #include "opt_inet6.h"
 #include "opt_ipx.h"
 
-#include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/kernel.h>
-#include <sys/malloc.h>
-#include <sys/mbuf.h>
-#include <sys/module.h>
-#include <sys/socket.h>
-#include <sys/sockio.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_malloc.h>
+#include <sys/bsd_mbuf.h>
+#include <sys/bsd_module.h>
+#include <sys/bsd_socket.h>
+#include <sys/bsd_sockio.h>
 
 #include <net/if.h>
 #include <net/if_dl.h>
@@ -89,14 +89,14 @@ extern u_char	at_org_code[ 3 ];
 extern u_char	aarp_org_code[ 3 ];
 #endif /* NETATALK */
 
-#include <security/mac/mac_framework.h>
+//#include <security/mac/mac_framework.h>
 
 static const u_char fddibroadcastaddr[FDDI_ADDR_LEN] =
 			{ 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 
-static int fddi_resolvemulti(struct ifnet *, struct bsd_sockaddr **,
-			      struct bsd_sockaddr *);
-static int fddi_output(struct ifnet *, struct mbuf *, struct bsd_sockaddr *,
+static int fddi_resolvemulti(struct ifnet *, struct sockaddr **,
+			      struct sockaddr *);
+static int fddi_output(struct ifnet *, struct mbuf *, struct sockaddr *,
 		       struct route *); 
 static void fddi_input(struct ifnet *ifp, struct mbuf *m);
 
@@ -113,10 +113,10 @@ static int
 fddi_output(ifp, m, dst, ro)
 	struct ifnet *ifp;
 	struct mbuf *m;
-	struct bsd_sockaddr *dst;
+	struct sockaddr *dst;
 	struct route *ro;
 {
-	bsd_uint16_t type;
+	u_int16_t type;
 	int loop_copy = 0, error = 0, hdrcmplt = 0;
  	u_char esrc[FDDI_ADDR_LEN], edst[FDDI_ADDR_LEN];
 	struct fddi_header *fh;
@@ -467,7 +467,7 @@ fddi_input(ifp, m)
 	switch (l->llc_dsap) {
 	case LLC_SNAP_LSAP:
 	{
-		bsd_uint16_t type;
+		u_int16_t type;
 		if ((l->llc_control != LLC_UI) ||
 		    (l->llc_ssap != LLC_SNAP_LSAP)) {
 			ifp->if_noproto++;
@@ -567,7 +567,7 @@ dropanyway:
 void
 fddi_ifattach(ifp, lla, bpf)
 	struct ifnet *ifp;
-	const bsd_uint8_t *lla;
+	const u_int8_t *lla;
 	int bpf;
 {
 	struct ifaddr *ifa;
@@ -672,9 +672,9 @@ fddi_ioctl (ifp, command, data)
 		}
 		break;
 	case SIOCGIFADDR: {
-			struct bsd_sockaddr *sa;
+			struct sockaddr *sa;
 
-			sa = (struct bsd_sockaddr *) & ifr->ifr_data;
+			sa = (struct sockaddr *) & ifr->ifr_data;
 			bcopy(IF_LLADDR(ifp),
 			      (caddr_t) sa->sa_data, FDDI_ADDR_LEN);
 
@@ -701,12 +701,12 @@ fddi_ioctl (ifp, command, data)
 static int
 fddi_resolvemulti(ifp, llsa, sa)
 	struct ifnet *ifp;
-	struct bsd_sockaddr **llsa;
-	struct bsd_sockaddr *sa;
+	struct sockaddr **llsa;
+	struct sockaddr *sa;
 {
 	struct sockaddr_dl *sdl;
 #ifdef INET
-	struct bsd_sockaddr_in *sin;
+	struct sockaddr_in *sin;
 #endif
 #ifdef INET6
 	struct sockaddr_in6 *sin6;
@@ -727,10 +727,10 @@ fddi_resolvemulti(ifp, llsa, sa)
 
 #ifdef INET
 	case AF_INET:
-		sin = (struct bsd_sockaddr_in *)sa;
+		sin = (struct sockaddr_in *)sa;
 		if (!IN_MULTICAST(ntohl(sin->sin_addr.s_addr)))
 			return (EADDRNOTAVAIL);
-		sdl = bsd_malloc(sizeof *sdl, M_IFMADDR,
+		sdl = malloc(sizeof *sdl, M_IFMADDR,
 		       M_NOWAIT | M_ZERO);
 		if (sdl == NULL)
 			return (ENOMEM);
@@ -743,7 +743,7 @@ fddi_resolvemulti(ifp, llsa, sa)
 		sdl->sdl_slen = 0;
 		e_addr = LLADDR(sdl);
 		ETHER_MAP_IP_MULTICAST(&sin->sin_addr, e_addr);
-		*llsa = (struct bsd_sockaddr *)sdl;
+		*llsa = (struct sockaddr *)sdl;
 		return (0);
 #endif
 #ifdef INET6
@@ -761,7 +761,7 @@ fddi_resolvemulti(ifp, llsa, sa)
 		}
 		if (!IN6_IS_ADDR_MULTICAST(&sin6->sin6_addr))
 			return (EADDRNOTAVAIL);
-		sdl = bsd_malloc(sizeof *sdl, M_IFMADDR,
+		sdl = malloc(sizeof *sdl, M_IFMADDR,
 		       M_NOWAIT | M_ZERO);
 		if (sdl == NULL)
 			return (ENOMEM);
@@ -774,7 +774,7 @@ fddi_resolvemulti(ifp, llsa, sa)
 		sdl->sdl_slen = 0;
 		e_addr = LLADDR(sdl);
 		ETHER_MAP_IPV6_MULTICAST(&sin6->sin6_addr, e_addr);
-		*llsa = (struct bsd_sockaddr *)sdl;
+		*llsa = (struct sockaddr *)sdl;
 		return (0);
 #endif
 

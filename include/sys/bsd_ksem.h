@@ -37,9 +37,9 @@
 
 struct ksem {
 	int		ks_ref;		/* number of references */
-	bsd_mode_t		ks_mode;	/* protection bits */
-	bsd_uid_t		ks_uid;		/* creator uid */
-	bsd_gid_t		ks_gid;		/* creator gid */
+	mode_t		ks_mode;	/* protection bits */
+	uid_t		ks_uid;		/* creator uid */
+	gid_t		ks_gid;		/* creator gid */
 	unsigned int	ks_value;	/* current value */
 	struct cv	ks_cv;		/* waiters sleep here */
 	int		ks_waiters;	/* number of waiters */
@@ -51,10 +51,10 @@ struct ksem {
 	 *
 	 * XXX: dubious
 	 */
-	struct bsd_timespec	ks_atime;
-	struct bsd_timespec	ks_mtime;
-	struct bsd_timespec	ks_ctime;
-	struct bsd_timespec	ks_birthtime;
+	struct timespec	ks_atime;
+	struct timespec	ks_mtime;
+	struct timespec	ks_ctime;
+	struct timespec	ks_birthtime;
 
 	struct label	*ks_label;	/* MAC label */
 	const char	*ks_path;

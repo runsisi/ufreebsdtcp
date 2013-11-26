@@ -34,9 +34,9 @@
 #include <sys/_bsd_types.h>
 #include <sys/bsd_sched.h>
 
-#ifndef _BSD_SIZE_T_DECLARED
-typedef __bsd_size_t	bsd_size_t;
-#define _BSD_SIZE_T_DECLARED
+#ifndef _SIZE_T_DECLARED
+typedef __size_t	size_t;
+#define _SIZE_T_DECLARED
 #endif
 
 /* Create the thread in the suspended state. */
@@ -48,9 +48,9 @@ struct thr_param {
     void	(*start_func)(void *);	/* thread entry function. */
     void	*arg;			/* argument for entry function. */
     char	*stack_base;		/* stack base address. */
-    bsd_size_t	stack_size;		/* stack size. */
+    size_t	stack_size;		/* stack size. */
     char	*tls_base;		/* tls base address. */
-    bsd_size_t	tls_size;		/* tls size. */
+    size_t	tls_size;		/* tls size. */
     long	*child_tid;		/* address to store new TID. */
     long	*parent_tid;		/* parent accesses the new TID here. */
     int		flags;			/* thread flags. */
@@ -65,7 +65,7 @@ struct thr_param {
 #include <sys/bsd_ucontext.h>
 
 #ifndef _PID_T_DECLARED
-typedef __pid_t		bsd_pid_t;
+typedef __pid_t		pid_t;
 #define _PID_T_DECLARED
 #endif
 
@@ -75,8 +75,8 @@ int thr_new(struct thr_param *param, int param_size);
 int thr_self(long *id);
 void thr_exit(long *state);
 int thr_kill(long id, int sig);
-int thr_kill2(bsd_pid_t pid, long id, int sig);
-int thr_suspend(const struct bsd_timespec *timeout);
+int thr_kill2(pid_t pid, long id, int sig);
+int thr_suspend(const struct timespec *timeout);
 int thr_wake(long id);
 int thr_set_name(long id, const char *name);
 __END_DECLS

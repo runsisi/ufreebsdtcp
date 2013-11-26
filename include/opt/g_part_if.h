@@ -154,11 +154,11 @@ extern struct kobjop_desc g_part_name_desc;
 /** @brief A function implementing the G_PART_NAME() method */
 typedef const char * g_part_name_t(struct g_part_table *table,
                                    struct g_part_entry *entry, char *buf,
-                                   bsd_size_t bufsz);
+                                   size_t bufsz);
 
 static __inline const char * G_PART_NAME(struct g_part_table *table,
                                          struct g_part_entry *entry, char *buf,
-                                         bsd_size_t bufsz)
+                                         size_t bufsz)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)table)->ops,g_part_name);
@@ -239,11 +239,11 @@ extern struct kobjop_desc g_part_type_desc;
 /** @brief A function implementing the G_PART_TYPE() method */
 typedef const char * g_part_type_t(struct g_part_table *table,
                                    struct g_part_entry *entry, char *buf,
-                                   bsd_size_t bufsz);
+                                   size_t bufsz);
 
 static __inline const char * G_PART_TYPE(struct g_part_table *table,
                                          struct g_part_entry *entry, char *buf,
-                                         bsd_size_t bufsz)
+                                         size_t bufsz)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)table)->ops,g_part_type);

@@ -30,8 +30,8 @@
  * $FreeBSD: release/9.2.0/sys/sys/resource.h 244172 2012-12-13 06:17:05Z kib $
  */
 
-#ifndef _BSD_SYS_RESOURCE_H_
-#define	_BSD_SYS_RESOURCE_H_
+#ifndef _SYS_RESOURCE_H_
+#define	_SYS_RESOURCE_H_
 
 #include <sys/bsd_cdefs.h>
 #include <sys/_bsd_timeval.h>
@@ -59,8 +59,8 @@
 #define	RUSAGE_THREAD	1
 
 struct rusage {
-	struct bsd_timeval ru_utime;	/* user time used */
-	struct bsd_timeval ru_stime;	/* system time used */
+	struct timeval ru_utime;	/* user time used */
+	struct timeval ru_stime;	/* system time used */
 	long	ru_maxrss;		/* max resident set size */
 #define	ru_first	ru_ixrss
 	long	ru_ixrss;		/* integral shared memory size */
@@ -106,7 +106,7 @@ struct __wrusage {
 
 #define	RLIM_NLIMITS	13		/* number of resource limits */
 
-#define	RLIM_INFINITY	((bsd_rlim_t)(((bsd_uint64_t)1 << 63) - 1))
+#define	RLIM_INFINITY	((rlim_t)(((uint64_t)1 << 63) - 1))
 /* XXX Missing: RLIM_SAVED_MAX, RLIM_SAVED_CUR */
 
 
@@ -132,34 +132,34 @@ static const char *rlimit_ident[RLIM_NLIMITS] = {
 };
 #endif
 
-#ifndef _BSD_RLIM_T_DECLARED
-typedef	__bsd_rlim_t	bsd_rlim_t;
-#define	_BSD_RLIM_T_DECLARED
+#ifndef _RLIM_T_DECLARED
+typedef	__rlim_t	rlim_t;
+#define	_RLIM_T_DECLARED
 #endif
 
 struct rlimit {
-	bsd_rlim_t	rlim_cur;		/* current (soft) limit */
-	bsd_rlim_t	rlim_max;		/* maximum value for rlim_cur */
+	rlim_t	rlim_cur;		/* current (soft) limit */
+	rlim_t	rlim_max;		/* maximum value for rlim_cur */
 };
 
 #if __BSD_VISIBLE
 
 struct orlimit {
-	__bsd_int32_t	rlim_cur;	/* current (soft) limit */
-	__bsd_int32_t	rlim_max;	/* maximum value for rlim_cur */
+	__int32_t	rlim_cur;	/* current (soft) limit */
+	__int32_t	rlim_max;	/* maximum value for rlim_cur */
 };
 
 struct loadavg {
-	__bsd_fixpt_t	ldavg[3];
+	__fixpt_t	ldavg[3];
 	long		fscale;
 };
 
-#define	BSD_CP_USER		0
-#define	BSD_CP_NICE		1
-#define	BSD_CP_SYS		2
-#define	BSD_CP_INTR		3
-#define	BSD_CP_IDLE		4
-#define	BSD_CPUSTATES	5
+#define	CP_USER		0
+#define	CP_NICE		1
+#define	CP_SYS		2
+#define	CP_INTR		3
+#define	CP_IDLE		4
+#define	CPUSTATES	5
 
 #endif	/* __BSD_VISIBLE */
 

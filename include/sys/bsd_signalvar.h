@@ -30,8 +30,8 @@
  * $FreeBSD: release/9.2.0/sys/sys/signalvar.h 251147 2013-05-30 19:14:34Z jhb $
  */
 
-#ifndef _BSD_SYS_SIGNALVAR_H_
-#define	_BSD_SYS_SIGNALVAR_H_
+#ifndef _SYS_SIGNALVAR_H_
+#define	_SYS_SIGNALVAR_H_
 
 #include <sys/bsd_queue.h>
 #include <sys/_bsd_lock.h>
@@ -49,19 +49,19 @@
  * group.  All members are locked by the included mutex.  The reference count
  * and mutex must be last for the bcopy in sigacts_copy() to work.
  */
-struct bsd_sigacts {
-	//bsd_sig_t	ps_sigact[_SIG_MAXSIG];	/* Disposition of signals. */
-	bsd_sigset_t ps_catchmask[_SIG_MAXSIG];	/* Signals to be blocked. */
-	bsd_sigset_t ps_sigonstack;		/* Signals to take on sigstack. */
-	bsd_sigset_t ps_sigintr;		/* Signals that interrupt syscalls. */
-	bsd_sigset_t ps_sigreset;		/* Signals that reset when caught. */
-	bsd_sigset_t ps_signodefer;		/* Signals not masked while handled. */
-	bsd_sigset_t ps_siginfo;		/* Signals that want SA_SIGINFO args. */
-	bsd_sigset_t ps_sigignore;		/* Signals being ignored. */
-	bsd_sigset_t ps_sigcatch;		/* Signals being caught by user. */
-	bsd_sigset_t ps_freebsd4;		/* Signals using freebsd4 ucontext. */
-	bsd_sigset_t ps_osigset;		/* Signals using <= 3.x osigset_t. */
-	bsd_sigset_t ps_usertramp;		/* SunOS compat; libc sigtramp. XXX */
+struct sigacts {
+	sig_t	ps_sigact[_SIG_MAXSIG];	/* Disposition of signals. */
+	sigset_t ps_catchmask[_SIG_MAXSIG];	/* Signals to be blocked. */
+	sigset_t ps_sigonstack;		/* Signals to take on sigstack. */
+	sigset_t ps_sigintr;		/* Signals that interrupt syscalls. */
+	sigset_t ps_sigreset;		/* Signals that reset when caught. */
+	sigset_t ps_signodefer;		/* Signals not masked while handled. */
+	sigset_t ps_siginfo;		/* Signals that want SA_SIGINFO args. */
+	sigset_t ps_sigignore;		/* Signals being ignored. */
+	sigset_t ps_sigcatch;		/* Signals being caught by user. */
+	sigset_t ps_freebsd4;		/* Signals using freebsd4 ucontext. */
+	sigset_t ps_osigset;		/* Signals using <= 3.x osigset_t. */
+	sigset_t ps_usertramp;		/* SunOS compat; libc sigtramp. XXX */
 	int	ps_flag;
 	int	ps_refcnt;
 	struct mtx ps_mtx;
@@ -176,7 +176,7 @@ typedef void __osiginfohandler_t(int, osiginfo_t *, void *);
 #define	OSIG2SIG(osig, sig)	SIGEMPTYSET(sig); (sig).__bits[0] = osig
 
 static __inline int
-__sigisempty(bsd_sigset_t *set)
+__sigisempty(sigset_t *set)
 {
 	int i;
 
@@ -188,7 +188,7 @@ __sigisempty(bsd_sigset_t *set)
 }
 
 static __inline int
-__sigseteq(bsd_sigset_t *set1, bsd_sigset_t *set2)
+__sigseteq(sigset_t *set1, sigset_t *set2)
 {
 	int i;
 
@@ -209,11 +209,11 @@ struct osigevent {
 };
 
 typedef struct ksiginfo {
-	BSD_TAILQ_ENTRY(ksiginfo)	ksi_link;
-	bsd_siginfo_t		ksi_info;
+	TAILQ_ENTRY(ksiginfo)	ksi_link;
+	siginfo_t		ksi_info;
 	int			ksi_flags;
 	struct sigqueue		*ksi_sigq;
-} bsd_ksiginfo_t;
+} ksiginfo_t;
 
 #define	ksi_signo	ksi_info.si_signo
 #define	ksi_errno	ksi_info.si_errno
@@ -240,9 +240,9 @@ typedef struct ksiginfo {
 #define	KSI_ONQ(ksi)	((ksi)->ksi_sigq != NULL)
 
 typedef struct sigqueue {
-	bsd_sigset_t	sq_signals;	/* All pending signals. */
-	bsd_sigset_t	sq_kill;	/* Legacy depth 1 queue. */
-	BSD_TAILQ_HEAD(, ksiginfo)	sq_list;/* Queued signal info. */
+	sigset_t	sq_signals;	/* All pending signals. */
+	sigset_t	sq_kill;	/* Legacy depth 1 queue. */
+	TAILQ_HEAD(, ksiginfo)	sq_list;/* Queued signal info. */
 	struct proc	*sq_proc;
 	int		sq_flags;
 } sigqueue_t;
@@ -264,7 +264,7 @@ typedef struct sigqueue {
  * containing SIGSETNAND(*set, *mask).
  */
 static __inline int
-sigsetmasked(bsd_sigset_t *set, bsd_sigset_t *mask)
+sigsetmasked(sigset_t *set, sigset_t *mask)
 {
 	int i;
 
@@ -288,14 +288,14 @@ do {						\
 } while(0)
 
 static __inline void
-ksiginfo_copy(bsd_ksiginfo_t *src, bsd_ksiginfo_t *dst)
+ksiginfo_copy(ksiginfo_t *src, ksiginfo_t *dst)
 {
 	(dst)->ksi_info = src->ksi_info;
 	(dst)->ksi_flags = (src->ksi_flags & KSI_COPYMASK);
 }
 
 static __inline void
-ksiginfo_set_sigev(bsd_ksiginfo_t *dst, struct sigevent *sigev)
+ksiginfo_set_sigev(ksiginfo_t *dst, struct sigevent *sigev)
 {
 	dst->ksi_signo = sigev->sigev_signo;
 	dst->ksi_value = sigev->sigev_value;
@@ -331,38 +331,38 @@ int	cursig(struct thread *td, int stop_allowed);
 int	sigdeferstop(void);
 void	sigallowstop(void);
 void	execsigs(struct proc *p);
-void	gsignal(int pgid, int sig, bsd_ksiginfo_t *ksi);
+void	gsignal(int pgid, int sig, ksiginfo_t *ksi);
 void	killproc(struct proc *p, char *why);
-bsd_ksiginfo_t * ksiginfo_alloc(int wait);
-void	ksiginfo_free(bsd_ksiginfo_t *ksi);
-int	pksignal(struct proc *p, int sig, bsd_ksiginfo_t *ksi);
+ksiginfo_t * ksiginfo_alloc(int wait);
+void	ksiginfo_free(ksiginfo_t *ksi);
+int	pksignal(struct proc *p, int sig, ksiginfo_t *ksi);
 void	pgsigio(struct sigio **sigiop, int sig, int checkctty);
-void	pgsignal(struct pgrp *pgrp, int sig, int checkctty, bsd_ksiginfo_t *ksi);
+void	pgsignal(struct pgrp *pgrp, int sig, int checkctty, ksiginfo_t *ksi);
 int	postsig(int sig);
 void	kern_psignal(struct proc *p, int sig);
 int	ptracestop(struct thread *td, int sig);
-//void	sendsig(bsd_sig_t catcher, bsd_ksiginfo_t *ksi, bsd_sigset_t *retmask);
-struct bsd_sigacts *sigacts_alloc(void);
-void	sigacts_copy(struct bsd_sigacts *dest, struct bsd_sigacts *src);
-void	sigacts_free(struct bsd_sigacts *ps);
-struct bsd_sigacts *sigacts_hold(struct bsd_sigacts *ps);
-int	sigacts_shared(struct bsd_sigacts *ps);
+void	sendsig(sig_t catcher, ksiginfo_t *ksi, sigset_t *retmask);
+struct sigacts *sigacts_alloc(void);
+void	sigacts_copy(struct sigacts *dest, struct sigacts *src);
+void	sigacts_free(struct sigacts *ps);
+struct sigacts *sigacts_hold(struct sigacts *ps);
+int	sigacts_shared(struct sigacts *ps);
 void	sigexit(struct thread *td, int sig) __dead2;
 int	sigev_findtd(struct proc *p, struct sigevent *sigev, struct thread **);
-int	sig_ffs(bsd_sigset_t *set);
+int	sig_ffs(sigset_t *set);
 void	siginit(struct proc *p);
 void	signotify(struct thread *td);
 void	sigqueue_delete(struct sigqueue *queue, int sig);
 void	sigqueue_delete_proc(struct proc *p, int sig);
 void	sigqueue_flush(struct sigqueue *queue);
 void	sigqueue_init(struct sigqueue *queue, struct proc *p);
-void	sigqueue_take(bsd_ksiginfo_t *ksi);
-void	tdksignal(struct thread *td, int sig, bsd_ksiginfo_t *ksi);
+void	sigqueue_take(ksiginfo_t *ksi);
+void	tdksignal(struct thread *td, int sig, ksiginfo_t *ksi);
 int	tdsendsignal(struct proc *p, struct thread *td, int sig,
-	   bsd_ksiginfo_t *ksi);
+	   ksiginfo_t *ksi);
 void	tdsigcleanup(struct thread *td);
 void	tdsignal(struct thread *td, int sig);
-void	trapsignal(struct thread *td, bsd_ksiginfo_t *ksi);
+void	trapsignal(struct thread *td, ksiginfo_t *ksi);
 
 #endif /* _KERNEL */
 

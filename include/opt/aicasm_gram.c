@@ -66,7 +66,7 @@ static int yygrowstack();
  * $FreeBSD: release/9.2.0/sys/dev/aic7xxx/aicasm/aicasm_gram.y 243198 2012-11-17 23:34:10Z dim $
  */
 
-#include <sys/types.h>
+#include <sys/bsd_types.h>
 
 #include <inttypes.h>
 #include <regex.h>
@@ -74,7 +74,7 @@ static int yygrowstack();
 #include <stdlib.h>
 #include <string.h>
 #include <sysexits.h>
-#include <sys/queue.h>
+#include <sys/bsd_queue.h>
 
 #include "aicasm.h"
 #include "aicasm_symbol.h"
@@ -963,7 +963,7 @@ initialize_symbol(symbol_t *symbol)
 	case SRAMLOC:
 	case SCBLOC:
 		symbol->info.rinfo =
-		    (struct reg_info *)bsd_malloc(sizeof(struct reg_info));
+		    (struct reg_info *)malloc(sizeof(struct reg_info));
 		if (symbol->info.rinfo == NULL) {
 			stop("Can't create register info", EX_SOFTWARE);
 			/* NOTREACHED */
@@ -984,7 +984,7 @@ initialize_symbol(symbol_t *symbol)
 		break;
 	case ALIAS:
 		symbol->info.ainfo =
-		    (struct alias_info *)bsd_malloc(sizeof(struct alias_info));
+		    (struct alias_info *)malloc(sizeof(struct alias_info));
 		if (symbol->info.ainfo == NULL) {
 			stop("Can't create alias info", EX_SOFTWARE);
 			/* NOTREACHED */
@@ -997,7 +997,7 @@ initialize_symbol(symbol_t *symbol)
 	case ENUM:
 	case ENUM_ENTRY:
 		symbol->info.finfo =
-		    (struct field_info *)bsd_malloc(sizeof(struct field_info));
+		    (struct field_info *)malloc(sizeof(struct field_info));
 		if (symbol->info.finfo == NULL) {
 			stop("Can't create field info", EX_SOFTWARE);
 			/* NOTREACHED */
@@ -1008,7 +1008,7 @@ initialize_symbol(symbol_t *symbol)
 	case CONST:
 	case DOWNLOAD_CONST:
 		symbol->info.cinfo =
-		    (struct const_info *)bsd_malloc(sizeof(struct const_info));
+		    (struct const_info *)malloc(sizeof(struct const_info));
 		if (symbol->info.cinfo == NULL) {
 			stop("Can't create alias info", EX_SOFTWARE);
 			/* NOTREACHED */
@@ -1018,7 +1018,7 @@ initialize_symbol(symbol_t *symbol)
 		break;
 	case LABEL:
 		symbol->info.linfo =
-		    (struct label_info *)bsd_malloc(sizeof(struct label_info));
+		    (struct label_info *)malloc(sizeof(struct label_info));
 		if (symbol->info.linfo == NULL) {
 			stop("Can't create label info", EX_SOFTWARE);
 			/* NOTREACHED */
@@ -1028,7 +1028,7 @@ initialize_symbol(symbol_t *symbol)
 		break;
 	case CONDITIONAL:
 		symbol->info.condinfo =
-		    (struct cond_info *)bsd_malloc(sizeof(struct cond_info));
+		    (struct cond_info *)malloc(sizeof(struct cond_info));
 		if (symbol->info.condinfo == NULL) {
 			stop("Can't create conditional info", EX_SOFTWARE);
 			/* NOTREACHED */
@@ -1038,7 +1038,7 @@ initialize_symbol(symbol_t *symbol)
 		break;
 	case MACRO:
 		symbol->info.macroinfo = 
-		    (struct macro_info *)bsd_malloc(sizeof(struct macro_info));
+		    (struct macro_info *)malloc(sizeof(struct macro_info));
 		if (symbol->info.macroinfo == NULL) {
 			stop("Can't create macro info", EX_SOFTWARE);
 			/* NOTREACHED */
@@ -1068,7 +1068,7 @@ add_macro_arg(const char *argtext, int argnum __unused)
 		/* NOTREACHED */
 	}
 
-	marg = (struct macro_arg *)bsd_malloc(sizeof(*marg));
+	marg = (struct macro_arg *)malloc(sizeof(*marg));
 	if (marg == NULL) {
 		stop("Can't create macro_arg structure", EX_SOFTWARE);
 		/* NOTREACHED */
@@ -1208,7 +1208,7 @@ format_2_instr(int opcode, symbol_ref_t *dest, expression_t *places,
 {
 	struct instruction *instr;
 	struct ins_format2 *f2_instr;
-	bsd_uint8_t shift_control;
+	uint8_t shift_control;
 
 	if (src->symbol == NULL)
 		src = dest;
@@ -1343,7 +1343,7 @@ type_check(symbol_t *symbol, expression_t *expression, int opcode)
 {
 	symbol_node_t *node;
 	int and_op;
-	bsd_uint8_t invalid_bits;
+	uint8_t invalid_bits;
 
 	and_op = FALSE;
 	if (opcode == AIC_OP_AND
@@ -1448,7 +1448,7 @@ add_version(const char *verstring)
 	oldlen = 0;
 	if (versions != NULL)
 		oldlen = strlen(versions);
-	versions = bsd_realloc(versions, newlen + oldlen + 2);
+	versions = realloc(versions, newlen + oldlen + 2);
 	if (versions == NULL)
 		stop("Can't allocate version string", EX_SOFTWARE);
 	strcpy(&versions[oldlen], verprefix);
@@ -1491,14 +1491,14 @@ static int yygrowstack()
     else if ((newsize *= 2) > YYMAXDEPTH)
         newsize = YYMAXDEPTH;
     i = yyssp - yyss;
-    newss = yyss ? (short *)bsd_realloc(yyss, newsize * sizeof *newss) :
-      (short *)bsd_malloc(newsize * sizeof *newss);
+    newss = yyss ? (short *)realloc(yyss, newsize * sizeof *newss) :
+      (short *)malloc(newsize * sizeof *newss);
     if (newss == NULL)
         return -1;
     yyss = newss;
     yyssp = newss + i;
-    newvs = yyvs ? (YYSTYPE *)bsd_realloc(yyvs, newsize * sizeof *newvs) :
-      (YYSTYPE *)bsd_malloc(newsize * sizeof *newvs);
+    newvs = yyvs ? (YYSTYPE *)realloc(yyvs, newsize * sizeof *newvs) :
+      (YYSTYPE *)malloc(newsize * sizeof *newvs);
     if (newvs == NULL)
         return -1;
     yyvs = newvs;

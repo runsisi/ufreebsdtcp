@@ -51,12 +51,12 @@
 struct firmware {
 	const char	*name;		/* system-wide name */
 	const void	*data;		/* location of image */
-	bsd_size_t		 datasize;	/* size of image in bytes */
+	size_t		 datasize;	/* size of image in bytes */
 	unsigned int	 version;	/* version of the image */
 };
 
 const struct firmware	*firmware_register(const char *,
-	const void *, bsd_size_t, unsigned int, const struct firmware *);
+	const void *, size_t, unsigned int, const struct firmware *);
 int	 firmware_unregister(const char *);
 const struct firmware *firmware_get(const char *);
 #define	FIRMWARE_UNLOAD		0x0001	/* unload if unreferenced */

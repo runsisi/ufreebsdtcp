@@ -27,14 +27,14 @@
  * SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 
 __FBSDID("$FreeBSD: release/9.2.0/sys/netinet6/in6_pcbgroup.c 222748 2011-06-06 12:55:02Z rwatson $");
 
 #include "opt_inet6.h"
 
-#include <sys/param.h>
-#include <sys/mbuf.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_mbuf.h>
 
 #include <netinet/in.h>
 #include <netinet/in_pcb.h>
@@ -47,7 +47,7 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/netinet6/in6_pcbgroup.c 222748 2011-06-06 
  * index.
  */
 static __inline u_int
-in6_pcbgroup_getbucket(struct inpcbinfo *pcbinfo, bsd_uint32_t hash)
+in6_pcbgroup_getbucket(struct inpcbinfo *pcbinfo, uint32_t hash)
 {
 
 	return (hash % pcbinfo->ipi_npcbgroups);
@@ -58,7 +58,7 @@ in6_pcbgroup_getbucket(struct inpcbinfo *pcbinfo, bsd_uint32_t hash)
  * information is insufficient to identify the pcbgroup.
  */
 struct inpcbgroup *
-in6_pcbgroup_byhash(struct inpcbinfo *pcbinfo, u_int hashtype, bsd_uint32_t hash)
+in6_pcbgroup_byhash(struct inpcbinfo *pcbinfo, u_int hashtype, uint32_t hash)
 {
 
 	return (NULL);
@@ -73,10 +73,10 @@ in6_pcbgroup_bymbuf(struct inpcbinfo *pcbinfo, struct mbuf *m)
 }
 
 struct inpcbgroup *
-in6_pcbgroup_bytuple(struct inpcbinfo *pcbinfo, const struct bsd_in6_addr *laddrp,
-    u_short lport, const struct bsd_in6_addr *faddrp, u_short fport)
+in6_pcbgroup_bytuple(struct inpcbinfo *pcbinfo, const struct in6_addr *laddrp,
+    u_short lport, const struct in6_addr *faddrp, u_short fport)
 {
-	bsd_uint32_t hash;
+	uint32_t hash;
 
 	switch (pcbinfo->ipi_hashfields) {
 	case IPI_HASHFIELDS_4TUPLE:

@@ -31,8 +31,8 @@
  * $FreeBSD: release/9.2.0/sys/sys/mbuf.h 252828 2013-07-05 19:36:34Z andre $
  */
 
-#ifndef _BSD_SYS_MBUF_H_
-#define	_BSD_SYS_MBUF_H_
+#ifndef _SYS_MBUF_H_
+#define	_SYS_MBUF_H_
 
 /* XXX: These includes suck. Sorry! */
 #include <sys/bsd_queue.h>
@@ -93,22 +93,17 @@ struct m_hdr {
 	int		 mh_len;	/* amount of data in this mbuf */
 	int		 mh_flags;	/* flags; see below */
 	short		 mh_type;	/* type of data in this mbuf */
-    #if 0	// runsisi AT hust.edu.cn @2013/11/17
-    bsd_uint8_t          pad[M_HDR_PAD];/* word align                  */
-    #endif 	// ---------------------- @2013/11/17
-    // runsisi AT hust.edu.cn @2013/11/17
-    short   mh_fibnum;  /* used for vcid, vcid must not great than MAX_SHORT */
-    // ---------------------- @2013/11/17
+	uint8_t          pad[M_HDR_PAD];/* word align                  */
 };
 
 /*
  * Packet tag structure (see below for details).
  */
 struct m_tag {
-	BSD_SLIST_ENTRY(m_tag)	m_tag_link;	/* List of packet tags */
-	bsd_uint16_t		m_tag_id;	/* Tag ID */
-	bsd_uint16_t		m_tag_len;	/* Length of data */
-	bsd_uint32_t		m_tag_cookie;	/* ABI/Module ID */
+	SLIST_ENTRY(m_tag)	m_tag_link;	/* List of packet tags */
+	u_int16_t		m_tag_id;	/* Tag ID */
+	u_int16_t		m_tag_len;	/* Length of data */
+	u_int32_t		m_tag_cookie;	/* ABI/Module ID */
 	void			(*m_tag_free)(struct m_tag *);
 };
 
@@ -120,18 +115,18 @@ struct pkthdr {
 	/* variables for ip and tcp reassembly */
 	void		*header;	/* pointer to packet header */
 	int		 len;		/* total packet length */
-	bsd_uint32_t	 flowid;	/* packet's 4-tuple system
+	uint32_t	 flowid;	/* packet's 4-tuple system
 					 * flow identifier
 					 */
 	/* variables for hardware checksum */
 	int		 csum_flags;	/* flags regarding checksum */
 	int		 csum_data;	/* data field used by csum routines */
-	bsd_uint16_t	 tso_segsz;	/* TSO segment size */
+	u_int16_t	 tso_segsz;	/* TSO segment size */
 	union {
-		bsd_uint16_t vt_vtag;	/* Ethernet 802.1p+q vlan tag */
-		bsd_uint16_t vt_nrecs;	/* # of IGMPv3 records in this chain */
+		u_int16_t vt_vtag;	/* Ethernet 802.1p+q vlan tag */
+		u_int16_t vt_nrecs;	/* # of IGMPv3 records in this chain */
 	} PH_vt;
-	BSD_SLIST_HEAD(packet_tags, m_tag) tags; /* list of packet tags */
+	SLIST_HEAD(packet_tags, m_tag) tags; /* list of packet tags */
 };
 #define ether_vtag	PH_vt.vt_vtag
 
@@ -172,9 +167,6 @@ struct mbuf {
 #define	m_data		m_hdr.mh_data
 #define	m_type		m_hdr.mh_type
 #define	m_flags		m_hdr.mh_flags
-// runsisi AT hust.edu.cn @2013/11/17
-#define m_fibnum    m_hdr.mh_fibnum
-// ---------------------- @2013/11/17
 #define	m_nextpkt	m_hdr.mh_nextpkt
 #define	m_act		m_nextpkt
 #define	m_pkthdr	M_dat.MH.MH_pkthdr
@@ -419,10 +411,8 @@ static __inline struct mbuf	*m_gethdr(int how, short type);
 static __inline struct mbuf	*m_getjcl(int how, short type, int flags,
 				    int size);
 static __inline struct mbuf	*m_getclr(int how, short type);	/* XXX */
-#if 0	// runsisi AT hust.edu.cn @2013/11/05
 static __inline int		 m_init(struct mbuf *m, uma_zone_t zone,
-                    int size, int how, short type, int flags);
-#endif 	// ---------------------- @2013/11/05
+				    int size, int how, short type, int flags);
 static __inline struct mbuf	*m_free(struct mbuf *m);
 static __inline void		 m_clget(struct mbuf *m, int how);
 static __inline void		*m_cljget(struct mbuf *m, int how, int size);
@@ -430,10 +420,6 @@ static __inline void		 m_chtype(struct mbuf *m, short new_type);
 void				 mb_free_ext(struct mbuf *);
 static __inline struct mbuf	*m_last(struct mbuf *m);
 int				 m_pkthdr_init(struct mbuf *m, int how);
-// runsisi AT hust.edu.cn @2013/11/06
-extern struct mbuf *m_get_internal(uma_zone_t zone, void *arg, int how);
-extern void m_free_internal(uma_zone_t zone, struct mbuf *m);
-// ---------------------- @2013/11/06
 
 static __inline int
 m_gettype(int size)
@@ -495,7 +481,6 @@ m_getzone(int size)
 	return (zone);
 }
 
-#if 0	// runsisi AT hust.edu.cn @2013/11/05
 /*
  * Initialize an mbuf with linear storage.
  *
@@ -507,22 +492,21 @@ static __inline int
 m_init(struct mbuf *m, uma_zone_t zone, int size, int how, short type,
     int flags)
 {
-    int error;
+	int error;
 
-    m->m_next = NULL;
-    m->m_nextpkt = NULL;
-    m->m_data = m->m_dat;
-    m->m_len = 0;
-    m->m_flags = flags;
-    m->m_type = type;
-    if (flags & M_PKTHDR) {
-        if ((error = m_pkthdr_init(m, how)) != 0)
-            return (error);
-    }
+	m->m_next = NULL;
+	m->m_nextpkt = NULL;
+	m->m_data = m->m_dat;
+	m->m_len = 0;
+	m->m_flags = flags;
+	m->m_type = type;
+	if (flags & M_PKTHDR) {
+		if ((error = m_pkthdr_init(m, how)) != 0)
+			return (error);
+	}
 
-    return (0);
+	return (0);
 }
-#endif 	// ---------------------- @2013/11/05
 
 static __inline struct mbuf *
 m_get(int how, short type)
@@ -531,13 +515,7 @@ m_get(int how, short type)
 
 	args.flags = 0;
 	args.type = type;
-    #if 0	// runsisi AT hust.edu.cn @2013/11/04
-    return ((struct mbuf *)(uma_zalloc_arg(zone_mbuf, &args, how)));
-    #endif 	// ---------------------- @2013/11/04
-
-    // runsisi AT hust.edu.cn @2013/11/04
-    return m_get_internal(zone_mbuf, &args, how);
-    // ---------------------- @2013/11/04
+	return ((struct mbuf *)(uma_zalloc_arg(zone_mbuf, &args, how)));
 }
 
 /*
@@ -551,17 +529,10 @@ m_getclr(int how, short type)
 
 	args.flags = 0;
 	args.type = type;
-    #if 0	// runsisi AT hust.edu.cn @2013/11/04
-    m = uma_zalloc_arg(zone_mbuf, &args, how);
-    if (m != NULL)
-        bzero(m->m_data, MLEN);
-    return (m);
-    #endif 	// ---------------------- @2013/11/04
-
-    // runsisi AT hust.edu.cn @2013/11/04
-    m = (struct mbuf *)m_get_internal(zone_mbuf, &args, how);
-    return m;
-    // ---------------------- @2013/11/04
+	m = uma_zalloc_arg(zone_mbuf, &args, how);
+	if (m != NULL)
+		bzero(m->m_data, MLEN);
+	return (m);
 }
 
 static __inline struct mbuf *
@@ -571,20 +542,8 @@ m_gethdr(int how, short type)
 
 	args.flags = M_PKTHDR;
 	args.type = type;
-    #if 0	// runsisi AT hust.edu.cn @2013/11/04
-    return ((struct mbuf *)(uma_zalloc_arg(zone_mbuf, &args, how)));
-    #endif 	// ---------------------- @2013/11/04
-
-    // runsisi AT hust.edu.cn @2013/11/04
-    return (struct mbuf *)m_get_internal(zone_mbuf, &args, how);
-    // ---------------------- @2013/11/04
+	return ((struct mbuf *)(uma_zalloc_arg(zone_mbuf, &args, how)));
 }
-
-/*
- * TODO: Presently i only handle the case that mbuf length (including the
- * mbuf header) is less than 2048 bytes, both jumbo frame and mbuf chain
- * are not implemented
- */
 
 static __inline struct mbuf *
 m_getcl(int how, short type, int flags)
@@ -628,21 +587,26 @@ m_getjcl(int how, short type, int flags, int size)
 	return (m);
 }
 
+static __inline void
+m_free_fast(struct mbuf *m)
+{
+#ifdef INVARIANTS
+	if (m->m_flags & M_PKTHDR)
+		KASSERT(SLIST_EMPTY(&m->m_pkthdr.tags), ("doing fast free of mbuf with tags"));
+#endif
+
+	uma_zfree_arg(zone_mbuf, m, (void *)MB_NOTAGS);
+}
+
 static __inline struct mbuf *
 m_free(struct mbuf *m)
 {
 	struct mbuf *n = m->m_next;
 
-    #if 0	// runsisi AT hust.edu.cn @2013/11/04
-    if (m->m_flags & M_EXT)
-        mb_free_ext(m);
-    else if ((m->m_flags & M_NOFREE) == 0)
-        uma_zfree(zone_mbuf, m);
-    #endif 	// ---------------------- @2013/11/04
-
-    // runsisi AT hust.edu.cn @2013/11/04
-    m_free_internal(zone_mbuf, m);
-    // ---------------------- @2013/11/04
+	if (m->m_flags & M_EXT)
+		mb_free_ext(m);
+	else if ((m->m_flags & M_NOFREE) == 0)
+		uma_zfree(zone_mbuf, m);
 	return (n);
 }
 
@@ -658,12 +622,10 @@ m_clget(struct mbuf *m, int how)
 	 * On a cluster allocation failure, drain the packet zone and retry,
 	 * we might be able to loosen a few clusters up on the drain.
 	 */
-    #if 0	// runsisi AT hust.edu.cn @2013/11/08
-    if ((how & M_NOWAIT) && (m->m_ext.ext_buf == NULL)) {
-        zone_drain(zone_pack);
-        uma_zalloc_arg(zone_clust, m, how);
-    }
-    #endif 	// ---------------------- @2013/11/08
+	if ((how & M_NOWAIT) && (m->m_ext.ext_buf == NULL)) {
+		zone_drain(zone_pack);
+		uma_zalloc_arg(zone_clust, m, how);
+	}
 }
 
 /*
@@ -748,10 +710,8 @@ static __inline void
 m_addr_changed(struct mbuf *m)
 {
 
-    #if 0	// runsisi AT hust.edu.cn @2013/11/07
-    if (m_addr_chg_pf_p)
-        m_addr_chg_pf_p(m);
-    #endif 	// ---------------------- @2013/11/07
+	if (m_addr_chg_pf_p)
+		m_addr_chg_pf_p(m);
 }
 
 /*
@@ -1003,11 +963,11 @@ struct mbuf	*m_unshare(struct mbuf *, int how);
 /* Specific cookies and tags. */
 
 /* Packet tag routines. */
-struct m_tag	*m_tag_alloc(bsd_uint32_t, int, int, int);
+struct m_tag	*m_tag_alloc(u_int32_t, int, int, int);
 void		 m_tag_delete(struct mbuf *, struct m_tag *);
 void		 m_tag_delete_chain(struct mbuf *, struct m_tag *);
 void		 m_tag_free_default(struct m_tag *);
-struct m_tag	*m_tag_locate(struct mbuf *, bsd_uint32_t, int, struct m_tag *);
+struct m_tag	*m_tag_locate(struct mbuf *, u_int32_t, int, struct m_tag *);
 struct m_tag	*m_tag_copy(struct m_tag *, int);
 int		 m_tag_copy_chain(struct mbuf *, struct mbuf *, int);
 void		 m_tag_delete_nonpersistent(struct mbuf *);
@@ -1019,7 +979,7 @@ static __inline void
 m_tag_init(struct mbuf *m)
 {
 
-	BSD_SLIST_INIT(&m->m_pkthdr.tags);
+	SLIST_INIT(&m->m_pkthdr.tags);
 }
 
 /*
@@ -1029,7 +989,7 @@ m_tag_init(struct mbuf *m)
  * XXX probably should be called m_tag_init, but that was already taken.
  */
 static __inline void
-m_tag_setup(struct m_tag *t, bsd_uint32_t cookie, int type, int len)
+m_tag_setup(struct m_tag *t, u_int32_t cookie, int type, int len)
 {
 
 	t->m_tag_id = type;
@@ -1054,7 +1014,7 @@ static __inline struct m_tag *
 m_tag_first(struct mbuf *m)
 {
 
-	return (BSD_SLIST_FIRST(&m->m_pkthdr.tags));
+	return (SLIST_FIRST(&m->m_pkthdr.tags));
 }
 
 /*
@@ -1064,7 +1024,7 @@ static __inline struct m_tag *
 m_tag_next(struct mbuf *m, struct m_tag *t)
 {
 
-	return (BSD_SLIST_NEXT(t, m_tag_link));
+	return (SLIST_NEXT(t, m_tag_link));
 }
 
 /*
@@ -1074,7 +1034,7 @@ static __inline void
 m_tag_prepend(struct mbuf *m, struct m_tag *t)
 {
 
-	BSD_SLIST_INSERT_HEAD(&m->m_pkthdr.tags, t, m_tag_link);
+	SLIST_INSERT_HEAD(&m->m_pkthdr.tags, t, m_tag_link);
 }
 
 /*
@@ -1084,7 +1044,7 @@ static __inline void
 m_tag_unlink(struct mbuf *m, struct m_tag *t)
 {
 
-	BSD_SLIST_REMOVE(&m->m_pkthdr.tags, t, m_tag, m_tag_link);
+	SLIST_REMOVE(&m->m_pkthdr.tags, t, m_tag, m_tag_link);
 }
 
 /* These are for OpenBSD compatibility. */
@@ -1099,11 +1059,10 @@ m_tag_get(int type, int length, int wait)
 static __inline struct m_tag *
 m_tag_find(struct mbuf *m, int type, struct m_tag *start)
 {
-	return (BSD_SLIST_EMPTY(&m->m_pkthdr.tags) ? (struct m_tag *)NULL :
+	return (SLIST_EMPTY(&m->m_pkthdr.tags) ? (struct m_tag *)NULL :
 	    m_tag_locate(m, MTAG_ABI_COMPAT, type, start));
 }
 
-#if 0	// runsisi AT hust.edu.cn @2013/11/17
 /* XXX temporary FIB methods probably eventually use tags.*/
 #define M_FIBSHIFT    28
 #define M_FIBMASK	0x0F
@@ -1113,17 +1072,8 @@ m_tag_find(struct mbuf *m, int type, struct m_tag *start)
     ((((_m)->m_flags & M_FIB) >> M_FIBSHIFT) & M_FIBMASK)
 
 #define M_SETFIB(_m, _fib) do {						\
-    _m->m_flags &= ~M_FIB;					   	\
-    _m->m_flags |= (((_fib) << M_FIBSHIFT) & M_FIB);  \
-} while (0)
-#endif 	// ---------------------- @2013/11/17
-
-/* get the fib from an mbuf and if it is not set, return the default */
-#define M_GETFIB(_m) \
-    ((_m)->m_fibnum)
-
-#define M_SETFIB(_m, _fib) do {                     \
-    (_m)->m_fibnum = (_fib);                      \
+	_m->m_flags &= ~M_FIB;					   	\
+	_m->m_flags |= (((_fib) << M_FIBSHIFT) & M_FIB);  \
 } while (0)
 
 #endif /* _KERNEL */

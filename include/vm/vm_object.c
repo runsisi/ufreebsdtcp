@@ -62,25 +62,25 @@
  *	Virtual memory object module.
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/vm/vm_object.c 248085 2013-03-09 02:36:32Z marius $");
 
 #include "opt_vm.h"
 
-#include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/lock.h>
-#include <sys/mman.h>
-#include <sys/mount.h>
-#include <sys/kernel.h>
-#include <sys/sysctl.h>
-#include <sys/mutex.h>
-#include <sys/proc.h>		/* for curproc, pageproc */
-#include <sys/socket.h>
-#include <sys/resourcevar.h>
-#include <sys/vnode.h>
-#include <sys/vmmeter.h>
-#include <sys/sx.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_lock.h>
+#include <sys/bsd_mman.h>
+#include <sys/bsd_mount.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_sysctl.h>
+#include <sys/bsd_mutex.h>
+#include <sys/bsd_proc.h>		/* for curproc, pageproc */
+#include <sys/bsd_socket.h>
+#include <sys/bsd_resourcevar.h>
+#include <sys/bsd_vnode.h>
+#include <sys/bsd_vmmeter.h>
+#include <sys/bsd_sx.h>
 
 #include <vm/vm.h>
 #include <vm/vm_param.h>
@@ -2144,11 +2144,11 @@ vm_object_set_writeable_dirty(vm_object_t object)
 
 #include "opt_ddb.h"
 #ifdef DDB
-#include <sys/kernel.h>
+#include <sys/bsd_kernel.h>
 
-#include <sys/cons.h>
+#include <sys/bsd_cons.h>
 
-#include <ddb/ddb.h>
+//#include <ddb/ddb.h>
 
 static int
 _vm_object_in_map(vm_map_t map, vm_object_t object, vm_map_entry_t entry)

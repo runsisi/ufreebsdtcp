@@ -60,7 +60,7 @@ struct procdesc {
 	 * refcount.
 	 */
 	struct proc	*pd_proc;		/* (t) Process. */
-	bsd_pid_t		 pd_pid;		/* (c) Cached pid. */
+	pid_t		 pd_pid;		/* (c) Cached pid. */
 	u_int		 pd_refcount;		/* (r) Reference count. */
 
 	/*
@@ -93,10 +93,10 @@ struct procdesc {
  */
 int	 procdesc_exit(struct proc *);
 int	 procdesc_find(struct thread *, int fd, cap_rights_t, struct proc **);
-int	 kern_pdgetpid(struct thread *, int fd, cap_rights_t, bsd_pid_t *pidp);
+int	 kern_pdgetpid(struct thread *, int fd, cap_rights_t, pid_t *pidp);
 void	 procdesc_new(struct proc *, int);
 void	 procdesc_finit(struct procdesc *, struct file *);
-bsd_pid_t	 procdesc_pid(struct file *);
+pid_t	 procdesc_pid(struct file *);
 void	 procdesc_reap(struct proc *);
 
 #else /* !_KERNEL */
@@ -107,7 +107,7 @@ void	 procdesc_reap(struct proc *);
 struct rusage;
 int	 pdfork(int *, int);
 int	 pdkill(int, int);
-int	 pdgetpid(int, bsd_pid_t *);
+int	 pdgetpid(int, pid_t *);
 
 #endif /* _KERNEL */
 

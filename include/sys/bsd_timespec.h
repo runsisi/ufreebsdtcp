@@ -55,9 +55,9 @@
  * Structure defined by POSIX.1b to be like a itimerval, but with
  * timespecs. Used in the timer_*() system calls.
  */
-struct bsd_itimerspec {
-	struct bsd_timespec  it_interval;
-	struct bsd_timespec  it_value;
+struct itimerspec {
+	struct timespec  it_interval;
+	struct timespec  it_value;
 };
 
 #endif /* _SYS_TIMESPEC_H_ */

@@ -30,7 +30,7 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/netinet6/sctp6_var.h 252944 2013-07-07 13:07:42Z tuexen $");
 
 #ifndef _NETINET6_SCTP6_VAR_H_

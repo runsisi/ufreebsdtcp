@@ -83,14 +83,14 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/netinet/cc/cc_hd.c 220560 2011-04-12 08:13
 /* Largest possible number returned by random(). */
 #define	RANDOM_MAX	INT_MAX
 
-static void	hd_ack_received(struct cc_var *ccv, bsd_uint16_t ack_type);
+static void	hd_ack_received(struct cc_var *ccv, uint16_t ack_type);
 static int	hd_mod_init(void);
 
 static int ertt_id;
 
-static VNET_DEFINE(bsd_uint32_t, hd_qthresh) = 20;
-static VNET_DEFINE(bsd_uint32_t, hd_qmin) = 5;
-static VNET_DEFINE(bsd_uint32_t, hd_pmax) = 5;
+static VNET_DEFINE(uint32_t, hd_qthresh) = 20;
+static VNET_DEFINE(uint32_t, hd_qmin) = 5;
+static VNET_DEFINE(uint32_t, hd_pmax) = 5;
 #define	V_hd_qthresh	VNET(hd_qthresh)
 #define	V_hd_qmin	VNET(hd_qmin)
 #define	V_hd_pmax	VNET(hd_pmax)
@@ -130,7 +130,7 @@ should_backoff(int qdly, int maxqdly)
  * as NewReno in all other circumstances.
  */
 static void
-hd_ack_received(struct cc_var *ccv, bsd_uint16_t ack_type)
+hd_ack_received(struct cc_var *ccv, uint16_t ack_type)
 {
 	struct ertt *e_t;
 	int qdly;
@@ -182,7 +182,7 @@ static int
 hd_pmax_handler(SYSCTL_HANDLER_ARGS)
 {
 	int error;
-	bsd_uint32_t new;
+	uint32_t new;
 
 	new = V_hd_pmax;
 	error = sysctl_handle_int(oidp, &new, 0, req);
@@ -201,7 +201,7 @@ static int
 hd_qmin_handler(SYSCTL_HANDLER_ARGS)
 {
 	int error;
-	bsd_uint32_t new;
+	uint32_t new;
 
 	new = V_hd_qmin;
 	error = sysctl_handle_int(oidp, &new, 0, req);
@@ -219,7 +219,7 @@ static int
 hd_qthresh_handler(SYSCTL_HANDLER_ARGS)
 {
 	int error;
-	bsd_uint32_t new;
+	uint32_t new;
 
 	new = V_hd_qthresh;
 	error = sysctl_handle_int(oidp, &new, 0, req);

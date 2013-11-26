@@ -9,7 +9,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY AUTHOR AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -112,8 +112,8 @@
  * This type definition must match that of dtrace_probe. It is defined this
  * way to avoid having to rely on CDDL code.
  */
-typedef	void (*sdt_probe_func_t)(bsd_uint32_t, bsd_uintptr_t arg0, bsd_uintptr_t arg1,
-    bsd_uintptr_t arg2, bsd_uintptr_t arg3, bsd_uintptr_t arg4);
+typedef	void (*sdt_probe_func_t)(u_int32_t, uintptr_t arg0, uintptr_t arg1,
+    uintptr_t arg2, uintptr_t arg3, uintptr_t arg4);
 
 /*
  * The hook for the probe function. See kern_sdt.c which defaults this to
@@ -133,7 +133,7 @@ struct sdt_provider;
 struct sdt_argtype {
 	int	ndx;			/* Argument index. */
 	const char *type;		/* Argument type string. */
-	BSD_TAILQ_ENTRY(sdt_argtype)
+	TAILQ_ENTRY(sdt_argtype)
 			argtype_entry;	/* Argument type list entry. */
 	struct sdt_probe
 			*probe;		/* Ptr to the probe structure. */
@@ -144,25 +144,25 @@ struct sdt_probe {
 	sdt_state_t	state;
 	struct sdt_provider
 			*prov;		/* Ptr to the provider structure. */
-	BSD_TAILQ_ENTRY(sdt_probe)
+	TAILQ_ENTRY(sdt_probe)
 			probe_entry;	/* SDT probe list entry. */
-	BSD_TAILQ_HEAD(argtype_list_head, sdt_argtype) argtype_list;
+	TAILQ_HEAD(argtype_list_head, sdt_argtype) argtype_list;
 	const char	*mod;
 	const char	*func;
 	const char	*name;
-	bsd_id_t		id;		/* DTrace probe ID. */
+	id_t		id;		/* DTrace probe ID. */
 	int		n_args;		/* Number of arguments. */
 };
 
 struct sdt_provider {
 	const char *name;		/* Provider name. */
-	BSD_TAILQ_ENTRY(sdt_provider)
+	TAILQ_ENTRY(sdt_provider)
 			prov_entry;	/* SDT provider list entry. */
-	BSD_TAILQ_HEAD(probe_list_head, sdt_probe) probe_list;
-	bsd_uintptr_t	id;		/* DTrace provider ID. */
+	TAILQ_HEAD(probe_list_head, sdt_probe) probe_list;
+	uintptr_t	id;		/* DTrace provider ID. */
 };
 
-#define SDT_PROVIDER_DEFINE(prov)						/*\
+#define SDT_PROVIDER_DEFINE(prov)						\
 	struct sdt_provider sdt_provider_##prov[1] = {				\
 		{ #prov, { NULL, NULL }, { NULL, NULL } }			\
 	};									\
@@ -171,7 +171,7 @@ struct sdt_provider {
 	    sdt_provider_##prov );						\
 	SYSUNINIT(sdt_provider_##prov##_uninit, SI_SUB_KDTRACE,			\
 	    SI_ORDER_SECOND, sdt_provider_deregister, 				\
-	    sdt_provider_##prov )*/
+	    sdt_provider_##prov )
 
 #define SDT_PROVIDER_DECLARE(prov)						\
 	extern struct sdt_provider sdt_provider_##prov[1]
@@ -194,8 +194,8 @@ struct sdt_provider {
 #define SDT_PROBE(prov, mod, func, name, arg0, arg1, arg2, arg3, arg4)		\
 	if (sdt_##prov##_##mod##_##func##_##name->id)				\
 		(*sdt_probe_func)(sdt_##prov##_##mod##_##func##_##name->id,	\
-		    (bsd_uintptr_t) arg0, (bsd_uintptr_t) arg1, (bsd_uintptr_t) arg2,	\
-		    (bsd_uintptr_t) arg3, (bsd_uintptr_t) arg4)
+		    (uintptr_t) arg0, (uintptr_t) arg1, (uintptr_t) arg2,	\
+		    (uintptr_t) arg3, (uintptr_t) arg4)
 
 #define SDT_PROBE_ARGTYPE(prov, mod, func, name, num, type)			\
 	struct sdt_argtype sdt_##prov##_##mod##_##func##_##name##num[1]		\
@@ -209,14 +209,14 @@ struct sdt_provider {
 	    SI_SUB_KDTRACE, SI_ORDER_SECOND + 2, sdt_argtype_deregister,	\
 	    sdt_##prov##_##mod##_##func##_##name##num )
 
-#define	SDT_PROBE_DEFINE1(prov, mod, func, name, sname, arg0)		/*\
+#define	SDT_PROBE_DEFINE1(prov, mod, func, name, sname, arg0)		\
 	SDT_PROBE_DEFINE(prov, mod, func, name, sname);			\
-	SDT_PROBE_ARGTYPE(prov, mod, func, name, 0, arg0)*/
+	SDT_PROBE_ARGTYPE(prov, mod, func, name, 0, arg0)
 
-#define	SDT_PROBE_DEFINE2(prov, mod, func, name, sname, arg0, arg1)	/*\
+#define	SDT_PROBE_DEFINE2(prov, mod, func, name, sname, arg0, arg1)	\
 	SDT_PROBE_DEFINE(prov, mod, func, name, sname);			\
 	SDT_PROBE_ARGTYPE(prov, mod, func, name, 0, arg0);		\
-	SDT_PROBE_ARGTYPE(prov, mod, func, name, 1, arg1)*/
+	SDT_PROBE_ARGTYPE(prov, mod, func, name, 1, arg1)
 
 #define	SDT_PROBE_DEFINE3(prov, mod, func, name, sname, arg0, arg1, arg2)\
 	SDT_PROBE_DEFINE(prov, mod, func, name, sname);			\
@@ -262,10 +262,10 @@ struct sdt_provider {
 
 #define	SDT_PROBE0(prov, mod, func, name)				\
 	SDT_PROBE(prov, mod, func, name, 0, 0, 0, 0, 0)
-#define	SDT_PROBE1(prov, mod, func, name, arg0)				/*\
-	SDT_PROBE(prov, mod, func, name, arg0, 0, 0, 0, 0)*/
-#define	SDT_PROBE2(prov, mod, func, name, arg0, arg1)			/*\
-	SDT_PROBE(prov, mod, func, name, arg0, arg1, 0, 0, 0)*/
+#define	SDT_PROBE1(prov, mod, func, name, arg0)				\
+	SDT_PROBE(prov, mod, func, name, arg0, 0, 0, 0, 0)
+#define	SDT_PROBE2(prov, mod, func, name, arg0, arg1)			\
+	SDT_PROBE(prov, mod, func, name, arg0, arg1, 0, 0, 0)
 #define	SDT_PROBE3(prov, mod, func, name, arg0, arg1, arg2)		\
 	SDT_PROBE(prov, mod, func, name, arg0, arg1, arg2,  0, 0)
 #define	SDT_PROBE4(prov, mod, func, name, arg0, arg1, arg2, arg3)	\
@@ -275,23 +275,23 @@ struct sdt_provider {
 #define	SDT_PROBE6(prov, mod, func, name, arg0, arg1, arg2, arg3, arg4, arg5)  \
 	do {								       \
 		if (sdt_##prov##_##mod##_##func##_##name->id)		       \
-			(*(void (*)(bsd_uint32_t, bsd_uintptr_t, bsd_uintptr_t, bsd_uintptr_t, \
-			    bsd_uintptr_t, bsd_uintptr_t, bsd_uintptr_t))sdt_probe_func)(  \
+			(*(void (*)(uint32_t, uintptr_t, uintptr_t, uintptr_t, \
+			    uintptr_t, uintptr_t, uintptr_t))sdt_probe_func)(  \
 			    sdt_##prov##_##mod##_##func##_##name->id,	       \
-			    (bsd_uintptr_t)arg0, (bsd_uintptr_t)arg1, (bsd_uintptr_t)arg2, \
-			    (bsd_uintptr_t)arg3, (bsd_uintptr_t)arg4, (bsd_uintptr_t)arg5);\
+			    (uintptr_t)arg0, (uintptr_t)arg1, (uintptr_t)arg2, \
+			    (uintptr_t)arg3, (uintptr_t)arg4, (uintptr_t)arg5);\
 	} while (0)
 #define	SDT_PROBE7(prov, mod, func, name, arg0, arg1, arg2, arg3, arg4, arg5,  \
     arg6)								       \
 	do {								       \
 		if (sdt_##prov##_##mod##_##func##_##name->id)		       \
-			(*(void (*)(bsd_uint32_t, bsd_uintptr_t, bsd_uintptr_t, bsd_uintptr_t, \
-			    bsd_uintptr_t, bsd_uintptr_t, bsd_uintptr_t, bsd_uintptr_t))       \
+			(*(void (*)(uint32_t, uintptr_t, uintptr_t, uintptr_t, \
+			    uintptr_t, uintptr_t, uintptr_t, uintptr_t))       \
 			    sdt_probe_func)(				       \
 			    sdt_##prov##_##mod##_##func##_##name->id,	       \
-			    (bsd_uintptr_t)arg0, (bsd_uintptr_t)arg1, (bsd_uintptr_t)arg2, \
-			    (bsd_uintptr_t)arg3, (bsd_uintptr_t)arg4, (bsd_uintptr_t)arg5, \
-			    (bsd_uintptr_t)arg6);				       \
+			    (uintptr_t)arg0, (uintptr_t)arg1, (uintptr_t)arg2, \
+			    (uintptr_t)arg3, (uintptr_t)arg4, (uintptr_t)arg5, \
+			    (uintptr_t)arg6);				       \
 	} while (0)
 
 typedef int (*sdt_argtype_listall_func_t)(struct sdt_argtype *, void *);
@@ -304,8 +304,8 @@ void sdt_probe_deregister(void *);
 void sdt_probe_register(void *);
 void sdt_provider_deregister(void *);
 void sdt_provider_register(void *);
-void sdt_probe_stub(bsd_uint32_t, bsd_uintptr_t arg0, bsd_uintptr_t arg1, bsd_uintptr_t arg2,
-    bsd_uintptr_t arg3, bsd_uintptr_t arg4);
+void sdt_probe_stub(u_int32_t, uintptr_t arg0, uintptr_t arg1, uintptr_t arg2,
+    uintptr_t arg3, uintptr_t arg4);
 int sdt_argtype_listall(struct sdt_probe *, sdt_argtype_listall_func_t, void *);
 int sdt_probe_listall(struct sdt_provider *, sdt_probe_listall_func_t, void *);
 int sdt_provider_listall(sdt_provider_listall_func_t,void *);

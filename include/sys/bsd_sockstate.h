@@ -70,14 +70,14 @@
 #define	SBS_CANTRCVMORE		0x0020	/* can't receive more data from peer */
 #define	SBS_RCVATMARK		0x0040	/* at mark on input */
 
-struct bsd_socket;
+struct socket;
 
-void	soisconnected(struct bsd_socket *so);
-void	soisconnecting(struct bsd_socket *so);
-void	soisdisconnected(struct bsd_socket *so);
-void	soisdisconnecting(struct bsd_socket *so);
-void	socantrcvmore(struct bsd_socket *so);
-void	socantrcvmore_locked(struct bsd_socket *so);
-void	socantsendmore(struct bsd_socket *so);
-void	socantsendmore_locked(struct bsd_socket *so);
+void	soisconnected(struct socket *so);
+void	soisconnecting(struct socket *so);
+void	soisdisconnected(struct socket *so);
+void	soisdisconnecting(struct socket *so);
+void	socantrcvmore(struct socket *so);
+void	socantrcvmore_locked(struct socket *so);
+void	socantsendmore(struct socket *so);
+void	socantsendmore_locked(struct socket *so);
 #endif /* _SYS_SOCKTATE_H_ */

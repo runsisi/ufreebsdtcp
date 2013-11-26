@@ -24,21 +24,21 @@
  * SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/netinet/accf_data.c 193272 2009-06-01 21:17:03Z jhb $");
 
 #define ACCEPT_FILTER_MOD
 
-#include <sys/param.h>
-#include <sys/kernel.h>
-#include <sys/module.h>
-#include <sys/sysctl.h>
-#include <sys/signalvar.h>
-#include <sys/socketvar.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_module.h>
+#include <sys/bsd_sysctl.h>
+#include <sys/bsd_signalvar.h>
+#include <sys/bsd_socketvar.h>
 
 /* accept filter that holds a socket until data arrives */
 
-static int	sohasdata(struct bsd_socket *so, void *arg, int waitflag);
+static int	sohasdata(struct socket *so, void *arg, int waitflag);
 
 static struct accept_filter accf_data_filter = {
 	"dataready",
@@ -56,7 +56,7 @@ static moduledata_t accf_data_mod = {
 DECLARE_MODULE(accf_data, accf_data_mod, SI_SUB_DRIVERS, SI_ORDER_MIDDLE);
 
 static int
-sohasdata(struct bsd_socket *so, void *arg, int waitflag)
+sohasdata(struct socket *so, void *arg, int waitflag)
 {
 
 	if (!soreadable(so))

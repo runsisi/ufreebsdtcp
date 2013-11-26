@@ -24,17 +24,17 @@
  * SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/net/if_debug.c 223735 2011-07-03 12:22:02Z bz $");
 
 #include "opt_ddb.h"
 
-#include <sys/param.h>
-#include <sys/socket.h>
-#include <sys/types.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_socket.h>
+#include <sys/bsd_types.h>
 
 #ifdef DDB
-#include <ddb/ddb.h>
+//#include <ddb/ddb.h>
 #endif
 
 #include <net/if.h>

@@ -48,9 +48,9 @@
 #define	_SIG_BIT(sig)	(1 << (_SIG_IDX(sig) & 31))
 #define	_SIG_VALID(sig)	((sig) <= _SIG_MAXSIG && (sig) > 0)
 
-typedef struct __bsd_sigset {
-	__bsd_uint32_t __bits[_SIG_WORDS];
-} __bsd_sigset_t;
+typedef struct __sigset {
+	__uint32_t __bits[_SIG_WORDS];
+} __sigset_t;
 
 #if defined(_KERNEL) && defined(COMPAT_43)
 typedef unsigned int osigset_t;

@@ -28,16 +28,16 @@
 
 #define ACCEPT_FILTER_MOD
 
-#include <sys/param.h>
-#include <sys/kernel.h>
-#include <sys/mbuf.h>
-#include <sys/module.h>
-#include <sys/signalvar.h>
-#include <sys/sysctl.h>
-#include <sys/socketvar.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_mbuf.h>
+#include <sys/bsd_module.h>
+#include <sys/bsd_signalvar.h>
+#include <sys/bsd_sysctl.h>
+#include <sys/bsd_socketvar.h>
 
 /* check for full DNS request */
-static int sohasdns(struct bsd_socket *so, void *arg, int waitflag);
+static int sohasdns(struct socket *so, void *arg, int waitflag);
 
 struct packet {
 	struct mbuf *m;		/* Current mbuf. */
@@ -70,7 +70,7 @@ static moduledata_t accf_dns_mod = {
 DECLARE_MODULE(accf_dns, accf_dns_mod, SI_SUB_DRIVERS, SI_ORDER_MIDDLE);
 
 static int
-sohasdns(struct bsd_socket *so, void *arg, int waitflag)
+sohasdns(struct socket *so, void *arg, int waitflag)
 {
 	struct sockbuf *sb = &so->so_rcv;
 

@@ -68,13 +68,13 @@
 					   - sizeof(struct icmp6_hdr) */
 
 struct icmp6_hdr {
-	bsd_uint8_t	icmp6_type;	/* type field */
-	bsd_uint8_t	icmp6_code;	/* code field */
-	bsd_uint16_t	icmp6_cksum;	/* checksum field */
+	u_int8_t	icmp6_type;	/* type field */
+	u_int8_t	icmp6_code;	/* code field */
+	u_int16_t	icmp6_cksum;	/* checksum field */
 	union {
-		bsd_uint32_t	icmp6_un_data32[1]; /* type-specific field */
-		bsd_uint16_t	icmp6_un_data16[2]; /* type-specific field */
-		bsd_uint8_t	icmp6_un_data8[4];  /* type-specific field */
+		u_int32_t	icmp6_un_data32[1]; /* type-specific field */
+		u_int16_t	icmp6_un_data16[2]; /* type-specific field */
+		u_int8_t	icmp6_un_data8[4];  /* type-specific field */
 	} icmp6_dataun;
 } __packed;
 
@@ -175,7 +175,7 @@ struct icmp6_hdr {
  */
 struct mld_hdr {
 	struct icmp6_hdr	mld_icmp6_hdr;
-	struct bsd_in6_addr		mld_addr; /* multicast address */
+	struct in6_addr		mld_addr; /* multicast address */
 } __packed;
 
 /* definitions to provide backward compatibility to old KAME applications */
@@ -214,8 +214,8 @@ struct nd_router_solicit {	/* router solicitation */
 
 struct nd_router_advert {	/* router advertisement */
 	struct icmp6_hdr	nd_ra_hdr;
-	bsd_uint32_t		nd_ra_reachable;	/* reachable time */
-	bsd_uint32_t		nd_ra_retransmit;	/* retransmit timer */
+	u_int32_t		nd_ra_reachable;	/* reachable time */
+	u_int32_t		nd_ra_retransmit;	/* retransmit timer */
 	/* could be followed by options */
 } __packed;
 
@@ -243,7 +243,7 @@ struct nd_router_advert {	/* router advertisement */
 
 struct nd_neighbor_solicit {	/* neighbor solicitation */
 	struct icmp6_hdr	nd_ns_hdr;
-	struct bsd_in6_addr		nd_ns_target;	/*target address */
+	struct in6_addr		nd_ns_target;	/*target address */
 	/* could be followed by options */
 } __packed;
 
@@ -254,7 +254,7 @@ struct nd_neighbor_solicit {	/* neighbor solicitation */
 
 struct nd_neighbor_advert {	/* neighbor advertisement */
 	struct icmp6_hdr	nd_na_hdr;
-	struct bsd_in6_addr		nd_na_target;	/* target address */
+	struct in6_addr		nd_na_target;	/* target address */
 	/* could be followed by options */
 } __packed;
 
@@ -276,8 +276,8 @@ struct nd_neighbor_advert {	/* neighbor advertisement */
 
 struct nd_redirect {		/* redirect */
 	struct icmp6_hdr	nd_rd_hdr;
-	struct bsd_in6_addr		nd_rd_target;	/* target address */
-	struct bsd_in6_addr		nd_rd_dst;	/* destination address */
+	struct in6_addr		nd_rd_target;	/* target address */
+	struct in6_addr		nd_rd_dst;	/* destination address */
 	/* could be followed by options */
 } __packed;
 
@@ -287,8 +287,8 @@ struct nd_redirect {		/* redirect */
 #define nd_rd_reserved		nd_rd_hdr.icmp6_data32[0]
 
 struct nd_opt_hdr {		/* Neighbor discovery option header */
-	bsd_uint8_t	nd_opt_type;
-	bsd_uint8_t	nd_opt_len;
+	u_int8_t	nd_opt_type;
+	u_int8_t	nd_opt_len;
 	/* followed by option specific data*/
 } __packed;
 
@@ -302,56 +302,56 @@ struct nd_opt_hdr {		/* Neighbor discovery option header */
 #define ND_OPT_DNSSL			31	/* RFC 6106 */
 
 struct nd_opt_prefix_info {	/* prefix information */
-	bsd_uint8_t	nd_opt_pi_type;
-	bsd_uint8_t	nd_opt_pi_len;
-	bsd_uint8_t	nd_opt_pi_prefix_len;
-	bsd_uint8_t	nd_opt_pi_flags_reserved;
-	bsd_uint32_t	nd_opt_pi_valid_time;
-	bsd_uint32_t	nd_opt_pi_preferred_time;
-	bsd_uint32_t	nd_opt_pi_reserved2;
-	struct bsd_in6_addr	nd_opt_pi_prefix;
+	u_int8_t	nd_opt_pi_type;
+	u_int8_t	nd_opt_pi_len;
+	u_int8_t	nd_opt_pi_prefix_len;
+	u_int8_t	nd_opt_pi_flags_reserved;
+	u_int32_t	nd_opt_pi_valid_time;
+	u_int32_t	nd_opt_pi_preferred_time;
+	u_int32_t	nd_opt_pi_reserved2;
+	struct in6_addr	nd_opt_pi_prefix;
 } __packed;
 
 #define ND_OPT_PI_FLAG_ONLINK		0x80
 #define ND_OPT_PI_FLAG_AUTO		0x40
 
 struct nd_opt_rd_hdr {		/* redirected header */
-	bsd_uint8_t	nd_opt_rh_type;
-	bsd_uint8_t	nd_opt_rh_len;
-	bsd_uint16_t	nd_opt_rh_reserved1;
-	bsd_uint32_t	nd_opt_rh_reserved2;
+	u_int8_t	nd_opt_rh_type;
+	u_int8_t	nd_opt_rh_len;
+	u_int16_t	nd_opt_rh_reserved1;
+	u_int32_t	nd_opt_rh_reserved2;
 	/* followed by IP header and data */
 } __packed;
 
 struct nd_opt_mtu {		/* MTU option */
-	bsd_uint8_t	nd_opt_mtu_type;
-	bsd_uint8_t	nd_opt_mtu_len;
-	bsd_uint16_t	nd_opt_mtu_reserved;
-	bsd_uint32_t	nd_opt_mtu_mtu;
+	u_int8_t	nd_opt_mtu_type;
+	u_int8_t	nd_opt_mtu_len;
+	u_int16_t	nd_opt_mtu_reserved;
+	u_int32_t	nd_opt_mtu_mtu;
 } __packed;
 
 struct nd_opt_route_info {	/* route info */
-	bsd_uint8_t	nd_opt_rti_type;
-	bsd_uint8_t	nd_opt_rti_len;
-	bsd_uint8_t	nd_opt_rti_prefixlen;
-	bsd_uint8_t	nd_opt_rti_flags;
-	bsd_uint32_t	nd_opt_rti_lifetime;
+	u_int8_t	nd_opt_rti_type;
+	u_int8_t	nd_opt_rti_len;
+	u_int8_t	nd_opt_rti_prefixlen;
+	u_int8_t	nd_opt_rti_flags;
+	u_int32_t	nd_opt_rti_lifetime;
 	/* prefix follows */
 } __packed;
 
 struct nd_opt_rdnss {		/* RDNSS option (RFC 6106) */
-	bsd_uint8_t	nd_opt_rdnss_type;
-	bsd_uint8_t	nd_opt_rdnss_len;
-	bsd_uint16_t	nd_opt_rdnss_reserved;
-	bsd_uint32_t	nd_opt_rdnss_lifetime;
+	u_int8_t	nd_opt_rdnss_type;
+	u_int8_t	nd_opt_rdnss_len;
+	u_int16_t	nd_opt_rdnss_reserved;
+	u_int32_t	nd_opt_rdnss_lifetime;
 	/* followed by list of recursive DNS servers */
 } __packed;
 
 struct nd_opt_dnssl {		/* DNSSL option (RFC 6106) */
-	bsd_uint8_t	nd_opt_dnssl_type;
-	bsd_uint8_t	nd_opt_dnssl_len;
-	bsd_uint16_t	nd_opt_dnssl_reserved;
-	bsd_uint32_t	nd_opt_dnssl_lifetime;
+	u_int8_t	nd_opt_dnssl_type;
+	u_int8_t	nd_opt_dnssl_len;
+	u_int16_t	nd_opt_dnssl_reserved;
+	u_int32_t	nd_opt_dnssl_lifetime;
 	/* followed by list of DNS search domains */
 } __packed;
 
@@ -361,11 +361,11 @@ struct nd_opt_dnssl {		/* DNSSL option (RFC 6106) */
 
 struct icmp6_namelookup {
 	struct icmp6_hdr 	icmp6_nl_hdr;
-	bsd_uint8_t	icmp6_nl_nonce[8];
-	bsd_int32_t		icmp6_nl_ttl;
+	u_int8_t	icmp6_nl_nonce[8];
+	int32_t		icmp6_nl_ttl;
 #if 0
-	bsd_uint8_t	icmp6_nl_len;
-	bsd_uint8_t	icmp6_nl_name[3];
+	u_int8_t	icmp6_nl_len;
+	u_int8_t	icmp6_nl_name[3];
 #endif
 	/* could be followed by options */
 } __packed;
@@ -375,7 +375,7 @@ struct icmp6_namelookup {
  */
 struct icmp6_nodeinfo {
 	struct icmp6_hdr icmp6_ni_hdr;
-	bsd_uint8_t icmp6_ni_nonce[8];
+	u_int8_t icmp6_ni_nonce[8];
 	/* could be followed by reply data */
 } __packed;
 
@@ -437,9 +437,9 @@ struct icmp6_nodeinfo {
 #endif
 
 struct ni_reply_fqdn {
-	bsd_uint32_t ni_fqdn_ttl;	/* TTL */
-	bsd_uint8_t ni_fqdn_namelen; /* length in octets of the FQDN */
-	bsd_uint8_t ni_fqdn_name[3]; /* XXX: alignment */
+	u_int32_t ni_fqdn_ttl;	/* TTL */
+	u_int8_t ni_fqdn_namelen; /* length in octets of the FQDN */
+	u_int8_t ni_fqdn_name[3]; /* XXX: alignment */
 } __packed;
 
 /*
@@ -447,10 +447,10 @@ struct ni_reply_fqdn {
  */
 struct icmp6_router_renum {	/* router renumbering header */
 	struct icmp6_hdr	rr_hdr;
-	bsd_uint8_t	rr_segnum;
-	bsd_uint8_t	rr_flags;
-	bsd_uint16_t	rr_maxdelay;
-	bsd_uint32_t	rr_reserved;
+	u_int8_t	rr_segnum;
+	u_int8_t	rr_flags;
+	u_int16_t	rr_maxdelay;
+	u_int32_t	rr_reserved;
 } __packed;
 
 #define ICMP6_RR_FLAGS_TEST		0x80
@@ -465,14 +465,14 @@ struct icmp6_router_renum {	/* router renumbering header */
 #define rr_seqnum 	rr_hdr.icmp6_data32[0]
 
 struct rr_pco_match {		/* match prefix part */
-	bsd_uint8_t	rpm_code;
-	bsd_uint8_t	rpm_len;
-	bsd_uint8_t	rpm_ordinal;
-	bsd_uint8_t	rpm_matchlen;
-	bsd_uint8_t	rpm_minlen;
-	bsd_uint8_t	rpm_maxlen;
-	bsd_uint16_t	rpm_reserved;
-	struct	bsd_in6_addr	rpm_prefix;
+	u_int8_t	rpm_code;
+	u_int8_t	rpm_len;
+	u_int8_t	rpm_ordinal;
+	u_int8_t	rpm_matchlen;
+	u_int8_t	rpm_minlen;
+	u_int8_t	rpm_maxlen;
+	u_int16_t	rpm_reserved;
+	struct	in6_addr	rpm_prefix;
 } __packed;
 
 #define RPM_PCO_ADD		1
@@ -481,14 +481,14 @@ struct rr_pco_match {		/* match prefix part */
 #define RPM_PCO_MAX		4
 
 struct rr_pco_use {		/* use prefix part */
-	bsd_uint8_t	rpu_uselen;
-	bsd_uint8_t	rpu_keeplen;
-	bsd_uint8_t	rpu_ramask;
-	bsd_uint8_t	rpu_raflags;
-	bsd_uint32_t	rpu_vltime;
-	bsd_uint32_t	rpu_pltime;
-	bsd_uint32_t	rpu_flags;
-	struct	bsd_in6_addr rpu_prefix;
+	u_int8_t	rpu_uselen;
+	u_int8_t	rpu_keeplen;
+	u_int8_t	rpu_ramask;
+	u_int8_t	rpu_raflags;
+	u_int32_t	rpu_vltime;
+	u_int32_t	rpu_pltime;
+	u_int32_t	rpu_flags;
+	struct	in6_addr rpu_prefix;
 } __packed;
 #define ICMP6_RR_PCOUSE_RAFLAGS_ONLINK	0x80
 #define ICMP6_RR_PCOUSE_RAFLAGS_AUTO	0x40
@@ -502,11 +502,11 @@ struct rr_pco_use {		/* use prefix part */
 #endif
 
 struct rr_result {		/* router renumbering result message */
-	bsd_uint16_t	rrr_flags;
-	bsd_uint8_t	rrr_ordinal;
-	bsd_uint8_t	rrr_matchedlen;
-	bsd_uint32_t	rrr_ifid;
-	struct	bsd_in6_addr rrr_prefix;
+	u_int16_t	rrr_flags;
+	u_int8_t	rrr_ordinal;
+	u_int8_t	rrr_matchedlen;
+	u_int32_t	rrr_ifid;
+	struct	in6_addr rrr_prefix;
 } __packed;
 #if BYTE_ORDER == BIG_ENDIAN
 #define ICMP6_RR_RESULT_FLAGS_OOB		0x0002
@@ -521,7 +521,7 @@ struct rr_result {		/* router renumbering result message */
  */
 
 struct icmp6_filter {
-	bsd_uint32_t icmp6_filt[8];
+	u_int32_t icmp6_filt[8];
 };
 
 #ifdef _KERNEL
@@ -555,39 +555,39 @@ do {								\
  * of the internet control message protocol version 6.
  */
 struct icmp6errstat {
-	bsd_uquad_t icp6errs_dst_unreach_noroute;
-	bsd_uquad_t icp6errs_dst_unreach_admin;
-	bsd_uquad_t icp6errs_dst_unreach_beyondscope;
-	bsd_uquad_t icp6errs_dst_unreach_addr;
-	bsd_uquad_t icp6errs_dst_unreach_noport;
-	bsd_uquad_t icp6errs_packet_too_big;
-	bsd_uquad_t icp6errs_time_exceed_transit;
-	bsd_uquad_t icp6errs_time_exceed_reassembly;
-	bsd_uquad_t icp6errs_paramprob_header;
-	bsd_uquad_t icp6errs_paramprob_nextheader;
-	bsd_uquad_t icp6errs_paramprob_option;
-	bsd_uquad_t icp6errs_redirect; /* we regard redirect as an error here */
-	bsd_uquad_t icp6errs_unknown;
+	u_quad_t icp6errs_dst_unreach_noroute;
+	u_quad_t icp6errs_dst_unreach_admin;
+	u_quad_t icp6errs_dst_unreach_beyondscope;
+	u_quad_t icp6errs_dst_unreach_addr;
+	u_quad_t icp6errs_dst_unreach_noport;
+	u_quad_t icp6errs_packet_too_big;
+	u_quad_t icp6errs_time_exceed_transit;
+	u_quad_t icp6errs_time_exceed_reassembly;
+	u_quad_t icp6errs_paramprob_header;
+	u_quad_t icp6errs_paramprob_nextheader;
+	u_quad_t icp6errs_paramprob_option;
+	u_quad_t icp6errs_redirect; /* we regard redirect as an error here */
+	u_quad_t icp6errs_unknown;
 };
 
 struct icmp6stat {
 /* statistics related to icmp6 packets generated */
-	bsd_uquad_t icp6s_error;		/* # of calls to icmp6_error */
-	bsd_uquad_t icp6s_canterror;	/* no error 'cuz old was icmp */
-	bsd_uquad_t icp6s_toofreq;		/* no error 'cuz rate limitation */
-	bsd_uquad_t icp6s_outhist[256];
+	u_quad_t icp6s_error;		/* # of calls to icmp6_error */
+	u_quad_t icp6s_canterror;	/* no error 'cuz old was icmp */
+	u_quad_t icp6s_toofreq;		/* no error 'cuz rate limitation */
+	u_quad_t icp6s_outhist[256];
 /* statistics related to input message processed */
-	bsd_uquad_t icp6s_badcode;		/* icmp6_code out of range */
-	bsd_uquad_t icp6s_tooshort;	/* packet < sizeof(struct icmp6_hdr) */
-	bsd_uquad_t icp6s_checksum;	/* bad checksum */
-	bsd_uquad_t icp6s_badlen;		/* calculated bound mismatch */
+	u_quad_t icp6s_badcode;		/* icmp6_code out of range */
+	u_quad_t icp6s_tooshort;	/* packet < sizeof(struct icmp6_hdr) */
+	u_quad_t icp6s_checksum;	/* bad checksum */
+	u_quad_t icp6s_badlen;		/* calculated bound mismatch */
 	/*
 	 * number of responses: this member is inherited from netinet code, but
 	 * for netinet6 code, it is already available in icp6s_outhist[].
 	 */
-	bsd_uquad_t icp6s_reflect;
-	bsd_uquad_t icp6s_inhist[256];	
-	bsd_uquad_t icp6s_nd_toomanyopt;	/* too many ND options */
+	u_quad_t icp6s_reflect;
+	u_quad_t icp6s_inhist[256];	
+	u_quad_t icp6s_nd_toomanyopt;	/* too many ND options */
 	struct icmp6errstat icp6s_outerrhist;
 #define icp6s_odst_unreach_noroute \
 	icp6s_outerrhist.icp6errs_dst_unreach_noroute
@@ -607,13 +607,13 @@ struct icmp6stat {
 #define icp6s_oparamprob_option icp6s_outerrhist.icp6errs_paramprob_option
 #define icp6s_oredirect icp6s_outerrhist.icp6errs_redirect
 #define icp6s_ounknown icp6s_outerrhist.icp6errs_unknown
-	bsd_uquad_t icp6s_pmtuchg;		/* path MTU changes */
-	bsd_uquad_t icp6s_nd_badopt;	/* bad ND options */
-	bsd_uquad_t icp6s_badns;		/* bad neighbor solicitation */
-	bsd_uquad_t icp6s_badna;		/* bad neighbor advertisement */
-	bsd_uquad_t icp6s_badrs;		/* bad router advertisement */
-	bsd_uquad_t icp6s_badra;		/* bad router advertisement */
-	bsd_uquad_t icp6s_badredirect;	/* bad redirect message */
+	u_quad_t icp6s_pmtuchg;		/* path MTU changes */
+	u_quad_t icp6s_nd_badopt;	/* bad ND options */
+	u_quad_t icp6s_badns;		/* bad neighbor solicitation */
+	u_quad_t icp6s_badna;		/* bad neighbor advertisement */
+	u_quad_t icp6s_badrs;		/* bad router advertisement */
+	u_quad_t icp6s_badra;		/* bad router advertisement */
+	u_quad_t icp6s_badredirect;	/* bad redirect message */
 };
 
 #ifdef _KERNEL
@@ -676,7 +676,7 @@ void	icmp6_error2(struct mbuf *, int, int, int, struct ifnet *);
 int	icmp6_input(struct mbuf **, int *, int);
 void	icmp6_fasttimo(void);
 void	icmp6_slowtimo(void);
-void	icmp6_reflect(struct mbuf *, bsd_size_t);
+void	icmp6_reflect(struct mbuf *, size_t);
 void	icmp6_prepare(struct mbuf *);
 void	icmp6_redirect_input(struct mbuf *, int);
 void	icmp6_redirect_output(struct mbuf *, struct rtentry *);

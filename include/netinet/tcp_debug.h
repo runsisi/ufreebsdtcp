@@ -34,7 +34,7 @@
 #define	_NETINET_TCP_DEBUG_H_
 
 struct	tcp_debug {
-	bsd_uint32_t	td_time;	/* network format */
+	uint32_t	td_time;	/* network format */
 	short	td_act;
 	short	td_ostate;
 	caddr_t	td_tcb;
@@ -51,7 +51,7 @@ struct	tcp_debug {
 #else
 		u_char	ip6buf[IP6_HDR_LEN];
 #endif
-		struct	bsd_tcphdr th;
+		struct	tcphdr th;
 	} td_ti6;
 #define	td_ip6buf	td_ti6.ip6buf
 	short	td_req;

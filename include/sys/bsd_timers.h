@@ -47,7 +47,7 @@
 struct itimer {
 	struct mtx  		it_mtx;
 	struct sigevent		it_sigev;
-	struct bsd_itimerspec	it_time;
+	struct itimerspec	it_time;
 	struct proc 		*it_proc;
 	int	it_flags;
 	int	it_usecount;
@@ -55,7 +55,7 @@ struct itimer {
 	int	it_overrun_last;	/* Overruns associated w/ a delivery */
 	int	it_clockid;
 	int	it_timerid;
-	bsd_ksiginfo_t	it_ksi;
+	ksiginfo_t	it_ksi;
 	union {
 		/* realtime */
 		struct {
@@ -100,18 +100,18 @@ struct	itimers {
 struct	kclock {
 	int (*timer_create)(struct itimer *timer);
 	int (*timer_settime)(struct itimer * timer, int flags,
-		struct bsd_itimerspec * new_value,
-		struct bsd_itimerspec * old_value);
+		struct itimerspec * new_value,
+		struct itimerspec * old_value);
 	int (*timer_delete)(struct itimer * timer);
 	int (*timer_gettime)(struct itimer * timer,
-		struct bsd_itimerspec * cur_value);
-	void (*event_hook)(struct proc *p, bsd_clockid_t clock_id, int event);
+		struct itimerspec * cur_value);
+	void (*event_hook)(struct proc *p, clockid_t clock_id, int event);
 };
 
 /* Event values for event_hook() */
 #define	ITIMER_EV_EXEC	0
 #define	ITIMER_EV_EXIT	1
 
-int	itimer_accept(struct proc *p, int tid, bsd_ksiginfo_t *ksi);
+int	itimer_accept(struct proc *p, int tid, ksiginfo_t *ksi);
 #endif
 #endif /* !_SYS_TIMERS_H_ */

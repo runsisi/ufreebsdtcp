@@ -30,17 +30,17 @@
  *
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/vm/uma_dbg.c 187681 2009-01-25 09:11:24Z jeff $");
 
-#include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/kernel.h>
-#include <sys/types.h>
-#include <sys/queue.h>
-#include <sys/lock.h>
-#include <sys/mutex.h>
-#include <sys/malloc.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_types.h>
+#include <sys/bsd_queue.h>
+#include <sys/bsd_lock.h>
+#include <sys/bsd_mutex.h>
+#include <sys/bsd_malloc.h>
 
 #include <vm/vm.h>
 #include <vm/vm_object.h>
@@ -49,7 +49,7 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/vm/uma_dbg.c 187681 2009-01-25 09:11:24Z j
 #include <vm/uma_int.h>
 #include <vm/uma_dbg.h>
 
-static const bsd_uint32_t uma_junk = 0xdeadc0de;
+static const u_int32_t uma_junk = 0xdeadc0de;
 
 /*
  * Checks an item to make sure it hasn't been overwritten since it was freed,
@@ -62,7 +62,7 @@ int
 trash_ctor(void *mem, int size, void *arg, int flags)
 {
 	int cnt;
-	bsd_uint32_t *p;
+	u_int32_t *p;
 
 	cnt = size / sizeof(uma_junk);
 
@@ -85,7 +85,7 @@ void
 trash_dtor(void *mem, int size, void *arg)
 {
 	int cnt;
-	bsd_uint32_t *p;
+	u_int32_t *p;
 
 	cnt = size / sizeof(uma_junk);
 
@@ -122,7 +122,7 @@ int
 mtrash_ctor(void *mem, int size, void *arg, int flags)
 {
 	struct malloc_type **ksp;
-	bsd_uint32_t *p = mem;
+	u_int32_t *p = mem;
 	int cnt;
 
 	size -= sizeof(struct malloc_type *);
@@ -150,7 +150,7 @@ void
 mtrash_dtor(void *mem, int size, void *arg)
 {
 	int cnt;
-	bsd_uint32_t *p;
+	u_int32_t *p;
 
 	size -= sizeof(struct malloc_type *);
 	cnt = size / sizeof(uma_junk);
@@ -196,9 +196,9 @@ uma_dbg_getslab(uma_zone_t zone, void *item)
 {
 	uma_slab_t slab;
 	uma_keg_t keg;
-	bsd_uint8_t *mem;
+	u_int8_t *mem;
 
-	mem = (bsd_uint8_t *)((unsigned long)item & (~UMA_SLAB_MASK));
+	mem = (u_int8_t *)((unsigned long)item & (~UMA_SLAB_MASK));
 	if (zone->uz_flags & UMA_ZONE_VTOSLAB) {
 		slab = vtoslab((vm_offset_t)mem);
 	} else {

@@ -41,22 +41,22 @@
 #include <sys/_bsd_types.h>
 
 #ifndef _CLOCK_T_DECLARED
-typedef	__bsd_clock_t	bsd_clock_t;
+typedef	__clock_t	clock_t;
 #define	_CLOCK_T_DECLARED
 #endif
 
 struct tms {
-	bsd_clock_t tms_utime;	/* User CPU time */
-	bsd_clock_t tms_stime;	/* System CPU time */
-	bsd_clock_t tms_cutime;	/* User CPU time of terminated child procs */
-	bsd_clock_t tms_cstime;	/* System CPU time of terminated child procs */
+	clock_t tms_utime;	/* User CPU time */
+	clock_t tms_stime;	/* System CPU time */
+	clock_t tms_cutime;	/* User CPU time of terminated child procs */
+	clock_t tms_cstime;	/* System CPU time of terminated child procs */
 };
 
 #ifndef _KERNEL
 #include <sys/bsd_cdefs.h>
 
 __BEGIN_DECLS
-bsd_clock_t	times(struct tms *);
+clock_t	times(struct tms *);
 __END_DECLS
 #endif
 #endif /* !_SYS_TIMES_H_ */

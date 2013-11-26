@@ -36,7 +36,7 @@
  */
 struct sx {
 	struct lock_object	lock_object;
-	volatile bsd_uintptr_t	sx_lock;
+	volatile uintptr_t	sx_lock;
 };
 
 #endif	/* !_SYS__SX_H_ */

@@ -71,37 +71,37 @@ struct igmpstat {
 	/*
 	 * Structure header (to insulate ABI changes).
 	 */
-	bsd_uint32_t igps_version;		/* version of this structure */
-	bsd_uint32_t igps_len;		/* length of this structure */
+	uint32_t igps_version;		/* version of this structure */
+	uint32_t igps_len;		/* length of this structure */
 	/*
 	 * Message statistics.
 	 */
-	bsd_uint64_t igps_rcv_total;	/* total IGMP messages received */
-	bsd_uint64_t igps_rcv_tooshort;	/* received with too few bytes */
-	bsd_uint64_t igps_rcv_badttl;	/* received with ttl other than 1 */
-	bsd_uint64_t igps_rcv_badsum;	/* received with bad checksum */
+	uint64_t igps_rcv_total;	/* total IGMP messages received */
+	uint64_t igps_rcv_tooshort;	/* received with too few bytes */
+	uint64_t igps_rcv_badttl;	/* received with ttl other than 1 */
+	uint64_t igps_rcv_badsum;	/* received with bad checksum */
 	/*
 	 * Query statistics.
 	 */
-	bsd_uint64_t igps_rcv_v1v2_queries;	/* received IGMPv1/IGMPv2 queries */
-	bsd_uint64_t igps_rcv_v3_queries;	/* received IGMPv3 queries */
-	bsd_uint64_t igps_rcv_badqueries;	/* received invalid queries */
-	bsd_uint64_t igps_rcv_gen_queries;	/* received general queries */
-	bsd_uint64_t igps_rcv_group_queries;/* received group queries */
-	bsd_uint64_t igps_rcv_gsr_queries;	/* received group-source queries */
-	bsd_uint64_t igps_drop_gsr_queries;	/* dropped group-source queries */
+	uint64_t igps_rcv_v1v2_queries;	/* received IGMPv1/IGMPv2 queries */
+	uint64_t igps_rcv_v3_queries;	/* received IGMPv3 queries */
+	uint64_t igps_rcv_badqueries;	/* received invalid queries */
+	uint64_t igps_rcv_gen_queries;	/* received general queries */
+	uint64_t igps_rcv_group_queries;/* received group queries */
+	uint64_t igps_rcv_gsr_queries;	/* received group-source queries */
+	uint64_t igps_drop_gsr_queries;	/* dropped group-source queries */
 	/*
 	 * Report statistics.
 	 */
-	bsd_uint64_t igps_rcv_reports;	/* received membership reports */
-	bsd_uint64_t igps_rcv_badreports;	/* received invalid reports */
-	bsd_uint64_t igps_rcv_ourreports;	/* received reports for our groups */
-	bsd_uint64_t igps_rcv_nora;		/* received w/o Router Alert option */
-	bsd_uint64_t igps_snd_reports;	/* sent membership reports */
+	uint64_t igps_rcv_reports;	/* received membership reports */
+	uint64_t igps_rcv_badreports;	/* received invalid reports */
+	uint64_t igps_rcv_ourreports;	/* received reports for our groups */
+	uint64_t igps_rcv_nora;		/* received w/o Router Alert option */
+	uint64_t igps_snd_reports;	/* sent membership reports */
 	/*
 	 * Padding for future additions.
 	 */
-	bsd_uint64_t __igps_pad[4];
+	uint64_t __igps_pad[4];
 };
 #define IGPS_VERSION_3	3		/* as of FreeBSD 8.x */
 #define IGPS_VERSION3_LEN		168

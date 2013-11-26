@@ -10,16 +10,16 @@
  * See the source file for legal information
  */
 
-#include <sys/param.h>
-#include <sys/queue.h>
-#include <sys/kernel.h>
-#include <sys/kobj.h>
-#include <sys/bus.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_queue.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_kobj.h>
+#include <sys/bsd_bus.h>
 #include "agp_if.h"
 
 
 static int
-null_agp_chipset_flush(bsd_device_t dev)
+null_agp_chipset_flush(device_t dev)
 {
 	return (ENXIO);
 }

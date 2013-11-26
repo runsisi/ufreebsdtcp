@@ -56,32 +56,32 @@
  * rights to redistribute these changes.
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/vm/vm_glue.c 240499 2012-09-14 13:56:50Z zont $");
 
 #include "opt_vm.h"
 #include "opt_kstack_pages.h"
 #include "opt_kstack_max_pages.h"
 
-#include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/limits.h>
-#include <sys/lock.h>
-#include <sys/mutex.h>
-#include <sys/proc.h>
-#include <sys/racct.h>
-#include <sys/resourcevar.h>
-#include <sys/sched.h>
-#include <sys/sf_buf.h>
-#include <sys/shm.h>
-#include <sys/vmmeter.h>
-#include <sys/sx.h>
-#include <sys/sysctl.h>
-#include <sys/_kstack_cache.h>
-#include <sys/eventhandler.h>
-#include <sys/kernel.h>
-#include <sys/ktr.h>
-#include <sys/unistd.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_limits.h>
+#include <sys/bsd_lock.h>
+#include <sys/bsd_mutex.h>
+#include <sys/bsd_proc.h>
+#include <sys/bsd_racct.h>
+#include <sys/bsd_resourcevar.h>
+#include <sys/bsd_sched.h>
+#include <sys/bsd_sf_buf.h>
+#include <sys/bsd_shm.h>
+#include <sys/bsd_vmmeter.h>
+#include <sys/bsd_sx.h>
+#include <sys/bsd_sysctl.h>
+#include <sys/_bsd_kstack_cache.h>
+#include <sys/bsd_eventhandler.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_ktr.h>
+#include <sys/bsd_unistd.h>
 
 #include <vm/vm.h>
 #include <vm/vm_param.h>
@@ -674,7 +674,7 @@ faultin(p)
 			vm_thread_swapin(td);
 		PROC_LOCK(p);
 		swapclear(p);
-		p->p_swtick = V_ticks;
+		p->p_swtick = ticks;
 
 		wakeup(&p->p_flag);
 
@@ -723,7 +723,7 @@ loop:
 			PROC_UNLOCK(p);
 			continue;
 		}
-		swtime = (V_ticks - p->p_swtick) / hz;
+		swtime = (ticks - p->p_swtick) / hz;
 		FOREACH_THREAD_IN_PROC(p, td) {
 			/*
 			 * An otherwise runnable thread of a process
@@ -732,7 +732,7 @@ loop:
 			 */
 			thread_lock(td);
 			if (td->td_inhibitors == TDI_SWAPPED) {
-				slptime = (V_ticks - td->td_slptick) / hz;
+				slptime = (ticks - td->td_slptick) / hz;
 				pri = swtime + slptime;
 				if ((td->td_flags & TDF_SWAPINREQ) == 0)
 					pri -= p->p_nice * 8;
@@ -892,7 +892,7 @@ retry:
 					thread_unlock(td);
 					goto nextproc;
 				}
-				slptime = (V_ticks - td->td_slptick) / hz;
+				slptime = (ticks - td->td_slptick) / hz;
 				/*
 				 * Guarantee swap_idle_threshold1
 				 * time in memory.
@@ -1049,7 +1049,7 @@ swapout(p)
 
 	PROC_LOCK(p);
 	p->p_flag &= ~P_SWAPPINGOUT;
-	p->p_swtick = V_ticks;
+	p->p_swtick = ticks;
 	return (0);
 }
 #endif /* !NO_SWAPPING */

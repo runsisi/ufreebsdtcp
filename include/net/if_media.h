@@ -52,7 +52,7 @@
 
 #ifdef _KERNEL
 
-#include <sys/queue.h>
+#include <sys/bsd_queue.h>
 
 /*
  * Driver callbacks for media status and change requests.
@@ -105,7 +105,7 @@ int	ifmedia_ioctl(struct ifnet *ifp, struct ifreq *ifr,
 	    struct ifmedia *ifm, u_long cmd);
 
 /* Compute baudrate for a given media. */
-bsd_uint64_t	ifmedia_baudrate(int);
+uint64_t	ifmedia_baudrate(int);
 
 #endif /*_KERNEL */
 
@@ -643,7 +643,7 @@ struct ifmedia_description {
  */
 struct ifmedia_baudrate {
 	int		ifmb_word;		/* media word */
-	bsd_uint64_t	ifmb_baudrate;		/* corresponding baudrate */
+	uint64_t	ifmb_baudrate;		/* corresponding baudrate */
 };
 
 #define	IFM_BAUDRATE_DESCRIPTIONS {					\

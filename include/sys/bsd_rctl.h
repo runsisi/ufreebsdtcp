@@ -45,7 +45,7 @@ struct proc;
 struct uidinfo;
 struct loginclass;
 struct prison_racct;
-struct bsd_ucred;
+struct ucred;
 struct rctl_rule_link;
 
 #ifdef _KERNEL
@@ -144,7 +144,7 @@ int64_t	rctl_pcpu_available(const struct proc *p);
 uint64_t rctl_get_limit(struct proc *p, int resource);
 uint64_t rctl_get_available(struct proc *p, int resource);
 const char *rctl_resource_name(int resource);
-void	rctl_proc_ucred_changed(struct proc *p, struct bsd_ucred *newcred);
+void	rctl_proc_ucred_changed(struct proc *p, struct ucred *newcred);
 int	rctl_proc_fork(struct proc *parent, struct proc *child);
 void	rctl_racct_release(struct racct *racct);
 #else /* !_KERNEL */
@@ -153,16 +153,16 @@ void	rctl_racct_release(struct racct *racct);
  * Syscall interface.
  */
 __BEGIN_DECLS
-int	rctl_get_racct(const char *inbufp, bsd_size_t inbuflen, char *outbufp,
-	    bsd_size_t outbuflen);
-int	rctl_get_rules(const char *inbufp, bsd_size_t inbuflen, char *outbufp,
-	    bsd_size_t outbuflen);
-int	rctl_get_limits(const char *inbufp, bsd_size_t inbuflen, char *outbufp,
-	    bsd_size_t outbuflen);
-int	rctl_add_rule(const char *inbufp, bsd_size_t inbuflen, char *outbufp,
-	    bsd_size_t outbuflen);
-int	rctl_remove_rule(const char *inbufp, bsd_size_t inbuflen, char *outbufp,
-	    bsd_size_t outbuflen);
+int	rctl_get_racct(const char *inbufp, size_t inbuflen, char *outbufp,
+	    size_t outbuflen);
+int	rctl_get_rules(const char *inbufp, size_t inbuflen, char *outbufp,
+	    size_t outbuflen);
+int	rctl_get_limits(const char *inbufp, size_t inbuflen, char *outbufp,
+	    size_t outbuflen);
+int	rctl_add_rule(const char *inbufp, size_t inbuflen, char *outbufp,
+	    size_t outbuflen);
+int	rctl_remove_rule(const char *inbufp, size_t inbuflen, char *outbufp,
+	    size_t outbuflen);
 __END_DECLS
 
 #endif /* !_KERNEL */

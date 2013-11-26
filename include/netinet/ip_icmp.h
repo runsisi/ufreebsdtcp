@@ -42,8 +42,8 @@
  * Internal of an ICMP Router Advertisement
  */
 struct icmp_ra_addr {
-	bsd_uint32_t ira_addr;
-	bsd_uint32_t ira_preference;
+	u_int32_t ira_addr;
+	u_int32_t ira_preference;
 };
 
 /*
@@ -66,23 +66,23 @@ struct icmp {
 	u_short	icmp_cksum;		/* ones complement cksum of struct */
 	union {
 		u_char ih_pptr;			/* ICMP_PARAMPROB */
-		struct bsd_in_addr ih_gwaddr;	/* ICMP_REDIRECT */
+		struct in_addr ih_gwaddr;	/* ICMP_REDIRECT */
 		struct ih_idseq {
-			bsd_uint16_t	icd_id;	/* network format */
-			bsd_uint16_t	icd_seq; /* network format */
+			uint16_t	icd_id;	/* network format */
+			uint16_t	icd_seq; /* network format */
 		} ih_idseq;
 		int ih_void;
 
 		/* ICMP_UNREACH_NEEDFRAG -- Path MTU Discovery (RFC1191) */
 		struct ih_pmtu {
-			bsd_uint16_t ipm_void;	/* network format */
-			bsd_uint16_t ipm_nextmtu;	/* network format */
+			uint16_t ipm_void;	/* network format */
+			uint16_t ipm_nextmtu;	/* network format */
 		} ih_pmtu;
 
 		struct ih_rtradv {
 			u_char irt_num_addrs;
 			u_char irt_wpa;
-			bsd_uint16_t irt_lifetime;
+			u_int16_t irt_lifetime;
 		} ih_rtradv;
 	} icmp_hun;
 #define	icmp_pptr	icmp_hun.ih_pptr
@@ -101,16 +101,16 @@ struct icmp {
 			 * The next 3 fields are in network format,
 			 * milliseconds since 00:00 GMT
 			 */
-			bsd_uint32_t its_otime;	/* Originate */
-			bsd_uint32_t its_rtime;	/* Receive */
-			bsd_uint32_t its_ttime;	/* Transmit */
+			uint32_t its_otime;	/* Originate */
+			uint32_t its_rtime;	/* Receive */
+			uint32_t its_ttime;	/* Transmit */
 		} id_ts;
 		struct id_ip  {
-			struct bsd_ip idi_ip;
+			struct ip idi_ip;
 			/* options and then 64 bits of data */
 		} id_ip;
 		struct icmp_ra_addr id_radv;
-		bsd_uint32_t id_mask;
+		u_int32_t id_mask;
 		char	id_data[1];
 	} icmp_dun;
 #define	icmp_otime	icmp_dun.id_ts.its_otime
@@ -206,7 +206,7 @@ struct icmp {
 	(type) == ICMP_MASKREQ || (type) == ICMP_MASKREPLY)
 
 #ifdef _KERNEL
-void	icmp_error(struct mbuf *, int, int, bsd_uint32_t, int);
+void	icmp_error(struct mbuf *, int, int, uint32_t, int);
 void	icmp_input(struct mbuf *, int);
 int	ip_next_mtu(int, int);
 #endif

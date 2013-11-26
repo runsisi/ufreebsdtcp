@@ -82,7 +82,7 @@ tcp_lro_init(struct lro_ctrl *lc)
 
 	error = 0;
 	for (i = 0; i < LRO_ENTRIES; i++) {
-		le = (struct lro_entry *)bsd_malloc(sizeof(*le), M_DEVBUF,
+		le = (struct lro_entry *)malloc(sizeof(*le), M_DEVBUF,
 		    M_NOWAIT | M_ZERO);
                 if (le == NULL) {
 			if (i == 0)
@@ -104,20 +104,20 @@ tcp_lro_free(struct lro_ctrl *lc)
 	while (!SLIST_EMPTY(&lc->lro_free)) {
 		le = SLIST_FIRST(&lc->lro_free);
 		SLIST_REMOVE_HEAD(&lc->lro_free, next);
-		bsd_free(le, M_DEVBUF);
+		free(le, M_DEVBUF);
 	}
 }
 
 #ifdef TCP_LRO_UPDATE_CSUM
-static bsd_uint16_t
-tcp_lro_csum_th(struct bsd_tcphdr *th)
+static uint16_t
+tcp_lro_csum_th(struct tcphdr *th)
 {
-	bsd_uint32_t ch;
-	bsd_uint16_t *p, l;
+	uint32_t ch;
+	uint16_t *p, l;
 
 	ch = th->th_sum = 0x0000;
 	l = th->th_off;
-	p = (bsd_uint16_t *)th;
+	p = (uint16_t *)th;
 	while (l > 0) {
 		ch += *p;
 		p++;
@@ -131,12 +131,12 @@ tcp_lro_csum_th(struct bsd_tcphdr *th)
 	return (ch & 0xffff);
 }
 
-static bsd_uint16_t
-tcp_lro_rx_csum_fixup(struct lro_entry *le, void *l3hdr, struct bsd_tcphdr *th,
-    bsd_uint16_t tcp_data_len, bsd_uint16_t csum)
+static uint16_t
+tcp_lro_rx_csum_fixup(struct lro_entry *le, void *l3hdr, struct tcphdr *th,
+    uint16_t tcp_data_len, uint16_t csum)
 {
-	bsd_uint32_t c;
-	bsd_uint16_t cs;
+	uint32_t c;
+	uint16_t cs;
 
 	c = csum;
 
@@ -151,7 +151,7 @@ tcp_lro_rx_csum_fixup(struct lro_entry *le, void *l3hdr, struct bsd_tcphdr *th,
 		if (le->append_cnt == 0)
 			cs = ip6->ip6_plen;
 		else {
-			bsd_uint32_t cx;
+			uint32_t cx;
 
 			cx = ntohs(ip6->ip6_plen);
 			cs = in6_cksum_pseudo(ip6, cx, ip6->ip6_nxt, 0);
@@ -162,9 +162,9 @@ tcp_lro_rx_csum_fixup(struct lro_entry *le, void *l3hdr, struct bsd_tcphdr *th,
 #ifdef INET
 	case ETHERTYPE_IP:
 	{
-		struct bsd_ip *ip4;
+		struct ip *ip4;
 
-		ip4 = (struct bsd_ip *)l3hdr;
+		ip4 = (struct ip *)l3hdr;
 		if (le->append_cnt == 0)
 			cs = ip4->ip_len;
 		else {
@@ -198,8 +198,8 @@ tcp_lro_flush(struct lro_ctrl *lc, struct lro_entry *le)
 {
 
 	if (le->append_cnt > 0) {
-		struct bsd_tcphdr *th;
-		bsd_uint16_t p_len;
+		struct tcphdr *th;
+		uint16_t p_len;
 
 		p_len = htons(le->p_len);
 		switch (le->eh_type) {
@@ -210,7 +210,7 @@ tcp_lro_flush(struct lro_ctrl *lc, struct lro_entry *le)
 
 			ip6 = le->le_ip6;
 			ip6->ip6_plen = p_len;
-			th = (struct bsd_tcphdr *)(ip6 + 1);
+			th = (struct tcphdr *)(ip6 + 1);
 			le->m_head->m_pkthdr.csum_flags = CSUM_DATA_VALID |
 			    CSUM_PSEUDO_HDR;
 			le->p_len += ETHER_HDR_LEN + sizeof(*ip6);
@@ -220,10 +220,10 @@ tcp_lro_flush(struct lro_ctrl *lc, struct lro_entry *le)
 #ifdef INET
 		case ETHERTYPE_IP:
 		{
-			struct bsd_ip *ip4;
+			struct ip *ip4;
 #ifdef TCP_LRO_UPDATE_CSUM
-			bsd_uint32_t cl;
-			bsd_uint16_t c;
+			uint32_t cl;
+			uint16_t c;
 #endif
 
 			ip4 = le->le_ip4;
@@ -241,7 +241,7 @@ tcp_lro_flush(struct lro_ctrl *lc, struct lro_entry *le)
 			ip4->ip_sum = TCP_LRO_INVALID_CSUM;
 #endif
 			ip4->ip_len = p_len;
-			th = (struct bsd_tcphdr *)(ip4 + 1);
+			th = (struct tcphdr *)(ip4 + 1);
 			le->m_head->m_pkthdr.csum_flags = CSUM_DATA_VALID |
 			    CSUM_PSEUDO_HDR | CSUM_IP_CHECKED | CSUM_IP_VALID;
 			le->p_len += ETHER_HDR_LEN;
@@ -259,9 +259,9 @@ tcp_lro_flush(struct lro_ctrl *lc, struct lro_entry *le)
 		th->th_win = le->window;
 		/* Incorporate latest timestamp into the TCP header. */
 		if (le->timestamp != 0) {
-			bsd_uint32_t *ts_ptr;
+			uint32_t *ts_ptr;
 
-			ts_ptr = (bsd_uint32_t *)(th + 1);
+			ts_ptr = (uint32_t *)(th + 1);
 			ts_ptr[1] = htonl(le->tsval);
 			ts_ptr[2] = le->tsecr;
 		}
@@ -289,7 +289,7 @@ tcp_lro_flush(struct lro_ctrl *lc, struct lro_entry *le)
 #ifdef INET6
 static int
 tcp_lro_rx_ipv6(struct lro_ctrl *lc, struct mbuf *m, struct ip6_hdr *ip6,
-    struct bsd_tcphdr **th)
+    struct tcphdr **th)
 {
 
 	/* XXX-BZ we should check the flow-label. */
@@ -299,7 +299,7 @@ tcp_lro_rx_ipv6(struct lro_ctrl *lc, struct mbuf *m, struct ip6_hdr *ip6,
 		return (TCP_LRO_NOT_SUPPORTED);
 
 	/* Find the TCP header. */
-	*th = (struct bsd_tcphdr *)(ip6 + 1);
+	*th = (struct tcphdr *)(ip6 + 1);
 
 	return (0);
 }
@@ -307,11 +307,11 @@ tcp_lro_rx_ipv6(struct lro_ctrl *lc, struct mbuf *m, struct ip6_hdr *ip6,
 
 #ifdef INET
 static int
-tcp_lro_rx_ipv4(struct lro_ctrl *lc, struct mbuf *m, struct bsd_ip *ip4,
-    struct bsd_tcphdr **th)
+tcp_lro_rx_ipv4(struct lro_ctrl *lc, struct mbuf *m, struct ip *ip4,
+    struct tcphdr **th)
 {
 	int csum_flags;
-	bsd_uint16_t csum;
+	uint16_t csum;
 
 	if (ip4->ip_p != IPPROTO_TCP)
 		return (TCP_LRO_NOT_SUPPORTED);
@@ -340,14 +340,14 @@ tcp_lro_rx_ipv4(struct lro_ctrl *lc, struct mbuf *m, struct bsd_ip *ip4,
 	}
 
 	/* Find the TCP header (we assured there are no IP options). */
-	*th = (struct bsd_tcphdr *)(ip4 + 1);
+	*th = (struct tcphdr *)(ip4 + 1);
 
 	return (0);
 }
 #endif
 
 int
-tcp_lro_rx(struct lro_ctrl *lc, struct mbuf *m, bsd_uint32_t csum)
+tcp_lro_rx(struct lro_ctrl *lc, struct mbuf *m, uint32_t csum)
 {
 	struct lro_entry *le;
 	struct ether_header *eh;
@@ -355,14 +355,14 @@ tcp_lro_rx(struct lro_ctrl *lc, struct mbuf *m, bsd_uint32_t csum)
 	struct ip6_hdr *ip6 = NULL;	/* Keep compiler happy. */
 #endif
 #ifdef INET
-	struct bsd_ip *ip4 = NULL;		/* Keep compiler happy. */
+	struct ip *ip4 = NULL;		/* Keep compiler happy. */
 #endif
-	struct bsd_tcphdr *th;
+	struct tcphdr *th;
 	void *l3hdr = NULL;		/* Keep compiler happy. */
-	bsd_uint32_t *ts_ptr;
+	uint32_t *ts_ptr;
 	tcp_seq seq;
 	int error, ip_len, l;
-	bsd_uint16_t eh_type, tcp_data_len;
+	uint16_t eh_type, tcp_data_len;
 
 	/* We expect a contiguous header [eh, ip, tcp]. */
 
@@ -398,7 +398,7 @@ tcp_lro_rx(struct lro_ctrl *lc, struct mbuf *m, bsd_uint32_t csum)
 			return (TCP_LRO_CANNOT);
 		}
 		CURVNET_RESTORE();
-		l3hdr = ip4 = (struct bsd_ip *)(eh + 1);
+		l3hdr = ip4 = (struct ip *)(eh + 1);
 		error = tcp_lro_rx_ipv4(lc, m, ip4, &th);
 		if (error != 0)
 			return (error);
@@ -443,7 +443,7 @@ tcp_lro_rx(struct lro_ctrl *lc, struct mbuf *m, bsd_uint32_t csum)
 	l = (th->th_off << 2);
 	tcp_data_len -= l;
 	l -= sizeof(*th);
-	ts_ptr = (bsd_uint32_t *)(th + 1);
+	ts_ptr = (uint32_t *)(th + 1);
 	if (l != 0 && (__predict_false(l != TCPOLEN_TSTAMP_APPA) ||
 	    (*ts_ptr != ntohl(TCPOPT_NOP<<24|TCPOPT_NOP<<16|
 	    TCPOPT_TIMESTAMP<<8|TCPOLEN_TIMESTAMP))))
@@ -498,7 +498,7 @@ tcp_lro_rx(struct lro_ctrl *lc, struct mbuf *m, bsd_uint32_t csum)
 		}
 
 		if (l != 0) {
-			bsd_uint32_t tsval = ntohl(*(ts_ptr + 1));
+			uint32_t tsval = ntohl(*(ts_ptr + 1));
 			/* Make sure timestamp values are increasing. */
 			/* XXX-BZ flip and use TSTMP_GEQ macro for this? */
 			if (__predict_false(le->tsval > tsval ||

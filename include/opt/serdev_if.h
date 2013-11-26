@@ -17,9 +17,9 @@
 /** @brief Unique descriptor for the SERDEV_IHAND() method */
 extern struct kobjop_desc serdev_ihand_desc;
 /** @brief A function implementing the SERDEV_IHAND() method */
-typedef serdev_intr_t* serdev_ihand_t(bsd_device_t dev, int ipend);
+typedef serdev_intr_t* serdev_ihand_t(device_t dev, int ipend);
 
-static __inline serdev_intr_t* SERDEV_IHAND(bsd_device_t dev, int ipend)
+static __inline serdev_intr_t* SERDEV_IHAND(device_t dev, int ipend)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,serdev_ihand);
@@ -29,9 +29,9 @@ static __inline serdev_intr_t* SERDEV_IHAND(bsd_device_t dev, int ipend)
 /** @brief Unique descriptor for the SERDEV_IPEND() method */
 extern struct kobjop_desc serdev_ipend_desc;
 /** @brief A function implementing the SERDEV_IPEND() method */
-typedef int serdev_ipend_t(bsd_device_t dev);
+typedef int serdev_ipend_t(device_t dev);
 
-static __inline int SERDEV_IPEND(bsd_device_t dev)
+static __inline int SERDEV_IPEND(device_t dev)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,serdev_ipend);
@@ -41,9 +41,9 @@ static __inline int SERDEV_IPEND(bsd_device_t dev)
 /** @brief Unique descriptor for the SERDEV_SYSDEV() method */
 extern struct kobjop_desc serdev_sysdev_desc;
 /** @brief A function implementing the SERDEV_SYSDEV() method */
-typedef int serdev_sysdev_t(bsd_device_t dev);
+typedef int serdev_sysdev_t(device_t dev);
 
-static __inline int SERDEV_SYSDEV(bsd_device_t dev)
+static __inline int SERDEV_SYSDEV(device_t dev)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)dev)->ops,serdev_sysdev);

@@ -37,23 +37,23 @@
  * This currently handles IPPROTO_GRE, IPPROTO_MOBILE
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/netinet/ip_gre.c 252023 2013-06-20 07:30:13Z hrs $");
 
 #include "opt_inet.h"
 #include "opt_atalk.h"
 #include "opt_inet6.h"
 
-#include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/mbuf.h>
-#include <sys/socket.h>
-#include <sys/socketvar.h>
-#include <sys/protosw.h>
-#include <sys/errno.h>
-#include <sys/time.h>
-#include <sys/kernel.h>
-#include <sys/syslog.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_mbuf.h>
+#include <sys/bsd_socket.h>
+#include <sys/bsd_socketvar.h>
+#include <sys/bsd_protosw.h>
+#include <sys/bsd_errno.h>
+#include <sys/bsd_time.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_syslog.h>
 #include <net/bpf.h>
 #include <net/ethernet.h>
 #include <net/if.h>
@@ -68,7 +68,7 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/netinet/ip_gre.c 252023 2013-06-20 07:30:1
 #include <netinet/ip.h>
 #include <netinet/ip_var.h>
 #include <netinet/ip_gre.h>
-#include <machine/in_cksum.h>
+#include <machine/bsd_in_cksum.h>
 #else
 #error ip_gre input without IP?
 #endif
@@ -82,13 +82,13 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/netinet/ip_gre.c 252023 2013-06-20 07:30:1
 /* Needs IP headers. */
 #include <net/if_gre.h>
 
-#include <machine/stdarg.h>
+#include <machine/bsd_stdarg.h>
 
 #if 1
-void gre_inet_ntoa(struct bsd_in_addr in);	/* XXX */
+void gre_inet_ntoa(struct in_addr in);	/* XXX */
 #endif
 
-static struct gre_softc *gre_lookup(struct mbuf *, bsd_uint8_t);
+static struct gre_softc *gre_lookup(struct mbuf *, u_int8_t);
 
 static struct mbuf *gre_input2(struct mbuf *, int, u_char);
 
@@ -103,7 +103,7 @@ gre_input(struct mbuf *m, int off)
 {
 	int proto;
 
-	proto = (mtod(m, struct bsd_ip *))->ip_p;
+	proto = (mtod(m, struct ip *))->ip_p;
 
 	m = gre_input2(m, off, proto);
 
@@ -127,8 +127,8 @@ gre_input2(struct mbuf *m ,int hlen, u_char proto)
 	struct greip *gip;
 	int isr;
 	struct gre_softc *sc;
-	bsd_uint16_t flags;
-	bsd_uint32_t af;
+	u_int16_t flags;
+	u_int32_t af;
 
 	if ((sc = gre_lookup(m, proto)) == NULL) {
 		/* No matching tunnel or tunnel is down. */
@@ -228,7 +228,7 @@ gre_input2(struct mbuf *m ,int hlen, u_char proto)
 void
 gre_mobile_input(struct mbuf *m, int hlen)
 {
-	struct bsd_ip *ip;
+	struct ip *ip;
 	struct mobip_h *mip;
 	struct gre_softc *sc;
 	int msiz;
@@ -244,7 +244,7 @@ gre_mobile_input(struct mbuf *m, int hlen)
 		if (m == NULL)
 			return;
 	}
-	bsd_ip = mtod(m, struct bsd_ip *);
+	ip = mtod(m, struct ip *);
 	mip = mtod(m, struct mobip_h *);
 
 	GRE2IFP(sc)->if_ipackets++;
@@ -260,14 +260,14 @@ gre_mobile_input(struct mbuf *m, int hlen)
 		m = m_pullup(m, (ip->ip_hl << 2) + msiz);
 		if (m == NULL)
 			return;
-		bsd_ip = mtod(m, struct bsd_ip *);
+		ip = mtod(m, struct ip *);
 		mip = mtod(m, struct mobip_h *);
 	}
 
 	mip->mi.ip_dst.s_addr = mip->mh.odst;
 	mip->mi.ip_p = (ntohs(mip->mh.proto) >> 8);
 
-	if (gre_in_cksum((bsd_uint16_t *)&mip->mh, msiz) != 0) {
+	if (gre_in_cksum((u_int16_t *)&mip->mh, msiz) != 0) {
 		m_freem(m);
 		return;
 	}
@@ -284,13 +284,13 @@ gre_mobile_input(struct mbuf *m, int hlen)
 	 * that this field is in the original format (network byteorder
 	 * and full size of IP packet), so that adjust accordingly.
 	 */
-	ip->ip_len = htons(ip->ip_len + sizeof(struct bsd_ip) - msiz);
+	ip->ip_len = htons(ip->ip_len + sizeof(struct ip) - msiz);
 
 	ip->ip_sum = 0;
 	ip->ip_sum = in_cksum(m, (ip->ip_hl << 2));
 
 	if (bpf_peers_present(GRE2IFP(sc)->if_bpf)) {
-		bsd_uint32_t af = AF_INET;
+		u_int32_t af = AF_INET;
 		bpf_mtap2(GRE2IFP(sc)->if_bpf, &af, sizeof(af), m);
 	}
 
@@ -315,16 +315,16 @@ gre_mobile_input(struct mbuf *m, int hlen)
  * in_gre.c during destroy.
  */
 static struct gre_softc *
-gre_lookup(struct mbuf *m, bsd_uint8_t proto)
+gre_lookup(struct mbuf *m, u_int8_t proto)
 {
-	struct bsd_ip *bsd_ip = mtod(m, struct bsd_ip *);
+	struct ip *ip = mtod(m, struct ip *);
 	struct gre_softc *sc;
 
 	mtx_lock(&gre_mtx);
 	for (sc = LIST_FIRST(&gre_softc_list); sc != NULL;
 	     sc = LIST_NEXT(sc, sc_list)) {
-		if ((sc->g_dst.s_addr == bsd_ip->ip_src.s_addr) &&
-		    (sc->g_src.s_addr == bsd_ip->ip_dst.s_addr) &&
+		if ((sc->g_dst.s_addr == ip->ip_src.s_addr) &&
+		    (sc->g_src.s_addr == ip->ip_dst.s_addr) &&
 		    (sc->g_proto == proto) &&
 		    ((GRE2IFP(sc)->if_flags & IFF_UP) != 0)) {
 			mtx_unlock(&gre_mtx);

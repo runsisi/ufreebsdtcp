@@ -52,13 +52,13 @@ void	ttydisc_optimize(struct tty *tp);
 void	ttydisc_modem(struct tty *tp, int open);
 #define ttydisc_can_bypass(tp) ((tp)->t_flags & TF_BYPASS)
 int	ttydisc_rint(struct tty *tp, char c, int flags);
-bsd_size_t	ttydisc_rint_simple(struct tty *tp, const void *buf, bsd_size_t len);
-bsd_size_t	ttydisc_rint_bypass(struct tty *tp, const void *buf, bsd_size_t len);
+size_t	ttydisc_rint_simple(struct tty *tp, const void *buf, size_t len);
+size_t	ttydisc_rint_bypass(struct tty *tp, const void *buf, size_t len);
 void	ttydisc_rint_done(struct tty *tp);
-bsd_size_t	ttydisc_rint_poll(struct tty *tp);
-bsd_size_t	ttydisc_getc(struct tty *tp, void *buf, bsd_size_t len);
+size_t	ttydisc_rint_poll(struct tty *tp);
+size_t	ttydisc_getc(struct tty *tp, void *buf, size_t len);
 int	ttydisc_getc_uio(struct tty *tp, struct uio *uio);
-bsd_size_t	ttydisc_getc_poll(struct tty *tp);
+size_t	ttydisc_getc_poll(struct tty *tp);
 
 /* Error codes for ttydisc_rint(). */
 #define	TRE_FRAMING	0x01
@@ -66,7 +66,7 @@ bsd_size_t	ttydisc_getc_poll(struct tty *tp);
 #define	TRE_OVERRUN	0x04
 #define	TRE_BREAK	0x08
 
-static __inline bsd_size_t
+static __inline size_t
 ttydisc_read_poll(struct tty *tp)
 {
 
@@ -75,7 +75,7 @@ ttydisc_read_poll(struct tty *tp)
 	return ttyinq_bytescanonicalized(&tp->t_inq);
 }
 
-static __inline bsd_size_t
+static __inline size_t
 ttydisc_write_poll(struct tty *tp)
 {
 

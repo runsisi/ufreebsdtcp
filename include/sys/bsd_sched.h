@@ -93,7 +93,7 @@ void	sched_exit_thread(struct thread *td, struct thread *child);
 void	sched_fork_thread(struct thread *td, struct thread *child);
 void	sched_lend_prio(struct thread *td, u_char prio);
 void	sched_lend_user_prio(struct thread *td, u_char pri);
-bsd_fixpt_t	sched_pctcpu(struct thread *td);
+fixpt_t	sched_pctcpu(struct thread *td);
 void	sched_prio(struct thread *td, u_char prio);
 void	sched_sleep(struct thread *td, int prio);
 void	sched_switch(struct thread *td, struct thread *newtd, int flags);
@@ -105,7 +105,7 @@ void	sched_wakeup(struct thread *td);
 void	sched_preempt(struct thread *td);
 #ifdef	RACCT
 #ifdef	SCHED_4BSD
-bsd_fixpt_t	sched_pctcpu_delta(struct thread *td);
+fixpt_t	sched_pctcpu_delta(struct thread *td);
 #endif
 #endif
 
@@ -208,35 +208,35 @@ void schedinit(void);
  * POSIX scheduling policies
  */
 #define SCHED_FIFO      1
-//#define SCHED_OTHER     2
-//#define SCHED_RR        3
+#define SCHED_OTHER     2
+#define SCHED_RR        3
 
-//struct sched_param {
-//        int     sched_priority;
-//};
+struct sched_param {
+        int     sched_priority;
+};
 
 /*
  * POSIX scheduling declarations for userland.
  */
 #ifndef _KERNEL
-#include <sys/cdefs.h>
-#include <sys/_types.h>
+#include <sys/bsd_cdefs.h>
+#include <sys/_bsd_types.h>
 
-#ifndef _BSD_PID_T_DECLARED
-typedef __bsd_pid_t         bsd_pid_t;
-#define _BSD_PID_T_DECLARED
+#ifndef _PID_T_DECLARED
+typedef __pid_t         pid_t;
+#define _PID_T_DECLARED
 #endif
 
-struct bsd_timespec;
+struct timespec;
 
 __BEGIN_DECLS
 int     sched_get_priority_max(int);
 int     sched_get_priority_min(int);
-int     sched_getparam(bsd_pid_t, struct sched_param *);
-int     sched_getscheduler(bsd_pid_t);
-int     sched_rr_get_interval(bsd_pid_t, struct bsd_timespec *);
-int     sched_setparam(bsd_pid_t, const struct sched_param *);
-int     sched_setscheduler(bsd_pid_t, int, const struct sched_param *);
+int     sched_getparam(pid_t, struct sched_param *);
+int     sched_getscheduler(pid_t);
+int     sched_rr_get_interval(pid_t, struct timespec *);
+int     sched_setparam(pid_t, const struct sched_param *);
+int     sched_setscheduler(pid_t, int, const struct sched_param *);
 int     sched_yield(void);
 __END_DECLS
 

@@ -60,19 +60,19 @@
 #define	SHM_STAT	13
 #define	SHM_INFO	14
 
-#ifndef _BSD_PID_T_DECLARED
-typedef	__bsd_pid_t		bsd_pid_t;
-#define	_BSD_PID_T_DECLARED
+#ifndef _PID_T_DECLARED
+typedef	__pid_t		pid_t;
+#define	_PID_T_DECLARED
 #endif
 
-#ifndef _BSD_TIME_T_DECLARED
-typedef	__bsd_time_t	bsd_time_t;
-#define	_BSD_TIME_T_DECLARED
+#ifndef _TIME_T_DECLARED
+typedef	__time_t	time_t;
+#define	_TIME_T_DECLARED
 #endif
 
-#ifndef _BSD_SIZE_T_DECLARED
-typedef	__bsd_size_t	bsd_size_t;
-#define	_BSD_SIZE_T_DECLARED
+#ifndef _SIZE_T_DECLARED
+typedef	__size_t	size_t;
+#define	_SIZE_T_DECLARED
 #endif
 
 #if defined(COMPAT_FREEBSD4) || defined(COMPAT_FREEBSD5) || \
@@ -80,25 +80,25 @@ typedef	__bsd_size_t	bsd_size_t;
 struct shmid_ds_old {
 	struct ipc_perm_old shm_perm;	/* operation permission structure */
 	int             shm_segsz;	/* size of segment in bytes */
-	bsd_pid_t           shm_lpid;   /* process ID of last shared memory op */
-	bsd_pid_t           shm_cpid;	/* process ID of creator */
+	pid_t           shm_lpid;   /* process ID of last shared memory op */
+	pid_t           shm_cpid;	/* process ID of creator */
 	short		shm_nattch;	/* number of current attaches */
-	bsd_time_t          shm_atime;	/* time of last shmat() */
-	bsd_time_t          shm_dtime;	/* time of last shmdt() */
-	bsd_time_t          shm_ctime;	/* time of last change by shmctl() */
+	time_t          shm_atime;	/* time of last shmat() */
+	time_t          shm_dtime;	/* time of last shmdt() */
+	time_t          shm_ctime;	/* time of last change by shmctl() */
 	void           *shm_internal;   /* sysv stupidity */
 };
 #endif
 
 struct shmid_ds {
 	struct ipc_perm shm_perm;	/* operation permission structure */
-	bsd_size_t          shm_segsz;	/* size of segment in bytes */
-	bsd_pid_t           shm_lpid;   /* process ID of last shared memory op */
-	bsd_pid_t           shm_cpid;	/* process ID of creator */
+	size_t          shm_segsz;	/* size of segment in bytes */
+	pid_t           shm_lpid;   /* process ID of last shared memory op */
+	pid_t           shm_cpid;	/* process ID of creator */
 	int		shm_nattch;	/* number of current attaches */
-	bsd_time_t          shm_atime;	/* time of last shmat() */
-	bsd_time_t          shm_dtime;	/* time of last shmdt() */
-	bsd_time_t          shm_ctime;	/* time of last change by shmctl() */
+	time_t          shm_atime;	/* time of last shmat() */
+	time_t          shm_dtime;	/* time of last shmdt() */
+	time_t          shm_ctime;	/* time of last change by shmctl() */
 };
 
 #ifdef _KERNEL
@@ -148,9 +148,9 @@ void	shmfork(struct proc *, struct proc *);
 
 #include <sys/bsd_cdefs.h>
 
-#ifndef _BSD_SIZE_T_DECLARED
-typedef __bsd_size_t        bsd_size_t;
-#define _BSD_SIZE_T_DECLARED
+#ifndef _SIZE_T_DECLARED
+typedef __size_t        size_t;
+#define _SIZE_T_DECLARED
 #endif
 
 __BEGIN_DECLS
@@ -158,7 +158,7 @@ __BEGIN_DECLS
 int shmsys(int, ...);
 #endif
 void *shmat(int, const void *, int);
-int shmget(bsd_key_t, bsd_size_t, int);
+int shmget(key_t, size_t, int);
 int shmctl(int, int, struct shmid_ds *);
 int shmdt(const void *);
 __END_DECLS

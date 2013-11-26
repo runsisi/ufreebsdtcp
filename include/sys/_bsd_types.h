@@ -26,8 +26,8 @@
  * $FreeBSD: release/9.2.0/sys/sys/_types.h 223710 2011-07-01 12:13:48Z jonathan $
  */
 
-#ifndef _BSD_SYS__TYPES_H_
-#define _BSD_SYS__TYPES_H_
+#ifndef _SYS__TYPES_H_
+#define _SYS__TYPES_H_
 
 #include <sys/bsd_cdefs.h>
 #include <machine/_bsd_types.h>
@@ -35,37 +35,37 @@
 /*
  * Standard type definitions.
  */
-typedef	__bsd_uint32_t	__bsd_blksize_t;	/* file block size */
-typedef	__bsd_int64_t	__bsd_blkcnt_t;	/* file block count */
-typedef	__bsd_int32_t	__bsd_clockid_t;	/* clock_gettime()... */
-typedef	__bsd_uint64_t	__bsd_cap_rights_t;	/* capability rights */
-typedef	__bsd_uint32_t	__bsd_fflags_t;	/* file flags */
-typedef	__bsd_uint64_t	__bsd_fsblkcnt_t;
-typedef	__bsd_uint64_t	__bsd_fsfilcnt_t;
-typedef	__bsd_uint32_t	__bsd_gid_t;
-typedef	__bsd_int64_t	__bsd_id_t;		/* can hold a gid_t, pid_t, or uid_t */
-typedef	__bsd_uint32_t	__bsd_ino_t;	/* inode number */
-typedef	long		__bsd_key_t;	/* IPC key (for Sys V IPC) */
-typedef	__bsd_int32_t	__bsd_lwpid_t;	/* Thread ID (a.k.a. LWP) */
-typedef	__bsd_uint16_t	__bsd_mode_t;	/* permissions */
-typedef	int		__bsd_accmode_t;	/* access permissions */
-typedef	int		__bsd_nl_item;
-typedef	__bsd_uint16_t	__bsd_nlink_t;	/* link count */
-typedef	__bsd_int64_t	__bsd_off_t;	/* file offset */
-typedef	__bsd_int32_t	__bsd_pid_t;	/* process [group] */
-typedef	__bsd_int64_t	__bsd_rlim_t;	/* resource limit - intentionally */
+typedef	__uint32_t	__blksize_t;	/* file block size */
+typedef	__int64_t	__blkcnt_t;	/* file block count */
+typedef	__int32_t	__clockid_t;	/* clock_gettime()... */
+typedef	__uint64_t	__cap_rights_t;	/* capability rights */
+typedef	__uint32_t	__fflags_t;	/* file flags */
+typedef	__uint64_t	__fsblkcnt_t;
+typedef	__uint64_t	__fsfilcnt_t;
+typedef	__uint32_t	__gid_t;
+typedef	__int64_t	__id_t;		/* can hold a gid_t, pid_t, or uid_t */
+typedef	__uint32_t	__ino_t;	/* inode number */
+typedef	long		__key_t;	/* IPC key (for Sys V IPC) */
+typedef	__int32_t	__lwpid_t;	/* Thread ID (a.k.a. LWP) */
+typedef	__uint16_t	__mode_t;	/* permissions */
+typedef	int		__accmode_t;	/* access permissions */
+typedef	int		__nl_item;
+typedef	__uint16_t	__nlink_t;	/* link count */
+typedef	__int64_t	__off_t;	/* file offset */
+typedef	__int32_t	__pid_t;	/* process [group] */
+typedef	__int64_t	__rlim_t;	/* resource limit - intentionally */
 					/* signed, because of legacy code */
 					/* that uses -1 for RLIM_INFINITY */
-typedef	__bsd_uint8_t	__bsd_sa_family_t;
-typedef	__bsd_uint32_t	__bsd_socklen_t;
-typedef	long		__bsd_suseconds_t;	/* microseconds (signed) */
-typedef	struct __timer	*__bsd_timer_t;	/* timer_gettime()... */
-typedef	struct __mq	*__bsd_mqd_t;	/* mq_open()... */
-typedef	__bsd_uint32_t	__bsd_uid_t;
-typedef	unsigned int	__bsd_useconds_t;	/* microseconds (unsigned) */
-typedef	int		__bsd_cpuwhich_t;	/* which parameter for cpuset. */
-typedef	int		__bsd_cpulevel_t;	/* level parameter for cpuset. */
-typedef int		__bsd_cpusetid_t;	/* cpuset identifier. */
+typedef	__uint8_t	__sa_family_t;
+typedef	__uint32_t	__socklen_t;
+typedef	long		__suseconds_t;	/* microseconds (signed) */
+typedef	struct __timer	*__timer_t;	/* timer_gettime()... */
+typedef	struct __mq	*__mqd_t;	/* mq_open()... */
+typedef	__uint32_t	__uid_t;
+typedef	unsigned int	__useconds_t;	/* microseconds (unsigned) */
+typedef	int		__cpuwhich_t;	/* which parameter for cpuset. */
+typedef	int		__cpulevel_t;	/* level parameter for cpuset. */
+typedef int		__cpusetid_t;	/* cpuset identifier. */
 
 /*
  * Unusual type definitions.
@@ -85,14 +85,14 @@ typedef int		__bsd_cpusetid_t;	/* cpuset identifier. */
  * wchar_t, and should be able to hold all members of the largest
  * character set plus one extra value (WEOF), and must be at least 16 bits.
  */
-typedef	int		__bsd_ct_rune_t;	/* arg type for ctype funcs */
-typedef	__bsd_ct_rune_t	__bsd_rune_t;	/* rune_t (see above) */
-typedef	__bsd_ct_rune_t	__bsd_wchar_t;	/* wchar_t (see above) */
-typedef	__bsd_ct_rune_t	__bsd_wint_t;	/* wint_t (see above) */
+typedef	int		__ct_rune_t;	/* arg type for ctype funcs */
+typedef	__ct_rune_t	__rune_t;	/* rune_t (see above) */
+typedef	__ct_rune_t	__wchar_t;	/* wchar_t (see above) */
+typedef	__ct_rune_t	__wint_t;	/* wint_t (see above) */
 
-typedef	__bsd_uint32_t	__bsd_dev_t;	/* device number */
+typedef	__uint32_t	__dev_t;	/* device number */
 
-typedef	__bsd_uint32_t	__bsd_fixpt_t;	/* fixed point number */
+typedef	__uint32_t	__fixpt_t;	/* fixed point number */
 
 /*
  * mbstate_t is an opaque object to keep conversion state during multibyte
@@ -100,7 +100,7 @@ typedef	__bsd_uint32_t	__bsd_fixpt_t;	/* fixed point number */
  */
 typedef union {
 	char		__mbstate8[128];
-	__bsd_int64_t	_mbstateL;	/* for alignment */
-} __bsd_mbstate_t;
+	__int64_t	_mbstateL;	/* for alignment */
+} __mbstate_t;
 
 #endif /* !_SYS__TYPES_H_ */

@@ -126,43 +126,43 @@ struct kinfo_proc {
 	struct	filedesc *ki_fd;	/* pointer to open file info */
 	struct	vmspace *ki_vmspace;	/* pointer to kernel vmspace struct */
 	void	*ki_wchan;		/* sleep address */
-	bsd_pid_t	ki_pid;			/* Process identifier */
-	bsd_pid_t	ki_ppid;		/* parent process id */
-	bsd_pid_t	ki_pgid;		/* process group id */
-	bsd_pid_t	ki_tpgid;		/* tty process group id */
-	bsd_pid_t	ki_sid;			/* Process session ID */
-	bsd_pid_t	ki_tsid;		/* Terminal session ID */
+	pid_t	ki_pid;			/* Process identifier */
+	pid_t	ki_ppid;		/* parent process id */
+	pid_t	ki_pgid;		/* process group id */
+	pid_t	ki_tpgid;		/* tty process group id */
+	pid_t	ki_sid;			/* Process session ID */
+	pid_t	ki_tsid;		/* Terminal session ID */
 	short	ki_jobc;		/* job control counter */
 	short	ki_spare_short1;	/* unused (just here for alignment) */
-	bsd_dev_t	ki_tdev;		/* controlling tty dev */
-	bsd_sigset_t ki_siglist;		/* Signals arrived but not delivered */
-	bsd_sigset_t ki_sigmask;		/* Current signal mask */
-	bsd_sigset_t ki_sigignore;		/* Signals being ignored */
-	bsd_sigset_t ki_sigcatch;		/* Signals being caught by user */
-	bsd_uid_t	ki_uid;			/* effective user id */
-	bsd_uid_t	ki_ruid;		/* Real user id */
-	bsd_uid_t	ki_svuid;		/* Saved effective user id */
-	bsd_gid_t	ki_rgid;		/* Real group id */
-	bsd_gid_t	ki_svgid;		/* Saved effective group id */
+	dev_t	ki_tdev;		/* controlling tty dev */
+	sigset_t ki_siglist;		/* Signals arrived but not delivered */
+	sigset_t ki_sigmask;		/* Current signal mask */
+	sigset_t ki_sigignore;		/* Signals being ignored */
+	sigset_t ki_sigcatch;		/* Signals being caught by user */
+	uid_t	ki_uid;			/* effective user id */
+	uid_t	ki_ruid;		/* Real user id */
+	uid_t	ki_svuid;		/* Saved effective user id */
+	gid_t	ki_rgid;		/* Real group id */
+	gid_t	ki_svgid;		/* Saved effective group id */
 	short	ki_ngroups;		/* number of groups */
 	short	ki_spare_short2;	/* unused (just here for alignment) */
-	bsd_gid_t 	ki_groups[KI_NGROUPS];	/* groups */
-	bsd_vm_size_t ki_size;		/* virtual size */
-	bsd_segsz_t ki_rssize;		/* current resident set size in pages */
-	bsd_segsz_t ki_swrss;		/* resident set size before last swap */
-	bsd_segsz_t ki_tsize;		/* text size (pages) XXX */
-	bsd_segsz_t ki_dsize;		/* data size (pages) XXX */
-	bsd_segsz_t ki_ssize;		/* stack size (pages) */
+	gid_t 	ki_groups[KI_NGROUPS];	/* groups */
+	vm_size_t ki_size;		/* virtual size */
+	segsz_t ki_rssize;		/* current resident set size in pages */
+	segsz_t ki_swrss;		/* resident set size before last swap */
+	segsz_t ki_tsize;		/* text size (pages) XXX */
+	segsz_t ki_dsize;		/* data size (pages) XXX */
+	segsz_t ki_ssize;		/* stack size (pages) */
 	u_short	ki_xstat;		/* Exit status for wait & stop signal */
 	u_short	ki_acflag;		/* Accounting flags */
-	bsd_fixpt_t	ki_pctcpu;	 	/* %cpu for process during ki_swtime */
+	fixpt_t	ki_pctcpu;	 	/* %cpu for process during ki_swtime */
 	u_int	ki_estcpu;	 	/* Time averaged value of ki_cpticks */
 	u_int	ki_slptime;	 	/* Time since last blocked */
 	u_int	ki_swtime;	 	/* Time swapped in or out */
 	u_int	ki_cow;			/* number of copy-on-write faults */
-	bsd_uint64_t ki_runtime;		/* Real time in microsec */
-	struct	bsd_timeval ki_start;	/* starting time */
-	struct	bsd_timeval ki_childtime;	/* time used by process children */
+	u_int64_t ki_runtime;		/* Real time in microsec */
+	struct	timeval ki_start;	/* starting time */
+	struct	timeval ki_childtime;	/* time used by process children */
 	long	ki_flag;		/* P_* flags */
 	long	ki_kiflag;		/* KI_* flags (below) */
 	int	ki_traceflag;		/* Kernel trace points */
@@ -189,7 +189,7 @@ struct kinfo_proc {
 	u_int	ki_cr_flags;		/* Credential flags */
 	int	ki_jid;			/* Process jail ID */
 	int	ki_numthreads;		/* XXXKSE number of threads in total */
-	bsd_lwpid_t	ki_tid;			/* XXXKSE thread id */
+	lwpid_t	ki_tid;			/* XXXKSE thread id */
 	struct	priority ki_pri;	/* process priority */
 	struct	rusage ki_rusage;	/* process rusage statistics */
 	/* XXX - most fields in ki_rusage_ch are not (yet) filled in */
@@ -308,14 +308,14 @@ struct kinfo_ofile {
 	int	kf_ref_count;			/* Reference count. */
 	int	kf_flags;			/* Flags. */
 	/* XXX Hidden alignment padding here on amd64 */
-	bsd_off_t	kf_offset;			/* Seek location. */
+	off_t	kf_offset;			/* Seek location. */
 	int	kf_vnode_type;			/* Vnode type. */
 	int	kf_sock_domain;			/* Socket domain. */
 	int	kf_sock_type;			/* Socket type. */
 	int	kf_sock_protocol;		/* Socket protocol. */
 	char	kf_path[PATH_MAX];	/* Path to file, if any. */
-	struct bsd_sockaddr_storage kf_sa_local;	/* Socket address. */
-	struct bsd_sockaddr_storage	kf_sa_peer;	/* Peer address. */
+	struct sockaddr_storage kf_sa_local;	/* Socket address. */
+	struct sockaddr_storage	kf_sa_peer;	/* Peer address. */
 };
 
 #if defined(__amd64__) || defined(__i386__)
@@ -329,67 +329,67 @@ struct kinfo_file {
 	int		kf_ref_count;		/* Reference count. */
 	int		kf_flags;		/* Flags. */
 	int		kf_pad0;		/* Round to 64 bit alignment. */
-	bsd_int64_t		kf_offset;		/* Seek location. */
+	int64_t		kf_offset;		/* Seek location. */
 	int		kf_vnode_type;		/* Vnode type. */
 	int		kf_sock_domain;		/* Socket domain. */
 	int		kf_sock_type;		/* Socket type. */
 	int		kf_sock_protocol;	/* Socket protocol. */
-	struct bsd_sockaddr_storage kf_sa_local;	/* Socket address. */
-	struct bsd_sockaddr_storage	kf_sa_peer;	/* Peer address. */
+	struct sockaddr_storage kf_sa_local;	/* Socket address. */
+	struct sockaddr_storage	kf_sa_peer;	/* Peer address. */
 	union {
 		struct {
 			/* Address of so_pcb. */
-			bsd_uint64_t	kf_sock_pcb;
+			uint64_t	kf_sock_pcb;
 			/* Address of inp_ppcb. */
-			bsd_uint64_t	kf_sock_inpcb;
+			uint64_t	kf_sock_inpcb;
 			/* Address of unp_conn. */
-			bsd_uint64_t	kf_sock_unpconn;
+			uint64_t	kf_sock_unpconn;
 			/* Send buffer state. */
-			bsd_uint16_t	kf_sock_snd_sb_state;
+			uint16_t	kf_sock_snd_sb_state;
 			/* Receive buffer state. */
-			bsd_uint16_t	kf_sock_rcv_sb_state;
+			uint16_t	kf_sock_rcv_sb_state;
 			/* Round to 64 bit alignment. */
-			bsd_uint32_t	kf_sock_pad0;
+			uint32_t	kf_sock_pad0;
 		} kf_sock;
 		struct {
 			/* Global file id. */
-			bsd_uint64_t	kf_file_fileid;
+			uint64_t	kf_file_fileid;
 			/* File size. */
-			bsd_uint64_t	kf_file_size;
+			uint64_t	kf_file_size;
 			/* Vnode filesystem id. */
-			bsd_uint32_t	kf_file_fsid;
+			uint32_t	kf_file_fsid;
 			/* File device. */
-			bsd_uint32_t	kf_file_rdev;
+			uint32_t	kf_file_rdev;
 			/* File mode. */
-			bsd_uint16_t	kf_file_mode;
+			uint16_t	kf_file_mode;
 			/* Round to 64 bit alignment. */
-			bsd_uint16_t	kf_file_pad0;
-			bsd_uint32_t	kf_file_pad1;
+			uint16_t	kf_file_pad0;
+			uint32_t	kf_file_pad1;
 		} kf_file;
 		struct {
-			bsd_uint32_t	kf_sem_value;
-			bsd_uint16_t	kf_sem_mode;
+			uint32_t	kf_sem_value;
+			uint16_t	kf_sem_mode;
 		} kf_sem;
 		struct {
-			bsd_uint64_t	kf_pipe_addr;
-			bsd_uint64_t	kf_pipe_peer;
-			bsd_uint32_t	kf_pipe_buffer_cnt;
+			uint64_t	kf_pipe_addr;
+			uint64_t	kf_pipe_peer;
+			uint32_t	kf_pipe_buffer_cnt;
 			/* Round to 64 bit alignment. */
-			bsd_uint32_t	kf_pipe_pad0[3];
+			uint32_t	kf_pipe_pad0[3];
 		} kf_pipe;
 		struct {
-			bsd_uint32_t	kf_pts_dev;
+			uint32_t	kf_pts_dev;
 			/* Round to 64 bit alignment. */
-			bsd_uint32_t	kf_pts_pad0[7];
+			uint32_t	kf_pts_pad0[7];
 		} kf_pts;
 		struct {
-			bsd_pid_t		kf_pid;
+			pid_t		kf_pid;
 		} kf_proc;
 	} kf_un;
-	bsd_uint16_t	kf_status;		/* Status flags. */
-	bsd_uint16_t	kf_pad1;		/* Round to 32 bit alignment. */
+	uint16_t	kf_status;		/* Status flags. */
+	uint16_t	kf_pad1;		/* Round to 32 bit alignment. */
 	int		_kf_ispare0;		/* Space for more stuff. */
-	bsd_cap_rights_t	kf_cap_rights;		/* Capability rights. */
+	cap_rights_t	kf_cap_rights;		/* Capability rights. */
 	int		_kf_ispare[4];		/* Space for more stuff. */
 	/* Truncated before copyout in sysctl */
 	char		kf_path[PATH_MAX];	/* Path to file, if any. */
@@ -440,9 +440,9 @@ struct kinfo_ovmentry {
 	int	 kve_shadow_count;		/* VM obj shadow count. */
 	char	 kve_path[PATH_MAX];		/* Path to VM obj, if any. */
 	void	*_kve_pspare[8];		/* Space for more stuff. */
-	bsd_off_t	 kve_offset;			/* Mapping offset in object */
-	bsd_uint64_t kve_fileid;			/* inode number if vnode */
-	bsd_dev_t	 kve_fsid;			/* dev_t of vnode location */
+	off_t	 kve_offset;			/* Mapping offset in object */
+	uint64_t kve_fileid;			/* inode number if vnode */
+	dev_t	 kve_fsid;			/* dev_t of vnode location */
 	int	 _kve_ispare[3];		/* Space for more stuff. */
 };
 
@@ -453,11 +453,11 @@ struct kinfo_ovmentry {
 struct kinfo_vmentry {
 	int	 kve_structsize;		/* Variable size of record. */
 	int	 kve_type;			/* Type of map entry. */
-	bsd_uint64_t kve_start;			/* Starting address. */
-	bsd_uint64_t kve_end;			/* Finishing address. */
-	bsd_uint64_t kve_offset;			/* Mapping offset in object */
-	bsd_uint64_t kve_vn_fileid;			/* inode number if vnode */
-	bsd_uint32_t kve_vn_fsid;			/* dev_t of vnode location */
+	uint64_t kve_start;			/* Starting address. */
+	uint64_t kve_end;			/* Finishing address. */
+	uint64_t kve_offset;			/* Mapping offset in object */
+	uint64_t kve_vn_fileid;			/* inode number if vnode */
+	uint32_t kve_vn_fsid;			/* dev_t of vnode location */
 	int	 kve_flags;			/* Flags on map entry. */
 	int	 kve_resident;			/* Number of resident pages. */
 	int	 kve_private_resident;		/* Number of private pages. */
@@ -465,10 +465,10 @@ struct kinfo_vmentry {
 	int	 kve_ref_count;			/* VM obj ref count. */
 	int	 kve_shadow_count;		/* VM obj shadow count. */
 	int	 kve_vn_type;			/* Vnode type. */
-	bsd_uint64_t kve_vn_size;			/* File size. */
-	bsd_uint32_t kve_vn_rdev;			/* Device id if device. */
-	bsd_uint16_t kve_vn_mode;			/* File mode. */
-	bsd_uint16_t kve_status;			/* Status flags. */
+	uint64_t kve_vn_size;			/* File size. */
+	uint32_t kve_vn_rdev;			/* Device id if device. */
+	uint16_t kve_vn_mode;			/* File mode. */
+	uint16_t kve_status;			/* Status flags. */
 	int	 _kve_ispare[12];		/* Space for more stuff. */
 	/* Truncated before copyout in sysctl */
 	char	 kve_path[PATH_MAX];		/* Path to VM obj, if any. */
@@ -490,7 +490,7 @@ struct kinfo_vmentry {
 #endif
 
 struct kinfo_kstack {
-	bsd_lwpid_t	 kkst_tid;			/* ID of thread. */
+	lwpid_t	 kkst_tid;			/* ID of thread. */
 	int	 kkst_state;			/* Validity of stack. */
 	char	 kkst_trace[KKST_MAXLEN];	/* String representing stack. */
 	int	 _kkst_ispare[16];		/* Space for more stuff. */

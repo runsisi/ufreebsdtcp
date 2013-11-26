@@ -10,30 +10,30 @@
  * See the source file for legal information
  */
 
-#include <sys/param.h>
-#include <sys/queue.h>
-#include <sys/kernel.h>
-#include <sys/kobj.h>
-#include <sys/bus.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_queue.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_kobj.h>
+#include <sys/bsd_bus.h>
 #include "device_if.h"
 
 
-static int null_shutdown(bsd_device_t dev)
+static int null_shutdown(device_t dev)
 {
     return 0;
 }
 
-static int null_suspend(bsd_device_t dev)
+static int null_suspend(device_t dev)
 {
     return 0;
 }
 
-static int null_resume(bsd_device_t dev)
+static int null_resume(device_t dev)
 {
     return 0;
 }
 
-static int null_quiesce(bsd_device_t dev)
+static int null_quiesce(device_t dev)
 {
     return EOPNOTSUPP;
 }

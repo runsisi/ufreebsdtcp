@@ -10,18 +10,18 @@
  * See the source file for legal information
  */
 
-#include <sys/param.h>
-#include <sys/queue.h>
-#include <sys/kernel.h>
-#include <sys/kobj.h>
-#include <sys/bus.h>
-#include <sys/types.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_queue.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_kobj.h>
+#include <sys/bsd_bus.h>
+#include <sys/bsd_types.h>
 #include <contrib/dev/acpica/include/acpi.h>
 #include "acpi_wmi_if.h"
 
 
 static int
-acpi_wmi_generic_provides_guid_string(bsd_device_t dev, const char* guid_string)
+acpi_wmi_generic_provides_guid_string(device_t dev, const char* guid_string)
 {
 	return 0;
 }

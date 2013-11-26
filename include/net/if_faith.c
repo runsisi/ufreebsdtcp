@@ -42,18 +42,18 @@
 #include "opt_inet.h"
 #include "opt_inet6.h"
 
-#include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/kernel.h>
-#include <sys/mbuf.h>
-#include <sys/module.h>
-#include <sys/socket.h>
-#include <sys/errno.h>
-#include <sys/sockio.h>
-#include <sys/time.h>
-#include <sys/queue.h>
-#include <sys/types.h>
-#include <sys/malloc.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_mbuf.h>
+#include <sys/bsd_module.h>
+#include <sys/bsd_socket.h>
+#include <sys/bsd_errno.h>
+#include <sys/bsd_sockio.h>
+#include <sys/bsd_time.h>
+#include <sys/bsd_queue.h>
+#include <sys/bsd_types.h>
+#include <sys/bsd_malloc.h>
 
 #include <net/if.h>
 #include <net/if_clone.h>
@@ -86,7 +86,7 @@ struct faith_softc {
 };
 
 static int faithioctl(struct ifnet *, u_long, caddr_t);
-int faithoutput(struct ifnet *, struct mbuf *, struct bsd_sockaddr *,
+int faithoutput(struct ifnet *, struct mbuf *, struct sockaddr *,
 	struct route *);
 static void faithrtrequest(int, struct rtentry *, struct rt_addrinfo *);
 #ifdef INET6
@@ -151,10 +151,10 @@ faith_clone_create(ifc, unit, params)
 	struct ifnet *ifp;
 	struct faith_softc *sc;
 
-	sc = bsd_malloc(sizeof(struct faith_softc), M_FAITH, M_WAITOK | M_ZERO);
+	sc = malloc(sizeof(struct faith_softc), M_FAITH, M_WAITOK | M_ZERO);
 	ifp = sc->sc_ifp = if_alloc(IFT_FAITH);
 	if (ifp == NULL) {
-		bsd_free(sc, M_FAITH);
+		free(sc, M_FAITH);
 		return (ENOSPC);
 	}
 
@@ -170,7 +170,7 @@ faith_clone_create(ifc, unit, params)
 	ifp->if_addrlen = 0;
 	ifp->if_snd.ifq_maxlen = ifqmaxlen;
 	if_attach(ifp);
-	bpfattach(ifp, DLT_NULL, sizeof(bsd_uint32_t));
+	bpfattach(ifp, DLT_NULL, sizeof(u_int32_t));
 	return (0);
 }
 
@@ -183,18 +183,18 @@ faith_clone_destroy(ifp)
 	bpfdetach(ifp);
 	if_detach(ifp);
 	if_free(ifp);
-	bsd_free(sc, M_FAITH);
+	free(sc, M_FAITH);
 }
 
 int
 faithoutput(ifp, m, dst, ro)
 	struct ifnet *ifp;
 	struct mbuf *m;
-	struct bsd_sockaddr *dst;
+	struct sockaddr *dst;
 	struct route *ro;
 {
 	int isr;
-	bsd_uint32_t af;
+	u_int32_t af;
 	struct rtentry *rt = NULL;
 
 	M_ASSERTPKTHDR(m);
@@ -338,7 +338,7 @@ faithprefix(in6)
 	sin6.sin6_family = AF_INET6;
 	sin6.sin6_len = sizeof(struct sockaddr_in6);
 	sin6.sin6_addr = *in6;
-	rt = in6_rtalloc1((struct bsd_sockaddr *)&sin6, 0, 0UL, RT_DEFAULT_FIB);
+	rt = in6_rtalloc1((struct sockaddr *)&sin6, 0, 0UL, RT_DEFAULT_FIB);
 	if (rt && rt->rt_ifp && rt->rt_ifp->if_type == IFT_FAITH &&
 	    (rt->rt_ifp->if_flags & IFF_UP) != 0)
 		ret = 1;

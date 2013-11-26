@@ -27,17 +27,17 @@
  * SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/netinet/in_rmx.c 242646 2012-11-06 01:18:53Z melifaro $");
 
-#include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/kernel.h>
-#include <sys/sysctl.h>
-#include <sys/socket.h>
-#include <sys/mbuf.h>
-#include <sys/syslog.h>
-#include <sys/callout.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_sysctl.h>
+#include <sys/bsd_socket.h>
+#include <sys/bsd_mbuf.h>
+#include <sys/bsd_syslog.h>
+#include <sys/bsd_callout.h>
 
 #include <net/if.h>
 #include <net/route.h>
@@ -64,7 +64,7 @@ in_addroute(void *v_arg, void *n_arg, struct radix_node_head *head,
     struct radix_node *treenodes)
 {
 	struct rtentry *rt = (struct rtentry *)treenodes;
-	struct bsd_sockaddr_in *sin = (struct bsd_sockaddr_in *)rt_key(rt);
+	struct sockaddr_in *sin = (struct sockaddr_in *)rt_key(rt);
 
 	RADIX_NODE_HEAD_WLOCK_ASSERT(head);
 	/*
@@ -167,7 +167,7 @@ in_clsroute(struct radix_node *rn, struct radix_node_head *head)
 	 */
 	if (V_rtq_reallyold != 0) {
 		rt->rt_flags |= RTPRF_OURS;
-		rt->rt_rmx.rmx_expire = V_time_uptime + V_rtq_reallyold;
+		rt->rt_rmx.rmx_expire = time_uptime + V_rtq_reallyold;
 	} else {
 		rtexpunge(rt);
 	}
@@ -179,7 +179,7 @@ struct rtqk_arg {
 	int killed;
 	int found;
 	int updating;
-	bsd_time_t nextstop;
+	time_t nextstop;
 };
 
 /*
@@ -199,26 +199,26 @@ in_rtqkill(struct radix_node *rn, void *rock)
 	if (rt->rt_flags & RTPRF_OURS) {
 		ap->found++;
 
-		if (ap->draining || rt->rt_rmx.rmx_expire <= V_time_uptime) {
+		if (ap->draining || rt->rt_rmx.rmx_expire <= time_uptime) {
 			if (rt->rt_refcnt > 0)
 				panic("rtqkill route really not free");
 
 			err = in_rtrequest(RTM_DELETE,
-					(struct bsd_sockaddr *)rt_key(rt),
+					(struct sockaddr *)rt_key(rt),
 					rt->rt_gateway, rt_mask(rt),
 					rt->rt_flags | RTF_RNH_LOCKED, 0,
 					rt->rt_fibnum);
 			if (err) {
-				bsd_log(LOG_WARNING, "in_rtqkill: error %d\n", err);
+				log(LOG_WARNING, "in_rtqkill: error %d\n", err);
 			} else {
 				ap->killed++;
 			}
 		} else {
 			if (ap->updating &&
-			    (rt->rt_rmx.rmx_expire - V_time_uptime >
+			    (rt->rt_rmx.rmx_expire - time_uptime >
 			     V_rtq_reallyold)) {
 				rt->rt_rmx.rmx_expire =
-				    V_time_uptime + V_rtq_reallyold;
+				    time_uptime + V_rtq_reallyold;
 			}
 			ap->nextstop = lmin(ap->nextstop,
 					    rt->rt_rmx.rmx_expire);
@@ -243,7 +243,7 @@ in_rtqtimo(void *rock)
 	CURVNET_SET((struct vnet *) rock);
 	int fibnum;
 	void *newrock;
-	struct bsd_timeval atv;
+	struct timeval atv;
 
 	for (fibnum = 0; fibnum < rt_numfibs; fibnum++) {
 		newrock = rt_tables_get_rnh(fibnum, AF_INET);
@@ -261,11 +261,11 @@ in_rtqtimo_one(void *rock)
 {
 	struct radix_node_head *rnh = rock;
 	struct rtqk_arg arg;
-	static bsd_time_t last_adjusted_timeout = 0;
+	static time_t last_adjusted_timeout = 0;
 
 	arg.found = arg.killed = 0;
 	arg.rnh = rnh;
-	arg.nextstop = V_time_uptime + V_rtq_timeout;
+	arg.nextstop = time_uptime + V_rtq_timeout;
 	arg.draining = arg.updating = 0;
 	RADIX_NODE_HEAD_LOCK(rnh);
 	rnh->rnh_walktree(rnh, in_rtqkill, &arg);
@@ -280,16 +280,16 @@ in_rtqtimo_one(void *rock)
 	 * hard.
 	 */
 	if ((arg.found - arg.killed > V_rtq_toomany) &&
-	    (V_time_uptime - last_adjusted_timeout >= V_rtq_timeout) &&
+	    (time_uptime - last_adjusted_timeout >= V_rtq_timeout) &&
 	    V_rtq_reallyold > V_rtq_minreallyold) {
 		V_rtq_reallyold = 2 * V_rtq_reallyold / 3;
 		if (V_rtq_reallyold < V_rtq_minreallyold) {
 			V_rtq_reallyold = V_rtq_minreallyold;
 		}
 
-		last_adjusted_timeout = V_time_uptime;
+		last_adjusted_timeout = time_uptime;
 #ifdef DIAGNOSTIC
-		bsd_log(LOG_DEBUG, "in_rtqtimo: adjusted rtq_reallyold to %d\n",
+		log(LOG_DEBUG, "in_rtqtimo: adjusted rtq_reallyold to %d\n",
 		    V_rtq_reallyold);
 #endif
 		arg.found = arg.killed = 0;
@@ -467,9 +467,9 @@ in_rtalloc_ign(struct route *ro, u_long ignflags, u_int fibnum)
 
 int
 in_rtrequest( int req,
-	struct bsd_sockaddr *dst,
-	struct bsd_sockaddr *gateway,
-	struct bsd_sockaddr *netmask,
+	struct sockaddr *dst,
+	struct sockaddr *gateway,
+	struct sockaddr *netmask,
 	int flags,
 	struct rtentry **ret_nrt,
 	u_int fibnum)
@@ -479,17 +479,17 @@ in_rtrequest( int req,
 }
 
 struct rtentry *
-in_rtalloc1(struct bsd_sockaddr *dst, int report, u_long ignflags, u_int fibnum)
+in_rtalloc1(struct sockaddr *dst, int report, u_long ignflags, u_int fibnum)
 {
 	return (rtalloc1_fib(dst, report, ignflags, fibnum));
 }
 
 void
-in_rtredirect(struct bsd_sockaddr *dst,
-	struct bsd_sockaddr *gateway,
-	struct bsd_sockaddr *netmask,
+in_rtredirect(struct sockaddr *dst,
+	struct sockaddr *gateway,
+	struct sockaddr *netmask,
 	int flags,
-	struct bsd_sockaddr *src,
+	struct sockaddr *src,
 	u_int fibnum)
 {
 	rtredirect_fib(dst, gateway, netmask, flags, src, fibnum);

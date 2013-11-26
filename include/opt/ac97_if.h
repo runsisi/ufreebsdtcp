@@ -17,9 +17,9 @@
 /** @brief Unique descriptor for the AC97_INIT() method */
 extern struct kobjop_desc ac97_init_desc;
 /** @brief A function implementing the AC97_INIT() method */
-typedef bsd_uint32_t ac97_init_t(kobj_t obj, void *devinfo);
+typedef u_int32_t ac97_init_t(kobj_t obj, void *devinfo);
 
-static __inline bsd_uint32_t AC97_INIT(kobj_t obj, void *devinfo)
+static __inline u_int32_t AC97_INIT(kobj_t obj, void *devinfo)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)obj)->ops,ac97_init);
@@ -41,10 +41,10 @@ static __inline int AC97_READ(kobj_t obj, void *devinfo, int regno)
 /** @brief Unique descriptor for the AC97_WRITE() method */
 extern struct kobjop_desc ac97_write_desc;
 /** @brief A function implementing the AC97_WRITE() method */
-typedef int ac97_write_t(kobj_t obj, void *devinfo, int regno, bsd_uint32_t data);
+typedef int ac97_write_t(kobj_t obj, void *devinfo, int regno, u_int32_t data);
 
 static __inline int AC97_WRITE(kobj_t obj, void *devinfo, int regno,
-                               bsd_uint32_t data)
+                               u_int32_t data)
 {
 	kobjop_t _m;
 	KOBJOPLOOKUP(((kobj_t)obj)->ops,ac97_write);

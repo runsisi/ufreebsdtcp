@@ -2,7 +2,7 @@
  * Copyright (c) 2004 Luigi Rizzo, Alessandro Cerri. All rights reserved.
  * Copyright (c) 2004-2008 Qing Li. All rights reserved.
  * Copyright (c) 2008 Kip Macy. All rights reserved.
- *
+ * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -11,7 +11,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY AUTHOR AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -33,7 +33,7 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/net/if_llatbl.h 252555 2013-07-03 09:25:29
 #include "opt_ofed.h"
 
 #include <sys/_bsd_rwlock.h>
-#include <netinet/bsd_in.h>
+#include <netinet/in.h>
 
 struct ifnet;
 struct sysctl_req;
@@ -41,7 +41,7 @@ struct rt_msghdr;
 struct rt_addrinfo;
 
 struct llentry;
-BSD_LIST_HEAD(llentries, llentry);
+LIST_HEAD(llentries, llentry);
 
 extern struct rwlock lltable_rwlock;
 #define	LLTABLE_RLOCK()		rw_rlock(&lltable_rwlock)
@@ -55,26 +55,26 @@ extern struct rwlock lltable_rwlock;
  * a shared lock
  */
 struct llentry {
-	BSD_LIST_ENTRY(llentry)	 lle_next;
+	LIST_ENTRY(llentry)	 lle_next;
 	struct rwlock		 lle_lock;
 	struct lltable		 *lle_tbl;
 	struct llentries	 *lle_head;
 	void			(*lle_free)(struct lltable *, struct llentry *);
 	struct mbuf		 *la_hold;
 	int			 la_numheld;  /* # of packets currently held */
-	bsd_time_t			 la_expire;
-	bsd_uint16_t		 la_flags;
-	bsd_uint16_t		 la_asked;
-	bsd_uint16_t		 la_preempt;
-	bsd_uint16_t		 ln_byhint;
-	bsd_int16_t			 ln_state;	/* IPv6 has ND6_LLINFO_NOSTATE == -2 */
-	bsd_uint16_t		 ln_router;
-	bsd_time_t			 ln_ntick;
+	time_t			 la_expire;
+	uint16_t		 la_flags;
+	uint16_t		 la_asked;
+	uint16_t		 la_preempt;
+	uint16_t		 ln_byhint;
+	int16_t			 ln_state;	/* IPv6 has ND6_LLINFO_NOSTATE == -2 */
+	uint16_t		 ln_router;
+	time_t			 ln_ntick;
 	int			 lle_refcnt;
 
 	union {
-		bsd_uint64_t	mac_aligned;
-		bsd_uint16_t	mac16[3];
+		uint64_t	mac_aligned;
+		uint16_t	mac16[3];
 #ifdef OFED
 		uint8_t		mac8[20];	/* IB needs 20 bytes. */
 #endif
@@ -149,17 +149,17 @@ struct llentry {
 #endif
 
 struct lltable {
-	BSD_SLIST_ENTRY(lltable)	llt_link;
+	SLIST_ENTRY(lltable)	llt_link;
 	struct llentries	lle_head[LLTBL_HASHTBL_SIZE];
 	int			llt_af;
 	struct ifnet		*llt_ifp;
 
 	void			(*llt_prefix_free)(struct lltable *,
-				    const struct bsd_sockaddr *prefix,
-				    const struct bsd_sockaddr *mask,
+				    const struct sockaddr *prefix,
+				    const struct sockaddr *mask,
 				    u_int flags);
 	struct llentry *	(*llt_lookup)(struct lltable *, u_int flags,
-				    const struct bsd_sockaddr *l3addr);
+				    const struct sockaddr *l3addr);
 	int			(*llt_dump)(struct lltable *,
 				    struct sysctl_req *);
 };
@@ -184,22 +184,22 @@ MALLOC_DECLARE(M_LLTABLE);
 
 struct lltable *lltable_init(struct ifnet *, int);
 void		lltable_free(struct lltable *);
-void		lltable_prefix_free(int, struct bsd_sockaddr *,
-		    struct bsd_sockaddr *, u_int);
+void		lltable_prefix_free(int, struct sockaddr *,
+		    struct sockaddr *, u_int);
 #if 0
 void		lltable_drain(int);
 #endif
 int		lltable_sysctl_dumparp(int, struct sysctl_req *);
 
-bsd_size_t		llentry_free(struct llentry *);
+size_t		llentry_free(struct llentry *);
 struct llentry  *llentry_alloc(struct ifnet *, struct lltable *,
-		    struct bsd_sockaddr_storage *);
+		    struct sockaddr_storage *);
 
 /*
  * Generic link layer address lookup function.
  */
 static __inline struct llentry *
-lla_lookup(struct lltable *llt, u_int flags, const struct bsd_sockaddr *l3addr)
+lla_lookup(struct lltable *llt, u_int flags, const struct sockaddr *l3addr)
 {
 	return llt->llt_lookup(llt, flags, l3addr);
 }

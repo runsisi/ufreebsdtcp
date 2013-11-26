@@ -32,22 +32,22 @@
  * from: FreeBSD: .../i386/vm_machdep.c,v 1.165 2001/07/04 23:27:04 dillon
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/vm/vm_zeroidle.c 198854 2009-11-03 16:46:52Z attilio $");
 
 #include <opt_sched.h>
 
-#include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/kernel.h>
-#include <sys/proc.h>
-#include <sys/vmmeter.h>
-#include <sys/lock.h>
-#include <sys/mutex.h>
-#include <sys/sched.h>
-#include <sys/sysctl.h>
-#include <sys/kthread.h>
-#include <sys/unistd.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_proc.h>
+#include <sys/bsd_vmmeter.h>
+#include <sys/bsd_lock.h>
+#include <sys/bsd_mutex.h>
+#include <sys/bsd_sched.h>
+#include <sys/bsd_sysctl.h>
+#include <sys/bsd_kthread.h>
+#include <sys/bsd_unistd.h>
 
 #include <vm/vm.h>
 #include <vm/vm_page.h>

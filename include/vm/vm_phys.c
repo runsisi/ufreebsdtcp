@@ -29,25 +29,25 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/vm/vm_phys.c 251179 2013-05-31 14:36:09Z jhb $");
 
 #include "opt_ddb.h"
 #include "opt_vm.h"
 
-#include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/lock.h>
-#include <sys/kernel.h>
-#include <sys/malloc.h>
-#include <sys/mutex.h>
-#include <sys/queue.h>
-#include <sys/sbuf.h>
-#include <sys/sysctl.h>
-#include <sys/vmmeter.h>
-#include <sys/vnode.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_lock.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_malloc.h>
+#include <sys/bsd_mutex.h>
+#include <sys/bsd_queue.h>
+#include <sys/bsd_sbuf.h>
+#include <sys/bsd_sysctl.h>
+#include <sys/bsd_vmmeter.h>
+#include <sys/bsd_vnode.h>
 
-#include <ddb/ddb.h>
+//#include <ddb/ddb.h>
 
 #include <vm/vm.h>
 #include <vm/vm_param.h>

@@ -143,8 +143,8 @@ struct ppp_comp_stats {
  * the last NP packet was sent or received.
  */
 struct ppp_idle {
-    bsd_time_t xmit_idle;		/* time since last NP packet sent */
-    bsd_time_t recv_idle;		/* time since last NP packet received */
+    time_t xmit_idle;		/* time since last NP packet sent */
+    time_t recv_idle;		/* time since last NP packet received */
 };
 
 #ifndef __P

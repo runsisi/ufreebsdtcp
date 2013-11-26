@@ -47,7 +47,7 @@
 #define ECN_NOCARE	(-1)	/* no consideration to ECN */
 
 #ifdef _KERNEL
-extern void ip_ecn_ingress(int, bsd_uint8_t *, const bsd_uint8_t *);
-extern int ip_ecn_egress(int, const bsd_uint8_t *, bsd_uint8_t *);
+extern void ip_ecn_ingress(int, u_int8_t *, const u_int8_t *);
+extern int ip_ecn_egress(int, const u_int8_t *, u_int8_t *);
 #endif
 #endif

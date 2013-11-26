@@ -60,12 +60,12 @@
  *	@(#)in_cksum.c	8.1 (Berkeley) 6/10/93
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/netinet6/in6_cksum.c 238227 2012-07-08 10:29:01Z bz $");
 
-#include <sys/param.h>
-#include <sys/mbuf.h>
-#include <sys/systm.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_mbuf.h>
+#include <sys/bsd_systm.h>
 #include <netinet/in.h>
 #include <netinet/ip6.h>
 #include <netinet6/scope6_var.h>
@@ -81,16 +81,16 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/netinet6/in6_cksum.c 238227 2012-07-08 10:
 #define REDUCE {l_util.l = sum; sum = l_util.s[0] + l_util.s[1]; (void)ADDCARRY(sum);}
 
 static int
-_in6_cksum_pseudo(struct ip6_hdr *ip6, bsd_uint32_t len, bsd_uint8_t nxt, bsd_uint16_t csum)
+_in6_cksum_pseudo(struct ip6_hdr *ip6, uint32_t len, uint8_t nxt, uint16_t csum)
 {
 	int sum;
-	bsd_uint16_t scope, *w;
+	uint16_t scope, *w;
 	union {
-		bsd_uint16_t phs[4];
+		u_int16_t phs[4];
 		struct {
-			bsd_uint32_t	ph_len;
-			bsd_uint8_t	ph_zero[3];
-			bsd_uint8_t	ph_nxt;
+			u_int32_t	ph_len;
+			u_int8_t	ph_zero[3];
+			u_int8_t	ph_nxt;
 		} __packed ph;
 	} uph;
 
@@ -99,7 +99,7 @@ _in6_cksum_pseudo(struct ip6_hdr *ip6, bsd_uint32_t len, bsd_uint8_t nxt, bsd_ui
 	/*
 	 * First create IP6 pseudo header and calculate a summary.
 	 */
-	uph.ph.ph_len = bsd_htonl(len);
+	uph.ph.ph_len = htonl(len);
 	uph.ph.ph_zero[0] = uph.ph.ph_zero[1] = uph.ph.ph_zero[2] = 0;
 	uph.ph.ph_nxt = nxt;
 
@@ -109,7 +109,7 @@ _in6_cksum_pseudo(struct ip6_hdr *ip6, bsd_uint32_t len, bsd_uint8_t nxt, bsd_ui
 
 	/* IPv6 source address. */
 	scope = in6_getscope(&ip6->ip6_src);
-	w = (bsd_uint16_t *)&ip6->ip6_src;
+	w = (u_int16_t *)&ip6->ip6_src;
 	sum += w[0]; sum += w[1]; sum += w[2]; sum += w[3];
 	sum += w[4]; sum += w[5]; sum += w[6]; sum += w[7];
 	if (scope != 0)
@@ -117,7 +117,7 @@ _in6_cksum_pseudo(struct ip6_hdr *ip6, bsd_uint32_t len, bsd_uint8_t nxt, bsd_ui
 
 	/* IPv6 destination address. */
 	scope = in6_getscope(&ip6->ip6_dst);
-	w = (bsd_uint16_t *)&ip6->ip6_dst;
+	w = (u_int16_t *)&ip6->ip6_dst;
 	sum += w[0]; sum += w[1]; sum += w[2]; sum += w[3];
 	sum += w[4]; sum += w[5]; sum += w[6]; sum += w[7];
 	if (scope != 0)
@@ -127,12 +127,12 @@ _in6_cksum_pseudo(struct ip6_hdr *ip6, bsd_uint32_t len, bsd_uint8_t nxt, bsd_ui
 }
 
 int
-in6_cksum_pseudo(struct ip6_hdr *ip6, bsd_uint32_t len, bsd_uint8_t nxt, bsd_uint16_t csum)
+in6_cksum_pseudo(struct ip6_hdr *ip6, uint32_t len, uint8_t nxt, uint16_t csum)
 {
 	int sum;
 	union {
-		bsd_uint16_t s[2];
-		bsd_uint32_t l;
+		u_int16_t s[2];
+		u_int32_t l;
 	} l_util;
 
 	sum = _in6_cksum_pseudo(ip6, len, nxt, csum);
@@ -147,27 +147,27 @@ in6_cksum_pseudo(struct ip6_hdr *ip6, bsd_uint32_t len, bsd_uint8_t nxt, bsd_uin
  * (e.g. TCP header + TCP payload)
  */
 int
-in6_cksum(struct mbuf *m, bsd_uint8_t nxt, bsd_uint32_t off, bsd_uint32_t len)
+in6_cksum(struct mbuf *m, u_int8_t nxt, u_int32_t off, u_int32_t len)
 {
 	struct ip6_hdr *ip6;
-	bsd_uint16_t *w, scope;
+	u_int16_t *w, scope;
 	int byte_swapped, mlen;
 	int sum;
 	union {
-		bsd_uint16_t phs[4];
+		u_int16_t phs[4];
 		struct {
-			bsd_uint32_t	ph_len;
-			bsd_uint8_t	ph_zero[3];
-			bsd_uint8_t	ph_nxt;
+			u_int32_t	ph_len;
+			u_int8_t	ph_zero[3];
+			u_int8_t	ph_nxt;
 		} __packed ph;
 	} uph;
 	union {
-		bsd_uint8_t	c[2];
-		bsd_uint16_t	s;
+		u_int8_t	c[2];
+		u_int16_t	s;
 	} s_util;
 	union {
-		bsd_uint16_t s[2];
-		bsd_uint32_t l;
+		u_int16_t s[2];
+		u_int32_t l;
 	} l_util;
 
 	/* Sanity check. */
@@ -177,7 +177,7 @@ in6_cksum(struct mbuf *m, bsd_uint8_t nxt, bsd_uint32_t off, bsd_uint32_t len)
 	/*
 	 * First create IP6 pseudo header and calculate a summary.
 	 */
-	uph.ph.ph_len = bsd_htonl(len);
+	uph.ph.ph_len = htonl(len);
 	uph.ph.ph_zero[0] = uph.ph.ph_zero[1] = uph.ph.ph_zero[2] = 0;
 	uph.ph.ph_nxt = nxt;
 
@@ -189,7 +189,7 @@ in6_cksum(struct mbuf *m, bsd_uint8_t nxt, bsd_uint32_t off, bsd_uint32_t len)
 
 	/* IPv6 source address. */
 	scope = in6_getscope(&ip6->ip6_src);
-	w = (bsd_uint16_t *)&ip6->ip6_src;
+	w = (u_int16_t *)&ip6->ip6_src;
 	sum += w[0]; sum += w[1]; sum += w[2]; sum += w[3];
 	sum += w[4]; sum += w[5]; sum += w[6]; sum += w[7];
 	if (scope != 0)
@@ -197,7 +197,7 @@ in6_cksum(struct mbuf *m, bsd_uint8_t nxt, bsd_uint32_t off, bsd_uint32_t len)
 
 	/* IPv6 destination address. */
 	scope = in6_getscope(&ip6->ip6_dst);
-	w = (bsd_uint16_t *)&ip6->ip6_dst;
+	w = (u_int16_t *)&ip6->ip6_dst;
 	sum += w[0]; sum += w[1]; sum += w[2]; sum += w[3];
 	sum += w[4]; sum += w[5]; sum += w[6]; sum += w[7];
 	if (scope != 0)
@@ -213,7 +213,7 @@ in6_cksum(struct mbuf *m, bsd_uint8_t nxt, bsd_uint32_t off, bsd_uint32_t len)
 			break;
 		m = m->m_next;
 	}
-	w = (bsd_uint16_t *)(mtod(m, u_char *) + off);
+	w = (u_int16_t *)(mtod(m, u_char *) + off);
 	mlen = m->m_len - off;
 	if (len < mlen)
 		mlen = len;
@@ -225,7 +225,7 @@ in6_cksum(struct mbuf *m, bsd_uint8_t nxt, bsd_uint32_t off, bsd_uint32_t len)
 		REDUCE;
 		sum <<= 8;
 		s_util.c[0] = *(u_char *)w;
-		w = (bsd_uint16_t *)((char *)w + 1);
+		w = (u_int16_t *)((char *)w + 1);
 		mlen--;
 		byte_swapped = 1;
 	} else
@@ -276,7 +276,7 @@ in6_cksum(struct mbuf *m, bsd_uint8_t nxt, bsd_uint32_t off, bsd_uint32_t len)
 	for (;m && len; m = m->m_next) {
 		if (m->m_len == 0)
 			continue;
-		w = mtod(m, bsd_uint16_t *);
+		w = mtod(m, u_int16_t *);
 		if (mlen == -1) {
 			/*
 			 * The first byte of this mbuf is the continuation
@@ -288,7 +288,7 @@ in6_cksum(struct mbuf *m, bsd_uint8_t nxt, bsd_uint32_t off, bsd_uint32_t len)
 			 */
 			s_util.c[1] = *(char *)w;
 			sum += s_util.s;
-			w = (bsd_uint16_t *)((char *)w + 1);
+			w = (u_int16_t *)((char *)w + 1);
 			mlen = m->m_len - 1;
 			len--;
 		} else
@@ -303,7 +303,7 @@ in6_cksum(struct mbuf *m, bsd_uint8_t nxt, bsd_uint32_t off, bsd_uint32_t len)
 			REDUCE;
 			sum <<= 8;
 			s_util.c[0] = *(u_char *)w;
-			w = (bsd_uint16_t *)((char *)w + 1);
+			w = (u_int16_t *)((char *)w + 1);
 			mlen--;
 			byte_swapped = 1;
 		}

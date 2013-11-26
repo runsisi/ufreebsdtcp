@@ -31,22 +31,22 @@
 
 #include <sys/_bsd_types.h>
 
-#ifndef _BSD_SUSECONDS_T_DECLARED
-typedef	__bsd_suseconds_t	bsd_suseconds_t;
-#define	_BSD_SUSECONDS_T_DECLARED
+#ifndef _SUSECONDS_T_DECLARED
+typedef	__suseconds_t	suseconds_t;
+#define	_SUSECONDS_T_DECLARED
 #endif
 
-#ifndef _BSD_TIME_T_DECLARED
-typedef	__bsd_time_t	bsd_time_t;
-#define	_BSD_TIME_T_DECLARED
+#ifndef _TIME_T_DECLARED
+typedef	__time_t	time_t;
+#define	_TIME_T_DECLARED
 #endif
 
 /*
  * Structure returned by gettimeofday(2) system call, and used in other calls.
  */
-struct bsd_timeval {
-	bsd_time_t		tv_sec;		/* seconds */
-	bsd_suseconds_t	tv_usec;	/* and microseconds */
+struct timeval {
+	time_t		tv_sec;		/* seconds */
+	suseconds_t	tv_usec;	/* and microseconds */
 };
 
 #endif /* !_SYS__TIMEVAL_H_ */

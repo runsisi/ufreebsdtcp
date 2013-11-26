@@ -42,7 +42,7 @@
  * their lifetime.
  *
  * The exact relationship to the vmobject is not determined at this point,
- * it may in fact be that we find them to be two sides of the same object
+ * it may in fact be that we find them to be two sides of the same object 
  * once things starts to crystalize.
  */
 
@@ -60,7 +60,7 @@ struct buf_ops;
 
 extern struct buf_ops buf_ops_bio;
 
-BSD_TAILQ_HEAD(buflists, buf);
+TAILQ_HEAD(buflists, buf);
 
 /* A Buffer splay list */
 struct bufv {
@@ -96,7 +96,7 @@ struct bufobj {
 	struct buf_ops	*bo_ops;	/* - Buffer operations */
 	int		bo_bsize;	/* - Block size for i/o */
 	struct vm_object *bo_object;	/* v Place to store VM object */
-	BSD_LIST_ENTRY(bufobj) bo_synclist;	/* S dirty vnode list */
+	LIST_ENTRY(bufobj) bo_synclist;	/* S dirty vnode list */
 	void		*bo_private;	/* private pointer */
 	struct vnode	*__bo_vnode;	/*
 					 * XXX: This vnode pointer is here

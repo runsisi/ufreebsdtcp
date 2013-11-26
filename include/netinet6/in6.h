@@ -65,8 +65,8 @@
 #error "do not include netinet6/in6.h directly, include netinet/in.h.  see RFC2553"
 #endif
 
-#ifndef _BSD_NETINET6_IN6_H_
-#define _BSD_NETINET6_IN6_H_
+#ifndef _NETINET6_IN6_H_
+#define _NETINET6_IN6_H_
 
 /*
  * Identification of the network protocol stack
@@ -92,11 +92,11 @@
 /*
  * IPv6 address
  */
-struct bsd_in6_addr {
+struct in6_addr {
 	union {
-		bsd_uint8_t		__u6_addr8[16];
-		bsd_uint16_t	__u6_addr16[8];
-		bsd_uint32_t	__u6_addr32[4];
+		uint8_t		__u6_addr8[16];
+		uint16_t	__u6_addr16[8];
+		uint32_t	__u6_addr32[4];
 	} __u6_addr;			/* 128-bit IP6 address */
 };
 
@@ -107,7 +107,7 @@ struct bsd_in6_addr {
 #define s6_addr32 __u6_addr.__u6_addr32
 #endif
 
-#define BSD_INET6_ADDRSTRLEN	46
+#define INET6_ADDRSTRLEN	46
 
 /*
  * XXX missing POSIX.1-2001 macro IPPROTO_IPV6.
@@ -117,65 +117,65 @@ struct bsd_in6_addr {
  * Socket address for IPv6
  */
 #if __BSD_VISIBLE
-#define BSD_SIN6_LEN
+#define SIN6_LEN
 #endif
 
-struct bsd_sockaddr_in6 {
-	bsd_uint8_t		sin6_len;	/* length of this struct */
-	bsd_sa_family_t	sin6_family;	/* AF_INET6 */
-	bsd_in_port_t	sin6_port;	/* Transport layer port # */
-	bsd_uint32_t	sin6_flowinfo;	/* IP6 flow information */
-	struct bsd_in6_addr	sin6_addr;	/* IP6 address */
-	bsd_uint32_t	sin6_scope_id;	/* scope zone index */
+struct sockaddr_in6 {
+	uint8_t		sin6_len;	/* length of this struct */
+	sa_family_t	sin6_family;	/* AF_INET6 */
+	in_port_t	sin6_port;	/* Transport layer port # */
+	uint32_t	sin6_flowinfo;	/* IP6 flow information */
+	struct in6_addr	sin6_addr;	/* IP6 address */
+	uint32_t	sin6_scope_id;	/* scope zone index */
 };
 
 /*
  * Local definition for masks
  */
 #ifdef _KERNEL	/* XXX nonstandard */
-#define BSD_IN6MASK0	{{{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }}}
-#define BSD_IN6MASK32	{{{ 0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, \
+#define IN6MASK0	{{{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }}}
+#define IN6MASK32	{{{ 0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, \
 			    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }}}
-#define BSD_IN6MASK64	{{{ 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, \
+#define IN6MASK64	{{{ 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, \
 			    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }}}
-#define BSD_IN6MASK96	{{{ 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, \
+#define IN6MASK96	{{{ 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, \
 			    0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00 }}}
-#define BSD_IN6MASK128	{{{ 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, \
+#define IN6MASK128	{{{ 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, \
 			    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff }}}
 #endif
 
 #ifdef _KERNEL
-extern const struct bsd_sockaddr_in6 bsd_sa6_any;
+extern const struct sockaddr_in6 sa6_any;
 
-extern const struct bsd_in6_addr bsd_in6mask0;
-extern const struct bsd_in6_addr bsd_in6mask32;
-extern const struct bsd_in6_addr bsd_in6mask64;
-extern const struct bsd_in6_addr bsd_in6mask96;
-extern const struct bsd_in6_addr bsd_in6mask128;
+extern const struct in6_addr in6mask0;
+extern const struct in6_addr in6mask32;
+extern const struct in6_addr in6mask64;
+extern const struct in6_addr in6mask96;
+extern const struct in6_addr in6mask128;
 #endif /* _KERNEL */
 
 /*
  * Macros started with IPV6_ADDR is KAME local
  */
 #ifdef _KERNEL	/* XXX nonstandard */
-#if _BSD_BYTE_ORDER == _BSD_BIG_ENDIAN
-#define BSD_IPV6_ADDR_INT32_ONE	1
-#define BSD_IPV6_ADDR_INT32_TWO	2
-#define BSD_IPV6_ADDR_INT32_MNL	0xff010000
-#define BSD_IPV6_ADDR_INT32_MLL	0xff020000
-#define BSD_IPV6_ADDR_INT32_SMP	0x0000ffff
-#define BSD_IPV6_ADDR_INT16_ULL	0xfe80
-#define BSD_IPV6_ADDR_INT16_USL	0xfec0
-#define BSD_IPV6_ADDR_INT16_MLL	0xff02
-#elif _BSD_BYTE_ORDER == _BSD_LITTLE_ENDIAN
-#define BSD_IPV6_ADDR_INT32_ONE	0x01000000
-#define BSD_IPV6_ADDR_INT32_TWO	0x02000000
-#define BSD_IPV6_ADDR_INT32_MNL	0x000001ff
-#define BSD_IPV6_ADDR_INT32_MLL	0x000002ff
-#define BSD_IPV6_ADDR_INT32_SMP	0xffff0000
-#define BSD_IPV6_ADDR_INT16_ULL	0x80fe
-#define BSD_IPV6_ADDR_INT16_USL	0xc0fe
-#define BSD_IPV6_ADDR_INT16_MLL	0x02ff
+#if _BYTE_ORDER == _BIG_ENDIAN
+#define IPV6_ADDR_INT32_ONE	1
+#define IPV6_ADDR_INT32_TWO	2
+#define IPV6_ADDR_INT32_MNL	0xff010000
+#define IPV6_ADDR_INT32_MLL	0xff020000
+#define IPV6_ADDR_INT32_SMP	0x0000ffff
+#define IPV6_ADDR_INT16_ULL	0xfe80
+#define IPV6_ADDR_INT16_USL	0xfec0
+#define IPV6_ADDR_INT16_MLL	0xff02
+#elif _BYTE_ORDER == _LITTLE_ENDIAN
+#define IPV6_ADDR_INT32_ONE	0x01000000
+#define IPV6_ADDR_INT32_TWO	0x02000000
+#define IPV6_ADDR_INT32_MNL	0x000001ff
+#define IPV6_ADDR_INT32_MLL	0x000002ff
+#define IPV6_ADDR_INT32_SMP	0xffff0000
+#define IPV6_ADDR_INT16_ULL	0x80fe
+#define IPV6_ADDR_INT16_USL	0xc0fe
+#define IPV6_ADDR_INT16_MLL	0x02ff
 #endif
 #endif
 
@@ -183,36 +183,36 @@ extern const struct bsd_in6_addr bsd_in6mask128;
  * Definition of some useful macros to handle IP6 addresses
  */
 #if __BSD_VISIBLE
-#define BSD_IN6ADDR_ANY_INIT \
+#define IN6ADDR_ANY_INIT \
 	{{{ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, \
 	    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }}}
-#define BSD_IN6ADDR_LOOPBACK_INIT \
+#define IN6ADDR_LOOPBACK_INIT \
 	{{{ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, \
 	    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 }}}
-#define BSD_IN6ADDR_NODELOCAL_ALLNODES_INIT \
+#define IN6ADDR_NODELOCAL_ALLNODES_INIT \
 	{{{ 0xff, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, \
 	    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 }}}
-#define BSD_IN6ADDR_INTFACELOCAL_ALLNODES_INIT \
+#define IN6ADDR_INTFACELOCAL_ALLNODES_INIT \
 	{{{ 0xff, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, \
 	    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 }}}
-#define BSD_IN6ADDR_LINKLOCAL_ALLNODES_INIT \
+#define IN6ADDR_LINKLOCAL_ALLNODES_INIT \
 	{{{ 0xff, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, \
 	    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 }}}
-#define BSD_IN6ADDR_LINKLOCAL_ALLROUTERS_INIT \
+#define IN6ADDR_LINKLOCAL_ALLROUTERS_INIT \
 	{{{ 0xff, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, \
 	    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02 }}}
-#define BSD_IN6ADDR_LINKLOCAL_ALLV2ROUTERS_INIT \
+#define IN6ADDR_LINKLOCAL_ALLV2ROUTERS_INIT \
 	{{{ 0xff, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, \
 	    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x16 }}}
 #endif
 
-extern const struct bsd_in6_addr bsd_in6addr_any;
-extern const struct bsd_in6_addr bsd_in6addr_loopback;
+extern const struct in6_addr in6addr_any;
+extern const struct in6_addr in6addr_loopback;
 #if __BSD_VISIBLE
-extern const struct bsd_in6_addr bsd_in6addr_nodelocal_allnodes;
-extern const struct bsd_in6_addr bsd_in6addr_linklocal_allnodes;
-extern const struct bsd_in6_addr bsd_in6addr_linklocal_allrouters;
-extern const struct bsd_in6_addr bsd_in6addr_linklocal_allv2routers;
+extern const struct in6_addr in6addr_nodelocal_allnodes;
+extern const struct in6_addr in6addr_linklocal_allnodes;
+extern const struct in6_addr in6addr_linklocal_allrouters;
+extern const struct in6_addr in6addr_linklocal_allv2routers;
 #endif
 
 /*
@@ -222,19 +222,19 @@ extern const struct bsd_in6_addr bsd_in6addr_linklocal_allv2routers;
  * in ANSI standard.
  */
 #ifdef _KERNEL
-#define BSD_IN6_ARE_ADDR_EQUAL(a, b)			\
-    (bcmp(&(a)->s6_addr[0], &(b)->s6_addr[0], sizeof(struct bsd_in6_addr)) == 0)
+#define IN6_ARE_ADDR_EQUAL(a, b)			\
+    (bcmp(&(a)->s6_addr[0], &(b)->s6_addr[0], sizeof(struct in6_addr)) == 0)
 #else
 #if __BSD_VISIBLE
-#define BSD_IN6_ARE_ADDR_EQUAL(a, b)			\
-    (memcmp(&(a)->s6_addr[0], &(b)->s6_addr[0], sizeof(struct bsd_in6_addr)) == 0)
+#define IN6_ARE_ADDR_EQUAL(a, b)			\
+    (memcmp(&(a)->s6_addr[0], &(b)->s6_addr[0], sizeof(struct in6_addr)) == 0)
 #endif
 #endif
 
 /*
  * Unspecified
  */
-#define BSD_IN6_IS_ADDR_UNSPECIFIED(a)	\
+#define IN6_IS_ADDR_UNSPECIFIED(a)	\
 	((a)->__u6_addr.__u6_addr32[0] == 0 &&	\
 	 (a)->__u6_addr.__u6_addr32[1] == 0 &&	\
 	 (a)->__u6_addr.__u6_addr32[2] == 0 &&	\
@@ -243,7 +243,7 @@ extern const struct bsd_in6_addr bsd_in6addr_linklocal_allv2routers;
 /*
  * Loopback
  */
-#define BSD_IN6_IS_ADDR_LOOPBACK(a)		\
+#define IN6_IS_ADDR_LOOPBACK(a)		\
 	((a)->__u6_addr.__u6_addr32[0] == 0 &&	\
 	 (a)->__u6_addr.__u6_addr32[1] == 0 &&	\
 	 (a)->__u6_addr.__u6_addr32[2] == 0 &&	\
@@ -252,7 +252,7 @@ extern const struct bsd_in6_addr bsd_in6addr_linklocal_allv2routers;
 /*
  * IPv4 compatible
  */
-#define BSD_IN6_IS_ADDR_V4COMPAT(a)		\
+#define IN6_IS_ADDR_V4COMPAT(a)		\
 	((a)->__u6_addr.__u6_addr32[0] == 0 &&	\
 	 (a)->__u6_addr.__u6_addr32[1] == 0 &&	\
 	 (a)->__u6_addr.__u6_addr32[2] == 0 &&	\
@@ -262,7 +262,7 @@ extern const struct bsd_in6_addr bsd_in6addr_linklocal_allv2routers;
 /*
  * Mapped
  */
-#define BSD_IN6_IS_ADDR_V4MAPPED(a)		      \
+#define IN6_IS_ADDR_V4MAPPED(a)		      \
 	((a)->__u6_addr.__u6_addr32[0] == 0 &&	\
 	 (a)->__u6_addr.__u6_addr32[1] == 0 &&	\
 	 (a)->__u6_addr.__u6_addr32[2] == ntohl(0x0000ffff))
@@ -272,98 +272,98 @@ extern const struct bsd_in6_addr bsd_in6addr_linklocal_allv2routers;
  */
 
 #ifdef _KERNEL	/* XXX nonstandard */
-#define BSD_IPV6_ADDR_SCOPE_NODELOCAL	0x01
-#define BSD_IPV6_ADDR_SCOPE_INTFACELOCAL	0x01
-#define BSD_IPV6_ADDR_SCOPE_LINKLOCAL	0x02
-#define BSD_IPV6_ADDR_SCOPE_SITELOCAL	0x05
-#define BSD_IPV6_ADDR_SCOPE_ORGLOCAL	0x08	/* just used in this file */
-#define BSD_IPV6_ADDR_SCOPE_GLOBAL		0x0e
+#define IPV6_ADDR_SCOPE_NODELOCAL	0x01
+#define IPV6_ADDR_SCOPE_INTFACELOCAL	0x01
+#define IPV6_ADDR_SCOPE_LINKLOCAL	0x02
+#define IPV6_ADDR_SCOPE_SITELOCAL	0x05
+#define IPV6_ADDR_SCOPE_ORGLOCAL	0x08	/* just used in this file */
+#define IPV6_ADDR_SCOPE_GLOBAL		0x0e
 #else
-#define __BSD_IPV6_ADDR_SCOPE_NODELOCAL	0x01
-#define __BSD_IPV6_ADDR_SCOPE_INTFACELOCAL	0x01
-#define __BSD_IPV6_ADDR_SCOPE_LINKLOCAL	0x02
-#define __BSD_IPV6_ADDR_SCOPE_SITELOCAL	0x05
-#define __BSD_IPV6_ADDR_SCOPE_ORGLOCAL	0x08	/* just used in this file */
-#define __BSD_IPV6_ADDR_SCOPE_GLOBAL	0x0e
+#define __IPV6_ADDR_SCOPE_NODELOCAL	0x01
+#define __IPV6_ADDR_SCOPE_INTFACELOCAL	0x01
+#define __IPV6_ADDR_SCOPE_LINKLOCAL	0x02
+#define __IPV6_ADDR_SCOPE_SITELOCAL	0x05
+#define __IPV6_ADDR_SCOPE_ORGLOCAL	0x08	/* just used in this file */
+#define __IPV6_ADDR_SCOPE_GLOBAL	0x0e
 #endif
 
 /*
  * Unicast Scope
  * Note that we must check topmost 10 bits only, not 16 bits (see RFC2373).
  */
-#define BSD_IN6_IS_ADDR_LINKLOCAL(a)	\
+#define IN6_IS_ADDR_LINKLOCAL(a)	\
 	(((a)->s6_addr[0] == 0xfe) && (((a)->s6_addr[1] & 0xc0) == 0x80))
-#define BSD_IN6_IS_ADDR_SITELOCAL(a)	\
+#define IN6_IS_ADDR_SITELOCAL(a)	\
 	(((a)->s6_addr[0] == 0xfe) && (((a)->s6_addr[1] & 0xc0) == 0xc0))
 
 /*
  * Multicast
  */
-#define BSD_IN6_IS_ADDR_MULTICAST(a)	((a)->s6_addr[0] == 0xff)
+#define IN6_IS_ADDR_MULTICAST(a)	((a)->s6_addr[0] == 0xff)
 
 #ifdef _KERNEL	/* XXX nonstandard */
-#define BSD_IPV6_ADDR_MC_SCOPE(a)		((a)->s6_addr[1] & 0x0f)
+#define IPV6_ADDR_MC_SCOPE(a)		((a)->s6_addr[1] & 0x0f)
 #else
-#define __BSD_IPV6_ADDR_MC_SCOPE(a)		((a)->s6_addr[1] & 0x0f)
+#define __IPV6_ADDR_MC_SCOPE(a)		((a)->s6_addr[1] & 0x0f)
 #endif
 
 /*
  * Multicast Scope
  */
 #ifdef _KERNEL	/* refers nonstandard items */
-#define BSD_IN6_IS_ADDR_MC_NODELOCAL(a)	\
-	(BSD_IN6_IS_ADDR_MULTICAST(a) &&	\
-	 (BSD_IPV6_ADDR_MC_SCOPE(a) == BSD_IPV6_ADDR_SCOPE_NODELOCAL))
-#define BSD_IN6_IS_ADDR_MC_INTFACELOCAL(a)	\
-	(BSD_IN6_IS_ADDR_MULTICAST(a) &&	\
-	 (BSD_IPV6_ADDR_MC_SCOPE(a) == BSD_IPV6_ADDR_SCOPE_INTFACELOCAL))
-#define BSD_IN6_IS_ADDR_MC_LINKLOCAL(a)	\
-	(BSD_IN6_IS_ADDR_MULTICAST(a) &&	\
-	 (BSD_IPV6_ADDR_MC_SCOPE(a) == BSD_IPV6_ADDR_SCOPE_LINKLOCAL))
-#define BSD_IN6_IS_ADDR_MC_SITELOCAL(a)	\
-	(BSD_IN6_IS_ADDR_MULTICAST(a) &&	\
-	 (BSD_IPV6_ADDR_MC_SCOPE(a) == BSD_IPV6_ADDR_SCOPE_SITELOCAL))
-#define BSD_IN6_IS_ADDR_MC_ORGLOCAL(a)	\
-	(BSD_IN6_IS_ADDR_MULTICAST(a) &&	\
-	 (BSD_IPV6_ADDR_MC_SCOPE(a) == BSD_IPV6_ADDR_SCOPE_ORGLOCAL))
-#define BSD_IN6_IS_ADDR_MC_GLOBAL(a)	\
-	(BSD_IN6_IS_ADDR_MULTICAST(a) &&	\
-	 (BSD_IPV6_ADDR_MC_SCOPE(a) == BSD_IPV6_ADDR_SCOPE_GLOBAL))
+#define IN6_IS_ADDR_MC_NODELOCAL(a)	\
+	(IN6_IS_ADDR_MULTICAST(a) &&	\
+	 (IPV6_ADDR_MC_SCOPE(a) == IPV6_ADDR_SCOPE_NODELOCAL))
+#define IN6_IS_ADDR_MC_INTFACELOCAL(a)	\
+	(IN6_IS_ADDR_MULTICAST(a) &&	\
+	 (IPV6_ADDR_MC_SCOPE(a) == IPV6_ADDR_SCOPE_INTFACELOCAL))
+#define IN6_IS_ADDR_MC_LINKLOCAL(a)	\
+	(IN6_IS_ADDR_MULTICAST(a) &&	\
+	 (IPV6_ADDR_MC_SCOPE(a) == IPV6_ADDR_SCOPE_LINKLOCAL))
+#define IN6_IS_ADDR_MC_SITELOCAL(a)	\
+	(IN6_IS_ADDR_MULTICAST(a) &&	\
+	 (IPV6_ADDR_MC_SCOPE(a) == IPV6_ADDR_SCOPE_SITELOCAL))
+#define IN6_IS_ADDR_MC_ORGLOCAL(a)	\
+	(IN6_IS_ADDR_MULTICAST(a) &&	\
+	 (IPV6_ADDR_MC_SCOPE(a) == IPV6_ADDR_SCOPE_ORGLOCAL))
+#define IN6_IS_ADDR_MC_GLOBAL(a)	\
+	(IN6_IS_ADDR_MULTICAST(a) &&	\
+	 (IPV6_ADDR_MC_SCOPE(a) == IPV6_ADDR_SCOPE_GLOBAL))
 #else
-#define BSD_IN6_IS_ADDR_MC_NODELOCAL(a)	\
-	(BSD_IN6_IS_ADDR_MULTICAST(a) &&	\
-	 (__BSD_IPV6_ADDR_MC_SCOPE(a) == __BSD_IPV6_ADDR_SCOPE_NODELOCAL))
-#define BSD_IN6_IS_ADDR_MC_LINKLOCAL(a)	\
-	(BSD_IN6_IS_ADDR_MULTICAST(a) &&	\
-	 (__BSD_IPV6_ADDR_MC_SCOPE(a) == __BSD_IPV6_ADDR_SCOPE_LINKLOCAL))
-#define BSD_IN6_IS_ADDR_MC_SITELOCAL(a)	\
-	(BSD_IN6_IS_ADDR_MULTICAST(a) &&	\
-	 (__BSD_IPV6_ADDR_MC_SCOPE(a) == __BSD_IPV6_ADDR_SCOPE_SITELOCAL))
-#define BSD_IN6_IS_ADDR_MC_ORGLOCAL(a)	\
-	(BSD_IN6_IS_ADDR_MULTICAST(a) &&	\
-	 (__BSD_IPV6_ADDR_MC_SCOPE(a) == __BSD_IPV6_ADDR_SCOPE_ORGLOCAL))
-#define BSD_IN6_IS_ADDR_MC_GLOBAL(a)	\
-	(BSD_IN6_IS_ADDR_MULTICAST(a) &&	\
-	 (__BSD_IPV6_ADDR_MC_SCOPE(a) == __BSD_IPV6_ADDR_SCOPE_GLOBAL))
+#define IN6_IS_ADDR_MC_NODELOCAL(a)	\
+	(IN6_IS_ADDR_MULTICAST(a) &&	\
+	 (__IPV6_ADDR_MC_SCOPE(a) == __IPV6_ADDR_SCOPE_NODELOCAL))
+#define IN6_IS_ADDR_MC_LINKLOCAL(a)	\
+	(IN6_IS_ADDR_MULTICAST(a) &&	\
+	 (__IPV6_ADDR_MC_SCOPE(a) == __IPV6_ADDR_SCOPE_LINKLOCAL))
+#define IN6_IS_ADDR_MC_SITELOCAL(a)	\
+	(IN6_IS_ADDR_MULTICAST(a) &&	\
+	 (__IPV6_ADDR_MC_SCOPE(a) == __IPV6_ADDR_SCOPE_SITELOCAL))
+#define IN6_IS_ADDR_MC_ORGLOCAL(a)	\
+	(IN6_IS_ADDR_MULTICAST(a) &&	\
+	 (__IPV6_ADDR_MC_SCOPE(a) == __IPV6_ADDR_SCOPE_ORGLOCAL))
+#define IN6_IS_ADDR_MC_GLOBAL(a)	\
+	(IN6_IS_ADDR_MULTICAST(a) &&	\
+	 (__IPV6_ADDR_MC_SCOPE(a) == __IPV6_ADDR_SCOPE_GLOBAL))
 #endif
 
 #ifdef _KERNEL	/* nonstandard */
 /*
  * KAME Scope
  */
-#define BSD_IN6_IS_SCOPE_LINKLOCAL(a)	\
-	((BSD_IN6_IS_ADDR_LINKLOCAL(a)) ||	\
-	 (BSD_IN6_IS_ADDR_MC_LINKLOCAL(a)))
-#define	BSD_IN6_IS_SCOPE_EMBED(a)			\
-	((BSD_IN6_IS_ADDR_LINKLOCAL(a)) ||		\
-	 (BSD_IN6_IS_ADDR_MC_LINKLOCAL(a)) ||	\
-	 (BSD_IN6_IS_ADDR_MC_INTFACELOCAL(a)))
+#define IN6_IS_SCOPE_LINKLOCAL(a)	\
+	((IN6_IS_ADDR_LINKLOCAL(a)) ||	\
+	 (IN6_IS_ADDR_MC_LINKLOCAL(a)))
+#define	IN6_IS_SCOPE_EMBED(a)			\
+	((IN6_IS_ADDR_LINKLOCAL(a)) ||		\
+	 (IN6_IS_ADDR_MC_LINKLOCAL(a)) ||	\
+	 (IN6_IS_ADDR_MC_INTFACELOCAL(a)))
 
-#define BSD_IFA6_IS_DEPRECATED(a) \
+#define IFA6_IS_DEPRECATED(a) \
 	((a)->ia6_lifetime.ia6t_pltime != ND6_INFINITE_LIFETIME && \
 	 (u_int32_t)((time_second - (a)->ia6_updatetime)) > \
 	 (a)->ia6_lifetime.ia6t_pltime)
-#define BSD_IFA6_IS_INVALID(a) \
+#define IFA6_IS_INVALID(a) \
 	((a)->ia6_lifetime.ia6t_vltime != ND6_INFINITE_LIFETIME && \
 	 (u_int32_t)((time_second - (a)->ia6_updatetime)) > \
 	 (a)->ia6_lifetime.ia6t_vltime)
@@ -376,9 +376,9 @@ extern const struct bsd_in6_addr bsd_in6addr_linklocal_allv2routers;
 struct route_in6 {
 	struct	rtentry *ro_rt;
 	struct	llentry *ro_lle;
-	struct	bsd_in6_addr *ro_ia6;
+	struct	in6_addr *ro_ia6;
 	int		ro_flags;
-	struct	bsd_sockaddr_in6 ro_dst;
+	struct	sockaddr_in6 ro_dst;
 };
 #endif
 
@@ -520,7 +520,7 @@ struct route_in6 {
  * Argument structure for IPV6_JOIN_GROUP and IPV6_LEAVE_GROUP.
  */
 struct ipv6_mreq {
-	struct bsd_in6_addr	ipv6mr_multiaddr;
+	struct in6_addr	ipv6mr_multiaddr;
 	unsigned int	ipv6mr_interface;
 };
 
@@ -528,7 +528,7 @@ struct ipv6_mreq {
  * IPV6_PKTINFO: Packet information(RFC2292 sec 5)
  */
 struct in6_pktinfo {
-	struct bsd_in6_addr	ipi6_addr;	/* src/dst IPv6 address */
+	struct in6_addr	ipi6_addr;	/* src/dst IPv6 address */
 	unsigned int	ipi6_ifindex;	/* send/recv interface index */
 };
 
@@ -536,8 +536,8 @@ struct in6_pktinfo {
  * Control structure for IPV6_RECVPATHMTU socket option.
  */
 struct ip6_mtuinfo {
-	struct bsd_sockaddr_in6 ip6m_addr;	/* or sockaddr_storage? */
-	bsd_uint32_t ip6m_mtu;
+	struct sockaddr_in6 ip6m_addr;	/* or sockaddr_storage? */
+	uint32_t ip6m_mtu;
 };
 
 /*
@@ -631,86 +631,86 @@ struct ip6_mtuinfo {
 #define	M_RTALERT_MLD	M_PROTO6
 
 #ifdef _KERNEL
-struct bsd_cmsghdr;
+struct cmsghdr;
 struct ip6_hdr;
 
-int	bsd_in6_cksum_pseudo(struct ip6_hdr *, bsd_uint32_t, bsd_uint8_t, bsd_uint16_t);
-int	bsd_in6_cksum(struct mbuf *, bsd_uint8_t, bsd_uint32_t, bsd_uint32_t);
-int	bsd_in6_localaddr(struct bsd_in6_addr *);
-int	bsd_in6_localip(struct bsd_in6_addr *);
-int	bsd_in6_addrscope(struct bsd_in6_addr *);
-struct	in6_ifaddr *bsd_in6_ifawithifp(struct ifnet *, struct bsd_in6_addr *);
-extern void bsd_in6_if_up(struct ifnet *);
-struct bsd_sockaddr;
+int	in6_cksum_pseudo(struct ip6_hdr *, uint32_t, uint8_t, uint16_t);
+int	in6_cksum(struct mbuf *, u_int8_t, u_int32_t, u_int32_t);
+int	in6_localaddr(struct in6_addr *);
+int	in6_localip(struct in6_addr *);
+int	in6_addrscope(struct in6_addr *);
+struct	in6_ifaddr *in6_ifawithifp(struct ifnet *, struct in6_addr *);
+extern void in6_if_up(struct ifnet *);
+struct sockaddr;
 extern	u_char	ip6_protox[];
 
-void	bsd_in6_sin6_2_sin(struct bsd_sockaddr_in *sin,
-			    struct bsd_sockaddr_in6 *sin6);
-void	bsd_in6_sin_2_v4mapsin6(struct bsd_sockaddr_in *sin,
-				 struct bsd_sockaddr_in6 *sin6);
-void	bsd_in6_sin6_2_sin_in_sock(struct bsd_sockaddr *nam);
-void	bsd_in6_sin_2_v4mapsin6_in_sock(struct bsd_sockaddr **nam);
+void	in6_sin6_2_sin(struct sockaddr_in *sin,
+			    struct sockaddr_in6 *sin6);
+void	in6_sin_2_v4mapsin6(struct sockaddr_in *sin,
+				 struct sockaddr_in6 *sin6);
+void	in6_sin6_2_sin_in_sock(struct sockaddr *nam);
+void	in6_sin_2_v4mapsin6_in_sock(struct sockaddr **nam);
 extern void addrsel_policy_init(void);
 
-#define	bsd_satosin6(sa)	((struct sockaddr_in6 *)(sa))
-#define	bsd_sin6tosa(sin6)	((struct sockaddr *)(sin6))
-#define	bsd_ifatoia6(ifa)	((struct in6_ifaddr *)(ifa))
+#define	satosin6(sa)	((struct sockaddr_in6 *)(sa))
+#define	sin6tosa(sin6)	((struct sockaddr *)(sin6))
+#define	ifatoia6(ifa)	((struct in6_ifaddr *)(ifa))
 
-extern int	(*faithprefix_p)(struct bsd_in6_addr *);
+extern int	(*faithprefix_p)(struct in6_addr *);
 #endif /* _KERNEL */
 
-#ifndef _BSD_SIZE_T_DECLARED
-typedef	__bsd_size_t	bsd_size_t;
-#define	_BSD_SIZE_T_DECLARED
+#ifndef _SIZE_T_DECLARED
+typedef	__size_t	size_t;
+#define	_SIZE_T_DECLARED
 #endif
 
-#ifndef _BSD_SOCKLEN_T_DECLARED
-typedef	__bsd_socklen_t	bsd_socklen_t;
-#define	_BSD_SOCKLEN_T_DECLARED
+#ifndef _SOCKLEN_T_DECLARED
+typedef	__socklen_t	socklen_t;
+#define	_SOCKLEN_T_DECLARED
 #endif
 
 #if __BSD_VISIBLE
 
 __BEGIN_DECLS
-struct bsd_cmsghdr;
+struct cmsghdr;
 
 extern int inet6_option_space(int);
-extern int inet6_option_init(void *, struct bsd_cmsghdr **, int);
-extern int inet6_option_append(struct bsd_cmsghdr *, const bsd_uint8_t *,
+extern int inet6_option_init(void *, struct cmsghdr **, int);
+extern int inet6_option_append(struct cmsghdr *, const uint8_t *,
 	int, int);
-extern bsd_uint8_t *inet6_option_alloc(struct bsd_cmsghdr *, int, int, int);
-extern int inet6_option_next(const struct bsd_cmsghdr *, bsd_uint8_t **);
-extern int inet6_option_find(const struct bsd_cmsghdr *, bsd_uint8_t **, int);
+extern uint8_t *inet6_option_alloc(struct cmsghdr *, int, int, int);
+extern int inet6_option_next(const struct cmsghdr *, uint8_t **);
+extern int inet6_option_find(const struct cmsghdr *, uint8_t **, int);
 
-extern bsd_size_t inet6_rthdr_space(int, int);
-extern struct bsd_cmsghdr *inet6_rthdr_init(void *, int);
-extern int inet6_rthdr_add(struct bsd_cmsghdr *, const struct bsd_in6_addr *,
+extern size_t inet6_rthdr_space(int, int);
+extern struct cmsghdr *inet6_rthdr_init(void *, int);
+extern int inet6_rthdr_add(struct cmsghdr *, const struct in6_addr *,
 	unsigned int);
-extern int inet6_rthdr_lasthop(struct bsd_cmsghdr *, unsigned int);
+extern int inet6_rthdr_lasthop(struct cmsghdr *, unsigned int);
 #if 0 /* not implemented yet */
-extern int inet6_rthdr_reverse(const struct bsd_cmsghdr *, struct bsd_cmsghdr *);
+extern int inet6_rthdr_reverse(const struct cmsghdr *, struct cmsghdr *);
 #endif
-extern int inet6_rthdr_segments(const struct bsd_cmsghdr *);
-extern struct bsd_in6_addr *inet6_rthdr_getaddr(struct bsd_cmsghdr *, int);
-extern int inet6_rthdr_getflags(const struct bsd_cmsghdr *, int);
+extern int inet6_rthdr_segments(const struct cmsghdr *);
+extern struct in6_addr *inet6_rthdr_getaddr(struct cmsghdr *, int);
+extern int inet6_rthdr_getflags(const struct cmsghdr *, int);
 
-extern int inet6_opt_init(void *, bsd_socklen_t);
-extern int inet6_opt_append(void *, bsd_socklen_t, int, bsd_uint8_t, bsd_socklen_t,
-	bsd_uint8_t, void **);
-extern int inet6_opt_finish(void *, bsd_socklen_t, int);
-extern int inet6_opt_set_val(void *, int, void *, bsd_socklen_t);
+extern int inet6_opt_init(void *, socklen_t);
+extern int inet6_opt_append(void *, socklen_t, int, uint8_t, socklen_t,
+	uint8_t, void **);
+extern int inet6_opt_finish(void *, socklen_t, int);
+extern int inet6_opt_set_val(void *, int, void *, socklen_t);
 
-extern int inet6_opt_next(void *, bsd_socklen_t, int, bsd_uint8_t *, bsd_socklen_t *,
+extern int inet6_opt_next(void *, socklen_t, int, uint8_t *, socklen_t *,
 	void **);
-extern int inet6_opt_find(void *, bsd_socklen_t, int, bsd_uint8_t, bsd_socklen_t *,
+extern int inet6_opt_find(void *, socklen_t, int, uint8_t, socklen_t *,
 	void **);
-extern int inet6_opt_get_val(void *, int, void *, bsd_socklen_t);
-extern bsd_socklen_t inet6_rth_space(int, int);
-extern void *inet6_rth_init(void *, bsd_socklen_t, int, int);
-extern int inet6_rth_add(void *, const struct bsd_in6_addr *);
+extern int inet6_opt_get_val(void *, int, void *, socklen_t);
+extern socklen_t inet6_rth_space(int, int);
+extern void *inet6_rth_init(void *, socklen_t, int, int);
+extern int inet6_rth_add(void *, const struct in6_addr *);
 extern int inet6_rth_reverse(const void *, void *);
 extern int inet6_rth_segments(const void *);
-extern struct bsd_in6_addr *inet6_rth_getaddr(const void *, int);
+extern struct in6_addr *inet6_rth_getaddr(const void *, int);
 __END_DECLS
 
 #endif /* __BSD_VISIBLE */

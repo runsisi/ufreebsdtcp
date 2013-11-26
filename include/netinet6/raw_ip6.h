@@ -37,14 +37,14 @@
  * ICMPv6 stat is counted separately.  see netinet/icmp6.h
  */
 struct rip6stat {
-	bsd_uquad_t rip6s_ipackets;	/* total input packets */
-	bsd_uquad_t rip6s_isum;		/* input checksum computations */
-	bsd_uquad_t rip6s_badsum;		/* of above, checksum error */
-	bsd_uquad_t rip6s_nosock;		/* no matching socket */
-	bsd_uquad_t rip6s_nosockmcast;	/* of above, arrived as multicast */
-	bsd_uquad_t rip6s_fullsock;	/* not delivered, input socket full */
+	u_quad_t rip6s_ipackets;	/* total input packets */
+	u_quad_t rip6s_isum;		/* input checksum computations */
+	u_quad_t rip6s_badsum;		/* of above, checksum error */
+	u_quad_t rip6s_nosock;		/* no matching socket */
+	u_quad_t rip6s_nosockmcast;	/* of above, arrived as multicast */
+	u_quad_t rip6s_fullsock;	/* not delivered, input socket full */
 
-	bsd_uquad_t rip6s_opackets;	/* total output packets */
+	u_quad_t rip6s_opackets;	/* total output packets */
 };
 
 #ifdef _KERNEL

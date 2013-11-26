@@ -38,8 +38,8 @@ struct racct;
  * Exactly one of these structures exists per login class.
  */
 struct loginclass {
-	BSD_LIST_ENTRY(loginclass)	lc_next;
-	char			lc_name[BSD_MAXLOGNAME];
+	LIST_ENTRY(loginclass)	lc_next;
+	char			lc_name[MAXLOGNAME];
 	u_int			lc_refcount;
 	struct racct		*lc_racct;
 };

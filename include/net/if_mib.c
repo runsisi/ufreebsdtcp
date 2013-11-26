@@ -29,11 +29,11 @@
  * $FreeBSD: release/9.2.0/sys/net/if_mib.c 248085 2013-03-09 02:36:32Z marius $
  */
 
-#include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/kernel.h>
-#include <sys/socket.h>
-#include <sys/sysctl.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_socket.h>
+#include <sys/bsd_sysctl.h>
 
 #include <net/if.h>
 #include <net/if_mib.h>
@@ -78,7 +78,7 @@ sysctl_ifdata(SYSCTL_HANDLER_ARGS) /* XXX bad syntax! */
 	u_int namelen = arg2;
 	struct ifnet *ifp;
 	struct ifmibdata ifmd;
-	bsd_size_t dlen;
+	size_t dlen;
 	char *dbuf;
 
 	if (namelen != 2)
@@ -96,7 +96,7 @@ sysctl_ifdata(SYSCTL_HANDLER_ARGS) /* XXX bad syntax! */
 
 	case IFDATA_GENERAL:
 		bzero(&ifmd, sizeof(ifmd));
-		bsd_strlcpy(ifmd.ifmd_name, ifp->if_xname, sizeof(ifmd.ifmd_name));
+		strlcpy(ifmd.ifmd_name, ifp->if_xname, sizeof(ifmd.ifmd_name));
 
 #define COPY(fld) ifmd.ifmd_##fld = ifp->if_##fld
 		COPY(pcount);
@@ -144,7 +144,7 @@ sysctl_ifdata(SYSCTL_HANDLER_ARGS) /* XXX bad syntax! */
 	case IFDATA_DRIVERNAME:
 		/* 20 is enough for 64bit ints */
 		dlen = strlen(ifp->if_dname) + 20 + 1;
-		if ((dbuf = bsd_malloc(dlen, M_TEMP, M_NOWAIT)) == NULL) {
+		if ((dbuf = malloc(dlen, M_TEMP, M_NOWAIT)) == NULL) {
 			error = ENOMEM;
 			goto out;
 		}
@@ -156,7 +156,7 @@ sysctl_ifdata(SYSCTL_HANDLER_ARGS) /* XXX bad syntax! */
 		error = SYSCTL_OUT(req, dbuf, strlen(dbuf) + 1);
 		if (error == 0 && req->newptr != NULL)
 			error = EPERM;
-		bsd_free(dbuf, M_TEMP);
+		free(dbuf, M_TEMP);
 		goto out;
 	}
 out:

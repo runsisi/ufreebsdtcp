@@ -55,7 +55,7 @@ struct igmp {
 	u_char		igmp_type;	/* version & type of IGMP message  */
 	u_char		igmp_code;	/* subtype for routing msgs        */
 	u_short		igmp_cksum;	/* IP-style checksum               */
-	struct bsd_in_addr	igmp_group;	/* group address being reported    */
+	struct in_addr	igmp_group;	/* group address being reported    */
 };					/*  (zero for queries)             */
 
 /*
@@ -65,7 +65,7 @@ struct igmpv3 {
 	u_char		igmp_type;	/* version & type of IGMP message  */
 	u_char		igmp_code;	/* subtype for routing msgs        */
 	u_short		igmp_cksum;	/* IP-style checksum               */
-	struct bsd_in_addr	igmp_group;	/* group address being reported    */
+	struct in_addr	igmp_group;	/* group address being reported    */
 					/*  (zero for queries)             */
 	u_char		igmp_misc;	/* reserved/suppress/robustness    */
 	u_char		igmp_qqi;	/* querier's query interval        */
@@ -83,7 +83,7 @@ struct igmp_grouprec {
 	u_char		ig_type;	/* record type */
 	u_char		ig_datalen;	/* length of auxiliary data */
 	u_short		ig_numsrc;	/* number of sources */
-	struct bsd_in_addr	ig_group;	/* group address being reported */
+	struct in_addr	ig_group;	/* group address being reported */
 	/*struct in_addr	ig_sources[1];*/ /* source addresses */
 };
 #define IGMP_GRPREC_HDRLEN		8

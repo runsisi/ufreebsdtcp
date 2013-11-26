@@ -46,13 +46,13 @@
  * to implement this interface.
  */
 
-#include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/socket.h>
-#include <sys/sockio.h>
-#include <sys/malloc.h>
-#include <sys/module.h>
-#include <sys/sysctl.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_socket.h>
+#include <sys/bsd_sockio.h>
+#include <sys/bsd_malloc.h>
+#include <sys/bsd_module.h>
+#include <sys/bsd_sysctl.h>
 
 #include <net/if.h>
 #include <net/if_media.h>
@@ -102,7 +102,7 @@ ifmedia_removeall(ifm)
 	for (entry = LIST_FIRST(&ifm->ifm_list); entry;
 	     entry = LIST_FIRST(&ifm->ifm_list)) {
 		LIST_REMOVE(entry, ifm_list);
-		bsd_free(entry, M_IFADDR);
+		free(entry, M_IFADDR);
 	}
 }
 
@@ -130,7 +130,7 @@ ifmedia_add(ifm, mword, data, aux)
 	}
 #endif
 
-	entry = bsd_malloc(sizeof(*entry), M_IFADDR, M_NOWAIT);
+	entry = malloc(sizeof(*entry), M_IFADDR, M_NOWAIT);
 	if (entry == NULL)
 		panic("ifmedia_add: can't malloc entry");
 
@@ -306,7 +306,7 @@ ifmedia_ioctl(ifp, ifr, ifm, cmd)
 			return (EINVAL);
 
 		if (ifmr->ifm_count != 0) {
-			kptr = (int *)bsd_malloc(ifmr->ifm_count * sizeof(int),
+			kptr = (int *)malloc(ifmr->ifm_count * sizeof(int),
 			    M_TEMP, M_NOWAIT);
 
 			if (kptr == NULL)
@@ -342,7 +342,7 @@ ifmedia_ioctl(ifp, ifr, ifm, cmd)
 			error = sticky;
 
 		if (ifmr->ifm_count != 0)
-			bsd_free(kptr, M_TEMP);
+			free(kptr, M_TEMP);
 
 		ifmr->ifm_count = count;
 		break;
@@ -392,7 +392,7 @@ ifmedia_match(ifm, target, mask)
 static const struct ifmedia_baudrate ifmedia_baudrate_descriptions[] =   
     IFM_BAUDRATE_DESCRIPTIONS;
 
-bsd_uint64_t
+uint64_t
 ifmedia_baudrate(int mword)
 {
 	int i;

@@ -51,10 +51,10 @@
 struct ktr_header {
 	int	ktr_len;		/* length of buf */
 	short	ktr_type;		/* trace record type */
-	bsd_pid_t	ktr_pid;		/* process id */
-	char	ktr_comm[BSD_MAXCOMLEN + 1];/* command name */
-	struct	bsd_timeval ktr_time;	/* timestamp */
-	bsd_intptr_t	ktr_tid;	/* was ktr_buffer */
+	pid_t	ktr_pid;		/* process id */
+	char	ktr_comm[MAXCOMLEN + 1];/* command name */
+	struct	timeval ktr_time;	/* timestamp */
+	intptr_t	ktr_tid;	/* was ktr_buffer */
 };
 
 /*
@@ -88,7 +88,7 @@ struct ktr_syscall {
 	/*
 	 * followed by ktr_narg register_t
 	 */
-	bsd_register_t	ktr_args[1];
+	register_t	ktr_args[1];
 };
 
 /*
@@ -99,7 +99,7 @@ struct ktr_sysret {
 	short	ktr_code;
 	short	ktr_eosys;
 	int	ktr_error;
-	bsd_register_t	ktr_retval;
+	register_t	ktr_retval;
 };
 
 /*
@@ -114,7 +114,7 @@ struct ktr_sysret {
 #define KTR_GENIO	4
 struct ktr_genio {
 	int	ktr_fd;
-	enum	bsd_uio_rw ktr_rw;
+	enum	uio_rw ktr_rw;
 	/*
 	 * followed by data successfully read/written
 	 */
@@ -126,9 +126,9 @@ struct ktr_genio {
 #define	KTR_PSIG	5
 struct ktr_psig {
 	int	signo;
-	bsd_sig_t	action;
+	sig_t	action;
 	int	code;
-	bsd_sigset_t mask;
+	sigset_t mask;
 };
 
 /*
@@ -160,8 +160,8 @@ struct ktr_csw {
 	 * record contains null-terminated struct name followed by
 	 * struct contents
 	 */
-struct bsd_sockaddr;
-struct bsd_stat;
+struct sockaddr;
+struct stat;
 struct sysentvec;
 
 /*
@@ -188,7 +188,7 @@ struct ktr_proc_ctor {
  */
 #define KTR_FAULT	13
 struct ktr_fault {
-	bsd_vm_offset_t vaddr;
+	vm_offset_t vaddr;
 	int type;
 };
 
@@ -234,19 +234,19 @@ struct ktr_faultend {
 #ifdef	_KERNEL
 void	ktrnamei(char *);
 void	ktrcsw(int, int, const char *);
-void	ktrpsig(int, bsd_sig_t, bsd_sigset_t *, int);
-void	ktrfault(bsd_vm_offset_t, int);
+void	ktrpsig(int, sig_t, sigset_t *, int);
+void	ktrfault(vm_offset_t, int);
 void	ktrfaultend(int);
-void	ktrgenio(int, enum bsd_uio_rw, struct uio *, int);
-void	ktrsyscall(int, int narg, bsd_register_t args[]);
+void	ktrgenio(int, enum uio_rw, struct uio *, int);
+void	ktrsyscall(int, int narg, register_t args[]);
 void	ktrsysctl(int *name, u_int namelen);
-void	ktrsysret(int, int, bsd_register_t);
+void	ktrsysret(int, int, register_t);
 void	ktrprocctor(struct proc *);
-void	ktrprocexec(struct proc *, struct bsd_ucred **, struct vnode **);
+void	ktrprocexec(struct proc *, struct ucred **, struct vnode **);
 void	ktrprocexit(struct thread *);
 void	ktrprocfork(struct proc *, struct proc *);
 void	ktruserret(struct thread *);
-void	ktrstruct(const char *, void *, bsd_size_t);
+void	ktrstruct(const char *, void *, size_t);
 #define ktrsockaddr(s) \
 	ktrstruct("sockaddr", (s), ((struct sockaddr *)(s))->sa_len)
 #define ktrstat(s) \
@@ -254,11 +254,11 @@ void	ktrstruct(const char *, void *, bsd_size_t);
 
 #else
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 
 __BEGIN_DECLS
-int	ktrace(const char *, int, int, bsd_pid_t);
-int	utrace(const void *, bsd_size_t);
+int	ktrace(const char *, int, int, pid_t);
+int	utrace(const void *, size_t);
 __END_DECLS
 
 #endif

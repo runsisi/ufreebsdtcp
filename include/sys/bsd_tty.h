@@ -46,7 +46,7 @@ struct cdev;
 struct file;
 struct pgrp;
 struct session;
-struct bsd_ucred;
+struct ucred;
 
 struct ttydevsw;
 
@@ -90,9 +90,9 @@ struct tty {
 
 	/* Buffering mechanisms. */
 	struct ttyinq	t_inq;		/* (t) Input queue. */
-	bsd_size_t		t_inlow;	/* (t) Input low watermark. */
+	size_t		t_inlow;	/* (t) Input low watermark. */
 	struct ttyoutq	t_outq;		/* (t) Output queue. */
-	bsd_size_t		t_outlow;	/* (t) Output low watermark. */
+	size_t		t_outlow;	/* (t) Output low watermark. */
 
 	/* Sleeping mechanisms. */
 	struct cv	t_inwait;	/* (t) Input wait queue. */
@@ -135,19 +135,19 @@ struct tty {
  * Userland version of struct tty, for sysctl kern.ttys
  */
 struct xtty {
-	bsd_size_t	xt_size;	/* Structure size. */
-	bsd_size_t	xt_insize;	/* Input queue size. */
-	bsd_size_t	xt_incc;	/* Canonicalized characters. */
-	bsd_size_t	xt_inlc;	/* Input line charaters. */
-	bsd_size_t	xt_inlow;	/* Input low watermark. */
-	bsd_size_t	xt_outsize;	/* Output queue size. */
-	bsd_size_t	xt_outcc;	/* Output queue usage. */
-	bsd_size_t	xt_outlow;	/* Output low watermark. */
+	size_t	xt_size;	/* Structure size. */
+	size_t	xt_insize;	/* Input queue size. */
+	size_t	xt_incc;	/* Canonicalized characters. */
+	size_t	xt_inlc;	/* Input line charaters. */
+	size_t	xt_inlow;	/* Input low watermark. */
+	size_t	xt_outsize;	/* Output queue size. */
+	size_t	xt_outcc;	/* Output queue usage. */
+	size_t	xt_outlow;	/* Output low watermark. */
 	unsigned int xt_column;	/* Current column position. */
-	bsd_pid_t	xt_pgid;	/* Foreground process group. */
-	bsd_pid_t	xt_sid;		/* Session. */
+	pid_t	xt_pgid;	/* Foreground process group. */
+	pid_t	xt_sid;		/* Session. */
 	unsigned int xt_flags;	/* Terminal option flags. */
-	bsd_dev_t	xt_dev;		/* Userland device. */
+	dev_t	xt_dev;		/* Userland device. */
 };
 
 #ifdef _KERNEL
@@ -170,7 +170,7 @@ void	tty_rel_gone(struct tty *tp);
 #define	tty_getlock(tp)		((tp)->t_mtx)
 
 /* Device node creation. */
-void	tty_makedev(struct tty *tp, struct bsd_ucred *cred, const char *fmt, ...)
+void	tty_makedev(struct tty *tp, struct ucred *cred, const char *fmt, ...)
     __printflike(3, 4);
 #define	tty_makealias(tp,fmt,...) \
 	make_dev_alias((tp)->t_dev, fmt, ## __VA_ARGS__)
@@ -196,7 +196,7 @@ void	tty_init_console(struct tty *tp, speed_t speed);
 void	tty_flush(struct tty *tp, int flags);
 void	tty_hiwat_in_block(struct tty *tp);
 void	tty_hiwat_in_unblock(struct tty *tp);
-bsd_dev_t	tty_udev(struct tty *tp);
+dev_t	tty_udev(struct tty *tp);
 #define	tty_opened(tp)		((tp)->t_flags & TF_OPENED)
 #define	tty_gone(tp)		((tp)->t_flags & TF_GONE)
 #define	tty_softc(tp)		((tp)->t_devswsoftc)
@@ -214,9 +214,9 @@ int	pts_alloc_external(int fd, struct thread *td, struct file *fp,
     struct cdev *dev, const char *name);
 
 /* Drivers and line disciplines also need to call these. */
-#include <sys/ttydisc.h>
-#include <sys/ttydevsw.h>
-#include <sys/ttyhook.h>
+#include <sys/bsd_ttydisc.h>
+#include <sys/bsd_ttydevsw.h>
+#include <sys/bsd_ttyhook.h>
 #endif /* _KERNEL */
 
 #endif /* !_SYS_TTY_H_ */

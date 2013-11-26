@@ -61,15 +61,15 @@
  * so that changes in the sockbuf may be computed to modify
  * back pressure on the sender accordingly.
  */
-typedef	bsd_uquad_t	unp_gen_t;
+typedef	u_quad_t	unp_gen_t;
 LIST_HEAD(unp_head, unpcb);
 
 struct unpcb {
 	LIST_ENTRY(unpcb) unp_link; 	/* glue on list of all PCBs */
-	struct	bsd_socket *unp_socket;	/* pointer back to socket */
+	struct	socket *unp_socket;	/* pointer back to socket */
 	struct	file *unp_file;		/* back-pointer to file for gc. */
 	struct	vnode *unp_vnode;	/* if associated with file */
-	bsd_ino_t	unp_ino;		/* fake inode number */
+	ino_t	unp_ino;		/* fake inode number */
 	struct	unpcb *unp_conn;	/* control block of connected socket */
 	struct	unp_head unp_refs;	/* referencing socket linked list */
 	LIST_ENTRY(unpcb) unp_reflink;	/* link in unp_refs list */
@@ -134,7 +134,7 @@ struct xunpcb {
 	} xu_cau;
 #define	xu_caddr xu_cau.xuu_caddr
 	struct	xsocket	xu_socket;
-	bsd_uquad_t	xu_alignment_hack;
+	u_quad_t	xu_alignment_hack;
 };
 
 struct xunpgen {

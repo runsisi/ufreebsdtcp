@@ -43,10 +43,10 @@
 /* BSD style release date */
 #define	BPF_RELEASE 199606
 
-typedef	bsd_int32_t	  bpf_int32;
-typedef	bsd_uint32_t bpf_u_int32;
-typedef	bsd_int64_t	  bpf_int64;
-typedef	bsd_uint64_t bpf_u_int64;
+typedef	int32_t	  bpf_int32;
+typedef	u_int32_t bpf_u_int32;
+typedef	int64_t	  bpf_int64;
+typedef	u_int64_t bpf_u_int64;
 
 /*
  * Alignment macros.  BPF_WORDALIGN rounds up to the next
@@ -112,7 +112,7 @@ struct bpf_version {
 struct bpf_zbuf {
 	void	*bz_bufa;	/* Location of 'a' zero-copy buffer. */
 	void	*bz_bufb;	/* Location of 'b' zero-copy buffer. */
-	bsd_size_t	 bz_buflen;	/* Size of zero-copy buffers. */
+	size_t	 bz_buflen;	/* Size of zero-copy buffers. */
 };
 
 #define	BIOCGBLEN	_IOR('B', 102, u_int)
@@ -202,7 +202,7 @@ struct bpf_xhdr {
 };
 /* Obsolete */
 struct bpf_hdr {
-	struct bsd_timeval	bh_tstamp;	/* time stamp */
+	struct timeval	bh_tstamp;	/* time stamp */
 	bpf_u_int32	bh_caplen;	/* length of captured portion */
 	bpf_u_int32	bh_datalen;	/* original length of packet */
 	u_short		bh_hdrlen;	/* length of bpf header (this struct

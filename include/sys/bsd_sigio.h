@@ -48,19 +48,19 @@ struct sigio {
 		struct	proc *siu_proc; /* (c)	process to receive SIGIO/SIGURG */
 		struct	pgrp *siu_pgrp; /* (c)	process group to receive ... */
 	} sio_u;
-	BSD_SLIST_ENTRY(sigio) sio_pgsigio;	/* (pg)	sigio's for process or group */
+	SLIST_ENTRY(sigio) sio_pgsigio;	/* (pg)	sigio's for process or group */
 	struct	sigio **sio_myref;	/* (c)	location of the pointer that holds
 					 * 	the reference to this structure */
-	struct	bsd_ucred *sio_ucred;	/* (c)	current credentials */
-	bsd_pid_t	sio_pgid;		/* (c)	pgid for signals */
+	struct	ucred *sio_ucred;	/* (c)	current credentials */
+	pid_t	sio_pgid;		/* (c)	pgid for signals */
 };
 #define	sio_proc	sio_u.siu_proc
 #define	sio_pgrp	sio_u.siu_pgrp
 
-BSD_SLIST_HEAD(sigiolst, sigio);
+SLIST_HEAD(sigiolst, sigio);
 
-bsd_pid_t	fgetown(struct sigio **sigiop);
-int	fsetown(bsd_pid_t pgid, struct sigio **sigiop);
+pid_t	fgetown(struct sigio **sigiop);
+int	fsetown(pid_t pgid, struct sigio **sigiop);
 void	funsetown(struct sigio **sigiop);
 void	funsetownlst(struct sigiolst *sigiolst);
 

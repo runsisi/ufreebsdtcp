@@ -72,28 +72,28 @@
  *	The proverbial page-out daemon.
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/vm/vm_pageout.c 240947 2012-09-26 03:54:55Z alc $");
 
 #include "opt_vm.h"
-#include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/kernel.h>
-#include <sys/eventhandler.h>
-#include <sys/lock.h>
-#include <sys/mutex.h>
-#include <sys/proc.h>
-#include <sys/kthread.h>
-#include <sys/ktr.h>
-#include <sys/mount.h>
-#include <sys/racct.h>
-#include <sys/resourcevar.h>
-#include <sys/sched.h>
-#include <sys/signalvar.h>
-#include <sys/vnode.h>
-#include <sys/vmmeter.h>
-#include <sys/sx.h>
-#include <sys/sysctl.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_eventhandler.h>
+#include <sys/bsd_lock.h>
+#include <sys/bsd_mutex.h>
+#include <sys/bsd_proc.h>
+#include <sys/bsd_kthread.h>
+#include <sys/bsd_ktr.h>
+#include <sys/bsd_mount.h>
+#include <sys/bsd_racct.h>
+#include <sys/bsd_resourcevar.h>
+#include <sys/bsd_sched.h>
+#include <sys/bsd_signalvar.h>
+#include <sys/bsd_vnode.h>
+#include <sys/bsd_vmmeter.h>
+#include <sys/bsd_sx.h>
+#include <sys/bsd_sysctl.h>
 
 #include <vm/vm.h>
 #include <vm/vm_param.h>
@@ -1420,7 +1420,7 @@ vm_pageout_page_stats()
 	pcount = cnt.v_active_count;
 	fullintervalcount += vm_pageout_stats_interval;
 	if (fullintervalcount < vm_pageout_full_stats_interval) {
-		tpcount = (bsd_int64_t)vm_pageout_stats_max * cnt.v_active_count /
+		tpcount = (int64_t)vm_pageout_stats_max * cnt.v_active_count /
 		    cnt.v_page_count;
 		if (pcount > tpcount)
 			pcount = tpcount;
@@ -1659,9 +1659,9 @@ vm_req_vmdaemon(int req)
 
 	mtx_lock(&vm_daemon_mtx);
 	vm_pageout_req_swapout |= req;
-	if ((V_ticks > (lastrun + hz)) || (V_ticks < lastrun)) {
+	if ((ticks > (lastrun + hz)) || (ticks < lastrun)) {
 		wakeup(&vm_daemon_needed);
-		lastrun = V_ticks;
+		lastrun = ticks;
 	}
 	mtx_unlock(&vm_daemon_mtx);
 }

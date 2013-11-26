@@ -10,15 +10,15 @@
  * See the source file for legal information
  */
 
-#include <sys/param.h>
-#include <sys/queue.h>
-#include <sys/kernel.h>
-#include <sys/kobj.h>
-#include <sys/param.h>
-#include <sys/lock.h>
-#include <sys/mutex.h>
-#include <sys/bus.h>
-#include <machine/bus.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_queue.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_kobj.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_lock.h>
+#include <sys/bsd_mutex.h>
+#include <sys/bsd_bus.h>
+#include <machine/bsd_bus.h>
 #include <dev/uart/uart.h>
 #include <dev/uart/uart_bus.h>
 #include "uart_if.h"

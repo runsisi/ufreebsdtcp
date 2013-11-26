@@ -95,58 +95,58 @@ struct thread;
 /*
  * Updates to kernel_vm_end are synchronized by the kernel_map's system mutex.
  */
-extern bsd_vm_offset_t kernel_vm_end;
+extern vm_offset_t kernel_vm_end;
 
 void		 pmap_activate(struct thread *td);
-void		 pmap_align_superpage(vm_object_t, bsd_vm_ooffset_t, bsd_vm_offset_t *,
-        bsd_vm_size_t);
+void		 pmap_align_superpage(vm_object_t, vm_ooffset_t, vm_offset_t *,
+		    vm_size_t);
 #if defined(__mips__)
 void		 pmap_align_tlb(vm_offset_t *);
 #endif
-void		 pmap_change_wiring(pmap_t, bsd_vm_offset_t, bsd_boolean_t);
-void		 pmap_clear_modify(bsd_vm_page_t m);
-void		 pmap_clear_reference(bsd_vm_page_t m);
-void		 pmap_copy(pmap_t, pmap_t, bsd_vm_offset_t, bsd_vm_size_t, bsd_vm_offset_t);
-void		 pmap_copy_page(bsd_vm_page_t, bsd_vm_page_t);
-void		 pmap_copy_pages(bsd_vm_page_t ma[], bsd_vm_offset_t a_offset,
-        bsd_vm_page_t mb[], bsd_vm_offset_t b_offset, int xfersize);
-void		 pmap_enter(pmap_t, bsd_vm_offset_t, vm_prot_t, bsd_vm_page_t,
-		    vm_prot_t, bsd_boolean_t);
-void		 pmap_enter_object(pmap_t pmap, bsd_vm_offset_t start,
-        bsd_vm_offset_t end, bsd_vm_page_t m_start, vm_prot_t prot);
-void		 pmap_enter_quick(pmap_t pmap, bsd_vm_offset_t va, bsd_vm_page_t m,
+void		 pmap_change_wiring(pmap_t, vm_offset_t, boolean_t);
+void		 pmap_clear_modify(vm_page_t m);
+void		 pmap_clear_reference(vm_page_t m);
+void		 pmap_copy(pmap_t, pmap_t, vm_offset_t, vm_size_t, vm_offset_t);
+void		 pmap_copy_page(vm_page_t, vm_page_t);
+void		 pmap_copy_pages(vm_page_t ma[], vm_offset_t a_offset,
+		    vm_page_t mb[], vm_offset_t b_offset, int xfersize);
+void		 pmap_enter(pmap_t, vm_offset_t, vm_prot_t, vm_page_t,
+		    vm_prot_t, boolean_t);
+void		 pmap_enter_object(pmap_t pmap, vm_offset_t start,
+		    vm_offset_t end, vm_page_t m_start, vm_prot_t prot);
+void		 pmap_enter_quick(pmap_t pmap, vm_offset_t va, vm_page_t m,
 		    vm_prot_t prot);
-bsd_vm_paddr_t	 pmap_extract(pmap_t pmap, bsd_vm_offset_t va);
-bsd_vm_page_t	 pmap_extract_and_hold(pmap_t pmap, bsd_vm_offset_t va,
+vm_paddr_t	 pmap_extract(pmap_t pmap, vm_offset_t va);
+vm_page_t	 pmap_extract_and_hold(pmap_t pmap, vm_offset_t va,
 		    vm_prot_t prot);
-void		 pmap_growkernel(bsd_vm_offset_t);
+void		 pmap_growkernel(vm_offset_t);
 void		 pmap_init(void);
-bsd_boolean_t	 pmap_is_modified(bsd_vm_page_t m);
-bsd_boolean_t	 pmap_is_prefaultable(pmap_t pmap, bsd_vm_offset_t va);
-bsd_boolean_t	 pmap_is_referenced(bsd_vm_page_t m);
-bsd_vm_offset_t	 pmap_map(bsd_vm_offset_t *, bsd_vm_paddr_t, bsd_vm_paddr_t, int);
-int		 pmap_mincore(pmap_t pmap, bsd_vm_offset_t addr,
-        bsd_vm_paddr_t *locked_pa);
-void		 pmap_object_init_pt(pmap_t pmap, bsd_vm_offset_t addr,
-		    vm_object_t object, bsd_vm_pindex_t pindex, bsd_vm_size_t size);
-bsd_boolean_t	 pmap_page_exists_quick(pmap_t pmap, bsd_vm_page_t m);
-void		 pmap_page_init(bsd_vm_page_t m);
-int		 pmap_page_wired_mappings(bsd_vm_page_t m);
+boolean_t	 pmap_is_modified(vm_page_t m);
+boolean_t	 pmap_is_prefaultable(pmap_t pmap, vm_offset_t va);
+boolean_t	 pmap_is_referenced(vm_page_t m);
+vm_offset_t	 pmap_map(vm_offset_t *, vm_paddr_t, vm_paddr_t, int);
+int		 pmap_mincore(pmap_t pmap, vm_offset_t addr,
+		    vm_paddr_t *locked_pa);
+void		 pmap_object_init_pt(pmap_t pmap, vm_offset_t addr,
+		    vm_object_t object, vm_pindex_t pindex, vm_size_t size);
+boolean_t	 pmap_page_exists_quick(pmap_t pmap, vm_page_t m);
+void		 pmap_page_init(vm_page_t m);
+int		 pmap_page_wired_mappings(vm_page_t m);
 int		 pmap_pinit(pmap_t);
 void		 pmap_pinit0(pmap_t);
-void		 pmap_protect(pmap_t, bsd_vm_offset_t, bsd_vm_offset_t, vm_prot_t);
-void		 pmap_qenter(bsd_vm_offset_t, bsd_vm_page_t *, int);
-void		 pmap_qremove(bsd_vm_offset_t, int);
+void		 pmap_protect(pmap_t, vm_offset_t, vm_offset_t, vm_prot_t);
+void		 pmap_qenter(vm_offset_t, vm_page_t *, int);
+void		 pmap_qremove(vm_offset_t, int);
 void		 pmap_release(pmap_t);
-void		 pmap_remove(pmap_t, bsd_vm_offset_t, bsd_vm_offset_t);
-void		 pmap_remove_all(bsd_vm_page_t m);
+void		 pmap_remove(pmap_t, vm_offset_t, vm_offset_t);
+void		 pmap_remove_all(vm_page_t m);
 void		 pmap_remove_pages(pmap_t);
-void		 pmap_remove_write(bsd_vm_page_t m);
-void		 pmap_sync_icache(pmap_t, bsd_vm_offset_t, bsd_vm_size_t);
-bsd_boolean_t	 pmap_ts_referenced(bsd_vm_page_t m);
-void		 pmap_zero_page(bsd_vm_page_t);
-void		 pmap_zero_page_area(bsd_vm_page_t, int off, int size);
-void		 pmap_zero_page_idle(bsd_vm_page_t);
+void		 pmap_remove_write(vm_page_t m);
+void		 pmap_sync_icache(pmap_t, vm_offset_t, vm_size_t);
+boolean_t	 pmap_ts_referenced(vm_page_t m);
+void		 pmap_zero_page(vm_page_t);
+void		 pmap_zero_page_area(vm_page_t, int off, int size);
+void		 pmap_zero_page_idle(vm_page_t);
 
 #define	pmap_resident_count(pm)	((pm)->pm_stats.resident_count)
 #define	pmap_wired_count(pm)	((pm)->pm_stats.wired_count)

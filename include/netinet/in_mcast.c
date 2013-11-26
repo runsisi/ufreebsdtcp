@@ -32,21 +32,21 @@
  * IPv4 multicast socket, group, and socket option processing module.
  */
 
-#include <sys/cdefs.h>
+#include <sys/bsd_cdefs.h>
 __FBSDID("$FreeBSD: release/9.2.0/sys/netinet/in_mcast.c 254630 2013-08-22 00:51:43Z delphij $");
 
-#include <sys/param.h>
-#include <sys/systm.h>
-#include <sys/kernel.h>
-#include <sys/malloc.h>
-#include <sys/mbuf.h>
-#include <sys/protosw.h>
-#include <sys/socket.h>
-#include <sys/socketvar.h>
-#include <sys/protosw.h>
-#include <sys/sysctl.h>
-#include <sys/ktr.h>
-#include <sys/tree.h>
+#include <sys/bsd_param.h>
+#include <sys/bsd_systm.h>
+#include <sys/bsd_kernel.h>
+#include <sys/bsd_malloc.h>
+#include <sys/bsd_mbuf.h>
+#include <sys/bsd_protosw.h>
+#include <sys/bsd_socket.h>
+#include <sys/bsd_socketvar.h>
+#include <sys/bsd_protosw.h>
+#include <sys/bsd_sysctl.h>
+#include <sys/bsd_ktr.h>
+#include <sys/bsd_tree.h>
 
 #include <net/if.h>
 #include <net/if_dl.h>
@@ -66,10 +66,10 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/netinet/in_mcast.c 254630 2013-08-22 00:51
 
 #ifndef __SOCKUNION_DECLARED
 union sockunion {
-	struct bsd_sockaddr_storage	ss;
-	struct bsd_sockaddr		sa;
+	struct sockaddr_storage	ss;
+	struct sockaddr		sa;
 	struct sockaddr_dl	sdl;
-	struct bsd_sockaddr_in	sin;
+	struct sockaddr_in	sin;
 };
 typedef union sockunion sockunion_t;
 #define __SOCKUNION_DECLARED
@@ -116,27 +116,27 @@ MTX_SYSINIT(in_multi_mtx, &in_multi_mtx, "in_multi_mtx", MTX_DEF);
  */
 static void	imf_commit(struct in_mfilter *);
 static int	imf_get_source(struct in_mfilter *imf,
-		    const struct bsd_sockaddr_in *psin,
+		    const struct sockaddr_in *psin,
 		    struct in_msource **);
 static struct in_msource *
-		imf_graft(struct in_mfilter *, const bsd_uint8_t,
-		    const struct bsd_sockaddr_in *);
+		imf_graft(struct in_mfilter *, const uint8_t,
+		    const struct sockaddr_in *);
 static void	imf_leave(struct in_mfilter *);
-static int	imf_prune(struct in_mfilter *, const struct bsd_sockaddr_in *);
+static int	imf_prune(struct in_mfilter *, const struct sockaddr_in *);
 static void	imf_purge(struct in_mfilter *);
 static void	imf_rollback(struct in_mfilter *);
 static void	imf_reap(struct in_mfilter *);
 static int	imo_grow(struct ip_moptions *);
-static bsd_size_t	imo_match_group(const struct ip_moptions *,
-		    const struct ifnet *, const struct bsd_sockaddr *);
+static size_t	imo_match_group(const struct ip_moptions *,
+		    const struct ifnet *, const struct sockaddr *);
 static struct in_msource *
-		imo_match_source(const struct ip_moptions *, const bsd_size_t,
-		    const struct bsd_sockaddr *);
+		imo_match_source(const struct ip_moptions *, const size_t,
+		    const struct sockaddr *);
 static void	ims_merge(struct ip_msource *ims,
 		    const struct in_msource *lims, const int rollback);
-static int	in_getmulti(struct ifnet *, const struct bsd_in_addr *,
+static int	in_getmulti(struct ifnet *, const struct in_addr *,
 		    struct in_multi **);
-static int	inm_get_source(struct in_multi *inm, const bsd_in_addr_t haddr,
+static int	inm_get_source(struct in_multi *inm, const in_addr_t haddr,
 		    const int noalloc, struct ip_msource **pims);
 static int	inm_is_ifp_detached(const struct in_multi *);
 static int	inm_merge(struct in_multi *, /*const*/ struct in_mfilter *);
@@ -144,15 +144,15 @@ static void	inm_purge(struct in_multi *);
 static void	inm_reap(struct in_multi *);
 static struct ip_moptions *
 		inp_findmoptions(struct inpcb *);
-static int	inp_get_source_filters(struct inpcb *, struct bsd_sockopt *);
-static int	inp_join_group(struct inpcb *, struct bsd_sockopt *);
-static int	inp_leave_group(struct inpcb *, struct bsd_sockopt *);
+static int	inp_get_source_filters(struct inpcb *, struct sockopt *);
+static int	inp_join_group(struct inpcb *, struct sockopt *);
+static int	inp_leave_group(struct inpcb *, struct sockopt *);
 static struct ifnet *
 		inp_lookup_mcast_ifp(const struct inpcb *,
-		    const struct bsd_sockaddr_in *, const struct bsd_in_addr);
-static int	inp_block_unblock_source(struct inpcb *, struct bsd_sockopt *);
-static int	inp_set_multicast_if(struct inpcb *, struct bsd_sockopt *);
-static int	inp_set_source_filters(struct inpcb *, struct bsd_sockopt *);
+		    const struct sockaddr_in *, const struct in_addr);
+static int	inp_block_unblock_source(struct inpcb *, struct sockopt *);
+static int	inp_set_multicast_if(struct inpcb *, struct sockopt *);
+static int	inp_set_source_filters(struct inpcb *, struct sockopt *);
 static int	sysctl_ip_mcast_filters(SYSCTL_HANDLER_ARGS);
 
 static SYSCTL_NODE(_net_inet_ip, OID_AUTO, mcast, CTLFLAG_RW, 0,
@@ -226,9 +226,9 @@ imo_grow(struct ip_moptions *imo)
 	struct in_multi		**omships;
 	struct in_mfilter	 *nmfilters;
 	struct in_mfilter	 *omfilters;
-	bsd_size_t			  idx;
-	bsd_size_t			  newmax;
-	bsd_size_t			  oldmax;
+	size_t			  idx;
+	size_t			  newmax;
+	size_t			  oldmax;
 
 	nmships = NULL;
 	nmfilters = NULL;
@@ -238,9 +238,9 @@ imo_grow(struct ip_moptions *imo)
 	newmax = ((oldmax + 1) * 2) - 1;
 
 	if (newmax <= IP_MAX_MEMBERSHIPS) {
-		nmships = (struct in_multi **)bsd_realloc(omships,
+		nmships = (struct in_multi **)realloc(omships,
 		    sizeof(struct in_multi *) * newmax, M_IPMOPTS, M_NOWAIT);
-		nmfilters = (struct in_mfilter *)bsd_realloc(omfilters,
+		nmfilters = (struct in_mfilter *)realloc(omfilters,
 		    sizeof(struct in_mfilter) * newmax, M_INMFILTER, M_NOWAIT);
 		if (nmships != NULL && nmfilters != NULL) {
 			/* Initialize newly allocated source filter heads. */
@@ -256,9 +256,9 @@ imo_grow(struct ip_moptions *imo)
 
 	if (nmships == NULL || nmfilters == NULL) {
 		if (nmships != NULL)
-			bsd_free(nmships, M_IPMOPTS);
+			free(nmships, M_IPMOPTS);
 		if (nmfilters != NULL)
-			bsd_free(nmfilters, M_INMFILTER);
+			free(nmfilters, M_INMFILTER);
 		return (ETOOMANYREFS);
 	}
 
@@ -270,16 +270,16 @@ imo_grow(struct ip_moptions *imo)
  * which matches the specified group, and optionally an interface.
  * Return its index into the array, or -1 if not found.
  */
-static bsd_size_t
+static size_t
 imo_match_group(const struct ip_moptions *imo, const struct ifnet *ifp,
-    const struct bsd_sockaddr *group)
+    const struct sockaddr *group)
 {
-	const struct bsd_sockaddr_in *gsin;
+	const struct sockaddr_in *gsin;
 	struct in_multi	**pinm;
 	int		  idx;
 	int		  nmships;
 
-	gsin = (const struct bsd_sockaddr_in *)group;
+	gsin = (const struct sockaddr_in *)group;
 
 	/* The imo_membership array may be lazy allocated. */
 	if (imo->imo_membership == NULL || imo->imo_num_memberships == 0)
@@ -309,8 +309,8 @@ imo_match_group(const struct ip_moptions *imo, const struct ifnet *ifp,
  * it exists, which may not be the desired behaviour.
  */
 static struct in_msource *
-imo_match_source(const struct ip_moptions *imo, const bsd_size_t gidx,
-    const struct bsd_sockaddr *src)
+imo_match_source(const struct ip_moptions *imo, const size_t gidx,
+    const struct sockaddr *src)
 {
 	struct ip_msource	 find;
 	struct in_mfilter	*imf;
@@ -342,9 +342,9 @@ imo_match_source(const struct ip_moptions *imo, const bsd_size_t gidx,
  */
 int
 imo_multi_filter(const struct ip_moptions *imo, const struct ifnet *ifp,
-    const struct bsd_sockaddr *group, const struct bsd_sockaddr *src)
+    const struct sockaddr *group, const struct sockaddr *src)
 {
-	bsd_size_t gidx;
+	size_t gidx;
 	struct in_msource *ims;
 	int mode;
 
@@ -382,10 +382,10 @@ imo_multi_filter(const struct ip_moptions *imo, const struct ifnet *ifp,
  * Return 0 if successful, otherwise return an appropriate error code.
  */
 static int
-in_getmulti(struct ifnet *ifp, const struct bsd_in_addr *group,
+in_getmulti(struct ifnet *ifp, const struct in_addr *group,
     struct in_multi **pinm)
 {
-	struct bsd_sockaddr_in	 gsin;
+	struct sockaddr_in	 gsin;
 	struct ifmultiaddr	*ifma;
 	struct in_ifinfo	*ii;
 	struct in_multi		*inm;
@@ -410,14 +410,14 @@ in_getmulti(struct ifnet *ifp, const struct bsd_in_addr *group,
 
 	memset(&gsin, 0, sizeof(gsin));
 	gsin.sin_family = AF_INET;
-	gsin.sin_len = sizeof(struct bsd_sockaddr_in);
+	gsin.sin_len = sizeof(struct sockaddr_in);
 	gsin.sin_addr = *group;
 
 	/*
 	 * Check if a link-layer group is already associated
 	 * with this network-layer group on the given ifnet.
 	 */
-	error = if_addmulti(ifp, (struct bsd_sockaddr *)&gsin, &ifma);
+	error = if_addmulti(ifp, (struct sockaddr *)&gsin, &ifma);
 	if (error != 0)
 		return (error);
 
@@ -459,7 +459,7 @@ in_getmulti(struct ifnet *ifp, const struct bsd_in_addr *group,
 	 *
 	 * The initial source filter state is INCLUDE, {} as per the RFC.
 	 */
-	inm = bsd_malloc(sizeof(*inm), M_IPMADDR, M_NOWAIT | M_ZERO);
+	inm = malloc(sizeof(*inm), M_IPMADDR, M_NOWAIT | M_ZERO);
 	if (inm == NULL) {
 		if_delmulti_ifma(ifma);
 		IF_ADDR_WUNLOCK(ifp);
@@ -522,7 +522,7 @@ inm_release_locked(struct in_multi *inm)
 
 	inm_purge(inm);
 
-	bsd_free(inm, M_IPMADDR);
+	free(inm, M_IPMADDR);
 
 	if_delmulti_ifma(ifma);
 }
@@ -572,7 +572,7 @@ inm_clear_recorded(struct in_multi *inm)
  * Return <0 if any error occured (negated errno code).
  */
 int
-inm_record_source(struct in_multi *inm, const bsd_in_addr_t naddr)
+inm_record_source(struct in_multi *inm, const in_addr_t naddr)
 {
 	struct ip_msource	 find;
 	struct ip_msource	*ims, *nims;
@@ -586,7 +586,7 @@ inm_record_source(struct in_multi *inm, const bsd_in_addr_t naddr)
 	if (ims == NULL) {
 		if (inm->inm_nsrc == in_mcast_maxgrpsrc)
 			return (-ENOSPC);
-		nims = bsd_malloc(sizeof(struct ip_msource), M_IPMSOURCE,
+		nims = malloc(sizeof(struct ip_msource), M_IPMSOURCE,
 		    M_NOWAIT | M_ZERO);
 		if (nims == NULL)
 			return (-ENOMEM);
@@ -618,7 +618,7 @@ inm_record_source(struct in_multi *inm, const bsd_in_addr_t naddr)
  * SMPng: May be called with locks held; malloc must not block.
  */
 static int
-imf_get_source(struct in_mfilter *imf, const struct bsd_sockaddr_in *psin,
+imf_get_source(struct in_mfilter *imf, const struct sockaddr_in *psin,
     struct in_msource **plims)
 {
 	struct ip_msource	 find;
@@ -637,7 +637,7 @@ imf_get_source(struct in_mfilter *imf, const struct bsd_sockaddr_in *psin,
 	if (lims == NULL) {
 		if (imf->imf_nsrc == in_mcast_maxsocksrc)
 			return (ENOSPC);
-		nims = bsd_malloc(sizeof(struct in_msource), M_INMFILTER,
+		nims = malloc(sizeof(struct in_msource), M_INMFILTER,
 		    M_NOWAIT | M_ZERO);
 		if (nims == NULL)
 			return (ENOMEM);
@@ -662,13 +662,13 @@ imf_get_source(struct in_mfilter *imf, const struct bsd_sockaddr_in *psin,
  * Return the pointer to the new node, otherwise return NULL.
  */
 static struct in_msource *
-imf_graft(struct in_mfilter *imf, const bsd_uint8_t st1,
-    const struct bsd_sockaddr_in *psin)
+imf_graft(struct in_mfilter *imf, const uint8_t st1,
+    const struct sockaddr_in *psin)
 {
 	struct ip_msource	*nims;
 	struct in_msource	*lims;
 
-	nims = bsd_malloc(sizeof(struct in_msource), M_INMFILTER,
+	nims = malloc(sizeof(struct in_msource), M_INMFILTER,
 	    M_NOWAIT | M_ZERO);
 	if (nims == NULL)
 		return (NULL);
@@ -691,7 +691,7 @@ imf_graft(struct in_mfilter *imf, const bsd_uint8_t st1,
  * Return 0 if no error occurred, otherwise return an errno value.
  */
 static int
-imf_prune(struct in_mfilter *imf, const struct bsd_sockaddr_in *psin)
+imf_prune(struct in_mfilter *imf, const struct sockaddr_in *psin)
 {
 	struct ip_msource	 find;
 	struct ip_msource	*ims;
@@ -728,7 +728,7 @@ imf_rollback(struct in_mfilter *imf)
 			/* revert source added t1 */
 			CTR2(KTR_IGMPV3, "%s: free ims %p", __func__, ims);
 			RB_REMOVE(ip_msource_tree, &imf->imf_sources, ims);
-			bsd_free(ims, M_INMFILTER);
+			free(ims, M_INMFILTER);
 			imf->imf_nsrc--;
 		}
 	}
@@ -782,7 +782,7 @@ imf_reap(struct in_mfilter *imf)
 		    (lims->imsl_st[1] == MCAST_UNDEFINED)) {
 			CTR2(KTR_IGMPV3, "%s: free lims %p", __func__, ims);
 			RB_REMOVE(ip_msource_tree, &imf->imf_sources, ims);
-			bsd_free(ims, M_INMFILTER);
+			free(ims, M_INMFILTER);
 			imf->imf_nsrc--;
 		}
 	}
@@ -799,7 +799,7 @@ imf_purge(struct in_mfilter *imf)
 	RB_FOREACH_SAFE(ims, ip_msource_tree, &imf->imf_sources, tims) {
 		CTR2(KTR_IGMPV3, "%s: free ims %p", __func__, ims);
 		RB_REMOVE(ip_msource_tree, &imf->imf_sources, ims);
-		bsd_free(ims, M_INMFILTER);
+		free(ims, M_INMFILTER);
 		imf->imf_nsrc--;
 	}
 	imf->imf_st[0] = imf->imf_st[1] = MCAST_UNDEFINED;
@@ -819,13 +819,13 @@ imf_purge(struct in_mfilter *imf)
  * Return 0 if successful, otherwise return a non-zero error code.
  */
 static int
-inm_get_source(struct in_multi *inm, const bsd_in_addr_t haddr,
+inm_get_source(struct in_multi *inm, const in_addr_t haddr,
     const int noalloc, struct ip_msource **pims)
 {
 	struct ip_msource	 find;
 	struct ip_msource	*ims, *nims;
 #ifdef KTR
-	struct bsd_in_addr ia;
+	struct in_addr ia;
 #endif
 
 	find.ims_haddr = haddr;
@@ -833,7 +833,7 @@ inm_get_source(struct in_multi *inm, const bsd_in_addr_t haddr,
 	if (ims == NULL && !noalloc) {
 		if (inm->inm_nsrc == in_mcast_maxgrpsrc)
 			return (ENOSPC);
-		nims = bsd_malloc(sizeof(struct ip_msource), M_IPMSOURCE,
+		nims = malloc(sizeof(struct ip_msource), M_IPMSOURCE,
 		    M_NOWAIT | M_ZERO);
 		if (nims == NULL)
 			return (ENOMEM);
@@ -862,7 +862,7 @@ ims_merge(struct ip_msource *ims, const struct in_msource *lims,
 {
 	int n = rollback ? -1 : 1;
 #ifdef KTR
-	struct bsd_in_addr ia;
+	struct in_addr ia;
 
 	ia.s_addr = htonl(ims->ims_haddr);
 #endif
@@ -1059,7 +1059,7 @@ inm_reap(struct in_multi *inm)
 			continue;
 		CTR2(KTR_IGMPV3, "%s: free ims %p", __func__, ims);
 		RB_REMOVE(ip_msource_tree, &inm->inm_srcs, ims);
-		bsd_free(ims, M_IPMSOURCE);
+		free(ims, M_IPMSOURCE);
 		inm->inm_nsrc--;
 	}
 }
@@ -1075,7 +1075,7 @@ inm_purge(struct in_multi *inm)
 	RB_FOREACH_SAFE(ims, ip_msource_tree, &inm->inm_srcs, tims) {
 		CTR2(KTR_IGMPV3, "%s: free ims %p", __func__, ims);
 		RB_REMOVE(ip_msource_tree, &inm->inm_srcs, ims);
-		bsd_free(ims, M_IPMSOURCE);
+		free(ims, M_IPMSOURCE);
 		inm->inm_nsrc--;
 	}
 }
@@ -1088,7 +1088,7 @@ inm_purge(struct in_multi *inm)
  * at this point, so we assume it's OK to recurse.
  */
 int
-in_joingroup(struct ifnet *ifp, const struct bsd_in_addr *gina,
+in_joingroup(struct ifnet *ifp, const struct in_addr *gina,
     /*const*/ struct in_mfilter *imf, struct in_multi **pinm)
 {
 	int error;
@@ -1110,7 +1110,7 @@ in_joingroup(struct ifnet *ifp, const struct bsd_in_addr *gina,
  * code is returned.
  */
 int
-in_joingroup_locked(struct ifnet *ifp, const struct bsd_in_addr *gina,
+in_joingroup_locked(struct ifnet *ifp, const struct in_addr *gina,
     /*const*/ struct in_mfilter *imf, struct in_multi **pinm)
 {
 	struct in_mfilter	 timf;
@@ -1249,7 +1249,7 @@ in_leavegroup_locked(struct in_multi *inm, /*const*/ struct in_mfilter *imf)
  * This KPI is for legacy kernel consumers only.
  */
 struct in_multi *
-in_addmulti(struct bsd_in_addr *ap, struct ifnet *ifp)
+in_addmulti(struct in_addr *ap, struct ifnet *ifp)
 {
 	struct in_multi *pinm;
 	int error;
@@ -1288,44 +1288,44 @@ in_delmulti(struct in_multi *inm)
  * Return 0 if successful, otherwise return an appropriate error code.
  */
 static int
-inp_block_unblock_source(struct inpcb *inp, struct bsd_sockopt *sopt)
+inp_block_unblock_source(struct inpcb *inp, struct sockopt *sopt)
 {
-	struct bsd_group_source_req		 gsr;
+	struct group_source_req		 gsr;
 	sockunion_t			*gsa, *ssa;
 	struct ifnet			*ifp;
 	struct in_mfilter		*imf;
 	struct ip_moptions		*imo;
 	struct in_msource		*ims;
 	struct in_multi			*inm;
-	bsd_size_t				 idx;
-	bsd_uint16_t			 fmode;
+	size_t				 idx;
+	uint16_t			 fmode;
 	int				 error, doblock;
 
 	ifp = NULL;
 	error = 0;
 	doblock = 0;
 
-	memset(&gsr, 0, sizeof(struct bsd_group_source_req));
+	memset(&gsr, 0, sizeof(struct group_source_req));
 	gsa = (sockunion_t *)&gsr.gsr_group;
 	ssa = (sockunion_t *)&gsr.gsr_source;
 
 	switch (sopt->sopt_name) {
 	case IP_BLOCK_SOURCE:
 	case IP_UNBLOCK_SOURCE: {
-		struct bsd_ip_mreq_source	 mreqs;
+		struct ip_mreq_source	 mreqs;
 
 		error = sooptcopyin(sopt, &mreqs,
-		    sizeof(struct bsd_ip_mreq_source),
-		    sizeof(struct bsd_ip_mreq_source));
+		    sizeof(struct ip_mreq_source),
+		    sizeof(struct ip_mreq_source));
 		if (error)
 			return (error);
 
 		gsa->sin.sin_family = AF_INET;
-		gsa->sin.sin_len = sizeof(struct bsd_sockaddr_in);
+		gsa->sin.sin_len = sizeof(struct sockaddr_in);
 		gsa->sin.sin_addr = mreqs.imr_multiaddr;
 
 		ssa->sin.sin_family = AF_INET;
-		ssa->sin.sin_len = sizeof(struct bsd_sockaddr_in);
+		ssa->sin.sin_len = sizeof(struct sockaddr_in);
 		ssa->sin.sin_addr = mreqs.imr_sourceaddr;
 
 		if (!in_nullhost(mreqs.imr_interface))
@@ -1342,17 +1342,17 @@ inp_block_unblock_source(struct inpcb *inp, struct bsd_sockopt *sopt)
 	case MCAST_BLOCK_SOURCE:
 	case MCAST_UNBLOCK_SOURCE:
 		error = sooptcopyin(sopt, &gsr,
-		    sizeof(struct bsd_group_source_req),
-		    sizeof(struct bsd_group_source_req));
+		    sizeof(struct group_source_req),
+		    sizeof(struct group_source_req));
 		if (error)
 			return (error);
 
 		if (gsa->sin.sin_family != AF_INET ||
-		    gsa->sin.sin_len != sizeof(struct bsd_sockaddr_in))
+		    gsa->sin.sin_len != sizeof(struct sockaddr_in))
 			return (EINVAL);
 
 		if (ssa->sin.sin_family != AF_INET ||
-		    ssa->sin.sin_len != sizeof(struct bsd_sockaddr_in))
+		    ssa->sin.sin_len != sizeof(struct sockaddr_in))
 			return (EINVAL);
 
 		if (gsr.gsr_interface == 0 || V_if_index < gsr.gsr_interface)
@@ -1478,7 +1478,7 @@ inp_findmoptions(struct inpcb *inp)
 	struct ip_moptions	 *imo;
 	struct in_multi		**immp;
 	struct in_mfilter	 *imfp;
-	bsd_size_t			  idx;
+	size_t			  idx;
 
 	INP_WLOCK(inp);
 	if (inp->inp_moptions != NULL)
@@ -1486,10 +1486,10 @@ inp_findmoptions(struct inpcb *inp)
 
 	INP_WUNLOCK(inp);
 
-	imo = bsd_malloc(sizeof(*imo), M_IPMOPTS, M_WAITOK);
-	immp = bsd_malloc(sizeof(*immp) * IP_MIN_MEMBERSHIPS, M_IPMOPTS,
+	imo = malloc(sizeof(*imo), M_IPMOPTS, M_WAITOK);
+	immp = malloc(sizeof(*immp) * IP_MIN_MEMBERSHIPS, M_IPMOPTS,
 	    M_WAITOK | M_ZERO);
-	imfp = bsd_malloc(sizeof(struct in_mfilter) * IP_MIN_MEMBERSHIPS,
+	imfp = malloc(sizeof(struct in_mfilter) * IP_MIN_MEMBERSHIPS,
 	    M_INMFILTER, M_WAITOK);
 
 	imo->imo_multicast_ifp = NULL;
@@ -1508,9 +1508,9 @@ inp_findmoptions(struct inpcb *inp)
 
 	INP_WLOCK(inp);
 	if (inp->inp_moptions != NULL) {
-		bsd_free(imfp, M_INMFILTER);
-		bsd_free(immp, M_IPMOPTS);
-		bsd_free(imo, M_IPMOPTS);
+		free(imfp, M_INMFILTER);
+		free(immp, M_IPMOPTS);
+		free(imo, M_IPMOPTS);
 		return (inp->inp_moptions);
 	}
 	inp->inp_moptions = imo;
@@ -1526,7 +1526,7 @@ void
 inp_freemoptions(struct ip_moptions *imo)
 {
 	struct in_mfilter	*imf;
-	bsd_size_t			 idx, nmships;
+	size_t			 idx, nmships;
 
 	KASSERT(imo != NULL, ("%s: ip_moptions is NULL", __func__));
 
@@ -1541,9 +1541,9 @@ inp_freemoptions(struct ip_moptions *imo)
 	}
 
 	if (imo->imo_mfilters)
-		bsd_free(imo->imo_mfilters, M_INMFILTER);
-	bsd_free(imo->imo_membership, M_IPMOPTS);
-	bsd_free(imo, M_IPMOPTS);
+		free(imo->imo_mfilters, M_INMFILTER);
+	free(imo->imo_membership, M_IPMOPTS);
+	free(imo, M_IPMOPTS);
 }
 
 /*
@@ -1551,20 +1551,20 @@ inp_freemoptions(struct ip_moptions *imo)
  * Called with INP lock held; returns with lock released.
  */
 static int
-inp_get_source_filters(struct inpcb *inp, struct bsd_sockopt *sopt)
+inp_get_source_filters(struct inpcb *inp, struct sockopt *sopt)
 {
-	struct __bsd_msfilterreq	 msfr;
+	struct __msfilterreq	 msfr;
 	sockunion_t		*gsa;
 	struct ifnet		*ifp;
 	struct ip_moptions	*imo;
 	struct in_mfilter	*imf;
 	struct ip_msource	*ims;
 	struct in_msource	*lims;
-	struct bsd_sockaddr_in	*psin;
-	struct bsd_sockaddr_storage	*ptss;
-	struct bsd_sockaddr_storage	*tss;
+	struct sockaddr_in	*psin;
+	struct sockaddr_storage	*ptss;
+	struct sockaddr_storage	*tss;
 	int			 error;
-	bsd_size_t			 idx, nsrcs, ncsrcs;
+	size_t			 idx, nsrcs, ncsrcs;
 
 	INP_WLOCK_ASSERT(inp);
 
@@ -1573,8 +1573,8 @@ inp_get_source_filters(struct inpcb *inp, struct bsd_sockopt *sopt)
 
 	INP_WUNLOCK(inp);
 
-	error = sooptcopyin(sopt, &msfr, sizeof(struct __bsd_msfilterreq),
-	    sizeof(struct __bsd_msfilterreq));
+	error = sooptcopyin(sopt, &msfr, sizeof(struct __msfilterreq),
+	    sizeof(struct __msfilterreq));
 	if (error)
 		return (error);
 
@@ -1618,7 +1618,7 @@ inp_get_source_filters(struct inpcb *inp, struct bsd_sockopt *sopt)
 		msfr.msfr_nsrcs = in_mcast_maxsocksrc;
 	tss = NULL;
 	if (msfr.msfr_srcs != NULL && msfr.msfr_nsrcs > 0) {
-		tss = bsd_malloc(sizeof(struct bsd_sockaddr_storage) * msfr.msfr_nsrcs,
+		tss = malloc(sizeof(struct sockaddr_storage) * msfr.msfr_nsrcs,
 		    M_TEMP, M_NOWAIT | M_ZERO);
 		if (tss == NULL) {
 			INP_WUNLOCK(inp);
@@ -1640,9 +1640,9 @@ inp_get_source_filters(struct inpcb *inp, struct bsd_sockopt *sopt)
 			continue;
 		++ncsrcs;
 		if (tss != NULL && nsrcs > 0) {
-			psin = (struct bsd_sockaddr_in *)ptss;
+			psin = (struct sockaddr_in *)ptss;
 			psin->sin_family = AF_INET;
-			psin->sin_len = sizeof(struct bsd_sockaddr_in);
+			psin->sin_len = sizeof(struct sockaddr_in);
 			psin->sin_addr.s_addr = htonl(lims->ims_haddr);
 			psin->sin_port = 0;
 			++ptss;
@@ -1654,14 +1654,14 @@ inp_get_source_filters(struct inpcb *inp, struct bsd_sockopt *sopt)
 
 	if (tss != NULL) {
 		error = copyout(tss, msfr.msfr_srcs,
-		    sizeof(struct bsd_sockaddr_storage) * msfr.msfr_nsrcs);
-		bsd_free(tss, M_TEMP);
+		    sizeof(struct sockaddr_storage) * msfr.msfr_nsrcs);
+		free(tss, M_TEMP);
 		if (error)
 			return (error);
 	}
 
 	msfr.msfr_nsrcs = ncsrcs;
-	error = sooptcopyout(sopt, &msfr, sizeof(struct __bsd_msfilterreq));
+	error = sooptcopyout(sopt, &msfr, sizeof(struct __msfilterreq));
 
 	return (error);
 }
@@ -1670,9 +1670,9 @@ inp_get_source_filters(struct inpcb *inp, struct bsd_sockopt *sopt)
  * Return the IP multicast options in response to user getsockopt().
  */
 int
-inp_getmoptions(struct inpcb *inp, struct bsd_sockopt *sopt)
+inp_getmoptions(struct inpcb *inp, struct sockopt *sopt)
 {
-	struct bsd_ip_mreqn		 mreqn;
+	struct ip_mreqn		 mreqn;
 	struct ip_moptions	*imo;
 	struct ifnet		*ifp;
 	struct in_ifaddr	*ia;
@@ -1704,7 +1704,7 @@ inp_getmoptions(struct inpcb *inp, struct bsd_sockopt *sopt)
 		break;
 
 	case IP_MULTICAST_IF:
-		memset(&mreqn, 0, sizeof(struct bsd_ip_mreqn));
+		memset(&mreqn, 0, sizeof(struct ip_mreqn));
 		if (imo != NULL) {
 			ifp = imo->imo_multicast_ifp;
 			if (!in_nullhost(imo->imo_multicast_addr)) {
@@ -1720,12 +1720,12 @@ inp_getmoptions(struct inpcb *inp, struct bsd_sockopt *sopt)
 			}
 		}
 		INP_WUNLOCK(inp);
-		if (sopt->sopt_valsize == sizeof(struct bsd_ip_mreqn)) {
+		if (sopt->sopt_valsize == sizeof(struct ip_mreqn)) {
 			error = sooptcopyout(sopt, &mreqn,
-			    sizeof(struct bsd_ip_mreqn));
+			    sizeof(struct ip_mreqn));
 		} else {
 			error = sooptcopyout(sopt, &mreqn.imr_address,
-			    sizeof(struct bsd_in_addr));
+			    sizeof(struct in_addr));
 		}
 		break;
 
@@ -1800,7 +1800,7 @@ inp_getmoptions(struct inpcb *inp, struct bsd_sockopt *sopt)
  */
 static struct ifnet *
 inp_lookup_mcast_ifp(const struct inpcb *inp,
-    const struct bsd_sockaddr_in *gsin, const struct bsd_in_addr ina)
+    const struct sockaddr_in *gsin, const struct in_addr ina)
 {
 	struct ifnet *ifp;
 
@@ -1815,7 +1815,7 @@ inp_lookup_mcast_ifp(const struct inpcb *inp,
 		struct route ro;
 
 		ro.ro_rt = NULL;
-		memcpy(&ro.ro_dst, gsin, sizeof(struct bsd_sockaddr_in));
+		memcpy(&ro.ro_dst, gsin, sizeof(struct sockaddr_in));
 		in_rtalloc_ign(&ro, 0, inp ? inp->inp_inc.inc_fibnum : 0);
 		if (ro.ro_rt != NULL) {
 			ifp = ro.ro_rt->rt_ifp;
@@ -1846,16 +1846,16 @@ inp_lookup_mcast_ifp(const struct inpcb *inp,
  * Join an IPv4 multicast group, possibly with a source.
  */
 static int
-inp_join_group(struct inpcb *inp, struct bsd_sockopt *sopt)
+inp_join_group(struct inpcb *inp, struct sockopt *sopt)
 {
-	struct bsd_group_source_req		 gsr;
+	struct group_source_req		 gsr;
 	sockunion_t			*gsa, *ssa;
 	struct ifnet			*ifp;
 	struct in_mfilter		*imf;
 	struct ip_moptions		*imo;
 	struct in_multi			*inm;
 	struct in_msource		*lims;
-	bsd_size_t				 idx;
+	size_t				 idx;
 	int				 error, is_new;
 
 	ifp = NULL;
@@ -1864,7 +1864,7 @@ inp_join_group(struct inpcb *inp, struct bsd_sockopt *sopt)
 	error = 0;
 	is_new = 0;
 
-	memset(&gsr, 0, sizeof(struct bsd_group_source_req));
+	memset(&gsr, 0, sizeof(struct group_source_req));
 	gsa = (sockunion_t *)&gsr.gsr_group;
 	gsa->ss.ss_family = AF_UNSPEC;
 	ssa = (sockunion_t *)&gsr.gsr_source;
@@ -1873,12 +1873,12 @@ inp_join_group(struct inpcb *inp, struct bsd_sockopt *sopt)
 	switch (sopt->sopt_name) {
 	case IP_ADD_MEMBERSHIP:
 	case IP_ADD_SOURCE_MEMBERSHIP: {
-		struct bsd_ip_mreq_source	 mreqs;
+		struct ip_mreq_source	 mreqs;
 
 		if (sopt->sopt_name == IP_ADD_MEMBERSHIP) {
 			error = sooptcopyin(sopt, &mreqs,
-			    sizeof(struct bsd_ip_mreq),
-			    sizeof(struct bsd_ip_mreq));
+			    sizeof(struct ip_mreq),
+			    sizeof(struct ip_mreq));
 			/*
 			 * Do argument switcharoo from ip_mreq into
 			 * ip_mreq_source to avoid using two instances.
@@ -1887,19 +1887,19 @@ inp_join_group(struct inpcb *inp, struct bsd_sockopt *sopt)
 			mreqs.imr_sourceaddr.s_addr = INADDR_ANY;
 		} else if (sopt->sopt_name == IP_ADD_SOURCE_MEMBERSHIP) {
 			error = sooptcopyin(sopt, &mreqs,
-			    sizeof(struct bsd_ip_mreq_source),
-			    sizeof(struct bsd_ip_mreq_source));
+			    sizeof(struct ip_mreq_source),
+			    sizeof(struct ip_mreq_source));
 		}
 		if (error)
 			return (error);
 
 		gsa->sin.sin_family = AF_INET;
-		gsa->sin.sin_len = sizeof(struct bsd_sockaddr_in);
+		gsa->sin.sin_len = sizeof(struct sockaddr_in);
 		gsa->sin.sin_addr = mreqs.imr_multiaddr;
 
 		if (sopt->sopt_name == IP_ADD_SOURCE_MEMBERSHIP) {
 			ssa->sin.sin_family = AF_INET;
-			ssa->sin.sin_len = sizeof(struct bsd_sockaddr_in);
+			ssa->sin.sin_len = sizeof(struct sockaddr_in);
 			ssa->sin.sin_addr = mreqs.imr_sourceaddr;
 		}
 
@@ -1917,18 +1917,18 @@ inp_join_group(struct inpcb *inp, struct bsd_sockopt *sopt)
 	case MCAST_JOIN_SOURCE_GROUP:
 		if (sopt->sopt_name == MCAST_JOIN_GROUP) {
 			error = sooptcopyin(sopt, &gsr,
-			    sizeof(struct bsd_group_req),
-			    sizeof(struct bsd_group_req));
+			    sizeof(struct group_req),
+			    sizeof(struct group_req));
 		} else if (sopt->sopt_name == MCAST_JOIN_SOURCE_GROUP) {
 			error = sooptcopyin(sopt, &gsr,
-			    sizeof(struct bsd_group_source_req),
-			    sizeof(struct bsd_group_source_req));
+			    sizeof(struct group_source_req),
+			    sizeof(struct group_source_req));
 		}
 		if (error)
 			return (error);
 
 		if (gsa->sin.sin_family != AF_INET ||
-		    gsa->sin.sin_len != sizeof(struct bsd_sockaddr_in))
+		    gsa->sin.sin_len != sizeof(struct sockaddr_in))
 			return (EINVAL);
 
 		/*
@@ -1938,7 +1938,7 @@ inp_join_group(struct inpcb *inp, struct bsd_sockopt *sopt)
 		gsa->sin.sin_port = 0;
 		if (sopt->sopt_name == MCAST_JOIN_SOURCE_GROUP) {
 			if (ssa->sin.sin_family != AF_INET ||
-			    ssa->sin.sin_len != sizeof(struct bsd_sockaddr_in))
+			    ssa->sin.sin_len != sizeof(struct sockaddr_in))
 				return (EINVAL);
 			ssa->sin.sin_port = 0;
 		}
@@ -2139,24 +2139,24 @@ out_inp_locked:
  * Leave an IPv4 multicast group on an inpcb, possibly with a source.
  */
 static int
-inp_leave_group(struct inpcb *inp, struct bsd_sockopt *sopt)
+inp_leave_group(struct inpcb *inp, struct sockopt *sopt)
 {
-	struct bsd_group_source_req		 gsr;
-	struct bsd_ip_mreq_source		 mreqs;
+	struct group_source_req		 gsr;
+	struct ip_mreq_source		 mreqs;
 	sockunion_t			*gsa, *ssa;
 	struct ifnet			*ifp;
 	struct in_mfilter		*imf;
 	struct ip_moptions		*imo;
 	struct in_msource		*ims;
 	struct in_multi			*inm;
-	bsd_size_t				 idx;
+	size_t				 idx;
 	int				 error, is_final;
 
 	ifp = NULL;
 	error = 0;
 	is_final = 1;
 
-	memset(&gsr, 0, sizeof(struct bsd_group_source_req));
+	memset(&gsr, 0, sizeof(struct group_source_req));
 	gsa = (sockunion_t *)&gsr.gsr_group;
 	gsa->ss.ss_family = AF_UNSPEC;
 	ssa = (sockunion_t *)&gsr.gsr_source;
@@ -2167,8 +2167,8 @@ inp_leave_group(struct inpcb *inp, struct bsd_sockopt *sopt)
 	case IP_DROP_SOURCE_MEMBERSHIP:
 		if (sopt->sopt_name == IP_DROP_MEMBERSHIP) {
 			error = sooptcopyin(sopt, &mreqs,
-			    sizeof(struct bsd_ip_mreq),
-			    sizeof(struct bsd_ip_mreq));
+			    sizeof(struct ip_mreq),
+			    sizeof(struct ip_mreq));
 			/*
 			 * Swap interface and sourceaddr arguments,
 			 * as ip_mreq and ip_mreq_source are laid
@@ -2178,19 +2178,19 @@ inp_leave_group(struct inpcb *inp, struct bsd_sockopt *sopt)
 			mreqs.imr_sourceaddr.s_addr = INADDR_ANY;
 		} else if (sopt->sopt_name == IP_DROP_SOURCE_MEMBERSHIP) {
 			error = sooptcopyin(sopt, &mreqs,
-			    sizeof(struct bsd_ip_mreq_source),
-			    sizeof(struct bsd_ip_mreq_source));
+			    sizeof(struct ip_mreq_source),
+			    sizeof(struct ip_mreq_source));
 		}
 		if (error)
 			return (error);
 
 		gsa->sin.sin_family = AF_INET;
-		gsa->sin.sin_len = sizeof(struct bsd_sockaddr_in);
+		gsa->sin.sin_len = sizeof(struct sockaddr_in);
 		gsa->sin.sin_addr = mreqs.imr_multiaddr;
 
 		if (sopt->sopt_name == IP_DROP_SOURCE_MEMBERSHIP) {
 			ssa->sin.sin_family = AF_INET;
-			ssa->sin.sin_len = sizeof(struct bsd_sockaddr_in);
+			ssa->sin.sin_len = sizeof(struct sockaddr_in);
 			ssa->sin.sin_addr = mreqs.imr_sourceaddr;
 		}
 
@@ -2213,23 +2213,23 @@ inp_leave_group(struct inpcb *inp, struct bsd_sockopt *sopt)
 	case MCAST_LEAVE_SOURCE_GROUP:
 		if (sopt->sopt_name == MCAST_LEAVE_GROUP) {
 			error = sooptcopyin(sopt, &gsr,
-			    sizeof(struct bsd_group_req),
-			    sizeof(struct bsd_group_req));
+			    sizeof(struct group_req),
+			    sizeof(struct group_req));
 		} else if (sopt->sopt_name == MCAST_LEAVE_SOURCE_GROUP) {
 			error = sooptcopyin(sopt, &gsr,
-			    sizeof(struct bsd_group_source_req),
-			    sizeof(struct bsd_group_source_req));
+			    sizeof(struct group_source_req),
+			    sizeof(struct group_source_req));
 		}
 		if (error)
 			return (error);
 
 		if (gsa->sin.sin_family != AF_INET ||
-		    gsa->sin.sin_len != sizeof(struct bsd_sockaddr_in))
+		    gsa->sin.sin_len != sizeof(struct sockaddr_in))
 			return (EINVAL);
 
 		if (sopt->sopt_name == MCAST_LEAVE_SOURCE_GROUP) {
 			if (ssa->sin.sin_family != AF_INET ||
-			    ssa->sin.sin_len != sizeof(struct bsd_sockaddr_in))
+			    ssa->sin.sin_len != sizeof(struct sockaddr_in))
 				return (EINVAL);
 		}
 
@@ -2360,21 +2360,21 @@ out_inp_locked:
  * When no interface is selected, one is chosen for every send.
  */
 static int
-inp_set_multicast_if(struct inpcb *inp, struct bsd_sockopt *sopt)
+inp_set_multicast_if(struct inpcb *inp, struct sockopt *sopt)
 {
-	struct bsd_in_addr		 addr;
-	struct bsd_ip_mreqn		 mreqn;
+	struct in_addr		 addr;
+	struct ip_mreqn		 mreqn;
 	struct ifnet		*ifp;
 	struct ip_moptions	*imo;
 	int			 error;
 
-	if (sopt->sopt_valsize == sizeof(struct bsd_ip_mreqn)) {
+	if (sopt->sopt_valsize == sizeof(struct ip_mreqn)) {
 		/*
 		 * An interface index was specified using the
 		 * Linux-derived ip_mreqn structure.
 		 */
-		error = sooptcopyin(sopt, &mreqn, sizeof(struct bsd_ip_mreqn),
-		    sizeof(struct bsd_ip_mreqn));
+		error = sooptcopyin(sopt, &mreqn, sizeof(struct ip_mreqn),
+		    sizeof(struct ip_mreqn));
 		if (error)
 			return (error);
 
@@ -2393,8 +2393,8 @@ inp_set_multicast_if(struct inpcb *inp, struct bsd_sockopt *sopt)
 		 * An interface was specified by IPv4 address.
 		 * This is the traditional BSD usage.
 		 */
-		error = sooptcopyin(sopt, &addr, sizeof(struct bsd_in_addr),
-		    sizeof(struct bsd_in_addr));
+		error = sooptcopyin(sopt, &addr, sizeof(struct in_addr),
+		    sizeof(struct in_addr));
 		if (error)
 			return (error);
 		if (in_nullhost(addr)) {
@@ -2426,19 +2426,19 @@ inp_set_multicast_if(struct inpcb *inp, struct bsd_sockopt *sopt)
  * SMPng: NOTE: Potentially calls malloc(M_WAITOK) with Giant held.
  */
 static int
-inp_set_source_filters(struct inpcb *inp, struct bsd_sockopt *sopt)
+inp_set_source_filters(struct inpcb *inp, struct sockopt *sopt)
 {
-	struct __bsd_msfilterreq	 msfr;
+	struct __msfilterreq	 msfr;
 	sockunion_t		*gsa;
 	struct ifnet		*ifp;
 	struct in_mfilter	*imf;
 	struct ip_moptions	*imo;
 	struct in_multi		*inm;
-	bsd_size_t			 idx;
+	size_t			 idx;
 	int			 error;
 
-	error = sooptcopyin(sopt, &msfr, sizeof(struct __bsd_msfilterreq),
-	    sizeof(struct __bsd_msfilterreq));
+	error = sooptcopyin(sopt, &msfr, sizeof(struct __msfilterreq),
+	    sizeof(struct __msfilterreq));
 	if (error)
 		return (error);
 
@@ -2450,7 +2450,7 @@ inp_set_source_filters(struct inpcb *inp, struct bsd_sockopt *sopt)
 		return (EINVAL);
 
 	if (msfr.msfr_group.ss_family != AF_INET ||
-	    msfr.msfr_group.ss_len != sizeof(struct bsd_sockaddr_in))
+	    msfr.msfr_group.ss_len != sizeof(struct sockaddr_in))
 		return (EINVAL);
 
 	gsa = (sockunion_t *)&msfr.msfr_group;
@@ -2494,20 +2494,20 @@ inp_set_source_filters(struct inpcb *inp, struct bsd_sockopt *sopt)
 	 */
 	if (msfr.msfr_nsrcs > 0) {
 		struct in_msource	*lims;
-		struct bsd_sockaddr_in	*psin;
-		struct bsd_sockaddr_storage	*kss, *pkss;
+		struct sockaddr_in	*psin;
+		struct sockaddr_storage	*kss, *pkss;
 		int			 i;
 
 		INP_WUNLOCK(inp);
  
 		CTR2(KTR_IGMPV3, "%s: loading %lu source list entries",
 		    __func__, (unsigned long)msfr.msfr_nsrcs);
-		kss = bsd_malloc(sizeof(struct bsd_sockaddr_storage) * msfr.msfr_nsrcs,
+		kss = malloc(sizeof(struct sockaddr_storage) * msfr.msfr_nsrcs,
 		    M_TEMP, M_WAITOK);
 		error = copyin(msfr.msfr_srcs, kss,
-		    sizeof(struct bsd_sockaddr_storage) * msfr.msfr_nsrcs);
+		    sizeof(struct sockaddr_storage) * msfr.msfr_nsrcs);
 		if (error) {
-			bsd_free(kss, M_TEMP);
+			free(kss, M_TEMP);
 			return (error);
 		}
 
@@ -2533,12 +2533,12 @@ inp_set_source_filters(struct inpcb *inp, struct bsd_sockopt *sopt)
 		 * every time, as the key space is common.
 		 */
 		for (i = 0, pkss = kss; i < msfr.msfr_nsrcs; i++, pkss++) {
-			psin = (struct bsd_sockaddr_in *)pkss;
+			psin = (struct sockaddr_in *)pkss;
 			if (psin->sin_family != AF_INET) {
 				error = EAFNOSUPPORT;
 				break;
 			}
-			if (psin->sin_len != sizeof(struct bsd_sockaddr_in)) {
+			if (psin->sin_len != sizeof(struct sockaddr_in)) {
 				error = EINVAL;
 				break;
 			}
@@ -2547,7 +2547,7 @@ inp_set_source_filters(struct inpcb *inp, struct bsd_sockopt *sopt)
 				break;
 			lims->imsl_st[1] = imf->imf_st[1];
 		}
-		bsd_free(kss, M_TEMP);
+		free(kss, M_TEMP);
 	}
 
 	if (error)
@@ -2600,7 +2600,7 @@ out_inp_locked:
  * is refactored to no longer use vifs.
  */
 int
-inp_setmoptions(struct inpcb *inp, struct bsd_sockopt *sopt)
+inp_setmoptions(struct inpcb *inp, struct sockopt *sopt)
 {
 	struct ip_moptions	*imo;
 	int			 error;
@@ -2752,7 +2752,7 @@ inp_setmoptions(struct inpcb *inp, struct bsd_sockopt *sopt)
 static int
 sysctl_ip_mcast_filters(SYSCTL_HANDLER_ARGS)
 {
-	struct bsd_in_addr			 src, group;
+	struct in_addr			 src, group;
 	struct ifnet			*ifp;
 	struct ifmultiaddr		*ifma;
 	struct in_multi			*inm;
@@ -2760,7 +2760,7 @@ sysctl_ip_mcast_filters(SYSCTL_HANDLER_ARGS)
 	int				*name;
 	int				 retval;
 	u_int				 namelen;
-	bsd_uint32_t			 fmode, ifindex;
+	uint32_t			 fmode, ifindex;
 
 	name = (int *)arg1;
 	namelen = arg2;
@@ -2793,7 +2793,7 @@ sysctl_ip_mcast_filters(SYSCTL_HANDLER_ARGS)
 	}
 
 	retval = sysctl_wire_old_buffer(req,
-	    sizeof(bsd_uint32_t) + (in_mcast_maxgrpsrc * sizeof(struct bsd_in_addr)));
+	    sizeof(uint32_t) + (in_mcast_maxgrpsrc * sizeof(struct in_addr)));
 	if (retval)
 		return (retval);
 
@@ -2808,12 +2808,12 @@ sysctl_ip_mcast_filters(SYSCTL_HANDLER_ARGS)
 		if (!in_hosteq(inm->inm_addr, group))
 			continue;
 		fmode = inm->inm_st[1].iss_fmode;
-		retval = SYSCTL_OUT(req, &fmode, sizeof(bsd_uint32_t));
+		retval = SYSCTL_OUT(req, &fmode, sizeof(uint32_t));
 		if (retval != 0)
 			break;
 		RB_FOREACH(ims, ip_msource_tree, &inm->inm_srcs) {
 #ifdef KTR
-			struct bsd_in_addr ina;
+			struct in_addr ina;
 			ina.s_addr = htonl(ims->ims_haddr);
 			CTR2(KTR_IGMPV3, "%s: visit node %s", __func__,
 			    inet_ntoa(ina));
@@ -2827,7 +2827,7 @@ sysctl_ip_mcast_filters(SYSCTL_HANDLER_ARGS)
 				continue;
 			}
 			src.s_addr = htonl(ims->ims_haddr);
-			retval = SYSCTL_OUT(req, &src, sizeof(struct bsd_in_addr));
+			retval = SYSCTL_OUT(req, &src, sizeof(struct in_addr));
 			if (retval != 0)
 				break;
 		}

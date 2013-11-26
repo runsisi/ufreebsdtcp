@@ -71,14 +71,14 @@
  * monitoring app should take into account.
  */
 struct malloc_type_stats {
-	bsd_uint64_t	mts_memalloced;	/* Bytes allocated on CPU. */
-	bsd_uint64_t	mts_memfreed;	/* Bytes freed on CPU. */
-	bsd_uint64_t	mts_numallocs;	/* Number of allocates on CPU. */
-	bsd_uint64_t	mts_numfrees;	/* number of frees on CPU. */
-	bsd_uint64_t	mts_size;	/* Bitmask of sizes allocated on CPU. */
-	bsd_uint64_t	_mts_reserved1;	/* Reserved field. */
-	bsd_uint64_t	_mts_reserved2;	/* Reserved field. */
-	bsd_uint64_t	_mts_reserved3;	/* Reserved field. */
+	uint64_t	mts_memalloced;	/* Bytes allocated on CPU. */
+	uint64_t	mts_memfreed;	/* Bytes freed on CPU. */
+	uint64_t	mts_numallocs;	/* Number of allocates on CPU. */
+	uint64_t	mts_numfrees;	/* number of frees on CPU. */
+	uint64_t	mts_size;	/* Bitmask of sizes allocated on CPU. */
+	uint64_t	_mts_reserved1;	/* Reserved field. */
+	uint64_t	_mts_reserved2;	/* Reserved field. */
+	uint64_t	_mts_reserved3;	/* Reserved field. */
 };
 
 /*
@@ -89,7 +89,7 @@ struct malloc_type_stats {
 #define DTMALLOC_PROBE_MAX		2
 
 struct malloc_type_internal {
-	bsd_uint32_t	mti_probes[DTMALLOC_PROBE_MAX];
+	uint32_t	mti_probes[DTMALLOC_PROBE_MAX];
 					/* DTrace probe ID array. */
 	u_char		mti_zone;
 	struct malloc_type_stats	mti_stats[MAXCPU];
@@ -116,10 +116,10 @@ struct malloc_type {
  */
 #define	MALLOC_TYPE_STREAM_VERSION	0x00000001
 struct malloc_type_stream_header {
-	bsd_uint32_t	mtsh_version;	/* Stream format version. */
-	bsd_uint32_t	mtsh_maxcpus;	/* Value of MAXCPU for stream. */
-	bsd_uint32_t	mtsh_count;	/* Number of records. */
-	bsd_uint32_t	_mtsh_pad;	/* Pad/reserved field. */
+	uint32_t	mtsh_version;	/* Stream format version. */
+	uint32_t	mtsh_maxcpus;	/* Value of MAXCPU for stream. */
+	uint32_t	mtsh_count;	/* Number of records. */
+	uint32_t	_mtsh_pad;	/* Pad/reserved field. */
 };
 
 #define	MALLOC_MAX_NAME	32
@@ -131,7 +131,11 @@ struct malloc_type_header {
 #define	MALLOC_DEFINE(type, shortdesc, longdesc)			\
 	struct malloc_type type[1] = {					\
 		{ NULL, M_MAGIC, shortdesc, NULL }			\
-	};
+	};								\
+	SYSINIT(type##_init, SI_SUB_KMEM, SI_ORDER_SECOND, malloc_init,	\
+	    type);							\
+	SYSUNINIT(type##_uninit, SI_SUB_KMEM, SI_ORDER_ANY,		\
+	    malloc_uninit, type)
 
 #define	MALLOC_DECLARE(type) \
 	extern struct malloc_type type[1]
@@ -166,17 +170,17 @@ typedef void malloc_type_list_func_t(struct malloc_type *, void *);
 
 void	contigfree(void *addr, unsigned long size, struct malloc_type *type);
 void	*contigmalloc(unsigned long size, struct malloc_type *type, int flags,
-	    bsd_vm_paddr_t low, bsd_vm_paddr_t high, unsigned long alignment,
-	    unsigned long boundary) __bsd_malloc_like;
-void	bsd_free(void *addr, struct malloc_type *type);
-void	*bsd_malloc(unsigned long size, struct malloc_type *type, int flags) __bsd_malloc_like;
+	    vm_paddr_t low, vm_paddr_t high, unsigned long alignment,
+	    unsigned long boundary) __malloc_like;
+void	free(void *addr, struct malloc_type *type);
+void	*malloc(unsigned long size, struct malloc_type *type, int flags) __malloc_like;
 void	malloc_init(void *);
 int	malloc_last_fail(void);
 void	malloc_type_allocated(struct malloc_type *type, unsigned long size);
 void	malloc_type_freed(struct malloc_type *type, unsigned long size);
 void	malloc_type_list(malloc_type_list_func_t *, void *);
 void	malloc_uninit(void *);
-void	*bsd_realloc(void *addr, unsigned long size, struct malloc_type *type,
+void	*realloc(void *addr, unsigned long size, struct malloc_type *type,
 	    int flags);
 void	*reallocf(void *addr, unsigned long size, struct malloc_type *type,
 	    int flags);
