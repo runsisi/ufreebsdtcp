@@ -287,11 +287,11 @@
 #define	__noinline
 #endif
 
-//#if __GNUC_PREREQ__(3, 3)
-//#define __nonnull(x)	__attribute__((__nonnull__(x)))
-//#else
-//#define __nonnull(x)
-//#endif
+#if __GNUC_PREREQ__(3, 3)
+#define __nonnull(x)	__attribute__((__nonnull__(x)))
+#else
+#define __nonnull(x)
+#endif
 
 #if __GNUC_PREREQ__(3, 4)
 #define	__fastcall	__attribute__((__fastcall__))

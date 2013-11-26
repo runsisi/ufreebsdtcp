@@ -66,8 +66,8 @@ static __inline u_long ulmin(u_long a, u_long b) { return (a < b ? a : b); }
 static __inline off_t omax(off_t a, off_t b) { return (a > b ? a : b); }
 static __inline off_t omin(off_t a, off_t b) { return (a < b ? a : b); }
 
-static __inline int abs(int a) { return (a < 0 ? -a : a); }
-static __inline long labs(long a) { return (a < 0 ? -a : a); }
+//static __inline int abs(int a) { return (a < 0 ? -a : a); }
+//static __inline long labs(long a) { return (a < 0 ? -a : a); }
 static __inline quad_t qabs(quad_t a) { return (a < 0 ? -a : a); }
 
 #define	ARC4_ENTR_NONE	0	/* Don't have entropy yet. */
@@ -102,18 +102,18 @@ void	 qsort(void *base, size_t nmemb, size_t size,
 	    int (*compar)(const void *, const void *));
 void	 qsort_r(void *base, size_t nmemb, size_t size, void *thunk,
 	    int (*compar)(void *, const void *, const void *));
-u_long	 random(void);
+//u_long	 random(void);
 char	*index(const char *, int);
 char	*rindex(const char *, int);
 int	 scanc(u_int, const u_char *, const u_char *, int);
 int	 skpc(int, int, char *);
-void	 srandom(u_long);
+//void	 srandom(u_long);
 int	 strcasecmp(const char *, const char *);
 char	*strcat(char * __restrict, const char * __restrict);
 int	 strcmp(const char *, const char *);
 char	*strcpy(char * __restrict, const char * __restrict);
 size_t	 strcspn(const char * __restrict, const char * __restrict) __pure;
-char	*strdup(const char *__restrict, struct malloc_type *);
+//char	*strdup(const char *__restrict, struct malloc_type *);
 size_t	 strlcat(char *, const char *, size_t);
 size_t	 strlcpy(char *, const char *, size_t);
 size_t	 strlen(const char *);
@@ -152,33 +152,33 @@ calculate_crc32c(uint32_t crc32c, const unsigned char *buffer,
         unsigned int length);
 
 
-LIBKERN_INLINE void *memset(void *, int, size_t);
-#ifdef LIBKERN_BODY
-LIBKERN_INLINE void *
-memset(void *b, int c, size_t len)
-{
-	char *bb;
+//LIBKERN_INLINE void *memset(void *, int, size_t);
+//#ifdef LIBKERN_BODY
+//LIBKERN_INLINE void *
+//memset(void *b, int c, size_t len)
+//{
+//	char *bb;
+//
+//	if (c == 0)
+//		bzero(b, len);
+//	else
+//		for (bb = (char *)b; len--; )
+//			*bb++ = c;
+//	return (b);
+//}
+//#endif
 
-	if (c == 0)
-		bzero(b, len);
-	else
-		for (bb = (char *)b; len--; )
-			*bb++ = c;
-	return (b);
-}
-#endif
+//static __inline char *
+//strchr(const char *p, int ch)
+//{
+//	return (index(p, ch));
+//}
 
-static __inline char *
-strchr(const char *p, int ch)
-{
-	return (index(p, ch));
-}
-
-static __inline char *
-strrchr(const char *p, int ch)
-{
-	return (rindex(p, ch));
-}
+//static __inline char *
+//strrchr(const char *p, int ch)
+//{
+//	return (rindex(p, ch));
+//}
 
 /* fnmatch() return values. */
 #define	FNM_NOMATCH	1	/* Match failed. */

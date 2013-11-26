@@ -157,8 +157,8 @@ struct uio;
 struct _jmp_buf;
 struct trapframe;
 
-int	setjmp(struct _jmp_buf *) __returns_twice;
-void	longjmp(struct _jmp_buf *, int) __dead2;
+//int	setjmp(struct _jmp_buf *) __returns_twice;
+//void	longjmp(struct _jmp_buf *, int) __dead2;
 int	dumpstatus(vm_offset_t addr, off_t count);
 int	nullop(void);
 int	eopnotsupp(void);
@@ -350,7 +350,7 @@ int	_sleep(void *chan, struct lock_object *lock, int pri, const char *wmesg,
 	_sleep((chan), &(mtx)->lock_object, (pri), (wmesg), (timo))
 int	msleep_spin(void *chan, struct mtx *mtx, const char *wmesg, int timo)
 	    __nonnull(1);
-int	pause(const char *wmesg, int timo);
+//int	pause(const char *wmesg, int timo);
 #define	tsleep(chan, pri, wmesg, timo)					\
 	_sleep((chan), NULL, (pri), (wmesg), (timo))
 void	wakeup(void *chan) __nonnull(1);

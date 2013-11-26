@@ -86,7 +86,7 @@
  * architecture.  It should be used with appropriate caution.
  */
 #define	CACHE_LINE_SHIFT	7
-#define	CACHE_LINE_SIZE		(1 << CACHE_LINE_SHIFT)
+//#define	CACHE_LINE_SIZE		(1 << CACHE_LINE_SHIFT)
 
 /* Size of the level 1 page table units */
 #define NPTEPG		(PAGE_SIZE/(sizeof (pt_entry_t)))
