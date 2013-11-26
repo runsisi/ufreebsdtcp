@@ -44,7 +44,7 @@
 #include <machine/bsd_endian.h>
 #include <sys/_bsd_types.h>
 
-#include <sys/_bsd_pthreadtypes.h>
+//#include <sys/_bsd_pthreadtypes.h>
 
 #if __BSD_VISIBLE
 typedef	unsigned char	u_char;
@@ -271,7 +271,7 @@ typedef	int	_Bool;
 typedef	_Bool	bool;
 #endif /* !__bool_true_false_are_defined && !__cplusplus */
 
-#define offsetof(type, field) __offsetof(type, field)
+//#define offsetof(type, field) __offsetof(type, field)
 
 #endif /* !_KERNEL */
 

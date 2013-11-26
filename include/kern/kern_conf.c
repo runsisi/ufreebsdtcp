@@ -46,7 +46,7 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/kern/kern_conf.c 253359 2013-07-15 11:45:5
 #include <sys/bsd_taskqueue.h>
 #include <machine/bsd_stdarg.h>
 
-#include <fs/devfs/devfs_int.h>
+//#include <fs/devfs/devfs_int.h>
 #include <vm/vm.h>
 
 static MALLOC_DEFINE(M_DEVT, "cdev", "cdev storage");

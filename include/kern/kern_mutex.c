@@ -68,7 +68,7 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/kern/kern_mutex.c 250581 2013-05-12 22:01:
 
 //#include <ddb/ddb.h>
 
-#include <fs/devfs/devfs_int.h>
+//#include <fs/devfs/devfs_int.h>
 
 #include <vm/vm.h>
 #include <vm/vm_extern.h>

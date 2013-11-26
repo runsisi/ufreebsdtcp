@@ -125,50 +125,50 @@
  * __XSTRING is like __STRING, but it expands any macros in its argument
  * first.  It is only available with ANSI C.
  */
-#if defined(__STDC__) || defined(__cplusplus)
-#define	__P(protos)	protos		/* full-blown ANSI C */
-#define	__CONCAT1(x,y)	x ## y
-#define	__CONCAT(x,y)	__CONCAT1(x,y)
-#define	__STRING(x)	#x		/* stringify without expanding x */
-#define	__XSTRING(x)	__STRING(x)	/* expand x, then stringify */
-
-#define	__const		const		/* define reserved names to standard */
-#define	__signed	signed
-#define	__volatile	volatile
-#if defined(__cplusplus)
-#define	__inline	inline		/* convert to C++ keyword */
-#else
-#if !(defined(__CC_SUPPORTS___INLINE))
-#define	__inline			/* delete GCC keyword */
-#endif /* ! __CC_SUPPORTS___INLINE */
-#endif /* !__cplusplus */
-
-#else	/* !(__STDC__ || __cplusplus) */
-#define	__P(protos)	()		/* traditional C preprocessor */
-#define	__CONCAT(x,y)	x/**/y
-#define	__STRING(x)	"x"
-
-#if !defined(__CC_SUPPORTS___INLINE)
-#define	__const				/* delete pseudo-ANSI C keywords */
-#define	__inline
-#define	__signed
-#define	__volatile
-/*
- * In non-ANSI C environments, new programs will want ANSI-only C keywords
- * deleted from the program and old programs will want them left alone.
- * When using a compiler other than gcc, programs using the ANSI C keywords
- * const, inline etc. as normal identifiers should define -DNO_ANSI_KEYWORDS.
- * When using "gcc -traditional", we assume that this is the intent; if
- * __GNUC__ is defined but __STDC__ is not, we leave the new keywords alone.
- */
-#ifndef	NO_ANSI_KEYWORDS
-#define	const				/* delete ANSI C keywords */
-#define	inline
-#define	signed
-#define	volatile
-#endif	/* !NO_ANSI_KEYWORDS */
-#endif	/* !__CC_SUPPORTS___INLINE */
-#endif	/* !(__STDC__ || __cplusplus) */
+//#if defined(__STDC__) || defined(__cplusplus)
+//#define	__P(protos)	protos		/* full-blown ANSI C */
+//#define	__CONCAT1(x,y)	x ## y
+//#define	__CONCAT(x,y)	__CONCAT1(x,y)
+//#define	__STRING(x)	#x		/* stringify without expanding x */
+//#define	__XSTRING(x)	__STRING(x)	/* expand x, then stringify */
+//
+//#define	__const		const		/* define reserved names to standard */
+//#define	__signed	signed
+//#define	__volatile	volatile
+//#if defined(__cplusplus)
+//#define	__inline	inline		/* convert to C++ keyword */
+//#else
+//#if !(defined(__CC_SUPPORTS___INLINE))
+//#define	__inline			/* delete GCC keyword */
+//#endif /* ! __CC_SUPPORTS___INLINE */
+//#endif /* !__cplusplus */
+//
+//#else	/* !(__STDC__ || __cplusplus) */
+//#define	__P(protos)	()		/* traditional C preprocessor */
+//#define	__CONCAT(x,y)	x/**/y
+//#define	__STRING(x)	"x"
+//
+//#if !defined(__CC_SUPPORTS___INLINE)
+//#define	__const				/* delete pseudo-ANSI C keywords */
+//#define	__inline
+//#define	__signed
+//#define	__volatile
+///*
+// * In non-ANSI C environments, new programs will want ANSI-only C keywords
+// * deleted from the program and old programs will want them left alone.
+// * When using a compiler other than gcc, programs using the ANSI C keywords
+// * const, inline etc. as normal identifiers should define -DNO_ANSI_KEYWORDS.
+// * When using "gcc -traditional", we assume that this is the intent; if
+// * __GNUC__ is defined but __STDC__ is not, we leave the new keywords alone.
+// */
+//#ifndef	NO_ANSI_KEYWORDS
+//#define	const				/* delete ANSI C keywords */
+//#define	inline
+//#define	signed
+//#define	volatile
+//#endif	/* !NO_ANSI_KEYWORDS */
+//#endif	/* !__CC_SUPPORTS___INLINE */
+//#endif	/* !(__STDC__ || __cplusplus) */
 
 /*
  * Compiler-dependent macros to help declare dead (non-returning) and
@@ -275,11 +275,11 @@
 #define	__pure
 #endif
 
-#if __GNUC_PREREQ__(3, 1) || (defined(__INTEL_COMPILER) && __INTEL_COMPILER >= 800)
-#define	__always_inline	__attribute__((__always_inline__))
-#else
-#define	__always_inline
-#endif
+//#if __GNUC_PREREQ__(3, 1) || (defined(__INTEL_COMPILER) && __INTEL_COMPILER >= 800)
+//#define	__always_inline	__attribute__((__always_inline__))
+//#else
+//#define	__always_inline
+//#endif
 
 #if __GNUC_PREREQ__(3, 1)
 #define	__noinline	__attribute__ ((__noinline__))
@@ -287,11 +287,11 @@
 #define	__noinline
 #endif
 
-#if __GNUC_PREREQ__(3, 3)
-#define __nonnull(x)	__attribute__((__nonnull__(x)))
-#else
-#define __nonnull(x)
-#endif
+//#if __GNUC_PREREQ__(3, 3)
+//#define __nonnull(x)	__attribute__((__nonnull__(x)))
+//#else
+//#define __nonnull(x)
+//#endif
 
 #if __GNUC_PREREQ__(3, 4)
 #define	__fastcall	__attribute__((__fastcall__))

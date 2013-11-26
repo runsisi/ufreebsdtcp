@@ -34,8 +34,8 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/kern/tty_tty.c 216952 2011-01-04 10:59:38Z
 #include <sys/bsd_sx.h>
 #include <sys/bsd_vnode.h>
 
-#include <fs/devfs/devfs.h>
-#include <fs/devfs/devfs_int.h>
+//#include <fs/devfs/devfs.h>
+//#include <fs/devfs/devfs_int.h>
 
 static	d_open_t	cttyopen;
 

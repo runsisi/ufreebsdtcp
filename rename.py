@@ -41,7 +41,7 @@ def rename_includes(rdir):
                     f.write(ln)
                     
 def comment_includes(rdir):    
-    s = r'^(\s*#include\s*<\s*(?:security|ddb)/.*)$'    
+    s = r'^(\s*#include\s*<\s*(?:security|ddb|fs)/.*)$'    
     e = compile(s, DOTALL)
     for (pdir, dirs, fns) in walk(rdir):
         if basename(__file__) in fns:
@@ -62,7 +62,7 @@ if __name__ == '__main__':
     c = raw_input('Now is your choice (input the digit 1 or 2 or 3 then press enter): \n'
               '1) Add a bsd_ prefix to all the header file names\n'
               '2) Add a bsd_ prefix for all the #include directives in .h/.c files\n'
-              '3) Comment out security and ddb includes\n\n'
+              '3) Comment out security and ddb and fs includes\n\n'
               'N.B.: This script will only affect the files under current directory:)\n')
     if c in ['1', '2', '3']:
         if c == '1':
