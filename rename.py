@@ -59,7 +59,7 @@ def comment_includes(rdir):
                     f.write(ln)
 
 if __name__ == '__main__':
-    c = raw_input('Now is your choice (input the digit 1 or 2 then press enter): \n'
+    c = raw_input('Now is your choice (input the digit 1 or 2 or 3 then press enter): \n'
               '1) Add a bsd_ prefix to all the header file names\n'
               '2) Add a bsd_ prefix for all the #include directives in .h/.c files\n'
               '3) Comment out security and ddb includes\n\n'
