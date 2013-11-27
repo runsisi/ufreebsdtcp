@@ -379,7 +379,7 @@ link_elf_init(void* arg)
 
 	dp = (Elf_Dyn *)&_DYNAMIC;
 	modname = NULL;
-	modptr = preload_search_by_type("elf" __XSTRING(__ELF_WORD_SIZE) " kernel");
+	modptr = preload_search_by_type("elf" __BSD_XSTRING(__ELF_WORD_SIZE) " kernel");
 	if (modptr == NULL)
 		modptr = preload_search_by_type("elf kernel");
 	if (modptr != NULL)
@@ -657,7 +657,7 @@ link_elf_link_preload(linker_class_t cls,
 	dynptr = preload_search_info(modptr,
 	    MODINFO_METADATA | MODINFOMD_DYNAMIC);
 	if (type == NULL ||
-	    (strcmp(type, "elf" __XSTRING(__ELF_WORD_SIZE) " module") != 0 &&
+	    (strcmp(type, "elf" __BSD_XSTRING(__ELF_WORD_SIZE) " module") != 0 &&
 	     strcmp(type, "elf module") != 0))
 		return (EFTYPE);
 	if (baseptr == NULL || sizeptr == NULL || dynptr == NULL)

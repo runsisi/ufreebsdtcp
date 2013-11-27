@@ -263,14 +263,14 @@ void	witness_thread_exit(struct thread *);
 	witness_warn((flags), (lock), (fmt), ## __VA_ARGS__)
 
 #define	WITNESS_SAVE_DECL(n)						\
-	const char * __CONCAT(n, __wf);					\
-	int __CONCAT(n, __wl)
+	const char * __BSD_CONCAT(n, __wf);					\
+	int __BSD_CONCAT(n, __wl)
 
 #define	WITNESS_SAVE(lock, n) 						\
-	witness_save((lock), &__CONCAT(n, __wf), &__CONCAT(n, __wl))
+	witness_save((lock), &__BSD_CONCAT(n, __wf), &__BSD_CONCAT(n, __wl))
 
 #define	WITNESS_RESTORE(lock, n) 					\
-	witness_restore((lock), __CONCAT(n, __wf), __CONCAT(n, __wl))
+	witness_restore((lock), __BSD_CONCAT(n, __wf), __BSD_CONCAT(n, __wl))
 
 #define	WITNESS_NORELEASE(lock)						\
 	witness_norelease(&(lock)->lock_object)

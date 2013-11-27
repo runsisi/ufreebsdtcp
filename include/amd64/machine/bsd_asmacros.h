@@ -101,9 +101,9 @@
  */
 #define ALTENTRY(name)		GEN_ENTRY(name) ; MCOUNT ; MEXITCOUNT ; jmp 9f
 #define	CROSSJUMP(jtrue, label, jfalse) \
-	jfalse 8f; MEXITCOUNT; jmp __CONCAT(to,label); 8:
+	jfalse 8f; MEXITCOUNT; jmp __BSD_CONCAT(to,label); 8:
 #define CROSSJUMPTARGET(label) \
-	ALIGN_TEXT; __CONCAT(to,label): ; MCOUNT; jmp label
+	ALIGN_TEXT; __BSD_CONCAT(to,label): ; MCOUNT; jmp label
 #define ENTRY(name)		GEN_ENTRY(name) ; 9: ; MCOUNT
 #define FAKE_MCOUNT(caller)	pushq caller ; call __mcount ; popq %rcx
 #define MCOUNT			call __mcount
@@ -136,8 +136,8 @@
 /*
  * Convenience macro for declaring interrupt entry points.
  */
-#define	IDTVEC(name)	ALIGN_TEXT; .globl __CONCAT(X,name); \
-			.type __CONCAT(X,name),@function; __CONCAT(X,name):
+#define	IDTVEC(name)	ALIGN_TEXT; .globl __BSD_CONCAT(X,name); \
+			.type __BSD_CONCAT(X,name),@function; __BSD_CONCAT(X,name):
 
 /*
  * Macros to create and destroy a trap frame.

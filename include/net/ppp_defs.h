@@ -147,11 +147,11 @@ struct ppp_idle {
     time_t recv_idle;		/* time since last NP packet received */
 };
 
-#ifndef __P
+#ifndef __BSD_P
 #ifdef __STDC__
-#define __P(x)	x
+#define __BSD_P(x)	x
 #else
-#define __P(x)	()
+#define __BSD_P(x)	()
 #endif
 #endif
 

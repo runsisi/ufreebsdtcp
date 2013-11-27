@@ -129,7 +129,7 @@ __END_DECLS
 
 /* Declare a fail_point and its sysctl in a function. */
 #define	_FAIL_POINT_NAME(name)	_fail_point_##name
-#define	_FAIL_POINT_LOCATION()	"(" __FILE__ ":" __XSTRING(__LINE__) ")"
+#define	_FAIL_POINT_LOCATION()	"(" __FILE__ ":" __BSD_XSTRING(__LINE__) ")"
 
 /**
  * Instantiate a failpoint which returns "value" from the function when triggered.

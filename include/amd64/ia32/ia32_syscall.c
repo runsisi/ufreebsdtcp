@@ -91,7 +91,7 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/amd64/ia32/ia32_syscall.c 239578 2012-08-2
 #include <machine/bsd_pcb.h>
 #include <machine/bsd_cpufunc.h>
 
-#define	IDTVEC(name)	__CONCAT(X,name)
+#define	IDTVEC(name)	__BSD_CONCAT(X,name)
 
 extern inthand_t IDTVEC(int0x80_syscall), IDTVEC(rsvd);
 

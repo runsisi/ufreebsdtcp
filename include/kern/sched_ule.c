@@ -83,9 +83,9 @@ dtrace_vtime_switch_func_t	dtrace_vtime_switch_func;
 
 #define	KTR_ULE	0
 
-#define	TS_NAME_LEN (MAXCOMLEN + sizeof(" td ") + sizeof(__XSTRING(UINT_MAX)))
-#define	TDQ_NAME_LEN	(sizeof("sched lock ") + sizeof(__XSTRING(MAXCPU)))
-#define	TDQ_LOADNAME_LEN	(sizeof("CPU ") + sizeof(__XSTRING(MAXCPU)) - 1 + sizeof(" load"))
+#define	TS_NAME_LEN (MAXCOMLEN + sizeof(" td ") + sizeof(__BSD_XSTRING(UINT_MAX)))
+#define	TDQ_NAME_LEN	(sizeof("sched lock ") + sizeof(__BSD_XSTRING(MAXCPU)))
+#define	TDQ_LOADNAME_LEN	(sizeof("CPU ") + sizeof(__BSD_XSTRING(MAXCPU)) - 1 + sizeof(" load"))
 
 /*
  * Thread scheduler specific section.  All fields are protected

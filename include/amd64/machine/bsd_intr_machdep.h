@@ -72,7 +72,7 @@
 
 typedef void inthand_t(u_int cs, u_int ef, u_int esp, u_int ss);
 
-#define	IDTVEC(name)	__CONCAT(X,name)
+#define	IDTVEC(name)	__BSD_CONCAT(X,name)
 
 struct intsrc;
 

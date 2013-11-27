@@ -84,7 +84,7 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/x86/x86/nexus.c 221324 2011-05-02 14:13:12
 #endif
 #include <sys/bsd_rtprio.h>
 
-#define	ELF_KERN_STR	("elf"__XSTRING(__ELF_WORD_SIZE)" kernel")
+#define	ELF_KERN_STR	("elf"__BSD_XSTRING(__ELF_WORD_SIZE)" kernel")
 
 static MALLOC_DEFINE(M_NEXUSDEV, "nexusdev", "Nexus device");
 

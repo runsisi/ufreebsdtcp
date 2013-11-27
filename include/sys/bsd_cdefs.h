@@ -114,61 +114,61 @@
 #endif
 
 /*
- * The __CONCAT macro is used to concatenate parts of symbol names, e.g.
- * with "#define OLD(foo) __CONCAT(old,foo)", OLD(foo) produces oldfoo.
- * The __CONCAT macro is a bit tricky to use if it must work in non-ANSI
+ * The __BSD_CONCAT macro is used to concatenate parts of symbol names, e.g.
+ * with "#define OLD(foo) __BSD_CONCAT(old,foo)", OLD(foo) produces oldfoo.
+ * The __BSD_CONCAT macro is a bit tricky to use if it must work in non-ANSI
  * mode -- there must be no spaces between its arguments, and for nested
- * __CONCAT's, all the __CONCAT's must be at the left.  __CONCAT can also
- * concatenate double-quoted strings produced by the __STRING macro, but
+ * __BSD_CONCAT's, all the __BSD_CONCAT's must be at the left.  __BSD_CONCAT can also
+ * concatenate double-quoted strings produced by the __BSD_STRING macro, but
  * this only works with ANSI C.
  *
- * __XSTRING is like __STRING, but it expands any macros in its argument
+ * __BSD_XSTRING is like __BSD_STRING, but it expands any macros in its argument
  * first.  It is only available with ANSI C.
  */
-//#if defined(__STDC__) || defined(__cplusplus)
-//#define	__P(protos)	protos		/* full-blown ANSI C */
-//#define	__CONCAT1(x,y)	x ## y
-//#define	__CONCAT(x,y)	__CONCAT1(x,y)
-//#define	__STRING(x)	#x		/* stringify without expanding x */
-//#define	__XSTRING(x)	__STRING(x)	/* expand x, then stringify */
-//
-//#define	__const		const		/* define reserved names to standard */
-//#define	__signed	signed
-//#define	__volatile	volatile
-//#if defined(__cplusplus)
-//#define	__inline	inline		/* convert to C++ keyword */
-//#else
-//#if !(defined(__CC_SUPPORTS___INLINE))
-//#define	__inline			/* delete GCC keyword */
-//#endif /* ! __CC_SUPPORTS___INLINE */
-//#endif /* !__cplusplus */
-//
-//#else	/* !(__STDC__ || __cplusplus) */
-//#define	__P(protos)	()		/* traditional C preprocessor */
-//#define	__CONCAT(x,y)	x/**/y
-//#define	__STRING(x)	"x"
-//
-//#if !defined(__CC_SUPPORTS___INLINE)
-//#define	__const				/* delete pseudo-ANSI C keywords */
-//#define	__inline
-//#define	__signed
-//#define	__volatile
-///*
-// * In non-ANSI C environments, new programs will want ANSI-only C keywords
-// * deleted from the program and old programs will want them left alone.
-// * When using a compiler other than gcc, programs using the ANSI C keywords
-// * const, inline etc. as normal identifiers should define -DNO_ANSI_KEYWORDS.
-// * When using "gcc -traditional", we assume that this is the intent; if
-// * __GNUC__ is defined but __STDC__ is not, we leave the new keywords alone.
-// */
-//#ifndef	NO_ANSI_KEYWORDS
-//#define	const				/* delete ANSI C keywords */
-//#define	inline
-//#define	signed
-//#define	volatile
-//#endif	/* !NO_ANSI_KEYWORDS */
-//#endif	/* !__CC_SUPPORTS___INLINE */
-//#endif	/* !(__STDC__ || __cplusplus) */
+#if defined(__STDC__) || defined(__cplusplus)
+#define	__BSD_P(protos)	protos		/* full-blown ANSI C */
+#define	__BSD_CONCAT1(x,y)	x ## y
+#define	__BSD_CONCAT(x,y)	__BSD_CONCAT1(x,y)
+#define	__BSD_STRING(x)	#x		/* stringify without expanding x */
+#define	__BSD_XSTRING(x)	__BSD_STRING(x)	/* expand x, then stringify */
+
+#define	__const		const		/* define reserved names to standard */
+#define	__signed	signed
+#define	__volatile	volatile
+#if defined(__cplusplus)
+#define	__inline	inline		/* convert to C++ keyword */
+#else
+#if !(defined(__CC_SUPPORTS___INLINE))
+#define	__inline			/* delete GCC keyword */
+#endif /* ! __CC_SUPPORTS___INLINE */
+#endif /* !__cplusplus */
+
+#else	/* !(__STDC__ || __cplusplus) */
+#define	__BSD_P(protos)	()		/* traditional C preprocessor */
+#define	__BSD_CONCAT(x,y)	x/**/y
+#define	__BSD_STRING(x)	"x"
+
+#if !defined(__CC_SUPPORTS___INLINE)
+#define	__const				/* delete pseudo-ANSI C keywords */
+#define	__inline
+#define	__signed
+#define	__volatile
+/*
+ * In non-ANSI C environments, new programs will want ANSI-only C keywords
+ * deleted from the program and old programs will want them left alone.
+ * When using a compiler other than gcc, programs using the ANSI C keywords
+ * const, inline etc. as normal identifiers should define -DNO_ANSI_KEYWORDS.
+ * When using "gcc -traditional", we assume that this is the intent; if
+ * __GNUC__ is defined but __STDC__ is not, we leave the new keywords alone.
+ */
+#ifndef	NO_ANSI_KEYWORDS
+#define	const				/* delete ANSI C keywords */
+#define	inline
+#define	signed
+#define	volatile
+#endif	/* !NO_ANSI_KEYWORDS */
+#endif	/* !__CC_SUPPORTS___INLINE */
+#endif	/* !(__STDC__ || __cplusplus) */
 
 /*
  * Compiler-dependent macros to help declare dead (non-returning) and
@@ -506,7 +506,7 @@
  */
 #ifndef	__FBSDID
 #if !defined(lint) && !defined(STRIP_FBSDID)
-#define	__FBSDID(s)	__IDSTRING(__CONCAT(__rcsid_,__LINE__),s)
+#define	__FBSDID(s)	__IDSTRING(__BSD_CONCAT(__rcsid_,__LINE__),s)
 #else
 #define	__FBSDID(s)	struct __hack
 #endif
@@ -514,7 +514,7 @@
 
 #ifndef	__RCSID
 #ifndef	NO__RCSID
-#define	__RCSID(s)	__IDSTRING(__CONCAT(__rcsid_,__LINE__),s)
+#define	__RCSID(s)	__IDSTRING(__BSD_CONCAT(__rcsid_,__LINE__),s)
 #else
 #define	__RCSID(s)	struct __hack
 #endif
@@ -522,7 +522,7 @@
 
 #ifndef	__RCSID_SOURCE
 #ifndef	NO__RCSID_SOURCE
-#define	__RCSID_SOURCE(s)	__IDSTRING(__CONCAT(__rcsid_source_,__LINE__),s)
+#define	__RCSID_SOURCE(s)	__IDSTRING(__BSD_CONCAT(__rcsid_source_,__LINE__),s)
 #else
 #define	__RCSID_SOURCE(s)	struct __hack
 #endif
@@ -530,7 +530,7 @@
 
 #ifndef	__SCCSID
 #ifndef	NO__SCCSID
-#define	__SCCSID(s)	__IDSTRING(__CONCAT(__sccsid_,__LINE__),s)
+#define	__SCCSID(s)	__IDSTRING(__BSD_CONCAT(__sccsid_,__LINE__),s)
 #else
 #define	__SCCSID(s)	struct __hack
 #endif
@@ -538,7 +538,7 @@
 
 #ifndef	__COPYRIGHT
 #ifndef	NO__COPYRIGHT
-#define	__COPYRIGHT(s)	__IDSTRING(__CONCAT(__copyright_,__LINE__),s)
+#define	__COPYRIGHT(s)	__IDSTRING(__BSD_CONCAT(__copyright_,__LINE__),s)
 #else
 #define	__COPYRIGHT(s)	struct __hack
 #endif

@@ -45,8 +45,8 @@
  */
 #ifdef __GNUCLIKE___SECTION
 #define __MAKE_SET(set, sym)						\
-	__GLOBL(__CONCAT(__start_set_,set));				\
-	__GLOBL(__CONCAT(__stop_set_,set));				\
+	__GLOBL(__BSD_CONCAT(__start_set_,set));				\
+	__GLOBL(__BSD_CONCAT(__stop_set_,set));				\
 	static void const * const __set_##set##_sym_##sym 		\
 	__section("set_" #set) __used = &sym
 #else /* !__GNUCLIKE___SECTION */
@@ -69,13 +69,13 @@
  * Initialize before referring to a given linker set.
  */
 #define SET_DECLARE(set, ptype)						\
-	extern ptype *__CONCAT(__start_set_,set);			\
-	extern ptype *__CONCAT(__stop_set_,set)
+	extern ptype *__BSD_CONCAT(__start_set_,set);			\
+	extern ptype *__BSD_CONCAT(__stop_set_,set)
 
 #define SET_BEGIN(set)							\
-	(&__CONCAT(__start_set_,set))
+	(&__BSD_CONCAT(__start_set_,set))
 #define SET_LIMIT(set)							\
-	(&__CONCAT(__stop_set_,set))
+	(&__BSD_CONCAT(__stop_set_,set))
 
 /*
  * Iterate over all the elements of a set.

@@ -889,19 +889,19 @@ void
 mutex_init(void)
 {
 
-	/* Setup turnstiles so that sleep mutexes work. */
-	init_turnstiles();
-
-	/*
-	 * Initialize mutexes.
-	 */
-	mtx_init(&Giant, "Giant", NULL, MTX_DEF | MTX_RECURSE);
-	mtx_init(&blocked_lock, "blocked lock", NULL, MTX_SPIN);
-	blocked_lock.mtx_lock = 0xdeadc0de;	/* Always blocked. */
-	mtx_init(&proc0.p_mtx, "process lock", NULL, MTX_DEF | MTX_DUPOK);
-	mtx_init(&proc0.p_slock, "process slock", NULL, MTX_SPIN | MTX_RECURSE);
-	mtx_init(&devmtx, "cdev", NULL, MTX_DEF);
-	mtx_lock(&Giant);
+//	/* Setup turnstiles so that sleep mutexes work. */
+//	init_turnstiles();
+//
+//	/*
+//	 * Initialize mutexes.
+//	 */
+//	mtx_init(&Giant, "Giant", NULL, MTX_DEF | MTX_RECURSE);
+//	mtx_init(&blocked_lock, "blocked lock", NULL, MTX_SPIN);
+//	blocked_lock.mtx_lock = 0xdeadc0de;	/* Always blocked. */
+//	mtx_init(&proc0.p_mtx, "process lock", NULL, MTX_DEF | MTX_DUPOK);
+//	mtx_init(&proc0.p_slock, "process slock", NULL, MTX_SPIN | MTX_RECURSE);
+//	mtx_init(&devmtx, "cdev", NULL, MTX_DEF);
+//	mtx_lock(&Giant);
 }
 
 #ifdef DDB

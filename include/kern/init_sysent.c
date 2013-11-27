@@ -15,19 +15,19 @@
 #define AS(name) (sizeof(struct name) / sizeof(register_t))
 
 #ifdef COMPAT_43
-#define compat(n, name) n, (sy_call_t *)__CONCAT(o,name)
+#define compat(n, name) n, (sy_call_t *)__BSD_CONCAT(o,name)
 #else
 #define compat(n, name) 0, (sy_call_t *)nosys
 #endif
 
 #ifdef COMPAT_FREEBSD4
-#define compat4(n, name) n, (sy_call_t *)__CONCAT(freebsd4_,name)
+#define compat4(n, name) n, (sy_call_t *)__BSD_CONCAT(freebsd4_,name)
 #else
 #define compat4(n, name) 0, (sy_call_t *)nosys
 #endif
 
 #ifdef COMPAT_FREEBSD7
-#define compat7(n, name) n, (sy_call_t *)__CONCAT(freebsd7_,name)
+#define compat7(n, name) n, (sy_call_t *)__BSD_CONCAT(freebsd7_,name)
 #else
 #define compat7(n, name) 0, (sy_call_t *)nosys
 #endif

@@ -277,13 +277,13 @@ struct tunable_int {
 	int *var;
 };
 #define	TUNABLE_INT(path, var)					\
-	static struct tunable_int __CONCAT(__tunable_int_, __LINE__) = { \
+	static struct tunable_int __BSD_CONCAT(__tunable_int_, __LINE__) = { \
 		(path),						\
 		(var),						\
 	};							\
-	SYSINIT(__CONCAT(__Tunable_init_, __LINE__),		\
+	SYSINIT(__BSD_CONCAT(__Tunable_init_, __LINE__),		\
 	    SI_SUB_TUNABLES, SI_ORDER_MIDDLE, tunable_int_init,	\
-	    &__CONCAT(__tunable_int_, __LINE__))
+	    &__BSD_CONCAT(__tunable_int_, __LINE__))
 
 #define	TUNABLE_INT_FETCH(path, var)	getenv_int((path), (var))
 
@@ -296,13 +296,13 @@ struct tunable_long {
 	long *var;
 };
 #define	TUNABLE_LONG(path, var)					\
-	static struct tunable_long __CONCAT(__tunable_long_, __LINE__) = { \
+	static struct tunable_long __BSD_CONCAT(__tunable_long_, __LINE__) = { \
 		(path),						\
 		(var),						\
 	};							\
-	SYSINIT(__CONCAT(__Tunable_init_, __LINE__),		\
+	SYSINIT(__BSD_CONCAT(__Tunable_init_, __LINE__),		\
 	    SI_SUB_TUNABLES, SI_ORDER_MIDDLE, tunable_long_init,\
-	    &__CONCAT(__tunable_long_, __LINE__))
+	    &__BSD_CONCAT(__tunable_long_, __LINE__))
 
 #define	TUNABLE_LONG_FETCH(path, var)	getenv_long((path), (var))
 
@@ -315,13 +315,13 @@ struct tunable_ulong {
 	unsigned long *var;
 };
 #define	TUNABLE_ULONG(path, var)				\
-	static struct tunable_ulong __CONCAT(__tunable_ulong_, __LINE__) = { \
+	static struct tunable_ulong __BSD_CONCAT(__tunable_ulong_, __LINE__) = { \
 		(path),						\
 		(var),						\
 	};							\
-	SYSINIT(__CONCAT(__Tunable_init_, __LINE__),		\
+	SYSINIT(__BSD_CONCAT(__Tunable_init_, __LINE__),		\
 	    SI_SUB_TUNABLES, SI_ORDER_MIDDLE, tunable_ulong_init, \
-	    &__CONCAT(__tunable_ulong_, __LINE__))
+	    &__BSD_CONCAT(__tunable_ulong_, __LINE__))
 
 #define	TUNABLE_ULONG_FETCH(path, var)	getenv_ulong((path), (var))
 
@@ -334,13 +334,13 @@ struct tunable_quad {
 	quad_t *var;
 };
 #define	TUNABLE_QUAD(path, var)					\
-	static struct tunable_quad __CONCAT(__tunable_quad_, __LINE__) = { \
+	static struct tunable_quad __BSD_CONCAT(__tunable_quad_, __LINE__) = { \
 		(path),						\
 		(var),						\
 	};							\
-	SYSINIT(__CONCAT(__Tunable_init_, __LINE__),		\
+	SYSINIT(__BSD_CONCAT(__Tunable_init_, __LINE__),		\
 	    SI_SUB_TUNABLES, SI_ORDER_MIDDLE, tunable_quad_init, \
-	    &__CONCAT(__tunable_quad_, __LINE__))
+	    &__BSD_CONCAT(__tunable_quad_, __LINE__))
 
 #define	TUNABLE_QUAD_FETCH(path, var)	getenv_quad((path), (var))
 
@@ -351,14 +351,14 @@ struct tunable_str {
 	int size;
 };
 #define	TUNABLE_STR(path, var, size)				\
-	static struct tunable_str __CONCAT(__tunable_str_, __LINE__) = { \
+	static struct tunable_str __BSD_CONCAT(__tunable_str_, __LINE__) = { \
 		(path),						\
 		(var),						\
 		(size),						\
 	};							\
-	SYSINIT(__CONCAT(__Tunable_init_, __LINE__),		\
+	SYSINIT(__BSD_CONCAT(__Tunable_init_, __LINE__),		\
 	    SI_SUB_TUNABLES, SI_ORDER_MIDDLE, tunable_str_init,	\
-	    &__CONCAT(__tunable_str_, __LINE__))
+	    &__BSD_CONCAT(__tunable_str_, __LINE__))
 
 #define	TUNABLE_STR_FETCH(path, var, size)			\
 	getenv_string((path), (var), (size))

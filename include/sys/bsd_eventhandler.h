@@ -78,7 +78,7 @@ typedef struct eventhandler_entry	*eventhandler_tag;
 	(list)->el_runcount++;						\
 	KASSERT((list)->el_runcount > 0,				\
 	    ("eventhandler_invoke: runcount overflow"));		\
-	CTR0(KTR_EVH, "eventhandler_invoke(\"" __STRING(name) "\")");	\
+	CTR0(KTR_EVH, "eventhandler_invoke(\"" __BSD_STRING(name) "\")");	\
 	BSD_TAILQ_FOREACH(_ep, &((list)->el_entries), ee_link) {		\
 		if (_ep->ee_priority != EHE_DEAD_PRIORITY) {		\
 			EHL_UNLOCK((list));				\

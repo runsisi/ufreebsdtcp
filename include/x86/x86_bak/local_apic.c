@@ -1189,7 +1189,7 @@ DB_SHOW_COMMAND(lapic, db_show_lapic)
 	db_printf("TPR      = %02x\n", lapic->tpr);
 
 #define dump_field(prefix, index)					\
-	dump_mask(__XSTRING(prefix ## index), lapic->prefix ## index,	\
+	dump_mask(__BSD_XSTRING(prefix ## index), lapic->prefix ## index,	\
 	    index * 32)
 
 	db_printf("In-service Interrupts:\n");

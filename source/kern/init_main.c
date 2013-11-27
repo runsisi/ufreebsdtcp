@@ -660,7 +660,7 @@ SYSINIT(random, SI_SUB_RANDOM, SI_ORDER_FIRST, random_init, NULL);
  */
 static char init_path[MAXPATHLEN] =
 #ifdef	INIT_PATH
-    __XSTRING(INIT_PATH);
+    __BSD_XSTRING(INIT_PATH);
 #else
     "/sbin/init:/sbin/oinit:/sbin/init.bak:/rescue/init:/stand/sysinstall";
 #endif

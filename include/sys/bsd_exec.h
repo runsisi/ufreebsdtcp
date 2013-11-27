@@ -86,7 +86,7 @@ int exec_unregister(const struct execsw *);
 #include <sys/bsd_module.h>
 
 #define EXEC_SET(name, execsw_arg) \
-	static int __CONCAT(name,_modevent)(module_t mod, int type, \
+	static int __BSD_CONCAT(name,_modevent)(module_t mod, int type, \
 	    void *data) \
 	{ \
 		struct execsw *exec = (struct execsw *)data; \
@@ -96,13 +96,13 @@ int exec_unregister(const struct execsw *);
 			/* printf(#name " module loaded\n"); */ \
 			error = exec_register(exec); \
 			if (error) \
-				printf(__XSTRING(name) "register failed\n"); \
+				printf(__BSD_XSTRING(name) "register failed\n"); \
 			break; \
 		case MOD_UNLOAD: \
 			/* printf(#name " module unloaded\n"); */ \
 			error = exec_unregister(exec); \
 			if (error) \
-				printf(__XSTRING(name) " unregister failed\n");\
+				printf(__BSD_XSTRING(name) " unregister failed\n");\
 			break; \
 		default: \
 			error = EOPNOTSUPP; \
@@ -110,12 +110,12 @@ int exec_unregister(const struct execsw *);
 		} \
 		return error; \
 	} \
-	static moduledata_t __CONCAT(name,_mod) = { \
-		__XSTRING(name), \
-		__CONCAT(name,_modevent), \
+	static moduledata_t __BSD_CONCAT(name,_mod) = { \
+		__BSD_XSTRING(name), \
+		__BSD_CONCAT(name,_modevent), \
 		(void *)& execsw_arg \
 	}; \
-	DECLARE_MODULE_TIED(name, __CONCAT(name,_mod), SI_SUB_EXEC, \
+	DECLARE_MODULE_TIED(name, __BSD_CONCAT(name,_mod), SI_SUB_EXEC, \
 	    SI_ORDER_ANY)
 #endif
 

@@ -93,7 +93,7 @@ static int __elfN(load_file)(struct proc *p, const char *file, u_long *addr,
 static int __elfN(load_section)(struct vmspace *vmspace, vm_object_t object,
     vm_offset_t offset, caddr_t vmaddr, size_t memsz, size_t filsz,
     vm_prot_t prot, size_t pagesize);
-static int __CONCAT(exec_, __elfN(imgact))(struct image_params *imgp);
+static int __BSD_CONCAT(exec_, __elfN(imgact))(struct image_params *imgp);
 static boolean_t __elfN(freebsd_trans_osrel)(const Elf_Note *note,
     int32_t *osrel);
 static boolean_t kfreebsd_trans_osrel(const Elf_Note *note, int32_t *osrel);
@@ -102,7 +102,7 @@ static boolean_t __elfN(check_note)(struct image_params *imgp,
 static vm_prot_t __elfN(trans_prot)(Elf_Word);
 static Elf_Word __elfN(untrans_prot)(vm_prot_t);
 
-SYSCTL_NODE(_kern, OID_AUTO, __CONCAT(elf, __ELF_WORD_SIZE), CTLFLAG_RW, 0,
+SYSCTL_NODE(_kern, OID_AUTO, __BSD_CONCAT(elf, __ELF_WORD_SIZE), CTLFLAG_RW, 0,
     "");
 
 #ifdef COMPRESS_USER_CORES
@@ -112,10 +112,10 @@ static int compress_core(gzFile, char *, char *, unsigned int,
 #define CORE_BUF_SIZE	(16 * 1024)
 
 int __elfN(fallback_brand) = -1;
-SYSCTL_INT(__CONCAT(_kern_elf, __ELF_WORD_SIZE), OID_AUTO,
+SYSCTL_INT(__BSD_CONCAT(_kern_elf, __ELF_WORD_SIZE), OID_AUTO,
     fallback_brand, CTLFLAG_RW, &__elfN(fallback_brand), 0,
-    __XSTRING(__CONCAT(ELF, __ELF_WORD_SIZE)) " brand of last resort");
-TUNABLE_INT("kern.elf" __XSTRING(__ELF_WORD_SIZE) ".fallback_brand",
+    __BSD_XSTRING(__BSD_CONCAT(ELF, __ELF_WORD_SIZE)) " brand of last resort");
+TUNABLE_INT("kern.elf" __BSD_XSTRING(__ELF_WORD_SIZE) ".fallback_brand",
     &__elfN(fallback_brand));
 
 static int elf_legacy_coredump = 0;
@@ -128,9 +128,9 @@ int __elfN(nxstack) =
 #else
 	0;
 #endif
-SYSCTL_INT(__CONCAT(_kern_elf, __ELF_WORD_SIZE), OID_AUTO,
+SYSCTL_INT(__BSD_CONCAT(_kern_elf, __ELF_WORD_SIZE), OID_AUTO,
     nxstack, CTLFLAG_RW, &__elfN(nxstack), 0,
-    __XSTRING(__CONCAT(ELF, __ELF_WORD_SIZE)) ": enable non-executable stack");
+    __BSD_XSTRING(__BSD_CONCAT(ELF, __ELF_WORD_SIZE)) ": enable non-executable stack");
 
 #if __ELF_WORD_SIZE == 32
 #if defined(__amd64__) || defined(__ia64__)
@@ -716,7 +716,7 @@ fail:
 }
 
 static int
-__CONCAT(exec_, __elfN(imgact))(struct image_params *imgp)
+__BSD_CONCAT(exec_, __elfN(imgact))(struct image_params *imgp)
 {
 	const Elf_Ehdr *hdr = (const Elf_Ehdr *)imgp->image_header;
 	const Elf_Phdr *phdr;
@@ -975,7 +975,7 @@ __CONCAT(exec_, __elfN(imgact))(struct image_params *imgp)
 	return (error);
 }
 
-#define	suword __CONCAT(suword, __ELF_WORD_SIZE)
+#define	suword __BSD_CONCAT(suword, __ELF_WORD_SIZE)
 
 int
 __elfN(freebsd_fixup)(register_t **stack_base, struct image_params *imgp)
@@ -2044,10 +2044,10 @@ __elfN(check_note)(struct image_params *imgp, Elf_Brandnote *checknote,
  * Tell kern_execve.c about it, with a little help from the linker.
  */
 static struct execsw __elfN(execsw) = {
-	__CONCAT(exec_, __elfN(imgact)),
-	__XSTRING(__CONCAT(ELF, __ELF_WORD_SIZE))
+	__BSD_CONCAT(exec_, __elfN(imgact)),
+	__BSD_XSTRING(__BSD_CONCAT(ELF, __ELF_WORD_SIZE))
 };
-EXEC_SET(__CONCAT(elf, __ELF_WORD_SIZE), __elfN(execsw));
+EXEC_SET(__BSD_CONCAT(elf, __ELF_WORD_SIZE), __elfN(execsw));
 
 #ifdef COMPRESS_USER_CORES
 /*
