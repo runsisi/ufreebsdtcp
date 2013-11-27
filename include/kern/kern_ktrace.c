@@ -711,7 +711,7 @@ void
 ktrpsig(sig, action, mask, code)
 	int sig;
 	sig_t action;
-	sigset_t *mask;
+	bsd_sigset_t *mask;
 	int code;
 {
 	struct thread *td = curthread;

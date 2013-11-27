@@ -77,7 +77,7 @@ struct sysent {			/* system call table */
 #define	SY_THR_INCR	0x8
 
 struct image_params;
-struct __sigset;
+struct __bsd_sigset;
 struct syscall_args;
 struct trapframe;
 struct vnode;
@@ -94,7 +94,7 @@ struct sysentvec {
 					/* translate trap-to-signal mapping */
 	int		(*sv_fixup)(register_t **, struct image_params *);
 					/* stack fixup function */
-	void		(*sv_sendsig)(void (*)(int), struct ksiginfo *, struct __sigset *);
+	void		(*sv_sendsig)(void (*)(int), struct ksiginfo *, struct __bsd_sigset *);
 			    		/* send signal */
 	char 		*sv_sigcode;	/* start of sigtramp code */
 	int 		*sv_szsigcode;	/* size of sigtramp code */

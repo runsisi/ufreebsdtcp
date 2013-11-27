@@ -135,10 +135,10 @@ struct kinfo_proc {
 	short	ki_jobc;		/* job control counter */
 	short	ki_spare_short1;	/* unused (just here for alignment) */
 	dev_t	ki_tdev;		/* controlling tty dev */
-	sigset_t ki_siglist;		/* Signals arrived but not delivered */
-	sigset_t ki_sigmask;		/* Current signal mask */
-	sigset_t ki_sigignore;		/* Signals being ignored */
-	sigset_t ki_sigcatch;		/* Signals being caught by user */
+	bsd_sigset_t ki_siglist;		/* Signals arrived but not delivered */
+	bsd_sigset_t ki_sigmask;		/* Current signal mask */
+	bsd_sigset_t ki_sigignore;		/* Signals being ignored */
+	bsd_sigset_t ki_sigcatch;		/* Signals being caught by user */
 	uid_t	ki_uid;			/* effective user id */
 	uid_t	ki_ruid;		/* Real user id */
 	uid_t	ki_svuid;		/* Saved effective user id */

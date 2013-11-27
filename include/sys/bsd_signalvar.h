@@ -51,17 +51,17 @@
  */
 struct sigacts {
 	sig_t	ps_sigact[_SIG_MAXSIG];	/* Disposition of signals. */
-	sigset_t ps_catchmask[_SIG_MAXSIG];	/* Signals to be blocked. */
-	sigset_t ps_sigonstack;		/* Signals to take on sigstack. */
-	sigset_t ps_sigintr;		/* Signals that interrupt syscalls. */
-	sigset_t ps_sigreset;		/* Signals that reset when caught. */
-	sigset_t ps_signodefer;		/* Signals not masked while handled. */
-	sigset_t ps_siginfo;		/* Signals that want SA_SIGINFO args. */
-	sigset_t ps_sigignore;		/* Signals being ignored. */
-	sigset_t ps_sigcatch;		/* Signals being caught by user. */
-	sigset_t ps_freebsd4;		/* Signals using freebsd4 ucontext. */
-	sigset_t ps_osigset;		/* Signals using <= 3.x osigset_t. */
-	sigset_t ps_usertramp;		/* SunOS compat; libc sigtramp. XXX */
+	bsd_sigset_t ps_catchmask[_SIG_MAXSIG];	/* Signals to be blocked. */
+	bsd_sigset_t ps_sigonstack;		/* Signals to take on sigstack. */
+	bsd_sigset_t ps_sigintr;		/* Signals that interrupt syscalls. */
+	bsd_sigset_t ps_sigreset;		/* Signals that reset when caught. */
+	bsd_sigset_t ps_signodefer;		/* Signals not masked while handled. */
+	bsd_sigset_t ps_siginfo;		/* Signals that want SA_SIGINFO args. */
+	bsd_sigset_t ps_sigignore;		/* Signals being ignored. */
+	bsd_sigset_t ps_sigcatch;		/* Signals being caught by user. */
+	bsd_sigset_t ps_freebsd4;		/* Signals using freebsd4 ucontext. */
+	bsd_sigset_t ps_osigset;		/* Signals using <= 3.x osigset_t. */
+	bsd_sigset_t ps_usertramp;		/* SunOS compat; libc sigtramp. XXX */
 	int	ps_flag;
 	int	ps_refcnt;
 	struct mtx ps_mtx;
@@ -180,7 +180,7 @@ typedef void __osiginfohandler_t(int, osiginfo_t *, void *);
 // ---------------------- @2013/11/27
 
 static __inline int
-__sigisempty(sigset_t *set)
+__sigisempty(bsd_sigset_t *set)
 {
 	int i;
 
@@ -192,7 +192,7 @@ __sigisempty(sigset_t *set)
 }
 
 static __inline int
-__sigseteq(sigset_t *set1, sigset_t *set2)
+__sigseteq(bsd_sigset_t *set1, bsd_sigset_t *set2)
 {
 	int i;
 
@@ -244,8 +244,8 @@ typedef struct ksiginfo {
 #define	KSI_ONQ(ksi)	((ksi)->ksi_sigq != NULL)
 
 typedef struct sigqueue {
-	sigset_t	sq_signals;	/* All pending signals. */
-	sigset_t	sq_kill;	/* Legacy depth 1 queue. */
+	bsd_sigset_t	sq_signals;	/* All pending signals. */
+	bsd_sigset_t	sq_kill;	/* Legacy depth 1 queue. */
 	BSD_TAILQ_HEAD(, ksiginfo)	sq_list;/* Queued signal info. */
 	struct proc	*sq_proc;
 	int		sq_flags;
@@ -268,7 +268,7 @@ typedef struct sigqueue {
  * containing SIGSETNAND(*set, *mask).
  */
 static __inline int
-sigsetmasked(sigset_t *set, sigset_t *mask)
+sigsetmasked(bsd_sigset_t *set, bsd_sigset_t *mask)
 {
 	int i;
 
@@ -349,7 +349,7 @@ void	pgsignal(struct pgrp *pgrp, int sig, int checkctty, ksiginfo_t *ksi);
 int	postsig(int sig);
 void	kern_psignal(struct proc *p, int sig);
 int	ptracestop(struct thread *td, int sig);
-void	sendsig(sig_t catcher, ksiginfo_t *ksi, sigset_t *retmask);
+void	sendsig(sig_t catcher, ksiginfo_t *ksi, bsd_sigset_t *retmask);
 struct sigacts *sigacts_alloc(void);
 void	sigacts_copy(struct sigacts *dest, struct sigacts *src);
 void	sigacts_free(struct sigacts *ps);
@@ -357,7 +357,7 @@ struct sigacts *sigacts_hold(struct sigacts *ps);
 int	sigacts_shared(struct sigacts *ps);
 void	sigexit(struct thread *td, int sig) __dead2;
 int	sigev_findtd(struct proc *p, struct sigevent *sigev, struct thread **);
-int	sig_ffs(sigset_t *set);
+int	sig_ffs(bsd_sigset_t *set);
 void	siginit(struct proc *p);
 void	signotify(struct thread *td);
 void	sigqueue_delete(struct sigqueue *queue, int sig);

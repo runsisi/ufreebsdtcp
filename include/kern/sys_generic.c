@@ -770,7 +770,7 @@ sys_pselect(struct thread *td, struct pselect_args *uap)
 {
 	struct timespec ts;
 	struct timeval tv, *tvp;
-	sigset_t set, *uset;
+	bsd_sigset_t set, *uset;
 	int error;
 
 	if (uap->ts != NULL) {
@@ -794,7 +794,7 @@ sys_pselect(struct thread *td, struct pselect_args *uap)
 
 int
 kern_pselect(struct thread *td, int nd, fd_set *in, fd_set *ou, fd_set *ex,
-    struct timeval *tvp, sigset_t *uset, int abi_nfdbits)
+    struct timeval *tvp, bsd_sigset_t *uset, int abi_nfdbits)
 {
 	int error;
 

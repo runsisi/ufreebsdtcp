@@ -82,7 +82,7 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/amd64/ia32/ia32_signal.c 251290 2013-06-03
 #include <machine/bsd_cpufunc.h>
 
 #ifdef COMPAT_FREEBSD4
-static void freebsd4_ia32_sendsig(sig_t, ksiginfo_t *, sigset_t *);
+static void freebsd4_ia32_sendsig(sig_t, ksiginfo_t *, bsd_sigset_t *);
 #endif
 
 #define	CS_SECURE(cs)		(ISPL(cs) == SEL_UPL)
@@ -332,7 +332,7 @@ freebsd32_swapcontext(struct thread *td, struct freebsd32_swapcontext_args *uap)
 
 #ifdef COMPAT_43
 static void
-ia32_osendsig(sig_t catcher, ksiginfo_t *ksi, sigset_t *mask)
+ia32_osendsig(sig_t catcher, ksiginfo_t *ksi, bsd_sigset_t *mask)
 {
 	struct ia32_sigframe3 sf, *fp;
 	struct proc *p;
@@ -434,7 +434,7 @@ ia32_osendsig(sig_t catcher, ksiginfo_t *ksi, sigset_t *mask)
 
 #ifdef COMPAT_FREEBSD4
 static void
-freebsd4_ia32_sendsig(sig_t catcher, ksiginfo_t *ksi, sigset_t *mask)
+freebsd4_ia32_sendsig(sig_t catcher, ksiginfo_t *ksi, bsd_sigset_t *mask)
 {
 	struct ia32_sigframe4 sf, *sfp;
 	struct siginfo32 siginfo;
@@ -549,7 +549,7 @@ freebsd4_ia32_sendsig(sig_t catcher, ksiginfo_t *ksi, sigset_t *mask)
 #endif	/* COMPAT_FREEBSD4 */
 
 void
-ia32_sendsig(sig_t catcher, ksiginfo_t *ksi, sigset_t *mask)
+ia32_sendsig(sig_t catcher, ksiginfo_t *ksi, bsd_sigset_t *mask)
 {
 	struct ia32_sigframe sf, *sfp;
 	struct siginfo32 siginfo;
@@ -754,7 +754,7 @@ ofreebsd32_sigreturn(struct thread *td, struct ofreebsd32_sigreturn_args *uap)
 	else
 		td->td_sigstk.ss_flags &= ~SS_ONSTACK;
 
-	kern_sigprocmask(td, SIG_SETMASK, (sigset_t *)&scp->sc_mask, NULL,
+	kern_sigprocmask(td, SIG_SETMASK, (bsd_sigset_t *)&scp->sc_mask, NULL,
 	    SIGPROCMASK_OLD);
 	set_pcb_flags(td->td_pcb, PCB_FULL_IRET);
 	return (EJUSTRETURN);

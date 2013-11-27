@@ -161,7 +161,7 @@ int	kern_posix_fallocate(struct thread *td, int fd, off_t offset,
 	    off_t len);
 int	kern_preadv(struct thread *td, int fd, struct uio *auio, off_t offset);
 int	kern_pselect(struct thread *td, int nd, fd_set *in, fd_set *ou,
-	    fd_set *ex, struct timeval *tvp, sigset_t *uset, int abi_nfdbits);
+	    fd_set *ex, struct timeval *tvp, bsd_sigset_t *uset, int abi_nfdbits);
 int	kern_ptrace(struct thread *td, int req, pid_t pid, void *addr,
 	    int data);
 int	kern_pwritev(struct thread *td, int fd, struct uio *auio, off_t offset);
@@ -205,9 +205,9 @@ int	kern_sigaction(struct thread *td, int sig, struct sigaction *act,
 	    struct sigaction *oact, int flags);
 int	kern_sigaltstack(struct thread *td, stack_t *ss, stack_t *oss);
 int	kern_sigprocmask(struct thread *td, int how,
-	    sigset_t *set, sigset_t *oset, int flags);
-int	kern_sigsuspend(struct thread *td, sigset_t mask);
-int	kern_sigtimedwait(struct thread *td, sigset_t waitset,
+	    bsd_sigset_t *set, bsd_sigset_t *oset, int flags);
+int	kern_sigsuspend(struct thread *td, bsd_sigset_t mask);
+int	kern_sigtimedwait(struct thread *td, bsd_sigset_t waitset,
 	    struct ksiginfo *ksi, struct timespec *timeout);
 int	kern_stat(struct thread *td, char *path, enum uio_seg pathseg,
 	    struct stat *sbp);

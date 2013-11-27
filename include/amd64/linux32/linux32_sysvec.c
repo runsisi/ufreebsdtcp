@@ -121,7 +121,7 @@ SET_DECLARE(linux_device_handler_set, struct linux_device_handler);
 static int	elf_linux_fixup(register_t **stack_base,
 		    struct image_params *iparams);
 static register_t *linux_copyout_strings(struct image_params *imgp);
-static void     linux_sendsig(sig_t catcher, ksiginfo_t *ksi, sigset_t *mask);
+static void     linux_sendsig(sig_t catcher, ksiginfo_t *ksi, bsd_sigset_t *mask);
 static void	exec_linux_setregs(struct thread *td, 
 				   struct image_params *imgp, u_long stack);
 static void	linux32_fixlimit(struct rlimit *rl, int which);
@@ -298,7 +298,7 @@ elf_linux_fixup(register_t **stack_base, struct image_params *imgp)
 extern unsigned long linux_sznonrtsigcode;
 
 static void
-linux_rt_sendsig(sig_t catcher, ksiginfo_t *ksi, sigset_t *mask)
+linux_rt_sendsig(sig_t catcher, ksiginfo_t *ksi, bsd_sigset_t *mask)
 {
 	struct thread *td = curthread;
 	struct proc *p = td->td_proc;
@@ -436,7 +436,7 @@ linux_rt_sendsig(sig_t catcher, ksiginfo_t *ksi, sigset_t *mask)
  * specified pc, psl.
  */
 static void
-linux_sendsig(sig_t catcher, ksiginfo_t *ksi, sigset_t *mask)
+linux_sendsig(sig_t catcher, ksiginfo_t *ksi, bsd_sigset_t *mask)
 {
 	struct thread *td = curthread;
 	struct proc *p = td->td_proc;
@@ -562,7 +562,7 @@ linux_sigreturn(struct thread *td, struct linux_sigreturn_args *args)
 {
 	struct l_sigframe frame;
 	struct trapframe *regs;
-	sigset_t bmask;
+	bsd_sigset_t bmask;
 	l_sigset_t lmask;
 	int eflags, i;
 	ksiginfo_t ksi;
@@ -660,7 +660,7 @@ linux_rt_sigreturn(struct thread *td, struct linux_rt_sigreturn_args *args)
 {
 	struct l_ucontext uc;
 	struct l_sigcontext *context;
-	sigset_t bmask;
+	bsd_sigset_t bmask;
 	l_stack_t *lss;
 	stack_t ss;
 	struct trapframe *regs;

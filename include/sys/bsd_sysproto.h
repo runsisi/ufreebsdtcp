@@ -942,22 +942,22 @@ struct nnpfs_syscall_args {
 };
 struct sigprocmask_args {
 	char how_l_[PADL_(int)]; int how; char how_r_[PADR_(int)];
-	char set_l_[PADL_(const sigset_t *)]; const sigset_t * set; char set_r_[PADR_(const sigset_t *)];
-	char oset_l_[PADL_(sigset_t *)]; sigset_t * oset; char oset_r_[PADR_(sigset_t *)];
+	char set_l_[PADL_(const bsd_sigset_t *)]; const bsd_sigset_t * set; char set_r_[PADR_(const bsd_sigset_t *)];
+	char oset_l_[PADL_(bsd_sigset_t *)]; bsd_sigset_t * oset; char oset_r_[PADR_(bsd_sigset_t *)];
 };
 struct sigsuspend_args {
-	char sigmask_l_[PADL_(const sigset_t *)]; const sigset_t * sigmask; char sigmask_r_[PADR_(const sigset_t *)];
+	char sigmask_l_[PADL_(const bsd_sigset_t *)]; const bsd_sigset_t * sigmask; char sigmask_r_[PADR_(const bsd_sigset_t *)];
 };
 struct sigpending_args {
-	char set_l_[PADL_(sigset_t *)]; sigset_t * set; char set_r_[PADR_(sigset_t *)];
+	char set_l_[PADL_(bsd_sigset_t *)]; bsd_sigset_t * set; char set_r_[PADR_(bsd_sigset_t *)];
 };
 struct sigtimedwait_args {
-	char set_l_[PADL_(const sigset_t *)]; const sigset_t * set; char set_r_[PADR_(const sigset_t *)];
+	char set_l_[PADL_(const bsd_sigset_t *)]; const bsd_sigset_t * set; char set_r_[PADR_(const bsd_sigset_t *)];
 	char info_l_[PADL_(siginfo_t *)]; siginfo_t * info; char info_r_[PADR_(siginfo_t *)];
 	char timeout_l_[PADL_(const struct timespec *)]; const struct timespec * timeout; char timeout_r_[PADR_(const struct timespec *)];
 };
 struct sigwaitinfo_args {
-	char set_l_[PADL_(const sigset_t *)]; const sigset_t * set; char set_r_[PADR_(const sigset_t *)];
+	char set_l_[PADL_(const bsd_sigset_t *)]; const bsd_sigset_t * set; char set_r_[PADR_(const bsd_sigset_t *)];
 	char info_l_[PADL_(siginfo_t *)]; siginfo_t * info; char info_r_[PADR_(siginfo_t *)];
 };
 struct __acl_get_file_args {
@@ -1267,7 +1267,7 @@ struct __acl_aclcheck_link_args {
 	char aclp_l_[PADL_(struct acl *)]; struct acl * aclp; char aclp_r_[PADR_(struct acl *)];
 };
 struct sigwait_args {
-	char set_l_[PADL_(const sigset_t *)]; const sigset_t * set; char set_r_[PADR_(const sigset_t *)];
+	char set_l_[PADL_(const bsd_sigset_t *)]; const bsd_sigset_t * set; char set_r_[PADR_(const bsd_sigset_t *)];
 	char sig_l_[PADL_(int *)]; int * sig; char sig_r_[PADR_(int *)];
 };
 struct thr_create_args {
@@ -1689,7 +1689,7 @@ struct pselect_args {
 	char ou_l_[PADL_(fd_set *)]; fd_set * ou; char ou_r_[PADR_(fd_set *)];
 	char ex_l_[PADL_(fd_set *)]; fd_set * ex; char ex_r_[PADR_(fd_set *)];
 	char ts_l_[PADL_(const struct timespec *)]; const struct timespec * ts; char ts_r_[PADR_(const struct timespec *)];
-	char sm_l_[PADL_(const sigset_t *)]; const sigset_t * sm; char sm_r_[PADR_(const sigset_t *)];
+	char sm_l_[PADL_(const bsd_sigset_t *)]; const bsd_sigset_t * sm; char sm_r_[PADR_(const bsd_sigset_t *)];
 };
 struct getloginclass_args {
 	char namebuf_l_[PADL_(char *)]; char * namebuf; char namebuf_r_[PADR_(char *)];

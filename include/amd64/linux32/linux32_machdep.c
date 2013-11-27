@@ -743,7 +743,7 @@ linux_sigaction(struct thread *td, struct linux_sigaction_args *args)
 int
 linux_sigsuspend(struct thread *td, struct linux_sigsuspend_args *args)
 {
-	sigset_t sigmask;
+	bsd_sigset_t sigmask;
 	l_sigset_t mask;
 
 #ifdef DEBUG
@@ -761,7 +761,7 @@ int
 linux_rt_sigsuspend(struct thread *td, struct linux_rt_sigsuspend_args *uap)
 {
 	l_sigset_t lmask;
-	sigset_t sigmask;
+	bsd_sigset_t sigmask;
 	int error;
 
 #ifdef DEBUG
@@ -785,7 +785,7 @@ int
 linux_pause(struct thread *td, struct linux_pause_args *args)
 {
 	struct proc *p = td->td_proc;
-	sigset_t sigmask;
+	bsd_sigset_t sigmask;
 
 #ifdef DEBUG
 	if (ldebug(pause))

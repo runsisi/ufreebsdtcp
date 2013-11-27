@@ -57,7 +57,7 @@ typedef long sig_atomic_t;
  * sigcontext must match those in mcontext_t and struct trapframe.
  */
 struct sigcontext {
-	struct __sigset sc_mask;	/* signal mask to restore */
+	struct __bsd_sigset sc_mask;	/* signal mask to restore */
 	long	sc_onstack;		/* sigstack state to restore */
 	long	sc_rdi;		/* machine state (struct trapframe) */
 	long	sc_rsi;

@@ -316,7 +316,7 @@ cpu_startup(dummy)
  * specified pc, psl.
  */
 void
-sendsig(sig_t catcher, ksiginfo_t *ksi, sigset_t *mask)
+sendsig(sig_t catcher, ksiginfo_t *ksi, bsd_sigset_t *mask)
 {
 	struct sigframe sf, *sfp;
 	struct pcb *pcb;

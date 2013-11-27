@@ -143,7 +143,7 @@ typedef	void __sighandler_t(int);
 #if __POSIX_VISIBLE || __XSI_VISIBLE
 #ifndef _SIGSET_T_DECLARED
 #define	_SIGSET_T_DECLARED
-typedef	__sigset_t	sigset_t;
+typedef	__bsd_sigset_t	bsd_sigset_t;
 #endif
 #endif
 
@@ -302,7 +302,7 @@ struct sigaction {
 		void    (*__sa_sigaction)(int, struct __siginfo *, void *);
 	} __sigaction_u;		/* signal handler */
 	int	sa_flags;		/* see signal options below */
-	sigset_t sa_mask;		/* signal mask to apply */
+	bsd_sigset_t sa_mask;		/* signal mask to apply */
 };
 
 #define	sa_handler	__sigaction_u.__sa_handler

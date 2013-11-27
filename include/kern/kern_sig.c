@@ -230,7 +230,7 @@ static int sigproptbl[NSIG] = {
         SA_KILL|SA_PROC,		/* SIGUSR2 */
 };
 
-static void reschedule_signals(struct proc *p, sigset_t block, int flags);
+static void reschedule_signals(struct proc *p, bsd_sigset_t block, int flags);
 
 static void
 sigqueue_start(void)
@@ -436,9 +436,9 @@ sigqueue_flush(sigqueue_t *sq)
 }
 
 static void
-sigqueue_move_set(sigqueue_t *src, sigqueue_t *dst, const sigset_t *set)
+sigqueue_move_set(sigqueue_t *src, sigqueue_t *dst, const bsd_sigset_t *set)
 {
-	sigset_t tmp;
+	bsd_sigset_t tmp;
 	struct proc *p1, *p2;
 	ksiginfo_t *ksi, *next;
 
@@ -475,7 +475,7 @@ sigqueue_move_set(sigqueue_t *src, sigqueue_t *dst, const sigset_t *set)
 static void
 sigqueue_move(sigqueue_t *src, sigqueue_t *dst, int signo)
 {
-	sigset_t set;
+	bsd_sigset_t set;
 
 	SIGEMPTYSET(set);
 	SIGADDSET(set, signo);
@@ -484,7 +484,7 @@ sigqueue_move(sigqueue_t *src, sigqueue_t *dst, int signo)
 #endif
 
 static void
-sigqueue_delete_set(sigqueue_t *sq, const sigset_t *set)
+sigqueue_delete_set(sigqueue_t *sq, const bsd_sigset_t *set)
 {
 	struct proc *p = sq->sq_proc;
 	ksiginfo_t *ksi, *next;
@@ -507,7 +507,7 @@ sigqueue_delete_set(sigqueue_t *sq, const sigset_t *set)
 void
 sigqueue_delete(sigqueue_t *sq, int signo)
 {
-	sigset_t set;
+	bsd_sigset_t set;
 
 	SIGEMPTYSET(set);
 	SIGADDSET(set, signo);
@@ -516,7 +516,7 @@ sigqueue_delete(sigqueue_t *sq, int signo)
 
 /* Remove a set of signals for a process */
 static void
-sigqueue_delete_set_proc(struct proc *p, const sigset_t *set)
+sigqueue_delete_set_proc(struct proc *p, const bsd_sigset_t *set)
 {
 	sigqueue_t worklist;
 	struct thread *td0;
@@ -535,7 +535,7 @@ sigqueue_delete_set_proc(struct proc *p, const sigset_t *set)
 void
 sigqueue_delete_proc(struct proc *p, int signo)
 {
-	sigset_t set;
+	bsd_sigset_t set;
 
 	SIGEMPTYSET(set);
 	SIGADDSET(set, signo);
@@ -545,7 +545,7 @@ sigqueue_delete_proc(struct proc *p, int signo)
 static void
 sigqueue_delete_stopmask_proc(struct proc *p)
 {
-	sigset_t set;
+	bsd_sigset_t set;
 
 	SIGEMPTYSET(set);
 	SIGADDSET(set, SIGSTOP);
@@ -618,7 +618,7 @@ sigprop(int sig)
 }
 
 int
-sig_ffs(sigset_t *set)
+sig_ffs(bsd_sigset_t *set)
 {
 	int i;
 
@@ -966,10 +966,10 @@ execsigs(struct proc *p)
  *	Manipulate signal mask.
  */
 int
-kern_sigprocmask(struct thread *td, int how, sigset_t *set, sigset_t *oset,
+kern_sigprocmask(struct thread *td, int how, bsd_sigset_t *set, bsd_sigset_t *oset,
     int flags)
 {
-	sigset_t new_block, oset1;
+	bsd_sigset_t new_block, oset1;
 	struct proc *p;
 	int error;
 
@@ -1031,8 +1031,8 @@ out:
 #ifndef _SYS_SYSPROTO_H_
 struct sigprocmask_args {
 	int	how;
-	const sigset_t *set;
-	sigset_t *oset;
+	const bsd_sigset_t *set;
+	bsd_sigset_t *oset;
 };
 #endif
 int
@@ -1040,8 +1040,8 @@ sys_sigprocmask(td, uap)
 	register struct thread *td;
 	struct sigprocmask_args *uap;
 {
-	sigset_t set, oset;
-	sigset_t *setp, *osetp;
+	bsd_sigset_t set, oset;
+	bsd_sigset_t *setp, *osetp;
 	int error;
 
 	setp = (uap->set != NULL) ? &set : NULL;
@@ -1070,7 +1070,7 @@ osigprocmask(td, uap)
 	register struct thread *td;
 	struct osigprocmask_args *uap;
 {
-	sigset_t set, oset;
+	bsd_sigset_t set, oset;
 	int error;
 
 	OSIG2SIG(uap->mask, set);
@@ -1084,7 +1084,7 @@ int
 sys_sigwait(struct thread *td, struct sigwait_args *uap)
 {
 	ksiginfo_t ksi;
-	sigset_t set;
+	bsd_sigset_t set;
 	int error;
 
 	error = copyin(uap->set, &set, sizeof(set));
@@ -1113,7 +1113,7 @@ sys_sigtimedwait(struct thread *td, struct sigtimedwait_args *uap)
 {
 	struct timespec ts;
 	struct timespec *timeout;
-	sigset_t set;
+	bsd_sigset_t set;
 	ksiginfo_t ksi;
 	int error;
 
@@ -1146,7 +1146,7 @@ int
 sys_sigwaitinfo(struct thread *td, struct sigwaitinfo_args *uap)
 {
 	ksiginfo_t ksi;
-	sigset_t set;
+	bsd_sigset_t set;
 	int error;
 
 	error = copyin(uap->set, &set, sizeof(set));
@@ -1166,11 +1166,11 @@ sys_sigwaitinfo(struct thread *td, struct sigwaitinfo_args *uap)
 }
 
 int
-kern_sigtimedwait(struct thread *td, sigset_t waitset, ksiginfo_t *ksi,
+kern_sigtimedwait(struct thread *td, bsd_sigset_t waitset, ksiginfo_t *ksi,
 	struct timespec *timeout)
 {
 	struct sigacts *ps;
-	sigset_t saved_mask, new_block;
+	bsd_sigset_t saved_mask, new_block;
 	struct proc *p;
 	int error, sig, timo, timevalid = 0;
 	struct timespec rts, ets, ts;
@@ -1281,7 +1281,7 @@ kern_sigtimedwait(struct thread *td, sigset_t waitset, ksiginfo_t *ksi,
 
 #ifndef _SYS_SYSPROTO_H_
 struct sigpending_args {
-	sigset_t	*set;
+	bsd_sigset_t	*set;
 };
 #endif
 int
@@ -1290,13 +1290,13 @@ sys_sigpending(td, uap)
 	struct sigpending_args *uap;
 {
 	struct proc *p = td->td_proc;
-	sigset_t pending;
+	bsd_sigset_t pending;
 
 	PROC_LOCK(p);
 	pending = p->p_sigqueue.sq_signals;
 	SIGSETOR(pending, td->td_sigqueue.sq_signals);
 	PROC_UNLOCK(p);
-	return (copyout(&pending, uap->set, sizeof(sigset_t)));
+	return (copyout(&pending, uap->set, sizeof(bsd_sigset_t)));
 }
 
 #ifdef COMPAT_43	/* XXX - COMPAT_FBSD3 */
@@ -1311,7 +1311,7 @@ osigpending(td, uap)
 	struct osigpending_args *uap;
 {
 	struct proc *p = td->td_proc;
-	sigset_t pending;
+	bsd_sigset_t pending;
 
 	PROC_LOCK(p);
 	pending = p->p_sigqueue.sq_signals;
@@ -1379,7 +1379,7 @@ osigblock(td, uap)
 	register struct thread *td;
 	struct osigblock_args *uap;
 {
-	sigset_t set, oset;
+	bsd_sigset_t set, oset;
 
 	OSIG2SIG(uap->mask, set);
 	kern_sigprocmask(td, SIG_BLOCK, &set, &oset, 0);
@@ -1397,7 +1397,7 @@ osigsetmask(td, uap)
 	struct thread *td;
 	struct osigsetmask_args *uap;
 {
-	sigset_t set, oset;
+	bsd_sigset_t set, oset;
 
 	OSIG2SIG(uap->mask, set);
 	kern_sigprocmask(td, SIG_SETMASK, &set, &oset, 0);
@@ -1412,7 +1412,7 @@ osigsetmask(td, uap)
  */
 #ifndef _SYS_SYSPROTO_H_
 struct sigsuspend_args {
-	const sigset_t *sigmask;
+	const bsd_sigset_t *sigmask;
 };
 #endif
 /* ARGSUSED */
@@ -1421,7 +1421,7 @@ sys_sigsuspend(td, uap)
 	struct thread *td;
 	struct sigsuspend_args *uap;
 {
-	sigset_t mask;
+	bsd_sigset_t mask;
 	int error;
 
 	error = copyin(uap->sigmask, &mask, sizeof(mask));
@@ -1431,7 +1431,7 @@ sys_sigsuspend(td, uap)
 }
 
 int
-kern_sigsuspend(struct thread *td, sigset_t mask)
+kern_sigsuspend(struct thread *td, bsd_sigset_t mask)
 {
 	struct proc *p = td->td_proc;
 	int has_sig, sig;
@@ -1487,7 +1487,7 @@ osigsuspend(td, uap)
 	struct thread *td;
 	struct osigsuspend_args *uap;
 {
-	sigset_t mask;
+	bsd_sigset_t mask;
 
 	OSIG2SIG(uap->mask, mask);
 	return (kern_sigsuspend(td, mask));
@@ -1861,7 +1861,7 @@ void
 trapsignal(struct thread *td, ksiginfo_t *ksi)
 {
 	struct sigacts *ps;
-	sigset_t mask;
+	bsd_sigset_t mask;
 	struct proc *p;
 	int sig;
 	int code;
@@ -2470,7 +2470,7 @@ stopme:
 }
 
 static void
-reschedule_signals(struct proc *p, sigset_t block, int flags)
+reschedule_signals(struct proc *p, bsd_sigset_t block, int flags)
 {
 	struct sigacts *ps;
 	struct thread *td;
@@ -2500,7 +2500,7 @@ void
 tdsigcleanup(struct thread *td)
 {
 	struct proc *p;
-	sigset_t unblocked;
+	bsd_sigset_t unblocked;
 
 	p = td->td_proc;
 	PROC_LOCK_ASSERT(p, MA_OWNED);
@@ -2576,7 +2576,7 @@ issignal(struct thread *td, int stop_allowed)
 	struct proc *p;
 	struct sigacts *ps;
 	struct sigqueue *queue;
-	sigset_t sigpending;
+	bsd_sigset_t sigpending;
 	int sig, prop, newsig;
 
 	p = td->td_proc;
@@ -2784,7 +2784,7 @@ postsig(sig)
 	struct sigacts *ps;
 	sig_t action;
 	ksiginfo_t ksi;
-	sigset_t returnmask, mask;
+	bsd_sigset_t returnmask, mask;
 
 	KASSERT(sig != 0, ("postsig"));
 

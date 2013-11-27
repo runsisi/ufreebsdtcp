@@ -7,22 +7,16 @@
 #endif 	// ---------------------- @2013/11/18
 
 // runsisi AT hust.edu.cn @2013/11/26
-#undef _ISOC95_SOURCE
-#undef _ISOC99_SOURCE
-#undef _POSIX_SOURCE
-#undef _POSIX_C_SOURCE
-#undef _XOPEN_SOURCE
-#undef _XOPEN_SOURCE_EXTENDED
-#undef _LARGEFILE64_SOURCE
-#undef _BSD_SOURCE
-#undef _SVID_SOURCE
-#undef _ATFILE_SOURCE
-
 #undef _ASM_GENERIC_ERRNO_H
-#undef _SIGSET_H_types
 
 #undef __nonnull
 #undef __size_t
+
+#undef _ANSI_SOURCE
+#undef _C99_SOURCE
+#undef _POSIX_SOURCE
+#undef _POSIX_C_SOURCE
+#undef _XOPEN_SOURCE
 
 #define _KERNEL     1
 #define VIMAGE      1

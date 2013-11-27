@@ -128,7 +128,7 @@ struct ktr_psig {
 	int	signo;
 	sig_t	action;
 	int	code;
-	sigset_t mask;
+	bsd_sigset_t mask;
 };
 
 /*
@@ -234,7 +234,7 @@ struct ktr_faultend {
 #ifdef	_KERNEL
 void	ktrnamei(char *);
 void	ktrcsw(int, int, const char *);
-void	ktrpsig(int, sig_t, sigset_t *, int);
+void	ktrpsig(int, sig_t, bsd_sigset_t *, int);
 void	ktrfault(vm_offset_t, int);
 void	ktrfaultend(int);
 void	ktrgenio(int, enum uio_rw, struct uio *, int);

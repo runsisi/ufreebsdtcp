@@ -46,7 +46,7 @@ typedef	__fd_mask	fd_mask;
 
 #ifndef _SIGSET_T_DECLARED
 #define	_SIGSET_T_DECLARED
-typedef	__sigset_t	sigset_t;
+typedef	__bsd_sigset_t	bsd_sigset_t;
 #endif
 
 /*
@@ -98,7 +98,7 @@ typedef	__sigset_t	sigset_t;
 
 __BEGIN_DECLS
 int pselect(int, fd_set *__restrict, fd_set *__restrict, fd_set *__restrict,
-	const struct timespec *__restrict, const sigset_t *__restrict);
+	const struct timespec *__restrict, const bsd_sigset_t *__restrict);
 #ifndef _SELECT_DECLARED
 #define	_SELECT_DECLARED
 /* XXX missing restrict type-qualifier */
