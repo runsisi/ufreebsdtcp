@@ -10,12 +10,15 @@
 //#undef _ASM_GENERIC_ERRNO_H
 
 #undef __size_t
+#undef errno
 
 #undef _ANSI_SOURCE
 #undef _C99_SOURCE
 #undef _POSIX_SOURCE
 #undef _POSIX_C_SOURCE
 #undef _XOPEN_SOURCE
+
+#define __FreeBSD__
 
 #define _KERNEL     1
 #define VIMAGE      1
