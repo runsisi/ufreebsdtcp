@@ -65,7 +65,7 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/netinet/toecore.c 252555 2013-07-03 09:25:
 #include <netinet/toecore.h>
 
 static struct mtx toedev_lock;
-static TAILQ_HEAD(, toedev) toedev_list;
+static BSD_TAILQ_HEAD(, toedev) toedev_list;
 static eventhandler_tag listen_start_eh;
 static eventhandler_tag listen_stop_eh;
 static eventhandler_tag lle_event_eh;
@@ -201,7 +201,7 @@ toe_listen_start(struct inpcb *inp, void *arg)
 
 	t = arg;
 	mtx_lock(&toedev_lock);
-	TAILQ_FOREACH(tod, &toedev_list, link) {
+	BSD_TAILQ_FOREACH(tod, &toedev_list, link) {
 		if (t == NULL || t == tod)
 			tod->tod_listen_start(tod, tp);
 	}
@@ -233,7 +233,7 @@ toe_listen_stop_event(void *arg __unused, struct tcpcb *tp)
 	    ("%s: t_state %s", __func__, tcpstates[tp->t_state]));
 
 	mtx_lock(&toedev_lock);
-	TAILQ_FOREACH(tod, &toedev_list, link)
+	BSD_TAILQ_FOREACH(tod, &toedev_list, link)
 	    tod->tod_listen_stop(tod, tp);
 	mtx_unlock(&toedev_lock);
 }
@@ -280,14 +280,14 @@ register_toedev(struct toedev *tod)
 	struct toedev *t;
 
 	mtx_lock(&toedev_lock);
-	TAILQ_FOREACH(t, &toedev_list, link) {
+	BSD_TAILQ_FOREACH(t, &toedev_list, link) {
 		if (t == tod) {
 			mtx_unlock(&toedev_lock);
 			return (EEXIST);
 		}
 	}
 
-	TAILQ_INSERT_TAIL(&toedev_list, tod, link);
+	BSD_TAILQ_INSERT_TAIL(&toedev_list, tod, link);
 	registered_toedevs++;
 	mtx_unlock(&toedev_lock);
 
@@ -308,9 +308,9 @@ unregister_toedev(struct toedev *tod)
 	int rc = ENODEV;
 
 	mtx_lock(&toedev_lock);
-	TAILQ_FOREACH_SAFE(t, &toedev_list, link, t2) {
+	BSD_TAILQ_FOREACH_SAFE(t, &toedev_list, link, t2) {
 		if (t == tod) {
-			TAILQ_REMOVE(&toedev_list, tod, link);
+			BSD_TAILQ_REMOVE(&toedev_list, tod, link);
 			registered_toedevs--;
 			rc = 0;
 			break;
@@ -588,7 +588,7 @@ toecore_load(void)
 {
 
 	mtx_init(&toedev_lock, "toedev lock", NULL, MTX_DEF);
-	TAILQ_INIT(&toedev_list);
+	BSD_TAILQ_INIT(&toedev_list);
 
 	listen_start_eh = EVENTHANDLER_REGISTER(tcp_offload_listen_start,
 	    toe_listen_start_event, NULL, EVENTHANDLER_PRI_ANY);
@@ -607,7 +607,7 @@ toecore_unload(void)
 {
 
 	mtx_lock(&toedev_lock);
-	if (!TAILQ_EMPTY(&toedev_list)) {
+	if (!BSD_TAILQ_EMPTY(&toedev_list)) {
 		mtx_unlock(&toedev_lock);
 		return (EBUSY);
 	}

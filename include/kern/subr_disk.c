@@ -147,7 +147,7 @@ void
 bioq_init(struct bio_queue_head *head)
 {
 
-	TAILQ_INIT(&head->queue);
+	BSD_TAILQ_INIT(&head->queue);
 	head->last_offset = 0;
 	head->insert_point = NULL;
 }
@@ -157,12 +157,12 @@ bioq_remove(struct bio_queue_head *head, struct bio *bp)
 {
 
 	if (head->insert_point == NULL) {
-		if (bp == TAILQ_FIRST(&head->queue))
+		if (bp == BSD_TAILQ_FIRST(&head->queue))
 			head->last_offset = bp->bio_offset + bp->bio_length;
 	} else if (bp == head->insert_point)
 		head->insert_point = NULL;
 
-	TAILQ_REMOVE(&head->queue, bp, bio_queue);
+	BSD_TAILQ_REMOVE(&head->queue, bp, bio_queue);
 }
 
 void
@@ -180,14 +180,14 @@ bioq_insert_head(struct bio_queue_head *head, struct bio *bp)
 
 	if (head->insert_point == NULL)
 		head->last_offset = bp->bio_offset;
-	TAILQ_INSERT_HEAD(&head->queue, bp, bio_queue);
+	BSD_TAILQ_INSERT_HEAD(&head->queue, bp, bio_queue);
 }
 
 void
 bioq_insert_tail(struct bio_queue_head *head, struct bio *bp)
 {
 
-	TAILQ_INSERT_TAIL(&head->queue, bp, bio_queue);
+	BSD_TAILQ_INSERT_TAIL(&head->queue, bp, bio_queue);
 	head->insert_point = bp;
 	head->last_offset = bp->bio_offset;
 }
@@ -196,7 +196,7 @@ struct bio *
 bioq_first(struct bio_queue_head *head)
 {
 
-	return (TAILQ_FIRST(&head->queue));
+	return (BSD_TAILQ_FIRST(&head->queue));
 }
 
 struct bio *
@@ -204,7 +204,7 @@ bioq_takefirst(struct bio_queue_head *head)
 {
 	struct bio *bp;
 
-	bp = TAILQ_FIRST(&head->queue);
+	bp = BSD_TAILQ_FIRST(&head->queue);
 	if (bp != NULL)
 		bioq_remove(head, bp);
 	return (bp);
@@ -248,20 +248,20 @@ bioq_disksort(struct bio_queue_head *head, struct bio *bp)
 
 	prev = NULL;
 	key = bioq_bio_key(head, bp);
-	cur = TAILQ_FIRST(&head->queue);
+	cur = BSD_TAILQ_FIRST(&head->queue);
 
 	if (head->insert_point) {
 		prev = head->insert_point;
-		cur = TAILQ_NEXT(head->insert_point, bio_queue);
+		cur = BSD_TAILQ_NEXT(head->insert_point, bio_queue);
 	}
 
 	while (cur != NULL && key >= bioq_bio_key(head, cur)) {
 		prev = cur;
-		cur = TAILQ_NEXT(cur, bio_queue);
+		cur = BSD_TAILQ_NEXT(cur, bio_queue);
 	}
 
 	if (prev == NULL)
-		TAILQ_INSERT_HEAD(&head->queue, bp, bio_queue);
+		BSD_TAILQ_INSERT_HEAD(&head->queue, bp, bio_queue);
 	else
-		TAILQ_INSERT_AFTER(&head->queue, prev, bp, bio_queue);
+		BSD_TAILQ_INSERT_AFTER(&head->queue, prev, bp, bio_queue);
 }

@@ -39,7 +39,7 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/kern/subr_eventhandler.c 205345 2010-03-19
 static MALLOC_DEFINE(M_EVENTHANDLER, "eventhandler", "Event handler records");
 
 /* List of 'slow' lists */
-static TAILQ_HEAD(, eventhandler_list)	eventhandler_lists;
+static BSD_TAILQ_HEAD(, eventhandler_list)	eventhandler_lists;
 static int				eventhandler_lists_initted = 0;
 static struct mtx			eventhandler_mutex;
 
@@ -57,7 +57,7 @@ static struct eventhandler_list *_eventhandler_find_list(const char *name);
 static void
 eventhandler_init(void *dummy __unused)
 {
-    TAILQ_INIT(&eventhandler_lists);
+    BSD_TAILQ_INIT(&eventhandler_lists);
     mtx_init(&eventhandler_mutex, "eventhandler", NULL, MTX_DEF);
     atomic_store_rel_int(&eventhandler_lists_initted, 1);
 }
@@ -106,12 +106,12 @@ eventhandler_register_internal(struct eventhandler_list *list,
 		bzero(&list->el_lock, sizeof(list->el_lock));
 		list->el_name = (char *)list + sizeof(struct eventhandler_list);
 		strcpy(list->el_name, name);
-		TAILQ_INSERT_HEAD(&eventhandler_lists, list, el_link);
+		BSD_TAILQ_INSERT_HEAD(&eventhandler_lists, list, el_link);
 	    }
 	}
     }
     if (!(list->el_flags & EHL_INITTED)) {
-	TAILQ_INIT(&list->el_entries);
+	BSD_TAILQ_INIT(&list->el_entries);
 	mtx_init(&list->el_lock, name, "eventhandler list", MTX_DEF);
 	atomic_store_rel_int(&list->el_flags, EHL_INITTED);
     }
@@ -124,15 +124,15 @@ eventhandler_register_internal(struct eventhandler_list *list,
     CTR4(KTR_EVH, "%s: adding item %p (function %p) to \"%s\"", __func__, epn,
 	((struct eventhandler_entry_generic *)epn)->func, name);
     EHL_LOCK(list);
-    TAILQ_FOREACH(ep, &list->el_entries, ee_link) {
+    BSD_TAILQ_FOREACH(ep, &list->el_entries, ee_link) {
 	if (ep->ee_priority != EHE_DEAD_PRIORITY &&
 	    epn->ee_priority < ep->ee_priority) {
-	    TAILQ_INSERT_BEFORE(ep, epn, ee_link);
+	    BSD_TAILQ_INSERT_BEFORE(ep, epn, ee_link);
 	    break;
 	}
     }
     if (ep == NULL)
-	TAILQ_INSERT_TAIL(&list->el_entries, epn, ee_link);
+	BSD_TAILQ_INSERT_TAIL(&list->el_entries, epn, ee_link);
     EHL_UNLOCK(list);
     return(epn);
 }
@@ -191,7 +191,7 @@ eventhandler_deregister(struct eventhandler_list *list, eventhandler_tag tag)
 	if (list->el_runcount == 0) {
 	    CTR3(KTR_EVH, "%s: removing item %p from \"%s\"", __func__, ep,
 		list->el_name);
-	    TAILQ_REMOVE(&list->el_entries, ep, ee_link);
+	    BSD_TAILQ_REMOVE(&list->el_entries, ep, ee_link);
 	    bsd_free(ep, M_EVENTHANDLER);
 	} else {
 	    CTR3(KTR_EVH, "%s: marking item %p from \"%s\" as dead", __func__,
@@ -203,15 +203,15 @@ eventhandler_deregister(struct eventhandler_list *list, eventhandler_tag tag)
 	if (list->el_runcount == 0) {
 	    CTR2(KTR_EVH, "%s: removing all items from \"%s\"", __func__,
 		list->el_name);
-	    while (!TAILQ_EMPTY(&list->el_entries)) {
-		ep = TAILQ_FIRST(&list->el_entries);
-		TAILQ_REMOVE(&list->el_entries, ep, ee_link);
+	    while (!BSD_TAILQ_EMPTY(&list->el_entries)) {
+		ep = BSD_TAILQ_FIRST(&list->el_entries);
+		BSD_TAILQ_REMOVE(&list->el_entries, ep, ee_link);
 		bsd_free(ep, M_EVENTHANDLER);
 	    }
 	} else {
 	    CTR2(KTR_EVH, "%s: marking all items from \"%s\" as dead",
 		__func__, list->el_name);
-	    TAILQ_FOREACH(ep, &list->el_entries, ee_link)
+	    BSD_TAILQ_FOREACH(ep, &list->el_entries, ee_link)
 		ep->ee_priority = EHE_DEAD_PRIORITY;
 	}
     }
@@ -229,7 +229,7 @@ _eventhandler_find_list(const char *name)
     struct eventhandler_list	*list;
 
     mtx_assert(&eventhandler_mutex, MA_OWNED);
-    TAILQ_FOREACH(list, &eventhandler_lists, el_link) {
+    BSD_TAILQ_FOREACH(list, &eventhandler_lists, el_link) {
 	if (!strcmp(name, list->el_name))
 	    break;
     }
@@ -268,9 +268,9 @@ eventhandler_prune_list(struct eventhandler_list *list)
 
     CTR2(KTR_EVH, "%s: pruning list \"%s\"", __func__, list->el_name);
     EHL_LOCK_ASSERT(list, MA_OWNED);
-    TAILQ_FOREACH_SAFE(ep, &list->el_entries, ee_link, en) {
+    BSD_TAILQ_FOREACH_SAFE(ep, &list->el_entries, ee_link, en) {
 	if (ep->ee_priority == EHE_DEAD_PRIORITY) {
-	    TAILQ_REMOVE(&list->el_entries, ep, ee_link);
+	    BSD_TAILQ_REMOVE(&list->el_entries, ep, ee_link);
 	    bsd_free(ep, M_EVENTHANDLER);
 	    pruned++;
 	}

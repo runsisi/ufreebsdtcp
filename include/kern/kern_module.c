@@ -47,8 +47,8 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/kern/kern_module.c 225617 2011-09-16 13:58
 static MALLOC_DEFINE(M_MODULE, "module", "module data structures");
 
 struct module {
-	TAILQ_ENTRY(module)	link;	/* chain together all modules */
-	TAILQ_ENTRY(module)	flink;	/* all modules in a file */
+	BSD_TAILQ_ENTRY(module)	link;	/* chain together all modules */
+	BSD_TAILQ_ENTRY(module)	flink;	/* all modules in a file */
 	struct linker_file	*file;	/* file which contains this module */
 	int			refs;	/* reference count */
 	int 			id;	/* unique id number */
@@ -60,7 +60,7 @@ struct module {
 
 #define MOD_EVENT(mod, type)	(mod)->handler((mod), (type), (mod)->arg)
 
-static TAILQ_HEAD(modulelist, module) modules;
+static BSD_TAILQ_HEAD(modulelist, module) modules;
 struct sx modules_sx;
 static int nextid = 1;
 static void module_shutdown(void *, int);
@@ -84,7 +84,7 @@ module_init(void *arg)
 {
 
 	sx_init(&modules_sx, "module subsystem sx lock");
-	TAILQ_INIT(&modules);
+	BSD_TAILQ_INIT(&modules);
 	EVENTHANDLER_REGISTER(shutdown_final, module_shutdown, NULL,
 	    SHUTDOWN_PRI_DEFAULT);
 }
@@ -100,7 +100,7 @@ module_shutdown(void *arg1, int arg2)
 		return;
 	mtx_lock(&Giant);
 	MOD_SLOCK;
-	TAILQ_FOREACH_REVERSE(mod, &modules, modulelist, link)
+	BSD_TAILQ_FOREACH_REVERSE(mod, &modules, modulelist, link)
 		MOD_EVENT(mod, MOD_SHUTDOWN);
 	MOD_SUNLOCK;
 	mtx_unlock(&Giant);
@@ -140,8 +140,8 @@ module_register_init(const void *arg)
 			 * modules to unload them, it will unload them
 			 * in the reverse order they were loaded.
 			 */
-			TAILQ_REMOVE(&mod->file->modules, mod, flink);
-			TAILQ_INSERT_HEAD(&mod->file->modules, mod, flink);
+			BSD_TAILQ_REMOVE(&mod->file->modules, mod, flink);
+			BSD_TAILQ_INSERT_HEAD(&mod->file->modules, mod, flink);
 		}
 		MOD_XUNLOCK;
 	}
@@ -175,10 +175,10 @@ module_register(const moduledata_t *data, linker_file_t container)
 	newmod->handler = data->evhand ? data->evhand : modevent_nop;
 	newmod->arg = data->priv;
 	bzero(&newmod->data, sizeof(newmod->data));
-	TAILQ_INSERT_TAIL(&modules, newmod, link);
+	BSD_TAILQ_INSERT_TAIL(&modules, newmod, link);
 
 	if (container)
-		TAILQ_INSERT_TAIL(&container->modules, newmod, flink);
+		BSD_TAILQ_INSERT_TAIL(&container->modules, newmod, flink);
 	newmod->file = container;
 	MOD_XUNLOCK;
 	return (0);
@@ -207,9 +207,9 @@ module_release(module_t mod)
 	
 	mod->refs--;
 	if (mod->refs == 0) {
-		TAILQ_REMOVE(&modules, mod, link);
+		BSD_TAILQ_REMOVE(&modules, mod, link);
 		if (mod->file)
-			TAILQ_REMOVE(&mod->file->modules, mod, flink);
+			BSD_TAILQ_REMOVE(&mod->file->modules, mod, flink);
 		bsd_free(mod, M_MODULE);
 	}
 }
@@ -222,7 +222,7 @@ module_lookupbyname(const char *name)
 
 	MOD_LOCK_ASSERT;
 
-	TAILQ_FOREACH(mod, &modules, link) {
+	BSD_TAILQ_FOREACH(mod, &modules, link) {
 		err = strcmp(mod->name, name);
 		if (err == 0)
 			return (mod);
@@ -237,7 +237,7 @@ module_lookupbyid(int modid)
 
         MOD_LOCK_ASSERT;
 
-        TAILQ_FOREACH(mod, &modules, link)
+        BSD_TAILQ_FOREACH(mod, &modules, link)
                 if (mod->id == modid)
                         return(mod);
         return (NULL);
@@ -280,7 +280,7 @@ module_getfnext(module_t mod)
 {
 
 	MOD_LOCK_ASSERT;
-	return (TAILQ_NEXT(mod, flink));
+	return (BSD_TAILQ_NEXT(mod, flink));
 }
 
 const char *
@@ -319,7 +319,7 @@ sys_modnext(struct thread *td, struct modnext_args *uap)
 
 	MOD_SLOCK;
 	if (uap->modid == 0) {
-		mod = TAILQ_FIRST(&modules);
+		mod = BSD_TAILQ_FIRST(&modules);
 		if (mod)
 			td->td_retval[0] = mod->id;
 		else
@@ -331,8 +331,8 @@ sys_modnext(struct thread *td, struct modnext_args *uap)
 		error = ENOENT;
 		goto done2;
 	}
-	if (TAILQ_NEXT(mod, link))
-		td->td_retval[0] = TAILQ_NEXT(mod, link)->id;
+	if (BSD_TAILQ_NEXT(mod, link))
+		td->td_retval[0] = BSD_TAILQ_NEXT(mod, link)->id;
 	else
 		td->td_retval[0] = 0;
 done2:
@@ -354,8 +354,8 @@ sys_modfnext(struct thread *td, struct modfnext_args *uap)
 		error = ENOENT;
 	} else {
 		error = 0;
-		if (TAILQ_NEXT(mod, flink))
-			td->td_retval[0] = TAILQ_NEXT(mod, flink)->id;
+		if (BSD_TAILQ_NEXT(mod, flink))
+			td->td_retval[0] = BSD_TAILQ_NEXT(mod, flink)->id;
 		else
 			td->td_retval[0] = 0;
 	}

@@ -58,7 +58,7 @@ static int pfil_list_remove(pfil_list_t *,
     int (*)(void *, struct mbuf **, struct ifnet *, int, struct inpcb *),
     void *);
 
-LIST_HEAD(pfilheadhead, pfil_head);
+BSD_LIST_HEAD(pfilheadhead, pfil_head);
 VNET_DEFINE(struct pfilheadhead, pfil_head_list);
 #define	V_pfil_head_list	VNET(pfil_head_list)
 
@@ -77,7 +77,7 @@ pfil_run_hooks(struct pfil_head *ph, struct mbuf **mp, struct ifnet *ifp,
 	PFIL_RLOCK(ph, &rmpt);
 	KASSERT(ph->ph_nhooks >= 0, ("Pfil hook count dropped < 0"));
 	for (pfh = pfil_hook_get(dir, ph); pfh != NULL;
-	     pfh = TAILQ_NEXT(pfh, pfil_link)) {
+	     pfh = BSD_TAILQ_NEXT(pfh, pfil_link)) {
 		if (pfh->pfil_func != NULL) {
 			rv = (*pfh->pfil_func)(pfh->pfil_arg, &m, ifp, dir,
 			    inp);
@@ -100,7 +100,7 @@ pfil_head_register(struct pfil_head *ph)
 	struct pfil_head *lph;
 
 	PFIL_LIST_LOCK();
-	LIST_FOREACH(lph, &V_pfil_head_list, ph_list) {
+	BSD_LIST_FOREACH(lph, &V_pfil_head_list, ph_list) {
 		if (ph->ph_type == lph->ph_type &&
 		    ph->ph_un.phu_val == lph->ph_un.phu_val) {
 			PFIL_LIST_UNLOCK();
@@ -109,9 +109,9 @@ pfil_head_register(struct pfil_head *ph)
 	}
 	PFIL_LOCK_INIT(ph);
 	ph->ph_nhooks = 0;
-	TAILQ_INIT(&ph->ph_in);
-	TAILQ_INIT(&ph->ph_out);
-	LIST_INSERT_HEAD(&V_pfil_head_list, ph, ph_list);
+	BSD_TAILQ_INIT(&ph->ph_in);
+	BSD_TAILQ_INIT(&ph->ph_out);
+	BSD_LIST_INSERT_HEAD(&V_pfil_head_list, ph, ph_list);
 	PFIL_LIST_UNLOCK();
 	return (0);
 }
@@ -127,11 +127,11 @@ pfil_head_unregister(struct pfil_head *ph)
 	struct packet_filter_hook *pfh, *pfnext;
 		
 	PFIL_LIST_LOCK();
-	LIST_REMOVE(ph, ph_list);
+	BSD_LIST_REMOVE(ph, ph_list);
 	PFIL_LIST_UNLOCK();
-	TAILQ_FOREACH_SAFE(pfh, &ph->ph_in, pfil_link, pfnext)
+	BSD_TAILQ_FOREACH_SAFE(pfh, &ph->ph_in, pfil_link, pfnext)
 		bsd_free(pfh, M_IFADDR);
-	TAILQ_FOREACH_SAFE(pfh, &ph->ph_out, pfil_link, pfnext)
+	BSD_TAILQ_FOREACH_SAFE(pfh, &ph->ph_out, pfil_link, pfnext)
 		bsd_free(pfh, M_IFADDR);
 	PFIL_LOCK_DESTROY(ph);
 	return (0);
@@ -146,7 +146,7 @@ pfil_head_get(int type, u_long val)
 	struct pfil_head *ph;
 
 	PFIL_LIST_LOCK();
-	LIST_FOREACH(ph, &V_pfil_head_list, ph_list)
+	BSD_LIST_FOREACH(ph, &V_pfil_head_list, ph_list)
 		if (ph->ph_type == type && ph->ph_un.phu_val == val)
 			break;
 	PFIL_LIST_UNLOCK();
@@ -250,7 +250,7 @@ pfil_list_add(pfil_list_t *list, struct packet_filter_hook *pfh1, int flags)
 	/*
 	 * First make sure the hook is not already there.
 	 */
-	TAILQ_FOREACH(pfh, list, pfil_link)
+	BSD_TAILQ_FOREACH(pfh, list, pfil_link)
 		if (pfh->pfil_func == pfh1->pfil_func &&
 		    pfh->pfil_arg == pfh1->pfil_arg)
 			return (EEXIST);
@@ -260,9 +260,9 @@ pfil_list_add(pfil_list_t *list, struct packet_filter_hook *pfh1, int flags)
 	 * the same path is followed in or out of the kernel.
 	 */
 	if (flags & PFIL_IN)
-		TAILQ_INSERT_HEAD(list, pfh1, pfil_link);
+		BSD_TAILQ_INSERT_HEAD(list, pfh1, pfil_link);
 	else
-		TAILQ_INSERT_TAIL(list, pfh1, pfil_link);
+		BSD_TAILQ_INSERT_TAIL(list, pfh1, pfil_link);
 	return (0);
 }
 
@@ -277,9 +277,9 @@ pfil_list_remove(pfil_list_t *list,
 {
 	struct packet_filter_hook *pfh;
 
-	TAILQ_FOREACH(pfh, list, pfil_link)
+	BSD_TAILQ_FOREACH(pfh, list, pfil_link)
 		if (pfh->pfil_func == func && pfh->pfil_arg == arg) {
-			TAILQ_REMOVE(list, pfh, pfil_link);
+			BSD_TAILQ_REMOVE(list, pfh, pfil_link);
 			bsd_free(pfh, M_IFADDR);
 			return (0);
 		}
@@ -294,7 +294,7 @@ static int
 vnet_pfil_init(const void *unused)
 {
 
-	LIST_INIT(&V_pfil_head_list);
+	BSD_LIST_INIT(&V_pfil_head_list);
 	return (0);
 }
 

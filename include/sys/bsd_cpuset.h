@@ -176,7 +176,7 @@
 #define	CPUSET_DEFAULT	0
 
 #ifdef _KERNEL
-LIST_HEAD(setlist, cpuset);
+BSD_LIST_HEAD(setlist, cpuset);
 
 /*
  * cpusets encapsulate cpu binding information for one or more threads.
@@ -195,8 +195,8 @@ struct cpuset {
 	int			cs_flags;	/* (s) Flags from below. */
 	cpusetid_t		cs_id;		/* (s) Id or INVALID. */
 	struct cpuset		*cs_parent;	/* (s) Pointer to our parent. */
-	LIST_ENTRY(cpuset)	cs_link;	/* (c) All identified sets. */
-	LIST_ENTRY(cpuset)	cs_siblings;	/* (c) Sibling set link. */
+	BSD_LIST_ENTRY(cpuset)	cs_link;	/* (c) All identified sets. */
+	BSD_LIST_ENTRY(cpuset)	cs_siblings;	/* (c) Sibling set link. */
 	struct setlist		cs_children;	/* (c) List of children. */
 };
 

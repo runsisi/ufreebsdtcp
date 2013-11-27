@@ -44,7 +44,7 @@ struct mod_depend;
  * Object representing a file which has been loaded by the linker.
  */
 typedef struct linker_file* linker_file_t;
-typedef TAILQ_HEAD(, linker_file) linker_file_list_t;
+typedef BSD_TAILQ_HEAD(, linker_file) linker_file_list_t;
 
 typedef caddr_t linker_sym_t;		/* opaque symbol */
 typedef c_caddr_t c_linker_sym_t;	/* const opaque symbol */
@@ -62,7 +62,7 @@ typedef struct linker_symval {
 typedef int (*linker_function_nameval_callback_t)(linker_file_t, int, linker_symval_t *, void *);
 
 struct common_symbol {
-    STAILQ_ENTRY(common_symbol) link;
+    BSD_STAILQ_ENTRY(common_symbol) link;
     char*		name;
     caddr_t		address;
 };
@@ -73,7 +73,7 @@ struct linker_file {
     int			userrefs;	/* kldload(2) count */
     int			flags;
 #define LINKER_FILE_LINKED	0x1	/* file has been fully linked */
-    TAILQ_ENTRY(linker_file) link;	/* list of all loaded files */
+    BSD_TAILQ_ENTRY(linker_file) link;	/* list of all loaded files */
     char*		filename;	/* file which was loaded */
     char*		pathname;	/* file name with full path */
     int			id;		/* unique id */
@@ -81,9 +81,9 @@ struct linker_file {
     size_t		size;		/* size of file */
     int			ndeps;		/* number of dependencies */
     linker_file_t*	deps;		/* list of dependencies */
-    STAILQ_HEAD(, common_symbol) common; /* list of common symbols */
-    TAILQ_HEAD(, module) modules;	/* modules in this file */
-    TAILQ_ENTRY(linker_file) loaded;	/* preload dependency support */
+    BSD_STAILQ_HEAD(, common_symbol) common; /* list of common symbols */
+    BSD_TAILQ_HEAD(, module) modules;	/* modules in this file */
+    BSD_TAILQ_ENTRY(linker_file) loaded;	/* preload dependency support */
     int			loadcnt;	/* load counter value */
 
     /*
@@ -102,11 +102,11 @@ struct linker_file {
  * Object implementing a class of file (a.out, elf, etc.)
  */
 typedef struct linker_class *linker_class_t;
-typedef TAILQ_HEAD(, linker_class) linker_class_list_t;
+typedef BSD_TAILQ_HEAD(, linker_class) linker_class_list_t;
 
 struct linker_class {
     KOBJ_CLASS_FIELDS;
-    TAILQ_ENTRY(linker_class) link;	/* list of all file classes */
+    BSD_TAILQ_ENTRY(linker_class) link;	/* list of all file classes */
 };
 
 /*

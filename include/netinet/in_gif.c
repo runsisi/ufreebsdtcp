@@ -388,7 +388,7 @@ gif_validate4(const struct ip *ip, struct gif_softc *sc, struct ifnet *ifp)
 	/* reject packets with broadcast on source */
 	/* XXXRW: should use hash lists? */
 	IN_IFADDR_RLOCK();
-	TAILQ_FOREACH(ia4, &V_in_ifaddrhead, ia_link) {
+	BSD_TAILQ_FOREACH(ia4, &V_in_ifaddrhead, ia_link) {
 		if ((ia4->ia_ifa.ifa_ifp->if_flags & IFF_BROADCAST) == 0)
 			continue;
 		if (ip->ip_src.s_addr == ia4->ia_broadaddr.sin_addr.s_addr) {

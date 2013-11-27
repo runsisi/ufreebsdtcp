@@ -132,7 +132,7 @@ DB_SHOW_COMMAND(lock, db_show_lock)
  * lock instances.
  */
 struct lock_profile_object {
-	LIST_ENTRY(lock_profile_object) lpo_link;
+	BSD_LIST_ENTRY(lock_profile_object) lpo_link;
 	struct lock_object *lpo_obj;
 	const char	*lpo_file;
 	int		lpo_line;
@@ -147,7 +147,7 @@ struct lock_profile_object {
  * One lock_prof for each (file, line, lock object) triple.
  */
 struct lock_prof {
-	SLIST_ENTRY(lock_prof) link;
+	BSD_SLIST_ENTRY(lock_prof) link;
 	struct lock_class *class;
 	const char	*file;
 	const char	*name;
@@ -161,7 +161,7 @@ struct lock_prof {
 	uintmax_t	cnt_contest_locking;
 };
 
-SLIST_HEAD(lphead, lock_prof);
+BSD_SLIST_HEAD(lphead, lock_prof);
 
 #define	LPROF_HASH_SIZE		4096
 #define	LPROF_HASH_MASK		(LPROF_HASH_SIZE - 1)
@@ -216,12 +216,12 @@ lock_prof_init_type(struct lock_prof_type *type)
 {
 	int i;
 
-	SLIST_INIT(&type->lpt_lpalloc);
-	LIST_INIT(&type->lpt_lpoalloc);
+	BSD_SLIST_INIT(&type->lpt_lpalloc);
+	BSD_LIST_INIT(&type->lpt_lpoalloc);
 	for (i = 0; i < LPROF_CACHE_SIZE; i++) {
-		SLIST_INSERT_HEAD(&type->lpt_lpalloc, &type->lpt_prof[i],
+		BSD_SLIST_INSERT_HEAD(&type->lpt_lpalloc, &type->lpt_prof[i],
 		    link);
-		LIST_INSERT_HEAD(&type->lpt_lpoalloc, &type->lpt_objs[i],
+		BSD_LIST_INSERT_HEAD(&type->lpt_lpoalloc, &type->lpt_objs[i],
 		    lpo_link);
 	}
 }
@@ -298,8 +298,8 @@ lock_prof_reset(void)
 	for (cpu = 0; cpu <= mp_maxid; cpu++) {
 		lpc = lp_cpu[cpu];
 		for (i = 0; i < LPROF_CACHE_SIZE; i++) {
-			LIST_REMOVE(&lpc->lpc_types[0].lpt_objs[i], lpo_link);
-			LIST_REMOVE(&lpc->lpc_types[1].lpt_objs[i], lpo_link);
+			BSD_LIST_REMOVE(&lpc->lpc_types[0].lpt_objs[i], lpo_link);
+			BSD_LIST_REMOVE(&lpc->lpc_types[1].lpt_objs[i], lpo_link);
 		}
 	}
 	for (cpu = 0; cpu <= mp_maxid; cpu++) {
@@ -347,7 +347,7 @@ lock_prof_sum(struct lock_prof *match, struct lock_prof *dst, int hash,
 		if (lp_cpu[cpu] == NULL)
 			continue;
 		type = &lp_cpu[cpu]->lpc_types[spin];
-		SLIST_FOREACH(l, &type->lpt_hash[hash], link) {
+		BSD_SLIST_FOREACH(l, &type->lpt_hash[hash], link) {
 			if (l->ticks == t)
 				continue;
 			if (l->file != match->file || l->line != match->line ||
@@ -375,7 +375,7 @@ lock_prof_type_stats(struct lock_prof_type *type, struct sbuf *sb, int spin,
 	int i;
 
 	for (i = 0; i < LPROF_HASH_SIZE; ++i) {
-		SLIST_FOREACH(l, &type->lpt_hash[i], link) {
+		BSD_SLIST_FOREACH(l, &type->lpt_hash[i], link) {
 			struct lock_prof lp = {};
 
 			if (l->ticks == t)
@@ -475,23 +475,23 @@ lock_profile_lookup(struct lock_object *lo, int spin, const char *file,
 	hash &= LPROF_HASH_MASK;
 	type = &lp_cpu[PCPU_GET(cpuid)]->lpc_types[spin];
 	head = &type->lpt_hash[hash];
-	SLIST_FOREACH(lp, head, link) {
+	BSD_SLIST_FOREACH(lp, head, link) {
 		if (lp->line == line && lp->file == p &&
 		    lp->name == lo->lo_name)
 			return (lp);
 
 	}
-	lp = SLIST_FIRST(&type->lpt_lpalloc);
+	lp = BSD_SLIST_FIRST(&type->lpt_lpalloc);
 	if (lp == NULL) {
 		lock_prof_rejected++;
 		return (lp);
 	}
-	SLIST_REMOVE_HEAD(&type->lpt_lpalloc, link);
+	BSD_SLIST_REMOVE_HEAD(&type->lpt_lpalloc, link);
 	lp->file = p;
 	lp->line = line;
 	lp->class = LOCK_CLASS(lo);
 	lp->name = lo->lo_name;
-	SLIST_INSERT_HEAD(&type->lpt_hash[hash], lp, link);
+	BSD_SLIST_INSERT_HEAD(&type->lpt_hash[hash], lp, link);
 	return (lp);
 }
 
@@ -504,22 +504,22 @@ lock_profile_object_lookup(struct lock_object *lo, int spin, const char *file,
 	struct lpohead *head;
 
 	head = &curthread->td_lprof[spin];
-	LIST_FOREACH(l, head, lpo_link)
+	BSD_LIST_FOREACH(l, head, lpo_link)
 		if (l->lpo_obj == lo && l->lpo_file == file &&
 		    l->lpo_line == line)
 			return (l);
 	type = &lp_cpu[PCPU_GET(cpuid)]->lpc_types[spin];
-	l = LIST_FIRST(&type->lpt_lpoalloc);
+	l = BSD_LIST_FIRST(&type->lpt_lpoalloc);
 	if (l == NULL) {
 		lock_prof_rejected++;
 		return (NULL);
 	}
-	LIST_REMOVE(l, lpo_link);
+	BSD_LIST_REMOVE(l, lpo_link);
 	l->lpo_obj = lo;
 	l->lpo_file = file;
 	l->lpo_line = line;
 	l->lpo_cnt = 0;
-	LIST_INSERT_HEAD(head, l, lpo_link);
+	BSD_LIST_INSERT_HEAD(head, l, lpo_link);
 
 	return (l);
 }
@@ -578,15 +578,15 @@ lock_profile_thread_exit(struct thread *td)
 	 */
 	lock_prof_reset_wait();
 #ifdef INVARIANTS
-	LIST_FOREACH(l, &td->td_lprof[0], lpo_link)
+	BSD_LIST_FOREACH(l, &td->td_lprof[0], lpo_link)
 		printf("thread still holds lock acquired at %s:%d\n",
 		    l->lpo_file, l->lpo_line);
-	LIST_FOREACH(l, &td->td_lprof[1], lpo_link)
+	BSD_LIST_FOREACH(l, &td->td_lprof[1], lpo_link)
 		printf("thread still holds lock acquired at %s:%d\n",
 		    l->lpo_file, l->lpo_line);
 #endif
-	MPASS(LIST_FIRST(&td->td_lprof[0]) == NULL);
-	MPASS(LIST_FIRST(&td->td_lprof[1]) == NULL);
+	MPASS(BSD_LIST_FIRST(&td->td_lprof[0]) == NULL);
+	MPASS(BSD_LIST_FIRST(&td->td_lprof[1]) == NULL);
 }
 
 void
@@ -605,7 +605,7 @@ lock_profile_release_lock(struct lock_object *lo)
 		return;
 	spin = (LOCK_CLASS(lo)->lc_flags & LC_SPINLOCK) ? 1 : 0;
 	head = &curthread->td_lprof[spin];
-	if (LIST_FIRST(head) == NULL)
+	if (BSD_LIST_FIRST(head) == NULL)
 		return;
 	critical_enter();
 	/* Recheck enabled now that we're in a critical section. */
@@ -615,7 +615,7 @@ lock_profile_release_lock(struct lock_object *lo)
 	 * If lock profiling is not enabled we still want to remove the
 	 * lpo from our queue.
 	 */
-	LIST_FOREACH(l, head, lpo_link)
+	BSD_LIST_FOREACH(l, head, lpo_link)
 		if (l->lpo_obj == lo)
 			break;
 	if (l == NULL)
@@ -643,9 +643,9 @@ lock_profile_release_lock(struct lock_object *lo)
 	lp->cnt_contest_locking += l->lpo_contest_locking;
 	lp->cnt_cur += l->lpo_cnt;
 release:
-	LIST_REMOVE(l, lpo_link);
+	BSD_LIST_REMOVE(l, lpo_link);
 	type = &lp_cpu[PCPU_GET(cpuid)]->lpc_types[spin];
-	LIST_INSERT_HEAD(&type->lpt_lpoalloc, l, lpo_link);
+	BSD_LIST_INSERT_HEAD(&type->lpt_lpoalloc, l, lpo_link);
 out:
 	critical_exit();
 }

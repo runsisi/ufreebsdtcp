@@ -51,7 +51,7 @@ int	 syncache_pcbcount(void);
 int	 syncache_pcblist(struct sysctl_req *req, int max_pcbs, int *pcbs_exported);
 
 struct syncache {
-	TAILQ_ENTRY(syncache)	sc_hash;
+	BSD_TAILQ_ENTRY(syncache)	sc_hash;
 	struct		in_conninfo sc_inc;	/* addresses */
 	int		sc_rxttime;		/* retransmit time */
 	u_int16_t	sc_rxmits;		/* retransmit counter */
@@ -97,7 +97,7 @@ struct syncache {
 struct syncache_head {
 	struct vnet	*sch_vnet;
 	struct mtx	sch_mtx;
-	TAILQ_HEAD(sch_head, syncache)	sch_bucket;
+	BSD_TAILQ_HEAD(sch_head, syncache)	sch_bucket;
 	struct callout	sch_timer;
 	int		sch_nextc;
 	u_int		sch_length;

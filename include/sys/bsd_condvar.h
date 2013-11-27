@@ -35,7 +35,7 @@
 struct lock_object;
 struct thread;
 
-TAILQ_HEAD(cv_waitq, thread);
+BSD_TAILQ_HEAD(cv_waitq, thread);
 
 /*
  * Condition variable.  The waiters count is protected by the mutex that

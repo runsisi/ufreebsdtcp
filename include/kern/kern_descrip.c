@@ -159,7 +159,7 @@ static int	fill_shm_info(struct file *fp, struct kinfo_file *kif);
  */
 struct freetable {
 	struct file	**ft_table;
-	SLIST_ENTRY(freetable) ft_next;
+	BSD_SLIST_ENTRY(freetable) ft_next;
 };
 
 /*
@@ -171,7 +171,7 @@ struct filedesc0 {
 	/*
 	 * ofiles which need to be reclaimed on free.
 	 */
-	SLIST_HEAD(,freetable) fd_free;
+	BSD_SLIST_HEAD(,freetable) fd_free;
 	/*
 	 * These arrays are used when the number of open files is
 	 * <= NDFILE, and are then pointed to by the pointers above.
@@ -990,13 +990,13 @@ funsetown(struct sigio **sigiop)
 	if ((sigio)->sio_pgid < 0) {
 		struct pgrp *pg = (sigio)->sio_pgrp;
 		PGRP_LOCK(pg);
-		SLIST_REMOVE(&sigio->sio_pgrp->pg_sigiolst, sigio,
+		BSD_SLIST_REMOVE(&sigio->sio_pgrp->pg_sigiolst, sigio,
 			     sigio, sio_pgsigio);
 		PGRP_UNLOCK(pg);
 	} else {
 		struct proc *p = (sigio)->sio_proc;
 		PROC_LOCK(p);
-		SLIST_REMOVE(&sigio->sio_proc->p_sigiolst, sigio,
+		BSD_SLIST_REMOVE(&sigio->sio_proc->p_sigiolst, sigio,
 			     sigio, sio_pgsigio);
 		PROC_UNLOCK(p);
 	}
@@ -1018,7 +1018,7 @@ funsetownlst(struct sigiolst *sigiolst)
 	struct pgrp *pg;
 	struct sigio *sigio;
 
-	sigio = SLIST_FIRST(sigiolst);
+	sigio = BSD_SLIST_FIRST(sigiolst);
 	if (sigio == NULL)
 		return;
 	p = NULL;
@@ -1037,7 +1037,7 @@ funsetownlst(struct sigiolst *sigiolst)
 	}
 
 	SIGIO_LOCK();
-	while ((sigio = SLIST_FIRST(sigiolst)) != NULL) {
+	while ((sigio = BSD_SLIST_FIRST(sigiolst)) != NULL) {
 		*(sigio->sio_myref) = NULL;
 		if (pg != NULL) {
 			KASSERT(sigio->sio_pgid < 0,
@@ -1045,7 +1045,7 @@ funsetownlst(struct sigiolst *sigiolst)
 			KASSERT(sigio->sio_pgrp == pg,
 			    ("Bogus pgrp in sigio list"));
 			PGRP_LOCK(pg);
-			SLIST_REMOVE(&pg->pg_sigiolst, sigio, sigio,
+			BSD_SLIST_REMOVE(&pg->pg_sigiolst, sigio, sigio,
 			    sio_pgsigio);
 			PGRP_UNLOCK(pg);
 		} else /* if (p != NULL) */ {
@@ -1054,7 +1054,7 @@ funsetownlst(struct sigiolst *sigiolst)
 			KASSERT(sigio->sio_proc == p,
 			    ("Bogus proc in sigio list"));
 			PROC_LOCK(p);
-			SLIST_REMOVE(&p->p_sigiolst, sigio, sigio,
+			BSD_SLIST_REMOVE(&p->p_sigiolst, sigio, sigio,
 			    sio_pgsigio);
 			PROC_UNLOCK(p);
 		}
@@ -1152,12 +1152,12 @@ fsetown(pid_t pgid, struct sigio **sigiop)
 			ret = ESRCH;
 			goto fail;
 		}
-		SLIST_INSERT_HEAD(&proc->p_sigiolst, sigio, sio_pgsigio);
+		BSD_SLIST_INSERT_HEAD(&proc->p_sigiolst, sigio, sio_pgsigio);
 		sigio->sio_proc = proc;
 		PROC_UNLOCK(proc);
 	} else {
 		PGRP_LOCK(pgrp);
-		SLIST_INSERT_HEAD(&pgrp->pg_sigiolst, sigio, sio_pgsigio);
+		BSD_SLIST_INSERT_HEAD(&pgrp->pg_sigiolst, sigio, sio_pgsigio);
 		sigio->sio_pgrp = pgrp;
 		PGRP_UNLOCK(pgrp);
 	}
@@ -1518,7 +1518,7 @@ fdgrowtable(struct filedesc *fdp, int nfd)
 		fo = (struct freetable *)&otable[onfiles];
 		fdp0 = (struct filedesc0 *)fdp;
 		fo->ft_table = otable;
-		SLIST_INSERT_HEAD(&fdp0->fd_free, fo, ft_next);
+		BSD_SLIST_INSERT_HEAD(&fdp0->fd_free, fo, ft_next);
 	}
 	if (NDSLOTS(nnfiles) > NDSLOTS(onfiles)) {
 		bcopy(fdp->fd_map, nmap, NDSLOTS(onfiles) * sizeof(*nmap));
@@ -1805,8 +1805,8 @@ fddrop(struct filedesc *fdp)
 
 	FILEDESC_LOCK_DESTROY(fdp);
 	fdp0 = (struct filedesc0 *)fdp;
-	while ((ft = SLIST_FIRST(&fdp0->fd_free)) != NULL) {
-		SLIST_REMOVE_HEAD(&fdp0->fd_free, ft_next);
+	while ((ft = BSD_SLIST_FIRST(&fdp0->fd_free)) != NULL) {
+		BSD_SLIST_REMOVE_HEAD(&fdp0->fd_free, ft_next);
 		bsd_free(ft->ft_table, M_FILEDESC);
 	}
 	bsd_free(fdp, M_FILEDESC);
@@ -2857,7 +2857,7 @@ mountcheckdirs(struct vnode *olddp, struct vnode *newdp)
 	}
 	mtx_unlock(&prison0.pr_mtx);
 	sx_slock(&allprison_lock);
-	TAILQ_FOREACH(pr, &allprison, pr_list) {
+	BSD_TAILQ_FOREACH(pr, &allprison, pr_list) {
 		mtx_lock(&pr->pr_mtx);
 		if (pr->pr_root == olddp) {
 			vref(newdp);

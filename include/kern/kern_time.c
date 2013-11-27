@@ -1432,9 +1432,9 @@ itimers_alloc(struct proc *p)
 	int i;
 
 	its = bsd_malloc(sizeof (struct itimers), M_SUBPROC, M_WAITOK | M_ZERO);
-	LIST_INIT(&its->its_virtual);
-	LIST_INIT(&its->its_prof);
-	TAILQ_INIT(&its->its_worklist);
+	BSD_LIST_INIT(&its->its_virtual);
+	BSD_LIST_INIT(&its->its_prof);
+	BSD_TAILQ_INIT(&its->its_worklist);
 	for (i = 0; i < TIMER_MAX; i++)
 		its->its_timers[i] = NULL;
 	PROC_LOCK(p);

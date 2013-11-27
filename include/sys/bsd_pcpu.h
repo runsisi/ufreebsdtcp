@@ -161,7 +161,7 @@ struct pcpu {
 	uint64_t	pc_switchtime;		/* cpu_ticks() at last csw */
 	int		pc_switchticks;		/* `ticks' at last csw */
 	u_int		pc_cpuid;		/* This cpu number */
-	STAILQ_ENTRY(pcpu) pc_allcpu;
+	BSD_STAILQ_ENTRY(pcpu) pc_allcpu;
 	struct lock_list_entry *pc_spinlocks;
 	struct vmmeter	pc_cnt;			/* VM stats counters */
 	long		pc_cp_time[CPUSTATES];	/* statclock ticks */
@@ -195,7 +195,7 @@ struct pcpu {
 
 #ifdef _KERNEL
 
-STAILQ_HEAD(cpuhead, pcpu);
+BSD_STAILQ_HEAD(cpuhead, pcpu);
 
 extern struct cpuhead cpuhead;
 extern struct pcpu *cpuid_to_pcpu[];

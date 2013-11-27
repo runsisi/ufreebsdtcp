@@ -234,7 +234,7 @@ arprequest(struct ifnet *ifp, struct in_addr *sip, struct in_addr  *tip,
 		 */
 		struct ifaddr *ifa;
 
-		TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
+		BSD_TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
 			if (!ifa->ifa_addr ||
 			    ifa->ifa_addr->sa_family != AF_INET)
 				continue;
@@ -579,7 +579,7 @@ in_arpinput(struct mbuf *m)
 	 * XXX: This is really ugly!
 	 */
 	IN_IFADDR_RLOCK();
-	LIST_FOREACH(ia, INADDR_HASH(itaddr.s_addr), ia_hash) {
+	BSD_LIST_FOREACH(ia, INADDR_HASH(itaddr.s_addr), ia_hash) {
 		if (((bridged && ia->ia_ifp->if_bridge == ifp->if_bridge) ||
 		    ia->ia_ifp == ifp) &&
 		    itaddr.s_addr == ia->ia_addr.sin_addr.s_addr) {
@@ -596,7 +596,7 @@ in_arpinput(struct mbuf *m)
 			goto match;
 		}
 	}
-	LIST_FOREACH(ia, INADDR_HASH(isaddr.s_addr), ia_hash)
+	BSD_LIST_FOREACH(ia, INADDR_HASH(isaddr.s_addr), ia_hash)
 		if (((bridged && ia->ia_ifp->if_bridge == ifp->if_bridge) ||
 		    ia->ia_ifp == ifp) &&
 		    isaddr.s_addr == ia->ia_addr.sin_addr.s_addr) {
@@ -616,7 +616,7 @@ in_arpinput(struct mbuf *m)
 	 * meant to be destined to the bridge member.
 	 */
 	if (is_bridge) {
-		LIST_FOREACH(ia, INADDR_HASH(itaddr.s_addr), ia_hash) {
+		BSD_LIST_FOREACH(ia, INADDR_HASH(itaddr.s_addr), ia_hash) {
 			if (BDG_MEMBER_MATCHES_ARP(itaddr.s_addr, ifp, ia)) {
 				ifa_ref(&ia->ia_ifa);
 				ifp = ia->ia_ifp;
@@ -633,7 +633,7 @@ in_arpinput(struct mbuf *m)
 	 * as a dummy address for the rest of the function.
 	 */
 	IF_ADDR_RLOCK(ifp);
-	TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link)
+	BSD_TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link)
 		if (ifa->ifa_addr->sa_family == AF_INET) {
 			ia = ifatoia(ifa);
 			ifa_ref(ifa);
@@ -646,7 +646,7 @@ in_arpinput(struct mbuf *m)
 	 * If bridging, fall back to using any inet address.
 	 */
 	IN_IFADDR_RLOCK();
-	if (!bridged || (ia = TAILQ_FIRST(&V_in_ifaddrhead)) == NULL) {
+	if (!bridged || (ia = BSD_TAILQ_FIRST(&V_in_ifaddrhead)) == NULL) {
 		IN_IFADDR_RUNLOCK();
 		goto drop;
 	}

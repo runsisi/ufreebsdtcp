@@ -66,14 +66,14 @@ typedef struct sctp_key {
 }        sctp_key_t;
 
 typedef struct sctp_shared_key {
-	LIST_ENTRY(sctp_shared_key) next;
+	BSD_LIST_ENTRY(sctp_shared_key) next;
 	sctp_key_t *key;	/* key text */
 	uint32_t refcount;	/* reference count */
 	uint16_t keyid;		/* shared key ID */
 	uint8_t deactivated;	/* key is deactivated */
 }               sctp_sharedkey_t;
 
-LIST_HEAD(sctp_keyhead, sctp_shared_key);
+BSD_LIST_HEAD(sctp_keyhead, sctp_shared_key);
 
 /* authentication chunks list */
 typedef struct sctp_auth_chklist {

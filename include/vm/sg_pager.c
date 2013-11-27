@@ -108,7 +108,7 @@ sg_pager_alloc(void *handle, vm_ooffset_t size, vm_prot_t prot,
 	 */
 	object = vm_object_allocate(OBJT_SG, npages);
 	object->handle = sglist_hold(sg);
-	TAILQ_INIT(&object->un_pager.sgp.sgp_pglist);
+	BSD_TAILQ_INIT(&object->un_pager.sgp.sgp_pglist);
 	return (object);
 }
 
@@ -121,8 +121,8 @@ sg_pager_dealloc(vm_object_t object)
 	/*
 	 * Free up our fake pages.
 	 */
-	while ((m = TAILQ_FIRST(&object->un_pager.sgp.sgp_pglist)) != 0) {
-		TAILQ_REMOVE(&object->un_pager.sgp.sgp_pglist, m, pageq);
+	while ((m = BSD_TAILQ_FIRST(&object->un_pager.sgp.sgp_pglist)) != 0) {
+		BSD_TAILQ_REMOVE(&object->un_pager.sgp.sgp_pglist, m, pageq);
 		vm_page_putfake(m);
 	}
 	
@@ -180,7 +180,7 @@ sg_pager_getpages(vm_object_t object, vm_page_t *m, int count, int reqpage)
 	/* Construct a new fake page. */
 	page = vm_page_getfake(paddr, memattr);
 	VM_OBJECT_LOCK(object);
-	TAILQ_INSERT_TAIL(&object->un_pager.sgp.sgp_pglist, page, pageq);
+	BSD_TAILQ_INSERT_TAIL(&object->un_pager.sgp.sgp_pglist, page, pageq);
 
 	/* Free the original pages and insert this fake page into the object. */
 	for (i = 0; i < count; i++) {

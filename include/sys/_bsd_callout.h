@@ -42,13 +42,13 @@
 
 struct lock_object;
 
-SLIST_HEAD(callout_list, callout);
-TAILQ_HEAD(callout_tailq, callout);
+BSD_SLIST_HEAD(callout_list, callout);
+BSD_TAILQ_HEAD(callout_tailq, callout);
 
 struct callout {
 	union {
-		SLIST_ENTRY(callout) sle;
-		TAILQ_ENTRY(callout) tqe;
+		BSD_SLIST_ENTRY(callout) sle;
+		BSD_TAILQ_ENTRY(callout) tqe;
 	} c_links;
 	int	c_time;				/* ticks to the event */
 	void	*c_arg;				/* function argument */

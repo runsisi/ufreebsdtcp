@@ -72,15 +72,15 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/kern/kern_cons.c 241637 2012-10-17 11:30:1
 static MALLOC_DEFINE(M_TTYCONS, "tty console", "tty console handling");
 
 struct cn_device {
-	STAILQ_ENTRY(cn_device) cnd_next;
+	BSD_STAILQ_ENTRY(cn_device) cnd_next;
 	struct		consdev *cnd_cn;
 };
 
 #define CNDEVPATHMAX	32
 #define CNDEVTAB_SIZE	4
 static struct cn_device cn_devtab[CNDEVTAB_SIZE];
-static STAILQ_HEAD(, cn_device) cn_devlist =
-    STAILQ_HEAD_INITIALIZER(cn_devlist);
+static BSD_STAILQ_HEAD(, cn_device) cn_devlist =
+    BSD_STAILQ_HEAD_INITIALIZER(cn_devlist);
 
 int	cons_avail_mask = 0;	/* Bit mask. Each registered low level console
 				 * which is currently unavailable for inpit
@@ -170,7 +170,7 @@ cnadd(struct consdev *cn)
 	struct cn_device *cnd;
 	int i;
 
-	STAILQ_FOREACH(cnd, &cn_devlist, cnd_next)
+	BSD_STAILQ_FOREACH(cnd, &cn_devlist, cnd_next)
 		if (cnd->cnd_cn == cn)
 			return (0);
 	for (i = 0; i < CNDEVTAB_SIZE; i++) {
@@ -185,8 +185,8 @@ cnadd(struct consdev *cn)
 		/* XXX: it is unclear if/where this print might output */
 		printf("WARNING: console at %p has no name\n", cn);
 	}
-	STAILQ_INSERT_TAIL(&cn_devlist, cnd, cnd_next);
-	if (STAILQ_FIRST(&cn_devlist) == cnd)
+	BSD_STAILQ_INSERT_TAIL(&cn_devlist, cnd, cnd_next);
+	if (BSD_STAILQ_FIRST(&cn_devlist) == cnd)
 		ttyconsdev_select(cnd->cnd_cn->cn_name);
 
 	/* Add device to the active mask. */
@@ -201,12 +201,12 @@ cnremove(struct consdev *cn)
 	struct cn_device *cnd;
 	int i;
 
-	STAILQ_FOREACH(cnd, &cn_devlist, cnd_next) {
+	BSD_STAILQ_FOREACH(cnd, &cn_devlist, cnd_next) {
 		if (cnd->cnd_cn != cn)
 			continue;
-		if (STAILQ_FIRST(&cn_devlist) == cnd)
+		if (BSD_STAILQ_FIRST(&cn_devlist) == cnd)
 			ttyconsdev_select(NULL);
-		STAILQ_REMOVE(&cn_devlist, cnd, cn_device, cnd_next);
+		BSD_STAILQ_REMOVE(&cn_devlist, cnd, cn_device, cnd_next);
 		cnd->cnd_cn = NULL;
 
 		/* Remove this device from available mask. */
@@ -233,13 +233,13 @@ cnselect(struct consdev *cn)
 {
 	struct cn_device *cnd;
 
-	STAILQ_FOREACH(cnd, &cn_devlist, cnd_next) {
+	BSD_STAILQ_FOREACH(cnd, &cn_devlist, cnd_next) {
 		if (cnd->cnd_cn != cn)
 			continue;
-		if (cnd == STAILQ_FIRST(&cn_devlist))
+		if (cnd == BSD_STAILQ_FIRST(&cn_devlist))
 			return;
-		STAILQ_REMOVE(&cn_devlist, cnd, cn_device, cnd_next);
-		STAILQ_INSERT_HEAD(&cn_devlist, cnd, cnd_next);
+		BSD_STAILQ_REMOVE(&cn_devlist, cnd, cn_device, cnd_next);
+		BSD_STAILQ_INSERT_HEAD(&cn_devlist, cnd, cnd_next);
 		ttyconsdev_select(cnd->cnd_cn->cn_name);
 		return;
 	}
@@ -288,7 +288,7 @@ sysctl_kern_console(SYSCTL_HANDLER_ARGS)
 	if (sb == NULL)
 		return (ENOMEM);
 	sbuf_clear(sb);
-	STAILQ_FOREACH(cnd, &cn_devlist, cnd_next)
+	BSD_STAILQ_FOREACH(cnd, &cn_devlist, cnd_next)
 		sbuf_printf(sb, "%s,", cnd->cnd_cn->cn_name);
 	sbuf_printf(sb, "/");
 	SET_FOREACH(list, cons_set) {
@@ -353,7 +353,7 @@ cngrab()
 	struct cn_device *cnd;
 	struct consdev *cn;
 
-	STAILQ_FOREACH(cnd, &cn_devlist, cnd_next) {
+	BSD_STAILQ_FOREACH(cnd, &cn_devlist, cnd_next) {
 		cn = cnd->cnd_cn;
 		if (!kdb_active || !(cn->cn_flags & CN_FLAG_NODEBUG))
 			cn->cn_ops->cn_grab(cn);
@@ -366,7 +366,7 @@ cnungrab()
 	struct cn_device *cnd;
 	struct consdev *cn;
 
-	STAILQ_FOREACH(cnd, &cn_devlist, cnd_next) {
+	BSD_STAILQ_FOREACH(cnd, &cn_devlist, cnd_next) {
 		cn = cnd->cnd_cn;
 		if (!kdb_active || !(cn->cn_flags & CN_FLAG_NODEBUG))
 			cn->cn_ops->cn_ungrab(cn);
@@ -399,7 +399,7 @@ cncheckc(void)
 
 	if (cn_mute)
 		return (-1);
-	STAILQ_FOREACH(cnd, &cn_devlist, cnd_next) {
+	BSD_STAILQ_FOREACH(cnd, &cn_devlist, cnd_next) {
 		cn = cnd->cnd_cn;
 		if (!kdb_active || !(cn->cn_flags & CN_FLAG_NODEBUG)) {
 			c = cn->cn_ops->cn_getc(cn);
@@ -468,7 +468,7 @@ cnputc(int c)
 
 	if (cn_mute || c == '\0')
 		return;
-	STAILQ_FOREACH(cnd, &cn_devlist, cnd_next) {
+	BSD_STAILQ_FOREACH(cnd, &cn_devlist, cnd_next) {
 		cn = cnd->cnd_cn;
 		if (!kdb_active || !(cn->cn_flags & CN_FLAG_NODEBUG)) {
 			if (c == '\n')

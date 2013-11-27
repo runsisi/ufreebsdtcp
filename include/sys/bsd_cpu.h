@@ -77,10 +77,10 @@ struct cf_level {
 	struct cf_setting	abs_set;
 	struct cf_setting	rel_set[MAX_SETTINGS];
 	int			rel_count;
-	TAILQ_ENTRY(cf_level)	link;
+	BSD_TAILQ_ENTRY(cf_level)	link;
 };
 
-TAILQ_HEAD(cf_level_lst, cf_level);
+BSD_TAILQ_HEAD(cf_level_lst, cf_level);
 
 /* Drivers should set all unknown values to this. */
 #define CPUFREQ_VAL_UNKNOWN	(-1)

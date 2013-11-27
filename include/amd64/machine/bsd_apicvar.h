@@ -167,7 +167,7 @@ struct apic_enumerator {
 	int (*apic_probe_cpus)(void);
 	int (*apic_setup_local)(void);
 	int (*apic_setup_io)(void);
-	SLIST_ENTRY(apic_enumerator) apic_next;
+	BSD_SLIST_ENTRY(apic_enumerator) apic_next;
 };
 
 inthand_t

@@ -368,7 +368,7 @@ runq_print(struct runq *rq)
 			if (rq->rq_status.rqb_bits[i] & (1ul << j)) {
 				pri = j + (i << RQB_L2BPW);
 				rqh = &rq->rq_queues[pri];
-				TAILQ_FOREACH(td, rqh, td_runq) {
+				BSD_TAILQ_FOREACH(td, rqh, td_runq) {
 					printf("\t\t\ttd %p(%s) priority %d rqindex %d pri %d\n",
 					    td, td->td_name, td->td_priority,
 					    td->td_rqindex, pri);
@@ -1066,7 +1066,7 @@ again:
 			pri = RQB_FFS(rqb->rqb_bits[i]);
 		pri += (i << RQB_L2BPW);
 		rqh = &rq->rq_queues[pri];
-		TAILQ_FOREACH(td, rqh, td_runq) {
+		BSD_TAILQ_FOREACH(td, rqh, td_runq) {
 			if (first && THREAD_CAN_MIGRATE(td) &&
 			    THREAD_CAN_SCHED(td, cpu))
 				return (td);
@@ -1104,7 +1104,7 @@ runq_steal(struct runq *rq, int cpu)
 			if ((rqb->rqb_bits[word] & (1ul << bit)) == 0)
 				continue;
 			rqh = &rq->rq_queues[bit + (word << RQB_L2BPW)];
-			TAILQ_FOREACH(td, rqh, td_runq)
+			BSD_TAILQ_FOREACH(td, rqh, td_runq)
 				if (THREAD_CAN_MIGRATE(td) &&
 				    THREAD_CAN_SCHED(td, cpu))
 					return (td);
@@ -2205,7 +2205,7 @@ sched_clock(struct thread *td)
 	 */
 	if (tdq->tdq_idx == tdq->tdq_ridx) {
 		tdq->tdq_idx = (tdq->tdq_idx + 1) % RQ_NQS;
-		if (TAILQ_EMPTY(&tdq->tdq_timeshare.rq_queues[tdq->tdq_ridx]))
+		if (BSD_TAILQ_EMPTY(&tdq->tdq_timeshare.rq_queues[tdq->tdq_ridx]))
 			tdq->tdq_ridx = tdq->tdq_idx;
 	}
 	ts = td->td_sched;

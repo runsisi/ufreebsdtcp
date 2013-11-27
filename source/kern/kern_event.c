@@ -457,7 +457,7 @@ knote_fork(struct knlist *list, int pid)
 		return;
 	list->kl_lock(list->kl_lockarg);
 
-	SLIST_FOREACH(kn, &list->kl_list, kn_selnext) {
+	BSD_SLIST_FOREACH(kn, &list->kl_list, kn_selnext) {
 		if ((kn->kn_status & KN_INFLUX) == KN_INFLUX)
 			continue;
 		kq = kn->kn_kq;
@@ -701,13 +701,13 @@ sys_kqueue(struct thread *td, struct kqueue_args *uap)
 	/* An extra reference on `nfp' has been held for us by falloc(). */
 	kq = bsd_malloc(sizeof *kq, M_KQUEUE, M_WAITOK | M_ZERO);
 	mtx_init(&kq->kq_lock, "kqueue", NULL, MTX_DEF|MTX_DUPOK);
-	TAILQ_INIT(&kq->kq_head);
+	BSD_TAILQ_INIT(&kq->kq_head);
 	kq->kq_fdp = fdp;
 	knlist_init_mtx(&kq->kq_sel.si_note, &kq->kq_lock);
 	TASK_INIT(&kq->kq_task, 0, kqueue_task, kq);
 
 	FILEDESC_XLOCK(fdp);
-	SLIST_INSERT_HEAD(&fdp->fd_kqlist, kq, kq_list);
+	BSD_SLIST_INSERT_HEAD(&fdp->fd_kqlist, kq, kq_list);
 	FILEDESC_XUNLOCK(fdp);
 
 	finit(fp, FREAD | FWRITE, DTYPE_KQUEUE, kq, &kqueueops);
@@ -1015,7 +1015,7 @@ findkn:
 
 		KQ_LOCK(kq);
 		if (kev->ident < kq->kq_knlistsize) {
-			SLIST_FOREACH(kn, &kq->kq_knlist[kev->ident], kn_link)
+			BSD_SLIST_FOREACH(kn, &kq->kq_knlist[kev->ident], kn_link)
 				if (kev->filter == kn->kn_filter)
 					break;
 		}
@@ -1029,7 +1029,7 @@ findkn:
 
 			list = &kq->kq_knhash[
 			    KN_HASH((u_long)kev->ident, kq->kq_knhashmask)];
-			SLIST_FOREACH(kn, list, kn_link)
+			BSD_SLIST_FOREACH(kn, list, kn_link)
 				if (kev->ident == kn->kn_id &&
 				    kev->filter == kn->kn_filter)
 					break;
@@ -1389,11 +1389,11 @@ start:
 		goto done;
 	}
 
-	TAILQ_INSERT_TAIL(&kq->kq_head, marker, kn_tqe);
+	BSD_TAILQ_INSERT_TAIL(&kq->kq_head, marker, kn_tqe);
 	influx = 0;
 	while (count) {
 		KQ_OWNED(kq);
-		kn = TAILQ_FIRST(&kq->kq_head);
+		kn = BSD_TAILQ_FIRST(&kq->kq_head);
 
 		if ((kn->kn_status == KN_MARKER && kn != marker) ||
 		    (kn->kn_status & KN_INFLUX) == KN_INFLUX) {
@@ -1407,7 +1407,7 @@ start:
 			continue;
 		}
 
-		TAILQ_REMOVE(&kq->kq_head, kn, kn_tqe);
+		BSD_TAILQ_REMOVE(&kq->kq_head, kn, kn_tqe);
 		if ((kn->kn_status & KN_DISABLED) == KN_DISABLED) {
 			kn->kn_status &= ~KN_QUEUED;
 			kq->kq_count--;
@@ -1475,7 +1475,7 @@ start:
 				kn->kn_status &= ~(KN_QUEUED | KN_ACTIVE);
 				kq->kq_count--;
 			} else
-				TAILQ_INSERT_TAIL(&kq->kq_head, kn, kn_tqe);
+				BSD_TAILQ_INSERT_TAIL(&kq->kq_head, kn, kn_tqe);
 			
 			kn->kn_status &= ~(KN_INFLUX);
 			KN_LIST_UNLOCK(kn);
@@ -1498,7 +1498,7 @@ start:
 				break;
 		}
 	}
-	TAILQ_REMOVE(&kq->kq_head, marker, kn_tqe);
+	BSD_TAILQ_REMOVE(&kq->kq_head, marker, kn_tqe);
 done:
 	KQ_OWNED(kq);
 	KQ_UNLOCK_FLUX(kq);
@@ -1661,7 +1661,7 @@ kqueue_close(struct file *fp, struct thread *td)
 	    ("kqueue's knlist not empty"));
 
 	for (i = 0; i < kq->kq_knlistsize; i++) {
-		while ((kn = SLIST_FIRST(&kq->kq_knlist[i])) != NULL) {
+		while ((kn = BSD_SLIST_FIRST(&kq->kq_knlist[i])) != NULL) {
 			if ((kn->kn_status & KN_INFLUX) == KN_INFLUX) {
 				kq->kq_state |= KQ_FLUXWAIT;
 				msleep(kq, &kq->kq_lock, PSOCK, "kqclo1", 0);
@@ -1677,7 +1677,7 @@ kqueue_close(struct file *fp, struct thread *td)
 	}
 	if (kq->kq_knhashmask != 0) {
 		for (i = 0; i <= kq->kq_knhashmask; i++) {
-			while ((kn = SLIST_FIRST(&kq->kq_knhash[i])) != NULL) {
+			while ((kn = BSD_SLIST_FIRST(&kq->kq_knhash[i])) != NULL) {
 				if ((kn->kn_status & KN_INFLUX) == KN_INFLUX) {
 					kq->kq_state |= KQ_FLUXWAIT;
 					msleep(kq, &kq->kq_lock, PSOCK,
@@ -1708,7 +1708,7 @@ kqueue_close(struct file *fp, struct thread *td)
 	KQ_UNLOCK(kq);
 
 	FILEDESC_XLOCK(fdp);
-	SLIST_REMOVE(&fdp->fd_kqlist, kq, kqueue, kq_list);
+	BSD_SLIST_REMOVE(&fdp->fd_kqlist, kq, kqueue, kq_list);
 	FILEDESC_XUNLOCK(fdp);
 
 	seldrain(&kq->kq_sel);
@@ -1776,11 +1776,11 @@ knote(struct knlist *list, long hint, int lockflags)
 	 * If we unlock the list lock (and set KN_INFLUX), we can eliminate
 	 * the kqueue scheduling, but this will introduce four
 	 * lock/unlock's for each knote to test.  If we do, continue to use
-	 * SLIST_FOREACH, SLIST_FOREACH_SAFE is not safe in our case, it is
+	 * BSD_SLIST_FOREACH, BSD_SLIST_FOREACH_SAFE is not safe in our case, it is
 	 * only safe if you want to remove the current item, which we are
 	 * not doing.
 	 */
-	SLIST_FOREACH(kn, &list->kl_list, kn_selnext) {
+	BSD_SLIST_FOREACH(kn, &list->kl_list, kn_selnext) {
 		kq = kn->kn_kq;
 		if ((kn->kn_status & KN_INFLUX) != KN_INFLUX) {
 			KQ_LOCK(kq);
@@ -1821,7 +1821,7 @@ knlist_add(struct knlist *knl, struct knote *kn, int islocked)
 	    (KN_INFLUX|KN_DETACHED), ("knote not KN_INFLUX and KN_DETACHED"));
 	if (!islocked)
 		knl->kl_lock(knl->kl_lockarg);
-	SLIST_INSERT_HEAD(&knl->kl_list, kn, kn_selnext);
+	BSD_SLIST_INSERT_HEAD(&knl->kl_list, kn, kn_selnext);
 	if (!islocked)
 		knl->kl_unlock(knl->kl_lockarg);
 	KQ_LOCK(kn->kn_kq);
@@ -1841,7 +1841,7 @@ knlist_remove_kq(struct knlist *knl, struct knote *kn, int knlislocked, int kqis
     ("knlist_remove called w/o knote being KN_INFLUX or already removed"));
 	if (!knlislocked)
 		knl->kl_lock(knl->kl_lockarg);
-	SLIST_REMOVE(&knl->kl_list, kn, knote, kn_selnext);
+	BSD_SLIST_REMOVE(&knl->kl_list, kn, knote, kn_selnext);
 	kn->kn_knlist = NULL;
 	if (!knlislocked)
 		knl->kl_unlock(knl->kl_lockarg);
@@ -1877,7 +1877,7 @@ int
 knlist_empty(struct knlist *knl)
 {
 	KNL_ASSERT_LOCKED(knl);
-	return SLIST_EMPTY(&knl->kl_list);
+	return BSD_SLIST_EMPTY(&knl->kl_list);
 }
 
 static struct mtx	knlist_lock;
@@ -1938,7 +1938,7 @@ knlist_init(struct knlist *knl, void *lock, void (*kl_lock)(void *),
 	else
 		knl->kl_assert_unlocked = kl_assert_unlocked;
 
-	SLIST_INIT(&knl->kl_list);
+	BSD_SLIST_INIT(&knl->kl_list);
 }
 
 void
@@ -1957,12 +1957,12 @@ knlist_destroy(struct knlist *knl)
 	 * if we run across this error, we need to find the offending
 	 * driver and have it call knlist_clear.
 	 */
-	if (!SLIST_EMPTY(&knl->kl_list))
+	if (!BSD_SLIST_EMPTY(&knl->kl_list))
 		printf("WARNING: destroying knlist w/ knotes on it!\n");
 #endif
 
 	knl->kl_lockarg = knl->kl_lock = knl->kl_unlock = NULL;
-	SLIST_INIT(&knl->kl_list);
+	BSD_SLIST_INIT(&knl->kl_list);
 }
 
 /*
@@ -1983,7 +1983,7 @@ again:		/* need to reacquire lock since we have dropped it */
 		knl->kl_lock(knl->kl_lockarg);
 	}
 
-	SLIST_FOREACH_SAFE(kn, &knl->kl_list, kn_selnext, kn2) {
+	BSD_SLIST_FOREACH_SAFE(kn, &knl->kl_list, kn_selnext, kn2) {
 		kq = kn->kn_kq;
 		KQ_LOCK(kq);
 		if ((kn->kn_status & KN_INFLUX)) {
@@ -2003,9 +2003,9 @@ again:		/* need to reacquire lock since we have dropped it */
 		kq = NULL;
 	}
 
-	if (!SLIST_EMPTY(&knl->kl_list)) {
+	if (!BSD_SLIST_EMPTY(&knl->kl_list)) {
 		/* there are still KN_INFLUX remaining */
-		kn = SLIST_FIRST(&knl->kl_list);
+		kn = BSD_SLIST_FIRST(&knl->kl_list);
 		kq = kn->kn_kq;
 		KQ_LOCK(kq);
 		KASSERT(kn->kn_status & KN_INFLUX,
@@ -2044,13 +2044,13 @@ knote_fdclose(struct thread *td, int fd)
 	 * We shouldn't have to worry about new kevents appearing on fd
 	 * since filedesc is locked.
 	 */
-	SLIST_FOREACH(kq, &fdp->fd_kqlist, kq_list) {
+	BSD_SLIST_FOREACH(kq, &fdp->fd_kqlist, kq_list) {
 		KQ_LOCK(kq);
 
 again:
 		influx = 0;
 		while (kq->kq_knlistsize > fd &&
-		    (kn = SLIST_FIRST(&kq->kq_knlist[fd])) != NULL) {
+		    (kn = BSD_SLIST_FIRST(&kq->kq_knlist[fd])) != NULL) {
 			if (kn->kn_status & KN_INFLUX) {
 				/* someone else might be waiting on our knote */
 				if (influx)
@@ -2089,7 +2089,7 @@ knote_attach(struct knote *kn, struct kqueue *kq)
 		list = &kq->kq_knhash[KN_HASH(kn->kn_id, kq->kq_knhashmask)];
 	}
 
-	SLIST_INSERT_HEAD(list, kn, kn_link);
+	BSD_SLIST_INSERT_HEAD(list, kn, kn_link);
 
 	return 0;
 }
@@ -2117,8 +2117,8 @@ knote_drop(struct knote *kn, struct thread *td)
 	else
 		list = &kq->kq_knhash[KN_HASH(kn->kn_id, kq->kq_knhashmask)];
 
-	if (!SLIST_EMPTY(list))
-		SLIST_REMOVE(list, kn, knote, kn_link);
+	if (!BSD_SLIST_EMPTY(list))
+		BSD_SLIST_REMOVE(list, kn, knote, kn_link);
 	if (kn->kn_status & KN_QUEUED)
 		knote_dequeue(kn);
 	KQ_UNLOCK_FLUX(kq);
@@ -2140,7 +2140,7 @@ knote_enqueue(struct knote *kn)
 	KQ_OWNED(kn->kn_kq);
 	KASSERT((kn->kn_status & KN_QUEUED) == 0, ("knote already queued"));
 
-	TAILQ_INSERT_TAIL(&kq->kq_head, kn, kn_tqe);
+	BSD_TAILQ_INSERT_TAIL(&kq->kq_head, kn, kn_tqe);
 	kn->kn_status |= KN_QUEUED;
 	kq->kq_count++;
 	kqueue_wakeup(kq);
@@ -2154,7 +2154,7 @@ knote_dequeue(struct knote *kn)
 	KQ_OWNED(kn->kn_kq);
 	KASSERT(kn->kn_status & KN_QUEUED, ("knote not queued"));
 
-	TAILQ_REMOVE(&kq->kq_head, kn, kn_tqe);
+	BSD_TAILQ_REMOVE(&kq->kq_head, kn, kn_tqe);
 	kn->kn_status &= ~KN_QUEUED;
 	kq->kq_count--;
 }

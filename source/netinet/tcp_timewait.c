@@ -100,7 +100,7 @@ static int	maxtcptw;
  * queue pointers in each tcptw structure, are protected using the global
  * tcbinfo lock, which must be held over queue iteration and modification.
  */
-static VNET_DEFINE(TAILQ_HEAD(, tcptw), twq_2msl);
+static VNET_DEFINE(BSD_TAILQ_HEAD(, tcptw), twq_2msl);
 #define	V_twq_2msl			VNET(twq_2msl)
 
 static void	tcp_tw_2msl_reset(struct tcptw *, int);
@@ -170,7 +170,7 @@ tcp_tw_init(void)
 		uma_zone_set_max(V_tcptw_zone, tcptw_auto_size());
 	else
 		uma_zone_set_max(V_tcptw_zone, maxtcptw);
-	TAILQ_INIT(&V_twq_2msl);
+	BSD_TAILQ_INIT(&V_twq_2msl);
 }
 
 #ifdef VIMAGE
@@ -180,7 +180,7 @@ tcp_tw_destroy(void)
 	struct tcptw *tw;
 
 	INP_INFO_WLOCK(&V_tcbinfo);
-	while((tw = TAILQ_FIRST(&V_twq_2msl)) != NULL)
+	while((tw = BSD_TAILQ_FIRST(&V_twq_2msl)) != NULL)
 		tcp_twclose(tw, 0);
 	INP_INFO_WUNLOCK(&V_tcbinfo);
 
@@ -617,9 +617,9 @@ tcp_tw_2msl_reset(struct tcptw *tw, int rearm)
 	INP_INFO_WLOCK_ASSERT(&V_tcbinfo);
 	INP_WLOCK_ASSERT(tw->tw_inpcb);
 	if (rearm)
-		TAILQ_REMOVE(&V_twq_2msl, tw, tw_2msl);
+		BSD_TAILQ_REMOVE(&V_twq_2msl, tw, tw_2msl);
 	tw->tw_time = ticks + 2 * tcp_msl;
-	TAILQ_INSERT_TAIL(&V_twq_2msl, tw, tw_2msl);
+	BSD_TAILQ_INSERT_TAIL(&V_twq_2msl, tw, tw_2msl);
 }
 
 static void
@@ -627,7 +627,7 @@ tcp_tw_2msl_stop(struct tcptw *tw)
 {
 
 	INP_INFO_WLOCK_ASSERT(&V_tcbinfo);
-	TAILQ_REMOVE(&V_twq_2msl, tw, tw_2msl);
+	BSD_TAILQ_REMOVE(&V_twq_2msl, tw, tw_2msl);
 }
 
 struct tcptw *
@@ -637,7 +637,7 @@ tcp_tw_2msl_scan(int reuse)
 
 	INP_INFO_WLOCK_ASSERT(&V_tcbinfo);
 	for (;;) {
-		tw = TAILQ_FIRST(&V_twq_2msl);
+		tw = BSD_TAILQ_FIRST(&V_twq_2msl);
 		if (tw == NULL || (!reuse && (tw->tw_time - ticks) > 0))
 			break;
 		INP_WLOCK(tw->tw_inpcb);

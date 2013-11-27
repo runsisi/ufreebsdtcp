@@ -321,8 +321,8 @@ gre_lookup(struct mbuf *m, u_int8_t proto)
 	struct gre_softc *sc;
 
 	mtx_lock(&gre_mtx);
-	for (sc = LIST_FIRST(&gre_softc_list); sc != NULL;
-	     sc = LIST_NEXT(sc, sc_list)) {
+	for (sc = BSD_LIST_FIRST(&gre_softc_list); sc != NULL;
+	     sc = BSD_LIST_NEXT(sc, sc_list)) {
 		if ((sc->g_dst.s_addr == ip->ip_src.s_addr) &&
 		    (sc->g_src.s_addr == ip->ip_dst.s_addr) &&
 		    (sc->g_proto == proto) &&

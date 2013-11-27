@@ -104,7 +104,7 @@ sctp_cwnd_update_after_fr(struct sctp_tcb *stcb,
 	t_ucwnd_sbw = 0;
 	if ((asoc->sctp_cmt_on_off == SCTP_CMT_RPV1) ||
 	    (asoc->sctp_cmt_on_off == SCTP_CMT_RPV2)) {
-		TAILQ_FOREACH(net, &asoc->nets, sctp_next) {
+		BSD_TAILQ_FOREACH(net, &asoc->nets, sctp_next) {
 			t_ssthresh += net->ssthresh;
 			t_cwnd += net->cwnd;
 			if (net->lastsa > 0) {
@@ -119,7 +119,7 @@ sctp_cwnd_update_after_fr(struct sctp_tcb *stcb,
 	 * CMT fast recovery code. Need to debug. ((sctp_cmt_on_off > 0) &&
 	 * (net->fast_retran_loss_recovery == 0)))
 	 */
-	TAILQ_FOREACH(net, &asoc->nets, sctp_next) {
+	BSD_TAILQ_FOREACH(net, &asoc->nets, sctp_next) {
 		if ((asoc->fast_retran_loss_recovery == 0) ||
 		    (asoc->sctp_cmt_on_off > 0)) {
 			/* out of a RFC2582 Fast recovery window? */
@@ -185,7 +185,7 @@ sctp_cwnd_update_after_fr(struct sctp_tcb *stcb,
 					sctp_log_cwnd(stcb, net, (net->cwnd - old_cwnd),
 					    SCTP_CWND_LOG_FROM_FR);
 				}
-				lchk = TAILQ_FIRST(&asoc->send_queue);
+				lchk = BSD_TAILQ_FIRST(&asoc->send_queue);
 
 				net->partial_bytes_acked = 0;
 				/* Turn on fast recovery window */
@@ -682,7 +682,7 @@ sctp_cwnd_update_after_sack_common(struct sctp_tcb *stcb,
 	    (stcb->asoc.sctp_cmt_on_off == SCTP_CMT_RPV2) ||
 	    (stcb->asoc.sctp_cmt_on_off == SCTP_CMT_MPTCP)) {
 		max_path = 0;
-		TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
+		BSD_TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
 			t_ssthresh += net->ssthresh;
 			t_cwnd += net->cwnd;
 			/* lastsa>>3;  we don't need to devide ... */
@@ -715,7 +715,7 @@ sctp_cwnd_update_after_sack_common(struct sctp_tcb *stcb,
 	/******************************/
 	/* update cwnd and Early FR   */
 	/******************************/
-	TAILQ_FOREACH(net, &asoc->nets, sctp_next) {
+	BSD_TAILQ_FOREACH(net, &asoc->nets, sctp_next) {
 
 #ifdef JANA_CMT_FAST_RECOVERY
 		/*
@@ -1004,7 +1004,7 @@ sctp_cwnd_update_after_timeout(struct sctp_tcb *stcb, struct sctp_nets *net)
 		uint32_t srtt;
 
 		t_ucwnd_sbw = 0;
-		TAILQ_FOREACH(lnet, &stcb->asoc.nets, sctp_next) {
+		BSD_TAILQ_FOREACH(lnet, &stcb->asoc.nets, sctp_next) {
 			t_ssthresh += lnet->ssthresh;
 			t_cwnd += lnet->cwnd;
 			srtt = lnet->lastsa;
@@ -1430,7 +1430,7 @@ sctp_cwnd_rtcc_socket_option(struct sctp_tcb *stcb, int setorget,
 			    (cc_opt->aid_value.assoc_value != 1)) {
 				return (EINVAL);
 			}
-			TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
+			BSD_TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
 				net->cc_mod.rtcc.ret_from_eq = cc_opt->aid_value.assoc_value;
 			}
 		} else if (cc_opt->option == SCTP_CC_OPT_USE_DCCC_ECN) {
@@ -1438,11 +1438,11 @@ sctp_cwnd_rtcc_socket_option(struct sctp_tcb *stcb, int setorget,
 			    (cc_opt->aid_value.assoc_value != 1)) {
 				return (EINVAL);
 			}
-			TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
+			BSD_TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
 				net->cc_mod.rtcc.use_dccc_ecn = cc_opt->aid_value.assoc_value;
 			}
 		} else if (cc_opt->option == SCTP_CC_OPT_STEADY_STEP) {
-			TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
+			BSD_TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
 				net->cc_mod.rtcc.steady_step = cc_opt->aid_value.assoc_value;
 			}
 		} else {
@@ -1451,19 +1451,19 @@ sctp_cwnd_rtcc_socket_option(struct sctp_tcb *stcb, int setorget,
 	} else {
 		/* a get */
 		if (cc_opt->option == SCTP_CC_OPT_RTCC_SETMODE) {
-			net = TAILQ_FIRST(&stcb->asoc.nets);
+			net = BSD_TAILQ_FIRST(&stcb->asoc.nets);
 			if (net == NULL) {
 				return (EFAULT);
 			}
 			cc_opt->aid_value.assoc_value = net->cc_mod.rtcc.ret_from_eq;
 		} else if (cc_opt->option == SCTP_CC_OPT_USE_DCCC_ECN) {
-			net = TAILQ_FIRST(&stcb->asoc.nets);
+			net = BSD_TAILQ_FIRST(&stcb->asoc.nets);
 			if (net == NULL) {
 				return (EFAULT);
 			}
 			cc_opt->aid_value.assoc_value = net->cc_mod.rtcc.use_dccc_ecn;
 		} else if (cc_opt->option == SCTP_CC_OPT_STEADY_STEP) {
-			net = TAILQ_FIRST(&stcb->asoc.nets);
+			net = BSD_TAILQ_FIRST(&stcb->asoc.nets);
 			if (net == NULL) {
 				return (EFAULT);
 			}
@@ -1675,7 +1675,7 @@ sctp_hs_cwnd_update_after_fr(struct sctp_tcb *stcb,
 	 * CMT fast recovery code. Need to debug. ((sctp_cmt_on_off > 0) &&
 	 * (net->fast_retran_loss_recovery == 0)))
 	 */
-	TAILQ_FOREACH(net, &asoc->nets, sctp_next) {
+	BSD_TAILQ_FOREACH(net, &asoc->nets, sctp_next) {
 		if ((asoc->fast_retran_loss_recovery == 0) ||
 		    (asoc->sctp_cmt_on_off > 0)) {
 			/* out of a RFC2582 Fast recovery window? */
@@ -1690,7 +1690,7 @@ sctp_hs_cwnd_update_after_fr(struct sctp_tcb *stcb,
 
 				sctp_hs_cwnd_decrease(stcb, net);
 
-				lchk = TAILQ_FIRST(&asoc->send_queue);
+				lchk = BSD_TAILQ_FIRST(&asoc->send_queue);
 
 				net->partial_bytes_acked = 0;
 				/* Turn on fast recovery window */
@@ -1740,7 +1740,7 @@ sctp_hs_cwnd_update_after_sack(struct sctp_tcb *stcb,
 	/******************************/
 	/* update cwnd and Early FR   */
 	/******************************/
-	TAILQ_FOREACH(net, &asoc->nets, sctp_next) {
+	BSD_TAILQ_FOREACH(net, &asoc->nets, sctp_next) {
 
 #ifdef JANA_CMT_FAST_RECOVERY
 		/*
@@ -2129,7 +2129,7 @@ sctp_htcp_cwnd_update_after_sack(struct sctp_tcb *stcb,
 	/******************************/
 	/* update cwnd and Early FR   */
 	/******************************/
-	TAILQ_FOREACH(net, &asoc->nets, sctp_next) {
+	BSD_TAILQ_FOREACH(net, &asoc->nets, sctp_next) {
 
 #ifdef JANA_CMT_FAST_RECOVERY
 		/*
@@ -2197,7 +2197,7 @@ sctp_htcp_cwnd_update_after_fr(struct sctp_tcb *stcb,
 	 * CMT fast recovery code. Need to debug. ((sctp_cmt_on_off > 0) &&
 	 * (net->fast_retran_loss_recovery == 0)))
 	 */
-	TAILQ_FOREACH(net, &asoc->nets, sctp_next) {
+	BSD_TAILQ_FOREACH(net, &asoc->nets, sctp_next) {
 		if ((asoc->fast_retran_loss_recovery == 0) ||
 		    (asoc->sctp_cmt_on_off > 0)) {
 			/* out of a RFC2582 Fast recovery window? */
@@ -2219,7 +2219,7 @@ sctp_htcp_cwnd_update_after_fr(struct sctp_tcb *stcb,
 					sctp_log_cwnd(stcb, net, (net->cwnd - old_cwnd),
 					    SCTP_CWND_LOG_FROM_FR);
 				}
-				lchk = TAILQ_FIRST(&asoc->send_queue);
+				lchk = BSD_TAILQ_FIRST(&asoc->send_queue);
 
 				net->partial_bytes_acked = 0;
 				/* Turn on fast recovery window */

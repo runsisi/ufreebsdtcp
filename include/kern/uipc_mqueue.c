@@ -114,7 +114,7 @@ struct mqfs_info {
 };
 
 struct mqfs_vdata {
-	LIST_ENTRY(mqfs_vdata)	mv_link;
+	BSD_LIST_ENTRY(mqfs_vdata)	mv_link;
 	struct mqfs_node	*mv_node;
 	struct vnode		*mv_vnode;
 	struct task		mv_task;
@@ -127,9 +127,9 @@ struct mqfs_node {
 	char			mn_name[MQFS_NAMELEN+1];
 	struct mqfs_info	*mn_info;
 	struct mqfs_node	*mn_parent;
-	LIST_HEAD(,mqfs_node)	mn_children;
-	LIST_ENTRY(mqfs_node)	mn_sibling;
-	LIST_HEAD(,mqfs_vdata)	mn_vnodes;
+	BSD_LIST_HEAD(,mqfs_node)	mn_children;
+	BSD_LIST_ENTRY(mqfs_node)	mn_sibling;
+	BSD_LIST_HEAD(,mqfs_vdata)	mn_vnodes;
 	int			mn_refcount;
 	mqfs_type_t		mn_type;
 	int			mn_deleted;
@@ -150,12 +150,12 @@ struct mqfs_node {
 #define	FPTOMQ(fp)	((struct mqueue *)(((struct mqfs_node *) \
 				(fp)->f_data)->mn_data))
 
-TAILQ_HEAD(msgq, mqueue_msg);
+BSD_TAILQ_HEAD(msgq, mqueue_msg);
 
 struct mqueue;
 
 struct mqueue_notifier {
-	LIST_ENTRY(mqueue_notifier)	nt_link;
+	BSD_LIST_ENTRY(mqueue_notifier)	nt_link;
 	struct sigevent			nt_sigev;
 	ksiginfo_t			nt_ksi;
 	struct proc			*nt_proc;
@@ -180,7 +180,7 @@ struct mqueue {
 #define	MQ_WSEL		0x02
 
 struct mqueue_msg {
-	TAILQ_ENTRY(mqueue_msg)	msg_link;
+	BSD_TAILQ_ENTRY(mqueue_msg)	msg_link;
 	unsigned int	msg_prio;
 	unsigned int	msg_size;
 	/* following real data... */
@@ -419,9 +419,9 @@ mqfs_add_node(struct mqfs_node *parent, struct mqfs_node *node)
 
 	node->mn_info = parent->mn_info;
 	node->mn_parent = parent;
-	LIST_INIT(&node->mn_children);
-	LIST_INIT(&node->mn_vnodes);
-	LIST_INSERT_HEAD(&parent->mn_children, node, mn_sibling);
+	BSD_LIST_INIT(&node->mn_children);
+	BSD_LIST_INIT(&node->mn_vnodes);
+	BSD_LIST_INSERT_HEAD(&parent->mn_children, node, mn_sibling);
 	mqnode_addref(parent);
 	return (0);
 }
@@ -550,14 +550,14 @@ mqfs_destroy(struct mqfs_node *node)
 
 	/* destroy children */
 	if (node->mn_type == mqfstype_dir || node->mn_type == mqfstype_root)
-		while (! LIST_EMPTY(&node->mn_children))
-			mqfs_destroy(LIST_FIRST(&node->mn_children));
+		while (! BSD_LIST_EMPTY(&node->mn_children))
+			mqfs_destroy(BSD_LIST_FIRST(&node->mn_children));
 
 	/* unlink from parent */
 	if ((parent = node->mn_parent) != NULL) {
 		KASSERT(parent->mn_info == node->mn_info,
 		    ("%s(): parent has different mn_info", __func__));
-		LIST_REMOVE(node, mn_sibling);
+		BSD_LIST_REMOVE(node, mn_sibling);
 	}
 
 	if (node->mn_fileno != 0)
@@ -659,8 +659,8 @@ mqfs_init(struct vfsconf *vfc)
 	root = mqfs_create_node("/", 1, curthread->td_ucred, 01777,
 		mqfstype_root);
 	root->mn_info = mi;
-	LIST_INIT(&root->mn_children);
-	LIST_INIT(&root->mn_vnodes);
+	BSD_LIST_INIT(&root->mn_children);
+	BSD_LIST_INIT(&root->mn_vnodes);
 	mi->mi_root = root;
 	mqfs_fileno_init(mi);
 	mqfs_fileno_alloc(mi, root);
@@ -721,7 +721,7 @@ mqfs_allocv(struct mount *mp, struct vnode **vpp, struct mqfs_node *pn)
 	mqfs = pn->mn_info;
 	*vpp = NULL;
 	sx_xlock(&mqfs->mi_lock);
-	LIST_FOREACH(vd, &pn->mn_vnodes, mv_link) {
+	BSD_LIST_FOREACH(vd, &pn->mn_vnodes, mv_link) {
 		if (vd->mv_vnode->v_mount == mp) {
 			vhold(vd->mv_vnode);
 			break;
@@ -751,7 +751,7 @@ found:
 	 * Check if it has already been allocated
 	 * while we were blocked.
 	 */
-	LIST_FOREACH(vd, &pn->mn_vnodes, mv_link) {
+	BSD_LIST_FOREACH(vd, &pn->mn_vnodes, mv_link) {
 		if (vd->mv_vnode->v_mount == mp) {
 			vhold(vd->mv_vnode);
 			sx_xunlock(&mqfs->mi_lock);
@@ -769,7 +769,7 @@ found:
 	vd->mv_vnode = *vpp;
 	vd->mv_node = pn;
 	TASK_INIT(&vd->mv_task, 0, do_recycle, *vpp);
-	LIST_INSERT_HEAD(&pn->mn_vnodes, vd, mv_link);
+	BSD_LIST_INSERT_HEAD(&pn->mn_vnodes, vd, mv_link);
 	mqnode_addref(pn);
 	switch (pn->mn_type) {
 	case mqfstype_root:
@@ -804,7 +804,7 @@ mqfs_search(struct mqfs_node *pd, const char *name, int len)
 	struct mqfs_node *pn;
 
 	sx_assert(&pd->mn_info->mi_lock, SX_LOCKED);
-	LIST_FOREACH(pn, &pd->mn_children, mn_sibling) {
+	BSD_LIST_FOREACH(pn, &pd->mn_children, mn_sibling) {
 		if (strncmp(pn->mn_name, name, len) == 0 &&
 		    pn->mn_name[len] == '\0')
 			return (pn);
@@ -1012,8 +1012,8 @@ int do_unlink(struct mqfs_node *pn, struct ucred *ucred)
 		parent = pn->mn_parent;
 		pn->mn_parent = NULL;
 		pn->mn_deleted = 1;
-		LIST_REMOVE(pn, mn_sibling);
-		LIST_FOREACH(vd, &pn->mn_vnodes, mv_link) {
+		BSD_LIST_REMOVE(pn, mn_sibling);
+		BSD_LIST_FOREACH(vd, &pn->mn_vnodes, mv_link) {
 			cache_purge(vd->mv_vnode);
 			vhold(vd->mv_vnode);
 			taskqueue_enqueue(taskqueue_thread, &vd->mv_task);
@@ -1089,7 +1089,7 @@ mqfs_reclaim(struct vop_reclaim_args *ap)
 	pn = vd->mv_node;
 	sx_xlock(&mqfs->mi_lock);
 	vp->v_data = NULL;
-	LIST_REMOVE(vd, mv_link);
+	BSD_LIST_REMOVE(vd, mv_link);
 	uma_zfree(mvdata_zone, vd);
 	mqnode_release(pn);
 	sx_xunlock(&mqfs->mi_lock);
@@ -1388,7 +1388,7 @@ mqfs_readdir(struct vop_readdir_args *ap)
 
 	sx_xlock(&mi->mi_lock);
 
-	LIST_FOREACH(pn, &pd->mn_children, mn_sibling) {
+	BSD_LIST_FOREACH(pn, &pd->mn_children, mn_sibling) {
 		entry.d_reclen = sizeof(entry);
 		if (!pn->mn_fileno)
 			mqfs_fileno_alloc(mi, pn);
@@ -1502,9 +1502,9 @@ mqfs_rmdir(struct vop_rmdir_args *ap)
 		return (ENOENT);
 	}
 
-	pt = LIST_FIRST(&pn->mn_children);
-	pt = LIST_NEXT(pt, mn_sibling);
-	pt = LIST_NEXT(pt, mn_sibling);
+	pt = BSD_LIST_FIRST(&pn->mn_children);
+	pt = BSD_LIST_NEXT(pt, mn_sibling);
+	pt = BSD_LIST_NEXT(pt, mn_sibling);
 	if (pt != NULL) {
 		sx_xunlock(&mqfs->mi_lock);
 		return (ENOTEMPTY);
@@ -1512,7 +1512,7 @@ mqfs_rmdir(struct vop_rmdir_args *ap)
 	pt = pn->mn_parent;
 	pn->mn_parent = NULL;
 	pn->mn_deleted = 1;
-	LIST_REMOVE(pn, mn_sibling);
+	BSD_LIST_REMOVE(pn, mn_sibling);
 	mqnode_release(pn);
 	mqnode_release(pt);
 	sx_xunlock(&mqfs->mi_lock);
@@ -1533,7 +1533,7 @@ mqueue_alloc(const struct mq_attr *attr)
 	if (curmq >= maxmq)
 		return (NULL);
 	mq = uma_zalloc(mqueue_zone, M_WAITOK | M_ZERO);
-	TAILQ_INIT(&mq->mq_msgq);
+	BSD_TAILQ_INIT(&mq->mq_msgq);
 	if (attr != NULL) {
 		mq->mq_maxmsg = attr->mq_maxmsg;
 		mq->mq_msgsize = attr->mq_msgsize;
@@ -1556,8 +1556,8 @@ mqueue_free(struct mqueue *mq)
 {
 	struct mqueue_msg *msg;
 
-	while ((msg = TAILQ_FIRST(&mq->mq_msgq)) != NULL) {
-		TAILQ_REMOVE(&mq->mq_msgq, msg, msg_link);
+	while ((msg = BSD_TAILQ_FIRST(&mq->mq_msgq)) != NULL) {
+		BSD_TAILQ_REMOVE(&mq->mq_msgq, msg, msg_link);
 		bsd_free(msg, M_MQUEUEDATA);
 	}
 
@@ -1716,17 +1716,17 @@ _mqueue_send(struct mqueue *mq, struct mqueue_msg *msg, int timo)
 		return (error);
 	}
 	error = 0;
-	if (TAILQ_EMPTY(&mq->mq_msgq)) {
-		TAILQ_INSERT_HEAD(&mq->mq_msgq, msg, msg_link);
+	if (BSD_TAILQ_EMPTY(&mq->mq_msgq)) {
+		BSD_TAILQ_INSERT_HEAD(&mq->mq_msgq, msg, msg_link);
 	} else {
-		if (msg->msg_prio <= TAILQ_LAST(&mq->mq_msgq, msgq)->msg_prio) {
-			TAILQ_INSERT_TAIL(&mq->mq_msgq, msg, msg_link);
+		if (msg->msg_prio <= BSD_TAILQ_LAST(&mq->mq_msgq, msgq)->msg_prio) {
+			BSD_TAILQ_INSERT_TAIL(&mq->mq_msgq, msg, msg_link);
 		} else {
-			TAILQ_FOREACH(msg2, &mq->mq_msgq, msg_link) {
+			BSD_TAILQ_FOREACH(msg2, &mq->mq_msgq, msg_link) {
 				if (msg2->msg_prio < msg->msg_prio)
 					break;
 			}
-			TAILQ_INSERT_BEFORE(msg2, msg, msg_link);
+			BSD_TAILQ_INSERT_BEFORE(msg2, msg, msg_link);
 		}
 	}
 	mq->mq_curmsgs++;
@@ -1856,7 +1856,7 @@ _mqueue_recv(struct mqueue *mq, struct mqueue_msg **msg, int timo)
 	int error = 0;
 	
 	mtx_lock(&mq->mq_mutex);
-	while ((*msg = TAILQ_FIRST(&mq->mq_msgq)) == NULL && error == 0) {
+	while ((*msg = BSD_TAILQ_FIRST(&mq->mq_msgq)) == NULL && error == 0) {
 		if (timo < 0) {
 			mtx_unlock(&mq->mq_mutex);
 			return (EAGAIN);
@@ -1870,7 +1870,7 @@ _mqueue_recv(struct mqueue *mq, struct mqueue_msg **msg, int timo)
 	}
 	if (*msg != NULL) {
 		error = 0;
-		TAILQ_REMOVE(&mq->mq_msgq, *msg, msg_link);
+		BSD_TAILQ_REMOVE(&mq->mq_msgq, *msg, msg_link);
 		mq->mq_curmsgs--;
 		mq->mq_totalbytes -= (*msg)->msg_size;
 		if (mq->mq_senders)
@@ -1882,7 +1882,7 @@ _mqueue_recv(struct mqueue *mq, struct mqueue_msg **msg, int timo)
 		KNOTE_LOCKED(&mq->mq_wsel.si_note, 0);
 	}
 	if (mq->mq_notifier != NULL && mq->mq_receivers == 0 &&
-	    !TAILQ_EMPTY(&mq->mq_msgq)) {
+	    !BSD_TAILQ_EMPTY(&mq->mq_msgq)) {
 		mqueue_send_notification(mq);
 	}
 	mtx_unlock(&mq->mq_mutex);
@@ -1906,7 +1906,7 @@ notifier_search(struct proc *p, int fd)
 {
 	struct mqueue_notifier *nt;
 
-	LIST_FOREACH(nt, &p->p_mqnotifier, nt_link) {
+	BSD_LIST_FOREACH(nt, &p->p_mqnotifier, nt_link) {
 		if (nt->nt_ksi.ksi_mqd == fd)
 			break;
 	}
@@ -1916,13 +1916,13 @@ notifier_search(struct proc *p, int fd)
 static __inline void
 notifier_insert(struct proc *p, struct mqueue_notifier *nt)
 {
-	LIST_INSERT_HEAD(&p->p_mqnotifier, nt, nt_link);
+	BSD_LIST_INSERT_HEAD(&p->p_mqnotifier, nt, nt_link);
 }
 
 static __inline void
 notifier_delete(struct proc *p, struct mqueue_notifier *nt)
 {
-	LIST_REMOVE(nt, nt_link);
+	BSD_LIST_REMOVE(nt, nt_link);
 	notifier_free(nt);
 }
 
@@ -2324,7 +2324,7 @@ again:
 			 * as soon as possible.
 			 */
 			if (mq->mq_receivers == 0 &&
-			    !TAILQ_EMPTY(&mq->mq_msgq))
+			    !BSD_TAILQ_EMPTY(&mq->mq_msgq))
 				mqueue_send_notification(mq);
 		}
 	} else {
@@ -2386,7 +2386,7 @@ mq_proc_exit(void *arg __unused, struct proc *p)
 		}
 	}
 	FILEDESC_SUNLOCK(fdp);
-	KASSERT(LIST_EMPTY(&p->p_mqnotifier), ("mq notifiers left"));
+	KASSERT(BSD_LIST_EMPTY(&p->p_mqnotifier), ("mq notifiers left"));
 }
 
 static int

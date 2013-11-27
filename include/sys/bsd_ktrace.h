@@ -68,7 +68,7 @@ struct ktr_header {
 #define	KTRCHECK(td, type)	((td)->td_proc->p_traceflag & (1 << type))
 #define KTRPOINT(td, type)						\
 	(KTRCHECK((td), (type)) && !((td)->td_pflags & TDP_INKTRACE))
-#define	KTRCHECKDRAIN(td)	(!(STAILQ_EMPTY(&(td)->td_proc->p_ktr)))
+#define	KTRCHECKDRAIN(td)	(!(BSD_STAILQ_EMPTY(&(td)->td_proc->p_ktr)))
 #define	KTRUSERRET(td) do {						\
 	if (KTRCHECKDRAIN(td))						\
 		ktruserret(td);						\

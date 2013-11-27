@@ -1175,7 +1175,7 @@ flowlist_lookup(fv, pktattr, now)
 	switch (pktattr->pattr_af) {
 	case AF_INET:
 		ip = (struct ip *)pktattr->pattr_hdr;
-		TAILQ_FOREACH(fve, &fv->fv_flowlist, fve_lru){
+		BSD_TAILQ_FOREACH(fve, &fv->fv_flowlist, fve_lru){
 			if (fve->fve_lastdrop.tv_sec == 0)
 				break;
 			if (fve->fve_lastdrop.tv_sec < tthresh.tv_sec) {
@@ -1194,7 +1194,7 @@ flowlist_lookup(fv, pktattr, now)
 #ifdef INET6
 	case AF_INET6:
 		ip6 = (struct ip6_hdr *)pktattr->pattr_hdr;
-		TAILQ_FOREACH(fve, &fv->fv_flowlist, fve_lru){
+		BSD_TAILQ_FOREACH(fve, &fv->fv_flowlist, fve_lru){
 			if (fve->fve_lastdrop.tv_sec == 0)
 				break;
 			if (fve->fve_lastdrop.tv_sec < tthresh.tv_sec) {
@@ -1234,7 +1234,7 @@ flowlist_reclaim(fv, pktattr)
 	/*
 	 * get an entry from the tail of the LRU list.
 	 */
-	fve = TAILQ_LAST(&fv->fv_flowlist, fv_flowhead);
+	fve = BSD_TAILQ_LAST(&fv->fv_flowlist, fv_flowhead);
 
 	switch (pktattr->pattr_af) {
 	case AF_INET:
@@ -1271,9 +1271,9 @@ flowlist_move_to_head(fv, fve)
 	struct flowvalve *fv;
 	struct fve *fve;
 {
-	if (TAILQ_FIRST(&fv->fv_flowlist) != fve) {
-		TAILQ_REMOVE(&fv->fv_flowlist, fve, fve_lru);
-		TAILQ_INSERT_HEAD(&fv->fv_flowlist, fve, fve_lru);
+	if (BSD_TAILQ_FIRST(&fv->fv_flowlist) != fve) {
+		BSD_TAILQ_REMOVE(&fv->fv_flowlist, fve, fve_lru);
+		BSD_TAILQ_INSERT_HEAD(&fv->fv_flowlist, fve, fve_lru);
 	}
 }
 
@@ -1305,11 +1305,11 @@ fv_alloc(rp)
 	bzero(fv->fv_fves, sizeof(struct fve) * num);
 
 	fv->fv_flows = 0;
-	TAILQ_INIT(&fv->fv_flowlist);
+	BSD_TAILQ_INIT(&fv->fv_flowlist);
 	for (i = 0; i < num; i++) {
 		fve = &fv->fv_fves[i];
 		fve->fve_lastdrop.tv_sec = 0;
-		TAILQ_INSERT_TAIL(&fv->fv_flowlist, fve, fve_lru);
+		BSD_TAILQ_INSERT_TAIL(&fv->fv_flowlist, fve, fve_lru);
 	}
 
 	/* initialize drop rate threshold in scaled fixed-point */

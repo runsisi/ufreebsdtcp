@@ -102,18 +102,18 @@ struct resource {
 
 struct resource_i;
 
-TAILQ_HEAD(resource_head, resource_i);
+BSD_TAILQ_HEAD(resource_head, resource_i);
 
 struct rman {
 	struct	resource_head 	rm_list;
 	struct	mtx *rm_mtx;	/* mutex used to protect rm_list */
-	TAILQ_ENTRY(rman)	rm_link; /* link in list of all rmans */
+	BSD_TAILQ_ENTRY(rman)	rm_link; /* link in list of all rmans */
 	u_long	rm_start;	/* index of globally first entry */
 	u_long	rm_end;		/* index of globally last entry */
 	enum	rman_type rm_type; /* what type of resource this is */
 	const	char *rm_descr;	/* text descripion of this resource */
 };
-TAILQ_HEAD(rman_head, rman);
+BSD_TAILQ_HEAD(rman_head, rman);
 
 int	rman_activate_resource(struct resource *r);
 int	rman_adjust_resource(struct resource *r, u_long start, u_long end);

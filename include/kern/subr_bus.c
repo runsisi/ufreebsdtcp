@@ -68,20 +68,20 @@ SYSCTL_NODE(, OID_AUTO, dev, CTLFLAG_RW, NULL, NULL);
 typedef struct driverlink *driverlink_t;
 struct driverlink {
 	kobj_class_t	driver;
-	TAILQ_ENTRY(driverlink) link;	/* list of drivers in devclass */
+	BSD_TAILQ_ENTRY(driverlink) link;	/* list of drivers in devclass */
 	int		pass;
-	TAILQ_ENTRY(driverlink) passlink;
+	BSD_TAILQ_ENTRY(driverlink) passlink;
 };
 
 /*
  * Forward declarations
  */
-typedef TAILQ_HEAD(devclass_list, devclass) devclass_list_t;
-typedef TAILQ_HEAD(driver_list, driverlink) driver_list_t;
-typedef TAILQ_HEAD(device_list, device) device_list_t;
+typedef BSD_TAILQ_HEAD(devclass_list, devclass) devclass_list_t;
+typedef BSD_TAILQ_HEAD(driver_list, driverlink) driver_list_t;
+typedef BSD_TAILQ_HEAD(device_list, device) device_list_t;
 
 struct devclass {
-	TAILQ_ENTRY(devclass) link;
+	BSD_TAILQ_ENTRY(devclass) link;
 	devclass_t	parent;		/* parent in devclass hierarchy */
 	driver_list_t	drivers;     /* bus devclasses store drivers for bus */
 	char		*name;
@@ -107,8 +107,8 @@ struct device {
 	/*
 	 * Device hierarchy.
 	 */
-	TAILQ_ENTRY(device)	link;	/**< list of devices in parent */
-	TAILQ_ENTRY(device)	devlink; /**< global device list membership */
+	BSD_TAILQ_ENTRY(device)	link;	/**< list of devices in parent */
+	BSD_TAILQ_ENTRY(device)	devlink; /**< global device list membership */
 	device_t	parent;		/**< parent of this device  */
 	device_list_t	children;	/**< list of child devices */
 
@@ -385,10 +385,10 @@ static struct cdevsw dev_cdevsw = {
 struct dev_event_info
 {
 	char *dei_data;
-	TAILQ_ENTRY(dev_event_info) dei_link;
+	BSD_TAILQ_ENTRY(dev_event_info) dei_link;
 };
 
-TAILQ_HEAD(devq, dev_event_info);
+BSD_TAILQ_HEAD(devq, dev_event_info);
 
 static struct dev_softc
 {
@@ -411,7 +411,7 @@ devinit(void)
 	    UID_ROOT, GID_WHEEL, 0600, "devctl");
 	mtx_init(&devsoftc.mtx, "dev mtx", "devd", MTX_DEF);
 	cv_init(&devsoftc.cv, "dev cv");
-	TAILQ_INIT(&devsoftc.devq);
+	BSD_TAILQ_INIT(&devsoftc.devq);
 }
 
 static int
@@ -452,7 +452,7 @@ devread(struct cdev *dev, struct uio *uio, int ioflag)
 	int rv;
 
 	mtx_lock(&devsoftc.mtx);
-	while (TAILQ_EMPTY(&devsoftc.devq)) {
+	while (BSD_TAILQ_EMPTY(&devsoftc.devq)) {
 		if (devsoftc.nonblock) {
 			mtx_unlock(&devsoftc.mtx);
 			return (EAGAIN);
@@ -466,8 +466,8 @@ devread(struct cdev *dev, struct uio *uio, int ioflag)
 			return (rv);
 		}
 	}
-	n1 = TAILQ_FIRST(&devsoftc.devq);
-	TAILQ_REMOVE(&devsoftc.devq, n1, dei_link);
+	n1 = BSD_TAILQ_FIRST(&devsoftc.devq);
+	BSD_TAILQ_REMOVE(&devsoftc.devq, n1, dei_link);
 	devsoftc.queued--;
 	mtx_unlock(&devsoftc.mtx);
 	rv = uiomove(n1->dei_data, strlen(n1->dei_data), uio);
@@ -513,7 +513,7 @@ devpoll(struct cdev *dev, int events, struct thread *td)
 
 	mtx_lock(&devsoftc.mtx);
 	if (events & (POLLIN | POLLRDNORM)) {
-		if (!TAILQ_EMPTY(&devsoftc.devq))
+		if (!BSD_TAILQ_EMPTY(&devsoftc.devq))
 			revents = events & (POLLIN | POLLRDNORM);
 		else
 			selrecord(td, &devsoftc.sel);
@@ -562,13 +562,13 @@ devctl_queue_data_f(char *data, int flags)
 	}
 	/* Leave at least one spot in the queue... */
 	while (devsoftc.queued > devctl_queue_length - 1) {
-		n2 = TAILQ_FIRST(&devsoftc.devq);
-		TAILQ_REMOVE(&devsoftc.devq, n2, dei_link);
+		n2 = BSD_TAILQ_FIRST(&devsoftc.devq);
+		BSD_TAILQ_REMOVE(&devsoftc.devq, n2, dei_link);
 		bsd_free(n2->dei_data, M_BUS);
 		bsd_free(n2, M_BUS);
 		devsoftc.queued--;
 	}
-	TAILQ_INSERT_TAIL(&devsoftc.devq, n1, dei_link);
+	BSD_TAILQ_INSERT_TAIL(&devsoftc.devq, n1, dei_link);
 	devsoftc.queued++;
 	cv_broadcast(&devsoftc.cv);
 	mtx_unlock(&devsoftc.mtx);
@@ -748,9 +748,9 @@ sysctl_devctl_disable(SYSCTL_HANDLER_ARGS)
 		return (error);
 	mtx_lock(&devsoftc.mtx);
 	if (dis) {
-		while (!TAILQ_EMPTY(&devsoftc.devq)) {
-			n1 = TAILQ_FIRST(&devsoftc.devq);
-			TAILQ_REMOVE(&devsoftc.devq, n1, dei_link);
+		while (!BSD_TAILQ_EMPTY(&devsoftc.devq)) {
+			n1 = BSD_TAILQ_FIRST(&devsoftc.devq);
+			BSD_TAILQ_REMOVE(&devsoftc.devq, n1, dei_link);
 			bsd_free(n1->dei_data, M_BUS);
 			bsd_free(n1, M_BUS);
 		}
@@ -778,8 +778,8 @@ sysctl_devctl_queue(SYSCTL_HANDLER_ARGS)
 	mtx_lock(&devsoftc.mtx);
 	devctl_queue_length = q;
 	while (devsoftc.queued > devctl_queue_length) {
-		n1 = TAILQ_FIRST(&devsoftc.devq);
-		TAILQ_REMOVE(&devsoftc.devq, n1, dei_link);
+		n1 = BSD_TAILQ_FIRST(&devsoftc.devq);
+		BSD_TAILQ_REMOVE(&devsoftc.devq, n1, dei_link);
 		bsd_free(n1->dei_data, M_BUS);
 		bsd_free(n1, M_BUS);
 		devsoftc.queued--;
@@ -790,7 +790,7 @@ sysctl_devctl_queue(SYSCTL_HANDLER_ARGS)
 
 /* End of /dev/devctl code */
 
-static TAILQ_HEAD(,device)	bus_data_devices;
+static BSD_TAILQ_HEAD(,device)	bus_data_devices;
 static int bus_data_generation = 1;
 
 static kobj_method_t null_methods[] = {
@@ -803,7 +803,7 @@ DEFINE_CLASS(null, null_methods, 0);
  * Bus pass implementation
  */
 
-static driver_list_t passes = TAILQ_HEAD_INITIALIZER(passes);
+static driver_list_t passes = BSD_TAILQ_HEAD_INITIALIZER(passes);
 int bus_current_pass = BUS_PASS_ROOT;
 
 /**
@@ -830,15 +830,15 @@ driver_register_pass(struct driverlink *new)
 	 * then there is nothing to do.  If we don't, then insert this
 	 * driver link into the list.
 	 */
-	TAILQ_FOREACH(dl, &passes, passlink) {
+	BSD_TAILQ_FOREACH(dl, &passes, passlink) {
 		if (dl->pass < new->pass)
 			continue;
 		if (dl->pass == new->pass)
 			return;
-		TAILQ_INSERT_BEFORE(dl, new, passlink);
+		BSD_TAILQ_INSERT_BEFORE(dl, new, passlink);
 		return;
 	}
-	TAILQ_INSERT_TAIL(&passes, new, passlink);
+	BSD_TAILQ_INSERT_TAIL(&passes, new, passlink);
 }
 
 /**
@@ -856,7 +856,7 @@ bus_set_pass(int pass)
 	if (bus_current_pass > pass)
 		panic("Attempt to lower bus pass level");
 
-	TAILQ_FOREACH(dl, &passes, passlink) {
+	BSD_TAILQ_FOREACH(dl, &passes, passlink) {
 		/* Skip pass values below the current pass level. */
 		if (dl->pass <= bus_current_pass)
 			continue;
@@ -890,7 +890,7 @@ bus_set_pass(int pass)
  * Devclass implementation
  */
 
-static devclass_list_t devclasses = TAILQ_HEAD_INITIALIZER(devclasses);
+static devclass_list_t devclasses = BSD_TAILQ_HEAD_INITIALIZER(devclasses);
 
 /**
  * @internal
@@ -917,7 +917,7 @@ devclass_find_internal(const char *classname, const char *parentname,
 	if (!classname)
 		return (NULL);
 
-	TAILQ_FOREACH(dc, &devclasses, link) {
+	BSD_TAILQ_FOREACH(dc, &devclasses, link) {
 		if (!strcmp(dc->name, classname))
 			break;
 	}
@@ -931,8 +931,8 @@ devclass_find_internal(const char *classname, const char *parentname,
 		dc->parent = NULL;
 		dc->name = (char*) (dc + 1);
 		strcpy(dc->name, classname);
-		TAILQ_INIT(&dc->drivers);
-		TAILQ_INSERT_TAIL(&devclasses, dc, link);
+		BSD_TAILQ_INIT(&dc->drivers);
+		BSD_TAILQ_INSERT_TAIL(&devclasses, dc, link);
 
 		bus_data_generation_update();
 	}
@@ -1023,7 +1023,7 @@ devclass_driver_added(devclass_t dc, driver_t *driver)
 	if (!(dc->flags & DC_HAS_CHILDREN))
 		return;
 	parent = dc;
-	TAILQ_FOREACH(dc, &devclasses, link) {
+	BSD_TAILQ_FOREACH(dc, &devclasses, link) {
 		if (dc->parent == parent)
 			devclass_driver_added(dc, driver);
 	}
@@ -1078,7 +1078,7 @@ devclass_add_driver(devclass_t dc, driver_t *driver, int pass, devclass_t *dcp)
 	*dcp = devclass_find_internal(driver->name, parentname, TRUE);
 
 	dl->driver = driver;
-	TAILQ_INSERT_TAIL(&dc->drivers, dl, link);
+	BSD_TAILQ_INSERT_TAIL(&dc->drivers, dl, link);
 	driver->refs++;		/* XXX: kobj_mtx */
 	dl->pass = pass;
 	driver_register_pass(dl);
@@ -1149,7 +1149,7 @@ devclass_driver_deleted(devclass_t busclass, devclass_t dc, driver_t *driver)
 	if (!(busclass->flags & DC_HAS_CHILDREN))
 		return (0);
 	parent = busclass;
-	TAILQ_FOREACH(busclass, &devclasses, link) {
+	BSD_TAILQ_FOREACH(busclass, &devclasses, link) {
 		if (busclass->parent == parent) {
 			error = devclass_driver_deleted(busclass, dc, driver);
 			if (error)
@@ -1188,7 +1188,7 @@ devclass_delete_driver(devclass_t busclass, driver_t *driver)
 	/*
 	 * Find the link structure in the bus' list of drivers.
 	 */
-	TAILQ_FOREACH(dl, &busclass->drivers, link) {
+	BSD_TAILQ_FOREACH(dl, &busclass->drivers, link) {
 		if (dl->driver == driver)
 			break;
 	}
@@ -1203,7 +1203,7 @@ devclass_delete_driver(devclass_t busclass, driver_t *driver)
 	if (error != 0)
 		return (error);
 
-	TAILQ_REMOVE(&busclass->drivers, dl, link);
+	BSD_TAILQ_REMOVE(&busclass->drivers, dl, link);
 	bsd_free(dl, M_BUS);
 
 	/* XXX: kobj_mtx */
@@ -1245,7 +1245,7 @@ devclass_quiesce_driver(devclass_t busclass, driver_t *driver)
 	/*
 	 * Find the link structure in the bus' list of drivers.
 	 */
-	TAILQ_FOREACH(dl, &busclass->drivers, link) {
+	BSD_TAILQ_FOREACH(dl, &busclass->drivers, link) {
 		if (dl->driver == driver)
 			break;
 	}
@@ -1290,7 +1290,7 @@ devclass_find_driver_internal(devclass_t dc, const char *classname)
 
 	PDEBUG(("%s in devclass %s", classname, DEVCLANAME(dc)));
 
-	TAILQ_FOREACH(dl, &dc->drivers, link) {
+	BSD_TAILQ_FOREACH(dl, &dc->drivers, link) {
 		if (!strcmp(dl->driver->name, classname))
 			return (dl);
 	}
@@ -1412,14 +1412,14 @@ devclass_get_drivers(devclass_t dc, driver_t ***listp, int *countp)
 	int count;
 
 	count = 0;
-	TAILQ_FOREACH(dl, &dc->drivers, link)
+	BSD_TAILQ_FOREACH(dl, &dc->drivers, link)
 		count++;
 	list = bsd_malloc(count * sizeof(driver_t *), M_TEMP, M_NOWAIT);
 	if (list == NULL)
 		return (ENOMEM);
 
 	count = 0;
-	TAILQ_FOREACH(dl, &dc->drivers, link) {
+	BSD_TAILQ_FOREACH(dl, &dc->drivers, link) {
 		list[count] = dl->driver;
 		count++;
 	}
@@ -1714,7 +1714,7 @@ make_device(device_t parent, const char *name, int unit)
 		return (NULL);
 
 	dev->parent = parent;
-	TAILQ_INIT(&dev->children);
+	BSD_TAILQ_INIT(&dev->children);
 	kobj_init((kobj_t) dev, &null_class);
 	dev->driver = NULL;
 	dev->devclass = NULL;
@@ -1739,7 +1739,7 @@ make_device(device_t parent, const char *name, int unit)
 
 	dev->state = DS_NOTPRESENT;
 
-	TAILQ_INSERT_TAIL(&bus_data_devices, dev, devlink);
+	BSD_TAILQ_INSERT_TAIL(&bus_data_devices, dev, devlink);
 	bus_data_generation_update();
 
 	return (dev);
@@ -1818,7 +1818,7 @@ device_add_child_ordered(device_t dev, u_int order, const char *name, int unit)
 		return (child);
 	child->order = order;
 
-	TAILQ_FOREACH(place, &dev->children, link) {
+	BSD_TAILQ_FOREACH(place, &dev->children, link) {
 		if (place->order > order)
 			break;
 	}
@@ -1828,13 +1828,13 @@ device_add_child_ordered(device_t dev, u_int order, const char *name, int unit)
 		 * The device 'place' is the first device whose order is
 		 * greater than the new child.
 		 */
-		TAILQ_INSERT_BEFORE(place, child, link);
+		BSD_TAILQ_INSERT_BEFORE(place, child, link);
 	} else {
 		/*
 		 * The new child's order is greater or equal to the order of
 		 * any existing device. Add the child to the tail of the list.
 		 */
-		TAILQ_INSERT_TAIL(&dev->children, child, link);
+		BSD_TAILQ_INSERT_TAIL(&dev->children, child, link);
 	}
 
 	bus_data_generation_update();
@@ -1863,7 +1863,7 @@ device_delete_child(device_t dev, device_t child)
 	PDEBUG(("%s from %s", DEVICENAME(child), DEVICENAME(dev)));
 
 	/* remove children first */
-	while ((grandchild = TAILQ_FIRST(&child->children)) != NULL) {
+	while ((grandchild = BSD_TAILQ_FIRST(&child->children)) != NULL) {
 		error = device_delete_child(child, grandchild);
 		if (error)
 			return (error);
@@ -1875,8 +1875,8 @@ device_delete_child(device_t dev, device_t child)
 		devclass_delete_device(child->devclass, child);
 	if (child->parent)
 		BUS_CHILD_DELETED(dev, child);
-	TAILQ_REMOVE(&dev->children, child, link);
-	TAILQ_REMOVE(&bus_data_devices, child, devlink);
+	BSD_TAILQ_REMOVE(&dev->children, child, link);
+	BSD_TAILQ_REMOVE(&bus_data_devices, child, devlink);
 	kobj_delete((kobj_t) child, M_BUS);
 
 	bus_data_generation_update();
@@ -1906,7 +1906,7 @@ device_delete_children(device_t dev)
 
 	error = 0;
 
-	while ((child = TAILQ_FIRST(&dev->children)) != NULL) {
+	while ((child = BSD_TAILQ_FIRST(&dev->children)) != NULL) {
 		error = device_delete_child(dev, child);
 		if (error) {
 			PDEBUG(("Failed deleting %s", DEVICENAME(child)));
@@ -1962,7 +1962,7 @@ first_matching_driver(devclass_t dc, device_t dev)
 {
 	if (dev->devclass)
 		return (devclass_find_driver_internal(dc, dev->devclass->name));
-	return (TAILQ_FIRST(&dc->drivers));
+	return (BSD_TAILQ_FIRST(&dc->drivers));
 }
 
 /**
@@ -1973,12 +1973,12 @@ next_matching_driver(devclass_t dc, device_t dev, driverlink_t last)
 {
 	if (dev->devclass) {
 		driverlink_t dl;
-		for (dl = TAILQ_NEXT(last, link); dl; dl = TAILQ_NEXT(dl, link))
+		for (dl = BSD_TAILQ_NEXT(last, link); dl; dl = BSD_TAILQ_NEXT(dl, link))
 			if (!strcmp(dev->devclass->name, dl->driver->name))
 				return (dl);
 		return (NULL);
 	}
-	return (TAILQ_NEXT(last, link));
+	return (BSD_TAILQ_NEXT(last, link));
 }
 
 /**
@@ -2179,7 +2179,7 @@ device_get_children(device_t dev, device_t **devlistp, int *devcountp)
 	device_t *list;
 
 	count = 0;
-	TAILQ_FOREACH(child, &dev->children, link) {
+	BSD_TAILQ_FOREACH(child, &dev->children, link) {
 		count++;
 	}
 	if (count == 0) {
@@ -2193,7 +2193,7 @@ device_get_children(device_t dev, device_t **devlistp, int *devcountp)
 		return (ENOMEM);
 
 	count = 0;
-	TAILQ_FOREACH(child, &dev->children, link) {
+	BSD_TAILQ_FOREACH(child, &dev->children, link) {
 		list[count] = child;
 		count++;
 	}
@@ -2921,7 +2921,7 @@ device_set_unit(device_t dev, int unit)
 void
 resource_list_init(struct resource_list *rl)
 {
-	STAILQ_INIT(rl);
+	BSD_STAILQ_INIT(rl);
 }
 
 /**
@@ -2937,10 +2937,10 @@ resource_list_free(struct resource_list *rl)
 {
 	struct resource_list_entry *rle;
 
-	while ((rle = STAILQ_FIRST(rl)) != NULL) {
+	while ((rle = BSD_STAILQ_FIRST(rl)) != NULL) {
 		if (rle->res)
 			panic("resource_list_free: resource entry is busy");
-		STAILQ_REMOVE_HEAD(rl, link);
+		BSD_STAILQ_REMOVE_HEAD(rl, link);
 		bsd_free(rle, M_BUS);
 	}
 }
@@ -2998,7 +2998,7 @@ resource_list_add(struct resource_list *rl, int type, int rid,
 		    M_NOWAIT);
 		if (!rle)
 			panic("resource_list_add: can't record entry");
-		STAILQ_INSERT_TAIL(rl, rle, link);
+		BSD_STAILQ_INSERT_TAIL(rl, rle, link);
 		rle->type = type;
 		rle->rid = rid;
 		rle->res = NULL;
@@ -3081,7 +3081,7 @@ resource_list_find(struct resource_list *rl, int type, int rid)
 {
 	struct resource_list_entry *rle;
 
-	STAILQ_FOREACH(rle, rl, link) {
+	BSD_STAILQ_FOREACH(rle, rl, link) {
 		if (rle->type == type && rle->rid == rid)
 			return (rle);
 	}
@@ -3103,7 +3103,7 @@ resource_list_delete(struct resource_list *rl, int type, int rid)
 	if (rle) {
 		if (rle->res != NULL)
 			panic("resource_list_delete: resource has not been released");
-		STAILQ_REMOVE(rl, rle, resource_list_entry, link);
+		BSD_STAILQ_REMOVE(rl, rle, resource_list_entry, link);
 		bsd_free(rle, M_BUS);
 	}
 }
@@ -3377,7 +3377,7 @@ resource_list_print_type(struct resource_list *rl, const char *name, int type,
 	printed = 0;
 	retval = 0;
 	/* Yes, this is kinda cheating */
-	STAILQ_FOREACH(rle, rl, link) {
+	BSD_STAILQ_FOREACH(rle, rl, link) {
 		if (rle->type == type) {
 			if (printed == 0)
 				retval += printf(" %s ", name);
@@ -3407,11 +3407,11 @@ resource_list_purge(struct resource_list *rl)
 {
 	struct resource_list_entry *rle;
 
-	while ((rle = STAILQ_FIRST(rl)) != NULL) {
+	while ((rle = BSD_STAILQ_FIRST(rl)) != NULL) {
 		if (rle->res)
 			bus_release_resource(rman_get_device(rle->res),
 			    rle->type, rle->rid, rle->res);
-		STAILQ_REMOVE_HEAD(rl, link);
+		BSD_STAILQ_REMOVE_HEAD(rl, link);
 		bsd_free(rle, M_BUS);
 	}
 }
@@ -3437,7 +3437,7 @@ bus_generic_probe(device_t dev)
 	devclass_t dc = dev->devclass;
 	driverlink_t dl;
 
-	TAILQ_FOREACH(dl, &dc->drivers, link) {
+	BSD_TAILQ_FOREACH(dl, &dc->drivers, link) {
 		/*
 		 * If this driver's pass is too high, then ignore it.
 		 * For most drivers in the default pass, this will
@@ -3467,7 +3467,7 @@ bus_generic_attach(device_t dev)
 {
 	device_t child;
 
-	TAILQ_FOREACH(child, &dev->children, link) {
+	BSD_TAILQ_FOREACH(child, &dev->children, link) {
 		device_probe_and_attach(child);
 	}
 
@@ -3490,7 +3490,7 @@ bus_generic_detach(device_t dev)
 	if (dev->state != DS_ATTACHED)
 		return (EBUSY);
 
-	TAILQ_FOREACH(child, &dev->children, link) {
+	BSD_TAILQ_FOREACH(child, &dev->children, link) {
 		if ((error = device_detach(child)) != 0)
 			return (error);
 	}
@@ -3510,7 +3510,7 @@ bus_generic_shutdown(device_t dev)
 {
 	device_t child;
 
-	TAILQ_FOREACH(child, &dev->children, link) {
+	BSD_TAILQ_FOREACH(child, &dev->children, link) {
 		device_shutdown(child);
 	}
 
@@ -3532,12 +3532,12 @@ bus_generic_suspend(device_t dev)
 	int		error;
 	device_t	child, child2;
 
-	TAILQ_FOREACH(child, &dev->children, link) {
+	BSD_TAILQ_FOREACH(child, &dev->children, link) {
 		error = DEVICE_SUSPEND(child);
 		if (error) {
-			for (child2 = TAILQ_FIRST(&dev->children);
+			for (child2 = BSD_TAILQ_FIRST(&dev->children);
 			     child2 && child2 != child;
-			     child2 = TAILQ_NEXT(child2, link))
+			     child2 = BSD_TAILQ_NEXT(child2, link))
 				DEVICE_RESUME(child2);
 			return (error);
 		}
@@ -3556,7 +3556,7 @@ bus_generic_resume(device_t dev)
 {
 	device_t	child;
 
-	TAILQ_FOREACH(child, &dev->children, link) {
+	BSD_TAILQ_FOREACH(child, &dev->children, link) {
 		DEVICE_RESUME(child);
 		/* if resume fails, there's nothing we can usefully do... */
 	}
@@ -3668,7 +3668,7 @@ bus_generic_driver_added(device_t dev, driver_t *driver)
 	device_t child;
 
 	DEVICE_IDENTIFY(driver, dev);
-	TAILQ_FOREACH(child, &dev->children, link) {
+	BSD_TAILQ_FOREACH(child, &dev->children, link) {
 		if (child->state == DS_NOTPRESENT ||
 		    (child->flags & DF_REBID))
 			device_probe_and_attach(child);
@@ -3693,11 +3693,11 @@ bus_generic_new_pass(device_t dev)
 	device_t child;
 
 	dc = dev->devclass;
-	TAILQ_FOREACH(dl, &dc->drivers, link) {
+	BSD_TAILQ_FOREACH(dl, &dc->drivers, link) {
 		if (dl->pass == bus_current_pass)
 			DEVICE_IDENTIFY(dl->driver, dev);
 	}
-	TAILQ_FOREACH(child, &dev->children, link) {
+	BSD_TAILQ_FOREACH(child, &dev->children, link) {
 		if (child->state >= DS_ATTACHED)
 			BUS_NEW_PASS(child);
 		else if (child->state == DS_NOTPRESENT)
@@ -4437,7 +4437,7 @@ root_bus_module_handler(module_t mod, int what, void* arg)
 {
 	switch (what) {
 	case MOD_LOAD:
-		TAILQ_INIT(&bus_data_devices);
+		BSD_TAILQ_INIT(&bus_data_devices);
 		kobj_class_compile((kobj_class_t) &root_driver);
 		root_bus = make_device(NULL, "root", 0);
 		root_bus->desc = "System root bus";
@@ -4591,7 +4591,7 @@ print_device_short(device_t dev, int indent)
 	indentprintf(("device %d: <%s> %sparent,%schildren,%s%s%s%s%s,%sivars,%ssoftc,busy=%d\n",
 	    dev->unit, dev->desc,
 	    (dev->parent? "":"no "),
-	    (TAILQ_EMPTY(&dev->children)? "no ":""),
+	    (BSD_TAILQ_EMPTY(&dev->children)? "no ":""),
 	    (dev->flags&DF_ENABLED? "enabled,":"disabled,"),
 	    (dev->flags&DF_FIXEDCLASS? "fixed,":""),
 	    (dev->flags&DF_WILDCARD? "wildcard,":""),
@@ -4629,7 +4629,7 @@ print_device_tree_short(device_t dev, int indent)
 
 	print_device_short(dev, indent);
 
-	TAILQ_FOREACH(child, &dev->children, link) {
+	BSD_TAILQ_FOREACH(child, &dev->children, link) {
 		print_device_tree_short(child, indent+1);
 	}
 }
@@ -4645,7 +4645,7 @@ print_device_tree(device_t dev, int indent)
 
 	print_device(dev, indent);
 
-	TAILQ_FOREACH(child, &dev->children, link) {
+	BSD_TAILQ_FOREACH(child, &dev->children, link) {
 		print_device_tree(child, indent+1);
 	}
 }
@@ -4674,7 +4674,7 @@ print_driver_list(driver_list_t drivers, int indent)
 {
 	driverlink_t driver;
 
-	TAILQ_FOREACH(driver, &drivers, link) {
+	BSD_TAILQ_FOREACH(driver, &drivers, link) {
 		print_driver(driver->driver, indent);
 	}
 }
@@ -4712,7 +4712,7 @@ print_devclass_list_short(void)
 	devclass_t dc;
 
 	printf("Short listing of devclasses, drivers & devices:\n");
-	TAILQ_FOREACH(dc, &devclasses, link) {
+	BSD_TAILQ_FOREACH(dc, &devclasses, link) {
 		print_devclass_short(dc, 0);
 	}
 }
@@ -4723,7 +4723,7 @@ print_devclass_list(void)
 	devclass_t dc;
 
 	printf("Full listing of devclasses, drivers & devices:\n");
-	TAILQ_FOREACH(dc, &devclasses, link) {
+	BSD_TAILQ_FOREACH(dc, &devclasses, link) {
 		print_devclass(dc, 0);
 	}
 }
@@ -4778,7 +4778,7 @@ sysctl_devices(SYSCTL_HANDLER_ARGS)
 	/*
 	 * Scan the list of devices, looking for the requested index.
 	 */
-	TAILQ_FOREACH(dev, &bus_data_devices, devlink) {
+	BSD_TAILQ_FOREACH(dev, &bus_data_devices, devlink) {
 		if (index-- == 0)
 			break;
 	}

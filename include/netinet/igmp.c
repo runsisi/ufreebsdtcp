@@ -218,7 +218,7 @@ static VNET_DEFINE(int, current_state_timers_running);	/* IGMPv1/v2 host
 #define	V_state_change_timers_running	VNET(state_change_timers_running)
 #define	V_current_state_timers_running	VNET(current_state_timers_running)
 
-static VNET_DEFINE(LIST_HEAD(, igmp_ifinfo), igi_head);
+static VNET_DEFINE(BSD_LIST_HEAD(, igmp_ifinfo), igi_head);
 static VNET_DEFINE(struct igmpstat, igmpstat) = {
 	.igps_version = IGPS_VERSION_3,
 	.igps_len = sizeof(struct igmpstat),
@@ -454,7 +454,7 @@ sysctl_igmp_ifinfo(SYSCTL_HANDLER_ARGS)
 	if (ifp == NULL)
 		goto out_locked;
 
-	LIST_FOREACH(igi, &V_igi_head, igi_link) {
+	BSD_LIST_FOREACH(igi, &V_igi_head, igi_link) {
 		if (ifp == igi->igi_ifp) {
 			error = SYSCTL_OUT(req, igi,
 			    sizeof(struct igmp_ifinfo));
@@ -579,14 +579,14 @@ igi_alloc_locked(/*const*/ struct ifnet *ifp)
 	igi->igi_qri = IGMP_QRI_INIT;
 	igi->igi_uri = IGMP_URI_INIT;
 
-	SLIST_INIT(&igi->igi_relinmhead);
+	BSD_SLIST_INIT(&igi->igi_relinmhead);
 
 	/*
 	 * Responses to general queries are subject to bounds.
 	 */
 	IFQ_SET_MAXLEN(&igi->igi_gq, IGMP_MAX_RESPONSE_PACKETS);
 
-	LIST_INSERT_HEAD(&V_igi_head, igi, igi_link);
+	BSD_LIST_INSERT_HEAD(&V_igi_head, igi, igi_link);
 
 	CTR2(KTR_IGMPV3, "allocate igmp_ifinfo for ifp %p(%s)",
 	     ifp, ifp->if_xname);
@@ -619,7 +619,7 @@ igmp_ifdetach(struct ifnet *ifp)
 	igi = ((struct in_ifinfo *)ifp->if_afdata[AF_INET])->ii_igmp;
 	if (igi->igi_version == IGMP_VERSION_3) {
 		IF_ADDR_RLOCK(ifp);
-		TAILQ_FOREACH(ifma, &ifp->if_multiaddrs, ifma_link) {
+		BSD_TAILQ_FOREACH(ifma, &ifp->if_multiaddrs, ifma_link) {
 			if (ifma->ifma_addr->sa_family != AF_INET ||
 			    ifma->ifma_protospec == NULL)
 				continue;
@@ -629,7 +629,7 @@ igmp_ifdetach(struct ifnet *ifp)
 #endif
 			inm = (struct in_multi *)ifma->ifma_protospec;
 			if (inm->inm_state == IGMP_LEAVING_MEMBER) {
-				SLIST_INSERT_HEAD(&igi->igi_relinmhead,
+				BSD_SLIST_INSERT_HEAD(&igi->igi_relinmhead,
 				    inm, inm_nrele);
 			}
 			inm_clear_recorded(inm);
@@ -638,9 +638,9 @@ igmp_ifdetach(struct ifnet *ifp)
 		/*
 		 * Free the in_multi reference(s) for this IGMP lifecycle.
 		 */
-		SLIST_FOREACH_SAFE(inm, &igi->igi_relinmhead, inm_nrele,
+		BSD_SLIST_FOREACH_SAFE(inm, &igi->igi_relinmhead, inm_nrele,
 		    tinm) {
-			SLIST_REMOVE_HEAD(&igi->igi_relinmhead, inm_nrele);
+			BSD_SLIST_REMOVE_HEAD(&igi->igi_relinmhead, inm_nrele);
 			inm_release_locked(inm);
 		}
 	}
@@ -677,16 +677,16 @@ igi_delete_locked(const struct ifnet *ifp)
 
 	IGMP_LOCK_ASSERT();
 
-	LIST_FOREACH_SAFE(igi, &V_igi_head, igi_link, tigi) {
+	BSD_LIST_FOREACH_SAFE(igi, &V_igi_head, igi_link, tigi) {
 		if (igi->igi_ifp == ifp) {
 			/*
 			 * Free deferred General Query responses.
 			 */
 			_IF_DRAIN(&igi->igi_gq);
 
-			LIST_REMOVE(igi, igi_link);
+			BSD_LIST_REMOVE(igi, igi_link);
 
-			KASSERT(SLIST_EMPTY(&igi->igi_relinmhead),
+			KASSERT(BSD_SLIST_EMPTY(&igi->igi_relinmhead),
 			    ("%s: there are dangling in_multi references",
 			    __func__));
 
@@ -752,7 +752,7 @@ igmp_input_v1_query(struct ifnet *ifp, const struct ip *ip,
 	 * except those which are already running.
 	 */
 	IF_ADDR_RLOCK(ifp);
-	TAILQ_FOREACH(ifma, &ifp->if_multiaddrs, ifma_link) {
+	BSD_TAILQ_FOREACH(ifma, &ifp->if_multiaddrs, ifma_link) {
 		if (ifma->ifma_addr->sa_family != AF_INET ||
 		    ifma->ifma_protospec == NULL)
 			continue;
@@ -853,7 +853,7 @@ igmp_input_v2_query(struct ifnet *ifp, const struct ip *ip,
 		CTR2(KTR_IGMPV3, "process v2 general query on ifp %p(%s)",
 		    ifp, ifp->if_xname);
 		IF_ADDR_RLOCK(ifp);
-		TAILQ_FOREACH(ifma, &ifp->if_multiaddrs, ifma_link) {
+		BSD_TAILQ_FOREACH(ifma, &ifp->if_multiaddrs, ifma_link) {
 			if (ifma->ifma_addr->sa_family != AF_INET ||
 			    ifma->ifma_protospec == NULL)
 				continue;
@@ -1669,7 +1669,7 @@ igmp_fasttimo_vnet(void)
 		CTR1(KTR_IGMPV3, "%s: interface timers running", __func__);
 
 		V_interface_timers_running = 0;
-		LIST_FOREACH(igi, &V_igi_head, igi_link) {
+		BSD_LIST_FOREACH(igi, &V_igi_head, igi_link) {
 			if (igi->igi_v3_timer == 0) {
 				/* Do nothing. */
 			} else if (--igi->igi_v3_timer == 0) {
@@ -1693,7 +1693,7 @@ igmp_fasttimo_vnet(void)
 	 * IGMPv1/v2/v3 host report and state-change timer processing.
 	 * Note: Processing a v3 group timer may remove a node.
 	 */
-	LIST_FOREACH(igi, &V_igi_head, igi_link) {
+	BSD_LIST_FOREACH(igi, &V_igi_head, igi_link) {
 		ifp = igi->igi_ifp;
 
 		if (igi->igi_version == IGMP_VERSION_3) {
@@ -1709,7 +1709,7 @@ igmp_fasttimo_vnet(void)
 		}
 
 		IF_ADDR_RLOCK(ifp);
-		TAILQ_FOREACH(ifma, &ifp->if_multiaddrs, ifma_link) {
+		BSD_TAILQ_FOREACH(ifma, &ifp->if_multiaddrs, ifma_link) {
 			if (ifma->ifma_addr->sa_family != AF_INET ||
 			    ifma->ifma_protospec == NULL)
 				continue;
@@ -1738,9 +1738,9 @@ igmp_fasttimo_vnet(void)
 			 * Free the in_multi reference(s) for this
 			 * IGMP lifecycle.
 			 */
-			SLIST_FOREACH_SAFE(inm, &igi->igi_relinmhead,
+			BSD_SLIST_FOREACH_SAFE(inm, &igi->igi_relinmhead,
 			    inm_nrele, tinm) {
-				SLIST_REMOVE_HEAD(&igi->igi_relinmhead,
+				BSD_SLIST_REMOVE_HEAD(&igi->igi_relinmhead,
 				    inm_nrele);
 				inm_release_locked(inm);
 			}
@@ -1907,7 +1907,7 @@ igmp_v3_process_group_timers(struct igmp_ifinfo *igi,
 			if (inm->inm_state == IGMP_LEAVING_MEMBER &&
 			    inm->inm_scrv == 0) {
 				inm->inm_state = IGMP_NOT_MEMBER;
-				SLIST_INSERT_HEAD(&igi->igi_relinmhead,
+				BSD_SLIST_INSERT_HEAD(&igi->igi_relinmhead,
 				    inm, inm_nrele);
 			}
 		}
@@ -2024,7 +2024,7 @@ igmp_v3_cancel_link_timers(struct igmp_ifinfo *igi)
 	 */
 	ifp = igi->igi_ifp;
 	IF_ADDR_RLOCK(ifp);
-	TAILQ_FOREACH(ifma, &ifp->if_multiaddrs, ifma_link) {
+	BSD_TAILQ_FOREACH(ifma, &ifp->if_multiaddrs, ifma_link) {
 		if (ifma->ifma_addr->sa_family != AF_INET ||
 		    ifma->ifma_protospec == NULL)
 			continue;
@@ -2050,7 +2050,7 @@ igmp_v3_cancel_link_timers(struct igmp_ifinfo *igi)
 			 * message is sent upstream to the old querier --
 			 * transition to NOT would lose the leave and race.
 			 */
-			SLIST_INSERT_HEAD(&igi->igi_relinmhead, inm, inm_nrele);
+			BSD_SLIST_INSERT_HEAD(&igi->igi_relinmhead, inm, inm_nrele);
 			/* FALLTHROUGH */
 		case IGMP_G_QUERY_PENDING_MEMBER:
 		case IGMP_SG_QUERY_PENDING_MEMBER:
@@ -2069,8 +2069,8 @@ igmp_v3_cancel_link_timers(struct igmp_ifinfo *igi)
 		_IF_DRAIN(&inm->inm_scq);
 	}
 	IF_ADDR_RUNLOCK(ifp);
-	SLIST_FOREACH_SAFE(inm, &igi->igi_relinmhead, inm_nrele, tinm) {
-		SLIST_REMOVE_HEAD(&igi->igi_relinmhead, inm_nrele);
+	BSD_SLIST_FOREACH_SAFE(inm, &igi->igi_relinmhead, inm_nrele, tinm) {
+		BSD_SLIST_REMOVE_HEAD(&igi->igi_relinmhead, inm_nrele);
 		inm_release_locked(inm);
 	}
 }
@@ -2179,7 +2179,7 @@ igmp_slowtimo_vnet(void)
 
 	IGMP_LOCK();
 
-	LIST_FOREACH(igi, &V_igi_head, igi_link) {
+	BSD_LIST_FOREACH(igi, &V_igi_head, igi_link) {
 		igmp_v1v2_process_querier_timers(igi);
 	}
 
@@ -3330,7 +3330,7 @@ igmp_v3_dispatch_general_query(struct igmp_ifinfo *igi)
 	ifp = igi->igi_ifp;
 
 	IF_ADDR_RLOCK(ifp);
-	TAILQ_FOREACH(ifma, &ifp->if_multiaddrs, ifma_link) {
+	BSD_TAILQ_FOREACH(ifma, &ifp->if_multiaddrs, ifma_link) {
 		if (ifma->ifma_addr->sa_family != AF_INET ||
 		    ifma->ifma_protospec == NULL)
 			continue;
@@ -3610,7 +3610,7 @@ vnet_igmp_init(const void *unused __unused)
 
 	CTR1(KTR_IGMPV3, "%s: initializing", __func__);
 
-	LIST_INIT(&V_igi_head);
+	BSD_LIST_INIT(&V_igi_head);
 }
 VNET_SYSINIT(vnet_igmp_init, SI_SUB_PSEUDO, SI_ORDER_ANY, vnet_igmp_init,
     NULL);
@@ -3621,7 +3621,7 @@ vnet_igmp_uninit(const void *unused __unused)
 
 	CTR1(KTR_IGMPV3, "%s: tearing down", __func__);
 
-	KASSERT(LIST_EMPTY(&V_igi_head),
+	KASSERT(BSD_LIST_EMPTY(&V_igi_head),
 	    ("%s: igi list not empty; ifnets not detached?", __func__));
 }
 VNET_SYSUNINIT(vnet_igmp_uninit, SI_SUB_PSEUDO, SI_ORDER_ANY,

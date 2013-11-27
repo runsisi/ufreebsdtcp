@@ -46,7 +46,7 @@
 /*
  * This is the list of statically defined tracing providers.
  */
-static TAILQ_HEAD(sdt_provider_list_head, sdt_provider) sdt_provider_list;
+static BSD_TAILQ_HEAD(sdt_provider_list_head, sdt_provider) sdt_provider_list;
 
 /*
  * Mutex to serialise access to the SDT provider list.
@@ -91,9 +91,9 @@ sdt_provider_register(void *arg)
 
 	sx_xlock(&sdt_sx);
 
-	TAILQ_INSERT_TAIL(&sdt_provider_list, prov, prov_entry);
+	BSD_TAILQ_INSERT_TAIL(&sdt_provider_list, prov, prov_entry);
 
-	TAILQ_INIT(&prov->probe_list);
+	BSD_TAILQ_INIT(&prov->probe_list);
 
 	if (sdt_provider_register_func != NULL)
 		sdt_provider_register_func(prov, sdt_provider_register_arg);
@@ -111,7 +111,7 @@ sdt_provider_deregister(void *arg)
 
 	sx_xlock(&sdt_sx);
 
-	TAILQ_REMOVE(&sdt_provider_list, prov, prov_entry);
+	BSD_TAILQ_REMOVE(&sdt_provider_list, prov, prov_entry);
 
 	if (sdt_provider_deregister_func != NULL)
 		sdt_provider_deregister_func(prov, sdt_provider_deregister_arg);
@@ -138,9 +138,9 @@ sdt_probe_register(void *arg)
 
 	sx_xlock(&sdt_sx);
 
-	TAILQ_INSERT_TAIL(&probe->prov->probe_list, probe, probe_entry);
+	BSD_TAILQ_INSERT_TAIL(&probe->prov->probe_list, probe, probe_entry);
 
-	TAILQ_INIT(&probe->argtype_list);
+	BSD_TAILQ_INIT(&probe->argtype_list);
 
 	probe->state = SDT_INIT;
 
@@ -161,7 +161,7 @@ sdt_probe_deregister(void *arg)
 	sx_xlock(&sdt_sx);
 
 	if (probe->state == SDT_INIT) {
-		TAILQ_REMOVE(&probe->prov->probe_list, probe, probe_entry);
+		BSD_TAILQ_REMOVE(&probe->prov->probe_list, probe, probe_entry);
 		probe->state = SDT_UNINIT;
 	}
 
@@ -178,7 +178,7 @@ sdt_argtype_register(void *arg)
 
 	sx_xlock(&sdt_sx);
 
-	TAILQ_INSERT_TAIL(&argtype->probe->argtype_list, argtype, argtype_entry);
+	BSD_TAILQ_INSERT_TAIL(&argtype->probe->argtype_list, argtype, argtype_entry);
 
 	argtype->probe->n_args++;
 
@@ -195,7 +195,7 @@ sdt_argtype_deregister(void *arg)
 
 	sx_xlock(&sdt_sx);
 
-	TAILQ_REMOVE(&argtype->probe->argtype_list, argtype, argtype_entry);
+	BSD_TAILQ_REMOVE(&argtype->probe->argtype_list, argtype, argtype_entry);
 
 	sx_xunlock(&sdt_sx);
 }
@@ -205,7 +205,7 @@ sdt_init(void *arg)
 { 
 	sx_init_flags(&sdt_sx, "Statically Defined Tracing", SX_NOWITNESS);
 
-	TAILQ_INIT(&sdt_provider_list);
+	BSD_TAILQ_INIT(&sdt_provider_list);
 }
 
 SYSINIT(sdt, SI_SUB_KDTRACE, SI_ORDER_FIRST, sdt_init, NULL);
@@ -242,7 +242,7 @@ sdt_provider_listall_locked(sdt_provider_listall_func_t callback_func,
 
 	sx_assert(&sdt_sx, SX_XLOCKED);
 
-	TAILQ_FOREACH(prov, &sdt_provider_list, prov_entry) {
+	BSD_TAILQ_FOREACH(prov, &sdt_provider_list, prov_entry) {
 		if ((error = callback_func(prov, arg)) != 0)
 			break;
 	}
@@ -265,7 +265,7 @@ sdt_probe_listall(struct sdt_provider *prov,
 	if (!locked)
 		sx_xlock(&sdt_sx);
 
-	TAILQ_FOREACH(probe, &prov->probe_list, probe_entry) {
+	BSD_TAILQ_FOREACH(probe, &prov->probe_list, probe_entry) {
 		if ((error = callback_func(probe, arg)) != 0)
 			break;
 	}
@@ -291,7 +291,7 @@ sdt_argtype_listall(struct sdt_probe *probe,
 	if (!locked)
 		sx_xlock(&sdt_sx);
 
-	TAILQ_FOREACH(argtype, &probe->argtype_list, argtype_entry) {
+	BSD_TAILQ_FOREACH(argtype, &probe->argtype_list, argtype_entry) {
 		if ((error = callback_func(argtype, arg)) != 0)
 			break;
 	}

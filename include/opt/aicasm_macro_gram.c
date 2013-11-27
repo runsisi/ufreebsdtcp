@@ -220,7 +220,7 @@ add_macro_arg(const char *argtext, int argnum)
 	 * in the replace ment text for this call.
 	 */
 	i = 0;
-	STAILQ_FOREACH(marg, &macro_symbol->info.macroinfo->args, links) {
+	BSD_STAILQ_FOREACH(marg, &macro_symbol->info.macroinfo->args, links) {
 		i++;
 		if (i == argnum)
 			break;

@@ -84,7 +84,7 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/net/bridgestp.c 236052 2012-05-26 07:43:17
 
 const uint8_t bstp_etheraddr[] = { 0x01, 0x80, 0xc2, 0x00, 0x00, 0x00 };
 
-LIST_HEAD(, bstp_state) bstp_list;
+BSD_LIST_HEAD(, bstp_state) bstp_list;
 static struct mtx	bstp_list_mtx;
 
 static void	bstp_transmit(struct bstp_state *, struct bstp_port *);
@@ -788,7 +788,7 @@ bstp_assign_roles(struct bstp_state *bs)
 	bs->bs_root_port = NULL;
 
 	/* check if any recieved info supersedes us */
-	LIST_FOREACH(bp, &bs->bs_bplist, bp_next) {
+	BSD_LIST_FOREACH(bp, &bs->bs_bplist, bp_next) {
 		if (bp->bp_infois != BSTP_INFO_RECEIVED)
 			continue;
 
@@ -814,7 +814,7 @@ bstp_assign_roles(struct bstp_state *bs)
 		}
 	}
 
-	LIST_FOREACH(bp, &bs->bs_bplist, bp_next) {
+	BSD_LIST_FOREACH(bp, &bs->bs_bplist, bp_next) {
 		/* calculate the port designated vector */
 		bp->bp_desg_pv.pv_root_id = bs->bs_root_pv.pv_root_id;
 		bp->bp_desg_pv.pv_cost = bs->bs_root_pv.pv_cost;
@@ -903,7 +903,7 @@ bstp_update_state(struct bstp_state *bs, struct bstp_port *bp)
 	/* check if all the ports have syncronised again */
 	if (!bs->bs_allsynced) {
 		synced = 1;
-		LIST_FOREACH(bp2, &bs->bs_bplist, bp_next) {
+		BSD_LIST_FOREACH(bp2, &bs->bs_bplist, bp_next) {
 			if (!(bp2->bp_synced ||
 			     bp2->bp_role == BSTP_ROLE_ROOT)) {
 				synced = 0;
@@ -1163,7 +1163,7 @@ bstp_set_other_tcprop(struct bstp_port *bp)
 
 	BSTP_LOCK_ASSERT(bs);
 
-	LIST_FOREACH(bp2, &bs->bs_bplist, bp_next) {
+	BSD_LIST_FOREACH(bp2, &bs->bs_bplist, bp_next) {
 		if (bp2 == bp)
 			continue;
 		bp2->bp_tc_prop = 1;
@@ -1177,7 +1177,7 @@ bstp_set_all_reroot(struct bstp_state *bs)
 
 	BSTP_LOCK_ASSERT(bs);
 
-	LIST_FOREACH(bp, &bs->bs_bplist, bp_next)
+	BSD_LIST_FOREACH(bp, &bs->bs_bplist, bp_next)
 		bp->bp_reroot = 1;
 }
 
@@ -1188,7 +1188,7 @@ bstp_set_all_sync(struct bstp_state *bs)
 
 	BSTP_LOCK_ASSERT(bs);
 
-	LIST_FOREACH(bp, &bs->bs_bplist, bp_next) {
+	BSD_LIST_FOREACH(bp, &bs->bs_bplist, bp_next) {
 		bp->bp_sync = 1;
 		bp->bp_synced = 0;	/* Not explicit in spec */
 	}
@@ -1454,7 +1454,7 @@ bstp_rerooted(struct bstp_state *bs, struct bstp_port *bp)
 	struct bstp_port *bp2;
 	int rr_set = 0;
 
-	LIST_FOREACH(bp2, &bs->bs_bplist, bp_next) {
+	BSD_LIST_FOREACH(bp2, &bs->bs_bplist, bp_next) {
 		if (bp2 == bp)
 			continue;
 		if (bp2->bp_recent_root_timer.active) {
@@ -1528,7 +1528,7 @@ bstp_set_holdcount(struct bstp_state *bs, int count)
 
 	BSTP_LOCK(bs);
 	bs->bs_txholdcount = count;
-	LIST_FOREACH(bp, &bs->bs_bplist, bp_next)
+	BSD_LIST_FOREACH(bp, &bs->bs_bplist, bp_next)
 		bp->bp_txcount = 0;
 	BSTP_UNLOCK(bs);
 	return (0);
@@ -1552,7 +1552,7 @@ bstp_set_protocol(struct bstp_state *bs, int proto)
 	BSTP_LOCK(bs);
 	bs->bs_protover = proto;
 	bs->bs_bridge_htime = BSTP_DEFAULT_HELLO_TIME;
-	LIST_FOREACH(bp, &bs->bs_bplist, bp_next) {
+	BSD_LIST_FOREACH(bp, &bs->bs_bplist, bp_next) {
 		/* reinit state */
 		bp->bp_infois = BSTP_INFO_DISABLED;
 		bp->bp_txcount = 0;
@@ -1871,14 +1871,14 @@ bstp_tick(void *arg)
 
 	/* poll link events on interfaces that do not support linkstate */
 	if (bstp_timer_dectest(&bs->bs_link_timer)) {
-		LIST_FOREACH(bp, &bs->bs_bplist, bp_next) {
+		BSD_LIST_FOREACH(bp, &bs->bs_bplist, bp_next) {
 			if (!(bp->bp_ifp->if_capabilities & IFCAP_LINKSTATE))
 				taskqueue_enqueue(taskqueue_swi, &bp->bp_mediatask);
 		}
 		bstp_timer_start(&bs->bs_link_timer, BSTP_LINK_TIMER);
 	}
 
-	LIST_FOREACH(bp, &bs->bs_bplist, bp_next) {
+	BSD_LIST_FOREACH(bp, &bs->bs_bplist, bp_next) {
 		/* no events need to happen for these */
 		bstp_timer_dectest(&bp->bp_tc_timer);
 		bstp_timer_dectest(&bp->bp_recent_root_timer);
@@ -2026,11 +2026,11 @@ bstp_reinit(struct bstp_state *bs)
 
 	BSTP_LOCK_ASSERT(bs);
 
-	if (LIST_EMPTY(&bs->bs_bplist))
+	if (BSD_LIST_EMPTY(&bs->bs_bplist))
 		goto disablestp;
 
 	mif = NULL;
-	bridgeptr = LIST_FIRST(&bs->bs_bplist)->bp_ifp->if_bridge;
+	bridgeptr = BSD_LIST_FIRST(&bs->bs_bplist)->bp_ifp->if_bridge;
 	KASSERT(bridgeptr != NULL, ("Invalid bridge pointer"));
 	/*
 	 * Search through the Ethernet adapters and find the one with the
@@ -2039,7 +2039,7 @@ bstp_reinit(struct bstp_state *bs)
 	 * bridges in the same STP domain.
 	 */
 	IFNET_RLOCK_NOSLEEP();
-	TAILQ_FOREACH(ifp, &V_ifnet, if_link) {
+	BSD_TAILQ_FOREACH(ifp, &V_ifnet, if_link) {
 		if (ifp->if_type != IFT_ETHER)
 			continue;	/* Not Ethernet */
 
@@ -2080,7 +2080,7 @@ bstp_reinit(struct bstp_state *bs)
 	if (bs->bs_running && callout_pending(&bs->bs_bstpcallout) == 0)
 		callout_reset(&bs->bs_bstpcallout, hz, bstp_tick, bs);
 
-	LIST_FOREACH(bp, &bs->bs_bplist, bp_next) {
+	BSD_LIST_FOREACH(bp, &bs->bs_bplist, bp_next) {
 		bp->bp_port_id = (bp->bp_priority << 8) |
 		    (bp->bp_ifp->if_index  & 0xfff);
 		taskqueue_enqueue(taskqueue_swi, &bp->bp_mediatask);
@@ -2097,7 +2097,7 @@ disablestp:
 	bs->bs_bridge_pv.pv_root_id = bs->bs_bridge_pv.pv_dbridge_id;
 	bs->bs_root_pv = bs->bs_bridge_pv;
 	/* Disable any remaining ports, they will have no MAC address */
-	LIST_FOREACH(bp, &bs->bs_bplist, bp_next) {
+	BSD_LIST_FOREACH(bp, &bs->bs_bplist, bp_next) {
 		bp->bp_infois = BSTP_INFO_DISABLED;
 		bstp_set_port_role(bp, BSTP_ROLE_DISABLED);
 	}
@@ -2110,7 +2110,7 @@ bstp_modevent(module_t mod, int type, void *data)
 	switch (type) {
 	case MOD_LOAD:
 		mtx_init(&bstp_list_mtx, "bridgestp list", NULL, MTX_DEF);
-		LIST_INIT(&bstp_list);
+		BSD_LIST_INIT(&bstp_list);
 		break;
 	case MOD_UNLOAD:
 		mtx_destroy(&bstp_list_mtx);
@@ -2135,7 +2135,7 @@ bstp_attach(struct bstp_state *bs, struct bstp_cb_ops *cb)
 {
 	BSTP_LOCK_INIT(bs);
 	callout_init_mtx(&bs->bs_bstpcallout, &bs->bs_mtx, 0);
-	LIST_INIT(&bs->bs_bplist);
+	BSD_LIST_INIT(&bs->bs_bplist);
 
 	bs->bs_bridge_max_age = BSTP_DEFAULT_MAX_AGE;
 	bs->bs_bridge_htime = BSTP_DEFAULT_HELLO_TIME;
@@ -2152,17 +2152,17 @@ bstp_attach(struct bstp_state *bs, struct bstp_cb_ops *cb)
 	getmicrotime(&bs->bs_last_tc_time);
 
 	mtx_lock(&bstp_list_mtx);
-	LIST_INSERT_HEAD(&bstp_list, bs, bs_list);
+	BSD_LIST_INSERT_HEAD(&bstp_list, bs, bs_list);
 	mtx_unlock(&bstp_list_mtx);
 }
 
 void
 bstp_detach(struct bstp_state *bs)
 {
-	KASSERT(LIST_EMPTY(&bs->bs_bplist), ("bstp still active"));
+	KASSERT(BSD_LIST_EMPTY(&bs->bs_bplist), ("bstp still active"));
 
 	mtx_lock(&bstp_list_mtx);
-	LIST_REMOVE(bs, bs_list);
+	BSD_LIST_REMOVE(bs, bs_list);
 	mtx_unlock(&bstp_list_mtx);
 	callout_drain(&bs->bs_bstpcallout);
 	BSTP_LOCK_DESTROY(bs);
@@ -2185,7 +2185,7 @@ bstp_stop(struct bstp_state *bs)
 
 	BSTP_LOCK(bs);
 
-	LIST_FOREACH(bp, &bs->bs_bplist, bp_next)
+	BSD_LIST_FOREACH(bp, &bs->bs_bplist, bp_next)
 		bstp_set_port_state(bp, BSTP_IFSTATE_DISCARDING);
 
 	bs->bs_running = 0;
@@ -2235,7 +2235,7 @@ bstp_enable(struct bstp_port *bp)
 	}
 
 	BSTP_LOCK(bs);
-	LIST_INSERT_HEAD(&bs->bs_bplist, bp, bp_next);
+	BSD_LIST_INSERT_HEAD(&bs->bs_bplist, bp, bp_next);
 	bp->bp_active = 1;
 	bp->bp_flags |= BSTP_PORT_NEWINFO;
 	bstp_reinit(bs);
@@ -2253,7 +2253,7 @@ bstp_disable(struct bstp_port *bp)
 
 	BSTP_LOCK(bs);
 	bstp_disable_port(bs, bp);
-	LIST_REMOVE(bp, bp_next);
+	BSD_LIST_REMOVE(bp, bp_next);
 	bp->bp_active = 0;
 	bstp_reinit(bs);
 	BSTP_UNLOCK(bs);

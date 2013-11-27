@@ -50,7 +50,7 @@ static void
 phys_pager_init(void)
 {
 
-	TAILQ_INIT(&phys_pager_object_list);
+	BSD_TAILQ_INIT(&phys_pager_object_list);
 	mtx_init(&phys_pager_mtx, "phys_pager list", NULL, MTX_DEF);
 }
 
@@ -99,7 +99,7 @@ phys_pager_alloc(void *handle, vm_ooffset_t size, vm_prot_t prot,
 				object = object1;
 				object1 = NULL;
 				object->handle = handle;
-				TAILQ_INSERT_TAIL(&phys_pager_object_list, object,
+				BSD_TAILQ_INSERT_TAIL(&phys_pager_object_list, object,
 				    pager_object_list);
 			}
 		} else {
@@ -125,7 +125,7 @@ phys_pager_dealloc(vm_object_t object)
 	if (object->handle != NULL) {
 		VM_OBJECT_UNLOCK(object);
 		mtx_lock(&phys_pager_mtx);
-		TAILQ_REMOVE(&phys_pager_object_list, object, pager_object_list);
+		BSD_TAILQ_REMOVE(&phys_pager_object_list, object, pager_object_list);
 		mtx_unlock(&phys_pager_mtx);
 		VM_OBJECT_LOCK(object);
 	}

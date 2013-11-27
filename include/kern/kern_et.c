@@ -34,8 +34,8 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/kern/kern_et.c 248085 2013-03-09 02:36:32Z
 #include <sys/bsd_queue.h>
 #include <sys/bsd_timeet.h>
 
-SLIST_HEAD(et_eventtimers_list, eventtimer);
-static struct et_eventtimers_list eventtimers = SLIST_HEAD_INITIALIZER(et_eventtimers);
+BSD_SLIST_HEAD(et_eventtimers_list, eventtimer);
+static struct et_eventtimers_list eventtimers = BSD_SLIST_HEAD_INITIALIZER(et_eventtimers);
 
 struct mtx	et_eventtimers_mtx;
 MTX_SYSINIT(et_eventtimers_init, &et_eventtimers_mtx, "et_mtx", MTX_DEF);
@@ -75,14 +75,14 @@ et_register(struct eventtimer *et)
 	    "quality", CTLFLAG_RD, &(et->et_quality), 0,
 	    "Goodness of event timer");
 	ET_LOCK();
-	if (SLIST_EMPTY(&eventtimers) ||
-	    SLIST_FIRST(&eventtimers)->et_quality < et->et_quality) {
-		SLIST_INSERT_HEAD(&eventtimers, et, et_all);
+	if (BSD_SLIST_EMPTY(&eventtimers) ||
+	    BSD_SLIST_FIRST(&eventtimers)->et_quality < et->et_quality) {
+		BSD_SLIST_INSERT_HEAD(&eventtimers, et, et_all);
 	} else {
-		SLIST_FOREACH(tmp, &eventtimers, et_all) {
-			next = SLIST_NEXT(tmp, et_all);
+		BSD_SLIST_FOREACH(tmp, &eventtimers, et_all) {
+			next = BSD_SLIST_NEXT(tmp, et_all);
 			if (next == NULL || next->et_quality < et->et_quality) {
-				SLIST_INSERT_AFTER(tmp, et, et_all);
+				BSD_SLIST_INSERT_AFTER(tmp, et, et_all);
 				break;
 			}
 		}
@@ -105,7 +105,7 @@ et_deregister(struct eventtimer *et)
 	}
 
 	ET_LOCK();
-	SLIST_REMOVE(&eventtimers, et, eventtimer, et_all);
+	BSD_SLIST_REMOVE(&eventtimers, et, eventtimer, et_all);
 	ET_UNLOCK();
 	sysctl_remove_oid(et->et_sysctl, 1, 1);
 	return (0);
@@ -119,7 +119,7 @@ et_find(const char *name, int check, int want)
 {
 	struct eventtimer *et = NULL;
 
-	SLIST_FOREACH(et, &eventtimers, et_all) {
+	BSD_SLIST_FOREACH(et, &eventtimers, et_all) {
 		if (et->et_active)
 			continue;
 		if (name != NULL && strcasecmp(et->et_name, name) != 0)
@@ -244,7 +244,7 @@ sysctl_kern_eventtimer_choice(SYSCTL_HANDLER_ARGS)
 	buf[0] = 0;
 	off = 0;
 	ET_LOCK();
-	SLIST_FOREACH(et, &eventtimers, et_all) {
+	BSD_SLIST_FOREACH(et, &eventtimers, et_all) {
 		off += snprintf(buf + off, sizeof(buf) - off, "%s%s(%d)",
 		    spc, et->et_name, et->et_quality);
 		spc = " ";

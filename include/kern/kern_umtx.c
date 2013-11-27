@@ -73,13 +73,13 @@ struct umtx_pi {
 	int			pi_refcount;
 
  	/* List entry to link umtx holding by thread */
-	TAILQ_ENTRY(umtx_pi)	pi_link;
+	BSD_TAILQ_ENTRY(umtx_pi)	pi_link;
 
 	/* List entry in hash */
-	TAILQ_ENTRY(umtx_pi)	pi_hashlink;
+	BSD_TAILQ_ENTRY(umtx_pi)	pi_hashlink;
 
 	/* List for waiters */
-	TAILQ_HEAD(,umtx_q)	pi_blocked;
+	BSD_TAILQ_HEAD(,umtx_q)	pi_blocked;
 
 	/* Identify a userland lock object */
 	struct umtx_key		pi_key;
@@ -88,7 +88,7 @@ struct umtx_pi {
 /* A userland synchronous object user. */
 struct umtx_q {
 	/* Linked list for the hash. */
-	TAILQ_ENTRY(umtx_q)	uq_link;
+	BSD_TAILQ_ENTRY(umtx_q)	uq_link;
 
 	/* Umtx key. */
 	struct umtx_key		uq_key;
@@ -108,10 +108,10 @@ struct umtx_q {
 	struct umtx_pi		*uq_pi_blocked;
 
 	/* On blocked list */
-	TAILQ_ENTRY(umtx_q)	uq_lockq;
+	BSD_TAILQ_ENTRY(umtx_q)	uq_lockq;
 
 	/* Thread contending with us */
-	TAILQ_HEAD(,umtx_pi)	uq_pi_contested;
+	BSD_TAILQ_HEAD(,umtx_pi)	uq_pi_contested;
 
 	/* Inherited priority from PP mutex */
 	u_char			uq_inherited_pri;
@@ -123,17 +123,17 @@ struct umtx_q {
 	struct umtxq_queue	*uq_cur_queue;
 };
 
-TAILQ_HEAD(umtxq_head, umtx_q);
+BSD_TAILQ_HEAD(umtxq_head, umtx_q);
 
 /* Per-key wait-queue */
 struct umtxq_queue {
 	struct umtxq_head	head;
 	struct umtx_key		key;
-	LIST_ENTRY(umtxq_queue)	link;
+	BSD_LIST_ENTRY(umtxq_queue)	link;
 	int			length;
 };
 
-LIST_HEAD(umtxq_list, umtxq_queue);
+BSD_LIST_HEAD(umtxq_list, umtxq_queue);
 
 /* Userland lock object's wait-queue chain */
 struct umtxq_chain {
@@ -145,7 +145,7 @@ struct umtxq_chain {
 #define UMTX_SHARED_QUEUE	0
 #define UMTX_EXCLUSIVE_QUEUE	1
 
-	LIST_HEAD(, umtxq_queue) uc_spare_queue;
+	BSD_LIST_HEAD(, umtxq_queue) uc_spare_queue;
 
 	/* Busy flag */
 	char			uc_busy;
@@ -154,7 +154,7 @@ struct umtxq_chain {
 	int			uc_waiters;
 
 	/* All PI in the list */
-	TAILQ_HEAD(,umtx_pi)	uc_pi_list;
+	BSD_TAILQ_HEAD(,umtx_pi)	uc_pi_list;
 
 #ifdef UMTX_PROFILING
 	int 			length;
@@ -259,10 +259,10 @@ umtxq_sysinit(void *arg __unused)
 		for (j = 0; j < UMTX_CHAINS; ++j) {
 			mtx_init(&umtxq_chains[i][j].uc_lock, "umtxql", NULL,
 				 MTX_DEF | MTX_DUPOK);
-			LIST_INIT(&umtxq_chains[i][j].uc_queue[0]);
-			LIST_INIT(&umtxq_chains[i][j].uc_queue[1]);
-			LIST_INIT(&umtxq_chains[i][j].uc_spare_queue);
-			TAILQ_INIT(&umtxq_chains[i][j].uc_pi_list);
+			BSD_LIST_INIT(&umtxq_chains[i][j].uc_queue[0]);
+			BSD_LIST_INIT(&umtxq_chains[i][j].uc_queue[1]);
+			BSD_LIST_INIT(&umtxq_chains[i][j].uc_spare_queue);
+			BSD_TAILQ_INIT(&umtxq_chains[i][j].uc_pi_list);
 			umtxq_chains[i][j].uc_busy = 0;
 			umtxq_chains[i][j].uc_waiters = 0;
 #ifdef UMTX_PROFILING
@@ -286,8 +286,8 @@ umtxq_alloc(void)
 
 	uq = bsd_malloc(sizeof(struct umtx_q), M_UMTX, M_WAITOK | M_ZERO);
 	uq->uq_spare_queue = bsd_malloc(sizeof(struct umtxq_queue), M_UMTX, M_WAITOK | M_ZERO);
-	TAILQ_INIT(&uq->uq_spare_queue->head);
-	TAILQ_INIT(&uq->uq_pi_contested);
+	BSD_TAILQ_INIT(&uq->uq_spare_queue->head);
+	BSD_TAILQ_INIT(&uq->uq_pi_contested);
 	uq->uq_inherited_pri = PRI_MAX;
 	return (uq);
 }
@@ -395,7 +395,7 @@ umtxq_queue_lookup(struct umtx_key *key, int q)
 
 	uc = umtxq_getchain(key);
 	UMTXQ_LOCKED_ASSERT(uc);
-	LIST_FOREACH(uh, &uc->uc_queue[q], link) {
+	BSD_LIST_FOREACH(uh, &uc->uc_queue[q], link) {
 		if (umtx_key_match(&uh->key, key))
 			return (uh);
 	}
@@ -414,15 +414,15 @@ umtxq_insert_queue(struct umtx_q *uq, int q)
 	KASSERT((uq->uq_flags & UQF_UMTXQ) == 0, ("umtx_q is already on queue"));
 	uh = umtxq_queue_lookup(&uq->uq_key, q);
 	if (uh != NULL) {
-		LIST_INSERT_HEAD(&uc->uc_spare_queue, uq->uq_spare_queue, link);
+		BSD_LIST_INSERT_HEAD(&uc->uc_spare_queue, uq->uq_spare_queue, link);
 	} else {
 		uh = uq->uq_spare_queue;
 		uh->key = uq->uq_key;
-		LIST_INSERT_HEAD(&uc->uc_queue[q], uh, link);
+		BSD_LIST_INSERT_HEAD(&uc->uc_queue[q], uh, link);
 	}
 	uq->uq_spare_queue = NULL;
 
-	TAILQ_INSERT_TAIL(&uh->head, uq, uq_link);
+	BSD_TAILQ_INSERT_TAIL(&uh->head, uq, uq_link);
 	uh->length++;
 #ifdef UMTX_PROFILING
 	uc->length++;
@@ -447,20 +447,20 @@ umtxq_remove_queue(struct umtx_q *uq, int q)
 	UMTXQ_LOCKED_ASSERT(uc);
 	if (uq->uq_flags & UQF_UMTXQ) {
 		uh = uq->uq_cur_queue;
-		TAILQ_REMOVE(&uh->head, uq, uq_link);
+		BSD_TAILQ_REMOVE(&uh->head, uq, uq_link);
 		uh->length--;
 #ifdef UMTX_PROFILING
 		uc->length--;
 #endif
 		uq->uq_flags &= ~UQF_UMTXQ;
-		if (TAILQ_EMPTY(&uh->head)) {
+		if (BSD_TAILQ_EMPTY(&uh->head)) {
 			KASSERT(uh->length == 0,
 			    ("inconsistent umtxq_queue length"));
-			LIST_REMOVE(uh, link);
+			BSD_LIST_REMOVE(uh, link);
 		} else {
-			uh = LIST_FIRST(&uc->uc_spare_queue);
+			uh = BSD_LIST_FIRST(&uc->uc_spare_queue);
 			KASSERT(uh != NULL, ("uc_spare_queue is empty"));
-			LIST_REMOVE(uh, link);
+			BSD_LIST_REMOVE(uh, link);
 		}
 		uq->uq_spare_queue = uh;
 		uq->uq_cur_queue = NULL;
@@ -499,7 +499,7 @@ umtxq_count_pi(struct umtx_key *key, struct umtx_q **first)
 	UMTXQ_LOCKED_ASSERT(uc);
 	uh = umtxq_queue_lookup(key, UMTX_SHARED_QUEUE);
 	if (uh != NULL) {
-		*first = TAILQ_FIRST(&uh->head);
+		*first = BSD_TAILQ_FIRST(&uh->head);
 		return (uh->length);
 	}
 	return (0);
@@ -548,7 +548,7 @@ umtxq_signal_queue(struct umtx_key *key, int n_wake, int q)
 	UMTXQ_LOCKED_ASSERT(uc);
 	uh = umtxq_queue_lookup(key, q);
 	if (uh != NULL) {
-		while ((uq = TAILQ_FIRST(&uh->head)) != NULL) {
+		while ((uq = BSD_TAILQ_FIRST(&uh->head)) != NULL) {
 			umtxq_remove_queue(uq, q);
 			wakeup(uq);
 			if (++ret >= n_wake)
@@ -1462,7 +1462,7 @@ umtx_pi_alloc(int flags)
 	struct umtx_pi *pi;
 
 	pi = uma_zalloc(umtx_pi_zone, M_ZERO | flags);
-	TAILQ_INIT(&pi->pi_blocked);
+	BSD_TAILQ_INIT(&pi->pi_blocked);
 	atomic_add_int(&umtx_pi_allocated, 1);
 	return (pi);
 }
@@ -1495,16 +1495,16 @@ umtx_pi_adjust_thread(struct umtx_pi *pi, struct thread *td)
 	 * It needs to be moved if either its priority is lower than
 	 * the previous thread or higher than the next thread.
 	 */
-	uq1 = TAILQ_PREV(uq, umtxq_head, uq_lockq);
-	uq2 = TAILQ_NEXT(uq, uq_lockq);
+	uq1 = BSD_TAILQ_PREV(uq, umtxq_head, uq_lockq);
+	uq2 = BSD_TAILQ_NEXT(uq, uq_lockq);
 	if ((uq1 != NULL && UPRI(td) < UPRI(uq1->uq_thread)) ||
 	    (uq2 != NULL && UPRI(td) > UPRI(uq2->uq_thread))) {
 		/*
 		 * Remove thread from blocked chain and determine where
 		 * it should be moved to.
 		 */
-		TAILQ_REMOVE(&pi->pi_blocked, uq, uq_lockq);
-		TAILQ_FOREACH(uq1, &pi->pi_blocked, uq_lockq) {
+		BSD_TAILQ_REMOVE(&pi->pi_blocked, uq, uq_lockq);
+		BSD_TAILQ_FOREACH(uq1, &pi->pi_blocked, uq_lockq) {
 			td1 = uq1->uq_thread;
 			MPASS(td1->td_proc->p_magic == P_MAGIC);
 			if (UPRI(td1) > UPRI(td))
@@ -1512,9 +1512,9 @@ umtx_pi_adjust_thread(struct umtx_pi *pi, struct thread *td)
 		}
 
 		if (uq1 == NULL)
-			TAILQ_INSERT_TAIL(&pi->pi_blocked, uq, uq_lockq);
+			BSD_TAILQ_INSERT_TAIL(&pi->pi_blocked, uq, uq_lockq);
 		else
-			TAILQ_INSERT_BEFORE(uq1, uq, uq_lockq);
+			BSD_TAILQ_INSERT_BEFORE(uq1, uq, uq_lockq);
 	}
 	return (1);
 }
@@ -1583,8 +1583,8 @@ umtx_repropagate_priority(struct umtx_pi *pi)
 		pri = PRI_MAX;
 		uq_owner = pi->pi_owner->td_umtxq;
 
-		TAILQ_FOREACH(pi2, &uq_owner->uq_pi_contested, pi_link) {
-			uq = TAILQ_FIRST(&pi2->pi_blocked);
+		BSD_TAILQ_FOREACH(pi2, &uq_owner->uq_pi_contested, pi_link) {
+			uq = BSD_TAILQ_FIRST(&pi2->pi_blocked);
 			if (uq != NULL) {
 				if (pri > UPRI(uq->uq_thread))
 					pri = UPRI(uq->uq_thread);
@@ -1614,7 +1614,7 @@ umtx_pi_setowner(struct umtx_pi *pi, struct thread *owner)
 	if (pi->pi_owner != NULL)
 		panic("pi_ower != NULL");
 	pi->pi_owner = owner;
-	TAILQ_INSERT_TAIL(&uq_owner->uq_pi_contested, pi, pi_link);
+	BSD_TAILQ_INSERT_TAIL(&uq_owner->uq_pi_contested, pi, pi_link);
 }
 
 /*
@@ -1640,7 +1640,7 @@ umtx_pi_claim(struct umtx_pi *pi, struct thread *owner)
 		return (EPERM);
 	}
 	umtx_pi_setowner(pi, owner);
-	uq = TAILQ_FIRST(&pi->pi_blocked);
+	uq = BSD_TAILQ_FIRST(&pi->pi_blocked);
 	if (uq != NULL) {
 		int pri;
 
@@ -1709,16 +1709,16 @@ umtxq_sleep_pi(struct umtx_q *uq, struct umtx_pi *pi,
 		}
 	}
 
-	TAILQ_FOREACH(uq1, &pi->pi_blocked, uq_lockq) {
+	BSD_TAILQ_FOREACH(uq1, &pi->pi_blocked, uq_lockq) {
 		pri = UPRI(uq1->uq_thread);
 		if (pri > UPRI(td))
 			break;
 	}
 
 	if (uq1 != NULL)
-		TAILQ_INSERT_BEFORE(uq1, uq, uq_lockq);
+		BSD_TAILQ_INSERT_BEFORE(uq1, uq, uq_lockq);
 	else
-		TAILQ_INSERT_TAIL(&pi->pi_blocked, uq, uq_lockq);
+		BSD_TAILQ_INSERT_TAIL(&pi->pi_blocked, uq, uq_lockq);
 
 	uq->uq_pi_blocked = pi;
 	thread_lock(td);
@@ -1741,7 +1741,7 @@ umtxq_sleep_pi(struct umtx_q *uq, struct umtx_pi *pi,
 	thread_lock(td);
 	td->td_flags &= ~TDF_UPIBLOCKED;
 	thread_unlock(td);
-	TAILQ_REMOVE(&pi->pi_blocked, uq, uq_lockq);
+	BSD_TAILQ_REMOVE(&pi->pi_blocked, uq, uq_lockq);
 	umtx_repropagate_priority(pi);
 	mtx_unlock_spin(&umtx_lock);
 	umtxq_unlock(&uq->uq_key);
@@ -1777,14 +1777,14 @@ umtx_pi_unref(struct umtx_pi *pi)
 	if (--pi->pi_refcount == 0) {
 		mtx_lock_spin(&umtx_lock);
 		if (pi->pi_owner != NULL) {
-			TAILQ_REMOVE(&pi->pi_owner->td_umtxq->uq_pi_contested,
+			BSD_TAILQ_REMOVE(&pi->pi_owner->td_umtxq->uq_pi_contested,
 				pi, pi_link);
 			pi->pi_owner = NULL;
 		}
-		KASSERT(TAILQ_EMPTY(&pi->pi_blocked),
+		KASSERT(BSD_TAILQ_EMPTY(&pi->pi_blocked),
 			("blocked queue not empty"));
 		mtx_unlock_spin(&umtx_lock);
-		TAILQ_REMOVE(&uc->uc_pi_list, pi, pi_hashlink);
+		BSD_TAILQ_REMOVE(&uc->uc_pi_list, pi, pi_hashlink);
 		umtx_pi_free(pi);
 	}
 }
@@ -1801,7 +1801,7 @@ umtx_pi_lookup(struct umtx_key *key)
 	uc = umtxq_getchain(key);
 	UMTXQ_LOCKED_ASSERT(uc);
 
-	TAILQ_FOREACH(pi, &uc->uc_pi_list, pi_hashlink) {
+	BSD_TAILQ_FOREACH(pi, &uc->uc_pi_list, pi_hashlink) {
 		if (umtx_key_match(&pi->pi_key, key)) {
 			return (pi);
 		}
@@ -1819,7 +1819,7 @@ umtx_pi_insert(struct umtx_pi *pi)
 
 	uc = umtxq_getchain(&pi->pi_key);
 	UMTXQ_LOCKED_ASSERT(uc);
-	TAILQ_INSERT_TAIL(&uc->uc_pi_list, pi, pi_hashlink);
+	BSD_TAILQ_INSERT_TAIL(&uc->uc_pi_list, pi, pi_hashlink);
 }
 
 /*
@@ -2036,16 +2036,16 @@ do_unlock_pi(struct thread *td, struct umutex *m, uint32_t flags)
 		}
 		uq_me = curthread->td_umtxq;
 		pi->pi_owner = NULL;
-		TAILQ_REMOVE(&uq_me->uq_pi_contested, pi, pi_link);
+		BSD_TAILQ_REMOVE(&uq_me->uq_pi_contested, pi, pi_link);
 		/* get highest priority thread which is still sleeping. */
-		uq_first = TAILQ_FIRST(&pi->pi_blocked);
+		uq_first = BSD_TAILQ_FIRST(&pi->pi_blocked);
 		while (uq_first != NULL && 
 		       (uq_first->uq_flags & UQF_UMTXQ) == 0) {
-			uq_first = TAILQ_NEXT(uq_first, uq_lockq);
+			uq_first = BSD_TAILQ_NEXT(uq_first, uq_lockq);
 		}
 		pri = PRI_MAX;
-		TAILQ_FOREACH(pi2, &uq_me->uq_pi_contested, pi_link) {
-			uq_first2 = TAILQ_FIRST(&pi2->pi_blocked);
+		BSD_TAILQ_FOREACH(pi2, &uq_me->uq_pi_contested, pi_link) {
+			uq_first2 = BSD_TAILQ_FIRST(&pi2->pi_blocked);
 			if (uq_first2 != NULL) {
 				if (pri > UPRI(uq_first2->uq_thread))
 					pri = UPRI(uq_first2->uq_thread);
@@ -2167,8 +2167,8 @@ _do_lock_pp(struct thread *td, struct umutex *m, uint32_t flags, int timo,
 		mtx_lock_spin(&umtx_lock);
 		uq->uq_inherited_pri = old_inherited_pri;
 		pri = PRI_MAX;
-		TAILQ_FOREACH(pi, &uq->uq_pi_contested, pi_link) {
-			uq2 = TAILQ_FIRST(&pi->pi_blocked);
+		BSD_TAILQ_FOREACH(pi, &uq->uq_pi_contested, pi_link) {
+			uq2 = BSD_TAILQ_FIRST(&pi->pi_blocked);
 			if (uq2 != NULL) {
 				if (pri > UPRI(uq2->uq_thread))
 					pri = UPRI(uq2->uq_thread);
@@ -2186,8 +2186,8 @@ _do_lock_pp(struct thread *td, struct umutex *m, uint32_t flags, int timo,
 		mtx_lock_spin(&umtx_lock);
 		uq->uq_inherited_pri = old_inherited_pri;
 		pri = PRI_MAX;
-		TAILQ_FOREACH(pi, &uq->uq_pi_contested, pi_link) {
-			uq2 = TAILQ_FIRST(&pi->pi_blocked);
+		BSD_TAILQ_FOREACH(pi, &uq->uq_pi_contested, pi_link) {
+			uq2 = BSD_TAILQ_FIRST(&pi->pi_blocked);
 			if (uq2 != NULL) {
 				if (pri > UPRI(uq2->uq_thread))
 					pri = UPRI(uq2->uq_thread);
@@ -2277,8 +2277,8 @@ do_unlock_pp(struct thread *td, struct umutex *m, uint32_t flags)
 		if (su != 0)
 			uq->uq_inherited_pri = new_inherited_pri;
 		pri = PRI_MAX;
-		TAILQ_FOREACH(pi, &uq->uq_pi_contested, pi_link) {
-			uq2 = TAILQ_FIRST(&pi->pi_blocked);
+		BSD_TAILQ_FOREACH(pi, &uq->uq_pi_contested, pi_link) {
+			uq2 = BSD_TAILQ_FIRST(&pi->pi_blocked);
 			if (uq2 != NULL) {
 				if (pri > UPRI(uq2->uq_thread))
 					pri = UPRI(uq2->uq_thread);
@@ -3790,7 +3790,7 @@ umtx_thread_alloc(struct thread *td)
 	KASSERT(uq->uq_flags == 0, ("uq_flags != 0"));
 	KASSERT(uq->uq_thread == td, ("uq_thread != td"));
 	KASSERT(uq->uq_pi_blocked == NULL, ("uq_pi_blocked != NULL"));
-	KASSERT(TAILQ_EMPTY(&uq->uq_pi_contested), ("uq_pi_contested is not empty"));
+	KASSERT(BSD_TAILQ_EMPTY(&uq->uq_pi_contested), ("uq_pi_contested is not empty"));
 }
 
 /*
@@ -3826,9 +3826,9 @@ umtx_thread_cleanup(struct thread *td)
 
 	mtx_lock_spin(&umtx_lock);
 	uq->uq_inherited_pri = PRI_MAX;
-	while ((pi = TAILQ_FIRST(&uq->uq_pi_contested)) != NULL) {
+	while ((pi = BSD_TAILQ_FIRST(&uq->uq_pi_contested)) != NULL) {
 		pi->pi_owner = NULL;
-		TAILQ_REMOVE(&uq->uq_pi_contested, pi, pi_link);
+		BSD_TAILQ_REMOVE(&uq->uq_pi_contested, pi, pi_link);
 	}
 	mtx_unlock_spin(&umtx_lock);
 	thread_lock(td);

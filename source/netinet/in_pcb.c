@@ -223,7 +223,7 @@ in_pcbinfo_init(struct inpcbinfo *pcbinfo, const char *name,
 	pcbinfo->ipi_vnet = curvnet;
 #endif
 	pcbinfo->ipi_listhead = listhead;
-	LIST_INIT(pcbinfo->ipi_listhead);
+	BSD_LIST_INIT(pcbinfo->ipi_listhead);
 	pcbinfo->ipi_count = 0;
 	pcbinfo->ipi_hashbase = hashinit(hash_nelements, M_PCB,
 	    &pcbinfo->ipi_hashmask);
@@ -301,7 +301,7 @@ in_pcballoc(struct socket *so, struct inpcbinfo *pcbinfo)
 			inp->inp_flags |= IN6P_IPV6_V6ONLY;
 	}
 #endif
-	LIST_INSERT_HEAD(pcbinfo->ipi_listhead, inp, inp_list);
+	BSD_LIST_INSERT_HEAD(pcbinfo->ipi_listhead, inp, inp_list);
 	pcbinfo->ipi_count++;
 	so->so_pcb = (caddr_t)inp;
 #ifdef INET6
@@ -513,7 +513,7 @@ in_pcbbind_setup(struct inpcb *inp, struct sockaddr *nam, in_addr_t *laddrp,
 	INP_LOCK_ASSERT(inp);
 	INP_HASH_LOCK_ASSERT(pcbinfo);
 
-	if (TAILQ_EMPTY(&V_in_ifaddrhead)) /* XXX broken! */
+	if (BSD_TAILQ_EMPTY(&V_in_ifaddrhead)) /* XXX broken! */
 		return (EADDRNOTAVAIL);
 	laddr.s_addr = *laddrp;
 	if (nam != NULL && laddr.s_addr != INADDR_ANY)
@@ -762,7 +762,7 @@ in_pcbladdr(struct inpcb *inp, struct in_addr *faddr, struct in_addr *laddr,
 		ifa_free(&ia->ia_ifa);
 		ia = NULL;
 		IF_ADDR_RLOCK(ifp);
-		TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
+		BSD_TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
 
 			sa = ifa->ifa_addr;
 			if (sa->sa_family != AF_INET)
@@ -821,7 +821,7 @@ in_pcbladdr(struct inpcb *inp, struct in_addr *faddr, struct in_addr *laddr,
 		ia = NULL;
 		ifp = sro.ro_rt->rt_ifp;
 		IF_ADDR_RLOCK(ifp);
-		TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
+		BSD_TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
 			sa = ifa->ifa_addr;
 			if (sa->sa_family != AF_INET)
 				continue;
@@ -885,7 +885,7 @@ in_pcbladdr(struct inpcb *inp, struct in_addr *faddr, struct in_addr *laddr,
 			ifa_free(&ia->ia_ifa);
 			ia = NULL;
 			IF_ADDR_RLOCK(ifp);
-			TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
+			BSD_TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
 
 				sa = ifa->ifa_addr;
 				if (sa->sa_family != AF_INET)
@@ -963,7 +963,7 @@ in_pcbconnect_setup(struct inpcb *inp, struct sockaddr *nam,
 	faddr = sin->sin_addr;
 	fport = sin->sin_port;
 
-	if (!TAILQ_EMPTY(&V_in_ifaddrhead)) {
+	if (!BSD_TAILQ_EMPTY(&V_in_ifaddrhead)) {
 		/*
 		 * If the destination address is INADDR_ANY,
 		 * use the primary local address.
@@ -974,16 +974,16 @@ in_pcbconnect_setup(struct inpcb *inp, struct sockaddr *nam,
 		if (faddr.s_addr == INADDR_ANY) {
 			IN_IFADDR_RLOCK();
 			faddr =
-			    IA_SIN(TAILQ_FIRST(&V_in_ifaddrhead))->sin_addr;
+			    IA_SIN(BSD_TAILQ_FIRST(&V_in_ifaddrhead))->sin_addr;
 			IN_IFADDR_RUNLOCK();
 			if (cred != NULL &&
 			    (error = prison_get_ip4(cred, &faddr)) != 0)
 				return (error);
 		} else if (faddr.s_addr == (u_long)INADDR_BROADCAST) {
 			IN_IFADDR_RLOCK();
-			if (TAILQ_FIRST(&V_in_ifaddrhead)->ia_ifp->if_flags &
+			if (BSD_TAILQ_FIRST(&V_in_ifaddrhead)->ia_ifp->if_flags &
 			    IFF_BROADCAST)
-				faddr = satosin(&TAILQ_FIRST(
+				faddr = satosin(&BSD_TAILQ_FIRST(
 				    &V_in_ifaddrhead)->ia_broadaddr)->sin_addr;
 			IN_IFADDR_RUNLOCK();
 		}
@@ -1004,7 +1004,7 @@ in_pcbconnect_setup(struct inpcb *inp, struct sockaddr *nam,
 			if (imo->imo_multicast_ifp != NULL) {
 				ifp = imo->imo_multicast_ifp;
 				IN_IFADDR_RLOCK();
-				TAILQ_FOREACH(ia, &V_in_ifaddrhead, ia_link) {
+				BSD_TAILQ_FOREACH(ia, &V_in_ifaddrhead, ia_link) {
 					if ((ia->ia_ifp == ifp) &&
 					    (cred == NULL ||
 					    prison_check_ip4(cred,
@@ -1249,10 +1249,10 @@ in_pcbdrop(struct inpcb *inp)
 		struct inpcbport *phd = inp->inp_phd;
 
 		INP_HASH_WLOCK(inp->inp_pcbinfo);
-		LIST_REMOVE(inp, inp_hash);
-		LIST_REMOVE(inp, inp_portlist);
-		if (LIST_FIRST(&phd->phd_pcblist) == NULL) {
-			LIST_REMOVE(phd, phd_hash);
+		BSD_LIST_REMOVE(inp, inp_hash);
+		BSD_LIST_REMOVE(inp, inp_portlist);
+		if (BSD_LIST_FIRST(&phd->phd_pcblist) == NULL) {
+			BSD_LIST_REMOVE(phd, phd_hash);
 			bsd_free(phd, M_PCB);
 		}
 		INP_HASH_WUNLOCK(inp->inp_pcbinfo);
@@ -1327,7 +1327,7 @@ in_pcbnotifyall(struct inpcbinfo *pcbinfo, struct in_addr faddr, int errno,
 	struct inpcb *inp, *inp_temp;
 
 	INP_INFO_WLOCK(pcbinfo);
-	LIST_FOREACH_SAFE(inp, pcbinfo->ipi_listhead, inp_list, inp_temp) {
+	BSD_LIST_FOREACH_SAFE(inp, pcbinfo->ipi_listhead, inp_list, inp_temp) {
 		INP_WLOCK(inp);
 #ifdef INET6
 		if ((inp->inp_vflag & INP_IPV4) == 0) {
@@ -1354,7 +1354,7 @@ in_pcbpurgeif0(struct inpcbinfo *pcbinfo, struct ifnet *ifp)
 	int i, gap;
 
 	INP_INFO_RLOCK(pcbinfo);
-	LIST_FOREACH(inp, pcbinfo->ipi_listhead, inp_list) {
+	BSD_LIST_FOREACH(inp, pcbinfo->ipi_listhead, inp_list) {
 		INP_WLOCK(inp);
 		imo = inp->inp_moptions;
 		if ((inp->inp_vflag & INP_IPV4) &&
@@ -1416,7 +1416,7 @@ in_pcblookup_local(struct inpcbinfo *pcbinfo, struct in_addr laddr,
 		 */
 		head = &pcbinfo->ipi_hashbase[INP_PCBHASH(INADDR_ANY, lport,
 		    0, pcbinfo->ipi_hashmask)];
-		LIST_FOREACH(inp, head, inp_hash) {
+		BSD_LIST_FOREACH(inp, head, inp_hash) {
 #ifdef INET6
 			/* XXX inp locking */
 			if ((inp->inp_vflag & INP_IPV4) == 0)
@@ -1450,7 +1450,7 @@ in_pcblookup_local(struct inpcbinfo *pcbinfo, struct in_addr laddr,
 		 */
 		porthash = &pcbinfo->ipi_porthashbase[INP_PCBPORTHASH(lport,
 		    pcbinfo->ipi_porthashmask)];
-		LIST_FOREACH(phd, porthash, phd_hash) {
+		BSD_LIST_FOREACH(phd, porthash, phd_hash) {
 			if (phd->phd_port == lport)
 				break;
 		}
@@ -1459,7 +1459,7 @@ in_pcblookup_local(struct inpcbinfo *pcbinfo, struct in_addr laddr,
 			 * Port is in use by one or more PCBs. Look for best
 			 * fit.
 			 */
-			LIST_FOREACH(inp, &phd->phd_pcblist, inp_portlist) {
+			BSD_LIST_FOREACH(inp, &phd->phd_pcblist, inp_portlist) {
 				wildcard = 0;
 				if (cred != NULL &&
 				    !prison_equal_ip4(inp->inp_cred->cr_prison,
@@ -1529,7 +1529,7 @@ in_pcblookup_group(struct inpcbinfo *pcbinfo, struct inpcbgroup *pcbgroup,
 	INP_GROUP_LOCK(pcbgroup);
 	head = &pcbgroup->ipg_hashbase[INP_PCBHASH(faddr.s_addr, lport, fport,
 	    pcbgroup->ipg_hashmask)];
-	LIST_FOREACH(inp, head, inp_pcbgrouphash) {
+	BSD_LIST_FOREACH(inp, head, inp_pcbgrouphash) {
 #ifdef INET6
 		/* XXX inp locking */
 		if ((inp->inp_vflag & INP_IPV4) == 0)
@@ -1576,7 +1576,7 @@ in_pcblookup_group(struct inpcbinfo *pcbinfo, struct inpcbgroup *pcbgroup,
 		 */
 		head = &pcbinfo->ipi_wildbase[INP_PCBHASH(INADDR_ANY, lport,
 		    0, pcbinfo->ipi_wildmask)];
-		LIST_FOREACH(inp, head, inp_pcbgroup_wild) {
+		BSD_LIST_FOREACH(inp, head, inp_pcbgroup_wild) {
 #ifdef INET6
 			/* XXX inp locking */
 			if ((inp->inp_vflag & INP_IPV4) == 0)
@@ -1618,7 +1618,7 @@ in_pcblookup_group(struct inpcbinfo *pcbinfo, struct inpcbgroup *pcbgroup,
 					else
 						local_wild = inp;
 			}
-		} /* LIST_FOREACH */
+		} /* BSD_LIST_FOREACH */
 		inp = jail_wild;
 		if (inp == NULL)
 			inp = local_exact;
@@ -1676,7 +1676,7 @@ in_pcblookup_hash_locked(struct inpcbinfo *pcbinfo, struct in_addr faddr,
 	tmpinp = NULL;
 	head = &pcbinfo->ipi_hashbase[INP_PCBHASH(faddr.s_addr, lport, fport,
 	    pcbinfo->ipi_hashmask)];
-	LIST_FOREACH(inp, head, inp_hash) {
+	BSD_LIST_FOREACH(inp, head, inp_hash) {
 #ifdef INET6
 		/* XXX inp locking */
 		if ((inp->inp_vflag & INP_IPV4) == 0)
@@ -1721,7 +1721,7 @@ in_pcblookup_hash_locked(struct inpcbinfo *pcbinfo, struct in_addr faddr,
 
 		head = &pcbinfo->ipi_hashbase[INP_PCBHASH(INADDR_ANY, lport,
 		    0, pcbinfo->ipi_hashmask)];
-		LIST_FOREACH(inp, head, inp_hash) {
+		BSD_LIST_FOREACH(inp, head, inp_hash) {
 #ifdef INET6
 			/* XXX inp locking */
 			if ((inp->inp_vflag & INP_IPV4) == 0)
@@ -1763,7 +1763,7 @@ in_pcblookup_hash_locked(struct inpcbinfo *pcbinfo, struct in_addr faddr,
 					else
 						local_wild = inp;
 			}
-		} /* LIST_FOREACH */
+		} /* BSD_LIST_FOREACH */
 		if (jail_wild != NULL)
 			return (jail_wild);
 		if (local_exact != NULL)
@@ -1909,7 +1909,7 @@ in_pcbinshash_internal(struct inpcb *inp, int do_pcbgroup_update)
 	/*
 	 * Go through port list and look for a head for this lport.
 	 */
-	LIST_FOREACH(phd, pcbporthash, phd_hash) {
+	BSD_LIST_FOREACH(phd, pcbporthash, phd_hash) {
 		if (phd->phd_port == inp->inp_lport)
 			break;
 	}
@@ -1922,12 +1922,12 @@ in_pcbinshash_internal(struct inpcb *inp, int do_pcbgroup_update)
 			return (ENOBUFS); /* XXX */
 		}
 		phd->phd_port = inp->inp_lport;
-		LIST_INIT(&phd->phd_pcblist);
-		LIST_INSERT_HEAD(pcbporthash, phd, phd_hash);
+		BSD_LIST_INIT(&phd->phd_pcblist);
+		BSD_LIST_INSERT_HEAD(pcbporthash, phd, phd_hash);
 	}
 	inp->inp_phd = phd;
-	LIST_INSERT_HEAD(&phd->phd_pcblist, inp, inp_portlist);
-	LIST_INSERT_HEAD(pcbhash, inp, inp_hash);
+	BSD_LIST_INSERT_HEAD(&phd->phd_pcblist, inp, inp_portlist);
+	BSD_LIST_INSERT_HEAD(pcbhash, inp, inp_hash);
 	inp->inp_flags |= INP_INHASHLIST;
 #ifdef PCBGROUP
 	if (do_pcbgroup_update)
@@ -1990,8 +1990,8 @@ in_pcbrehash_mbuf(struct inpcb *inp, struct mbuf *m)
 	head = &pcbinfo->ipi_hashbase[INP_PCBHASH(hashkey_faddr,
 		inp->inp_lport, inp->inp_fport, pcbinfo->ipi_hashmask)];
 
-	LIST_REMOVE(inp, inp_hash);
-	LIST_INSERT_HEAD(head, inp, inp_hash);
+	BSD_LIST_REMOVE(inp, inp_hash);
+	BSD_LIST_INSERT_HEAD(head, inp, inp_hash);
 
 #ifdef PCBGROUP
 	if (m != NULL)
@@ -2024,16 +2024,16 @@ in_pcbremlists(struct inpcb *inp)
 		struct inpcbport *phd = inp->inp_phd;
 
 		INP_HASH_WLOCK(pcbinfo);
-		LIST_REMOVE(inp, inp_hash);
-		LIST_REMOVE(inp, inp_portlist);
-		if (LIST_FIRST(&phd->phd_pcblist) == NULL) {
-			LIST_REMOVE(phd, phd_hash);
+		BSD_LIST_REMOVE(inp, inp_hash);
+		BSD_LIST_REMOVE(inp, inp_portlist);
+		if (BSD_LIST_FIRST(&phd->phd_pcblist) == NULL) {
+			BSD_LIST_REMOVE(phd, phd_hash);
 			bsd_free(phd, M_PCB);
 		}
 		INP_HASH_WUNLOCK(pcbinfo);
 		inp->inp_flags &= ~INP_INHASHLIST;
 	}
-	LIST_REMOVE(inp, inp_list);
+	BSD_LIST_REMOVE(inp, inp_list);
 	pcbinfo->ipi_count--;
 #ifdef PCBGROUP
 	in_pcbgroup_remove(inp);
@@ -2163,7 +2163,7 @@ inp_apply_all(void (*func)(struct inpcb *, void *), void *arg)
 	struct inpcb *inp;
 
 	INP_INFO_RLOCK(&V_tcbinfo);
-	LIST_FOREACH(inp, V_tcbinfo.ipi_listhead, inp_list) {
+	BSD_LIST_FOREACH(inp, V_tcbinfo.ipi_listhead, inp_list) {
 		INP_WLOCK(inp);
 		func(inp, arg);
 		INP_WUNLOCK(inp);

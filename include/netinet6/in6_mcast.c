@@ -2719,7 +2719,7 @@ sysctl_ip6_mcast_filters(SYSCTL_HANDLER_ARGS)
 	IN6_MULTI_LOCK();
 
 	IF_ADDR_RLOCK(ifp);
-	TAILQ_FOREACH(ifma, &ifp->if_multiaddrs, ifma_link) {
+	BSD_TAILQ_FOREACH(ifma, &ifp->if_multiaddrs, ifma_link) {
 		if (ifma->ifma_addr->sa_family != AF_INET6 ||
 		    ifma->ifma_protospec == NULL)
 			continue;

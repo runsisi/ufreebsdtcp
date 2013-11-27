@@ -138,7 +138,7 @@ extern int racct_types[];
  */
 struct racct {
 	int64_t				r_resources[RACCT_MAX + 1];
-	LIST_HEAD(, rctl_rule_link)	r_rule_links;
+	BSD_LIST_HEAD(, rctl_rule_link)	r_rule_links;
 };
 
 int	racct_add(struct proc *p, int resource, uint64_t amount);

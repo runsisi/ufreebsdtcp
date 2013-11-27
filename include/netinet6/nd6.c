@@ -143,7 +143,7 @@ nd6_init(void)
 {
 	int i;
 
-	LIST_INIT(&V_nd_prefix);
+	BSD_LIST_INIT(&V_nd_prefix);
 
 	all1_sa.sin6_family = AF_INET6;
 	all1_sa.sin6_len = sizeof(struct sockaddr_in6);
@@ -151,7 +151,7 @@ nd6_init(void)
 		all1_sa.sin6_addr.s6_addr[i] = 0xff;
 
 	/* initialization of the default router list */
-	TAILQ_INIT(&V_nd_defrouter);
+	BSD_TAILQ_INIT(&V_nd_defrouter);
 
 	/* start timer */
 	callout_init(&V_nd6_slowtimo_ch, 0);
@@ -600,7 +600,7 @@ nd6_timer(void *arg)
 
 	/* expire default router list */
 	s = splnet();
-	TAILQ_FOREACH_SAFE(dr, &V_nd_defrouter, dr_entry, ndr) {
+	BSD_TAILQ_FOREACH_SAFE(dr, &V_nd_defrouter, dr_entry, ndr) {
 		if (dr->expire && dr->expire < time_second)
 			defrtrlist_del(dr);
 	}
@@ -614,7 +614,7 @@ nd6_timer(void *arg)
 	 * XXXRW: in6_ifaddrhead locking.
 	 */
   addrloop:
-	TAILQ_FOREACH_SAFE(ia6, &V_in6_ifaddrhead, ia_link, nia6) {
+	BSD_TAILQ_FOREACH_SAFE(ia6, &V_in6_ifaddrhead, ia_link, nia6) {
 		/* check address lifetime */
 		if (IFA6_IS_INVALID(ia6)) {
 			int regen = 0;
@@ -678,7 +678,7 @@ nd6_timer(void *arg)
 	}
 
 	/* expire prefix list */
-	LIST_FOREACH_SAFE(pr, &V_nd_prefix, ndpr_entry, npr) {
+	BSD_LIST_FOREACH_SAFE(pr, &V_nd_prefix, ndpr_entry, npr) {
 		/*
 		 * check prefix lifetime.
 		 * since pltime is just for autoconf, pltime processing for
@@ -710,7 +710,7 @@ regen_tmpaddr(struct in6_ifaddr *ia6)
 
 	ifp = ia6->ia_ifa.ifa_ifp;
 	IF_ADDR_RLOCK(ifp);
-	TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
+	BSD_TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
 		struct in6_ifaddr *it6;
 
 		if (ifa->ifa_addr->sa_family != AF_INET6)
@@ -785,7 +785,7 @@ nd6_purge(struct ifnet *ifp)
 	 * in the routing table, in order to keep additional side effects as
 	 * small as possible.
 	 */
-	TAILQ_FOREACH_SAFE(dr, &V_nd_defrouter, dr_entry, ndr) {
+	BSD_TAILQ_FOREACH_SAFE(dr, &V_nd_defrouter, dr_entry, ndr) {
 		if (dr->installed)
 			continue;
 
@@ -793,7 +793,7 @@ nd6_purge(struct ifnet *ifp)
 			defrtrlist_del(dr);
 	}
 
-	TAILQ_FOREACH_SAFE(dr, &V_nd_defrouter, dr_entry, ndr) {
+	BSD_TAILQ_FOREACH_SAFE(dr, &V_nd_defrouter, dr_entry, ndr) {
 		if (!dr->installed)
 			continue;
 
@@ -802,7 +802,7 @@ nd6_purge(struct ifnet *ifp)
 	}
 
 	/* Nuke prefix list entries toward ifp */
-	LIST_FOREACH_SAFE(pr, &V_nd_prefix, ndpr_entry, npr) {
+	BSD_LIST_FOREACH_SAFE(pr, &V_nd_prefix, ndpr_entry, npr) {
 		if (pr->ndpr_ifp == ifp) {
 			/*
 			 * Because if_detach() does *not* release prefixes
@@ -913,7 +913,7 @@ nd6_is_new_addr_neighbor(struct sockaddr_in6 *addr, struct ifnet *ifp)
 	 * If the address matches one of our on-link prefixes, it should be a
 	 * neighbor.
 	 */
-	LIST_FOREACH(pr, &V_nd_prefix, ndpr_entry) {
+	BSD_LIST_FOREACH(pr, &V_nd_prefix, ndpr_entry) {
 		if (pr->ndpr_ifp != ifp)
 			continue;
 
@@ -966,7 +966,7 @@ nd6_is_new_addr_neighbor(struct sockaddr_in6 *addr, struct ifnet *ifp)
 	 * as on-link, and thus, as a neighbor.
 	 */
 	if (ND_IFINFO(ifp)->flags & ND6_IFF_ACCEPT_RTADV &&
-	    TAILQ_EMPTY(&V_nd_defrouter) &&
+	    BSD_TAILQ_EMPTY(&V_nd_defrouter) &&
 	    V_nd6_defifindex == ifp->if_index) {
 		return (1);
 	}
@@ -1051,7 +1051,7 @@ nd6_free(struct llentry *ln, int gc)
 				nd6_llinfo_settimer_locked(ln,
 				    (long)V_nd6_gctimer * hz);
 
-			next = LIST_NEXT(ln, lle_next);
+			next = BSD_LIST_NEXT(ln, lle_next);
 			LLE_REMREF(ln);
 			LLE_WUNLOCK(ln);
 			return (next);
@@ -1117,7 +1117,7 @@ nd6_free(struct llentry *ln, int gc)
 	 * might have freed other entries (particularly the old next entry) as
 	 * a side effect (XXX).
 	 */
-	next = LIST_NEXT(ln, lle_next);
+	next = BSD_LIST_NEXT(ln, lle_next);
 
 	/*
 	 * Save to unlock. We still hold an extra reference and will not
@@ -1246,7 +1246,7 @@ nd6_ioctl(u_long cmd, caddr_t data, struct ifnet *ifp)
 		 */
 		bzero(drl, sizeof(*drl));
 		s = splnet();
-		TAILQ_FOREACH(dr, &V_nd_defrouter, dr_entry) {
+		BSD_TAILQ_FOREACH(dr, &V_nd_defrouter, dr_entry) {
 			if (i >= DRLSTSIZ)
 				break;
 			drl->defrouter[i].rtaddr = dr->rtaddr;
@@ -1275,7 +1275,7 @@ nd6_ioctl(u_long cmd, caddr_t data, struct ifnet *ifp)
 		 */
 		bzero(oprl, sizeof(*oprl));
 		s = splnet();
-		LIST_FOREACH(pr, &V_nd_prefix, ndpr_entry) {
+		BSD_LIST_FOREACH(pr, &V_nd_prefix, ndpr_entry) {
 			struct nd_pfxrouter *pfr;
 			int j;
 
@@ -1306,7 +1306,7 @@ nd6_ioctl(u_long cmd, caddr_t data, struct ifnet *ifp)
 			}
 
 			j = 0;
-			LIST_FOREACH(pfr, &pr->ndpr_advrtrs, pfr_entry) {
+			BSD_LIST_FOREACH(pfr, &pr->ndpr_advrtrs, pfr_entry) {
 				if (j < DRLSTSIZ) {
 #define RTRADDR oprl->prefix[i].advrtr[j]
 					RTRADDR = pfr->router->rtaddr;
@@ -1385,7 +1385,7 @@ nd6_ioctl(u_long cmd, caddr_t data, struct ifnet *ifp)
 			int duplicated_linklocal = 0;
 
 			IF_ADDR_RLOCK(ifp);
-			TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
+			BSD_TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
 				if (ifa->ifa_addr->sa_family != AF_INET6)
 					continue;
 				ia = (struct in6_ifaddr *)ifa;
@@ -1414,7 +1414,7 @@ nd6_ioctl(u_long cmd, caddr_t data, struct ifnet *ifp)
 
 			ND_IFINFO(ifp)->flags |= ND6_IFF_IFDISABLED;
 			IF_ADDR_RLOCK(ifp);
-			TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
+			BSD_TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
 				if (ifa->ifa_addr->sa_family != AF_INET6)
 					continue;
 				ia = (struct in6_ifaddr *)ifa;
@@ -1441,7 +1441,7 @@ nd6_ioctl(u_long cmd, caddr_t data, struct ifnet *ifp)
 				int haslinklocal = 0;
 			
 				IF_ADDR_RLOCK(ifp);
-				TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
+				BSD_TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
 					if (ifa->ifa_addr->sa_family != AF_INET6)
 						continue;
 					ia = (struct in6_ifaddr *)ifa;
@@ -1470,7 +1470,7 @@ nd6_ioctl(u_long cmd, caddr_t data, struct ifnet *ifp)
 		struct nd_prefix *pr, *next;
 
 		s = splnet();
-		LIST_FOREACH_SAFE(pr, &V_nd_prefix, ndpr_entry, next) {
+		BSD_LIST_FOREACH_SAFE(pr, &V_nd_prefix, ndpr_entry, next) {
 			struct in6_ifaddr *ia, *ia_next;
 
 			if (IN6_IS_ADDR_LINKLOCAL(&pr->ndpr_prefix.sin6_addr))
@@ -1478,7 +1478,7 @@ nd6_ioctl(u_long cmd, caddr_t data, struct ifnet *ifp)
 
 			/* do we really have to remove addresses as well? */
 			/* XXXRW: in6_ifaddrhead locking. */
-			TAILQ_FOREACH_SAFE(ia, &V_in6_ifaddrhead, ia_link,
+			BSD_TAILQ_FOREACH_SAFE(ia, &V_in6_ifaddrhead, ia_link,
 			    ia_next) {
 				if ((ia->ia6_flags & IN6_IFF_AUTOCONF) == 0)
 					continue;
@@ -1498,7 +1498,7 @@ nd6_ioctl(u_long cmd, caddr_t data, struct ifnet *ifp)
 
 		s = splnet();
 		defrouter_reset();
-		TAILQ_FOREACH_SAFE(dr, &V_nd_defrouter, dr_entry, next) {
+		BSD_TAILQ_FOREACH_SAFE(dr, &V_nd_defrouter, dr_entry, next) {
 			defrtrlist_del(dr);
 		}
 		defrouter_select();
@@ -1820,7 +1820,7 @@ nd6_slowtimo(void *arg)
 	callout_reset(&V_nd6_slowtimo_ch, ND6_SLOWTIMER_INTERVAL * hz,
 	    nd6_slowtimo, curvnet);
 	IFNET_RLOCK_NOSLEEP();
-	TAILQ_FOREACH(ifp, &V_ifnet, if_list) {
+	BSD_TAILQ_FOREACH(ifp, &V_ifnet, if_list) {
 		nd6if = ND_IFINFO(ifp);
 		if (nd6if->basereachable && /* already initialized */
 		    (nd6if->recalctm -= ND6_SLOWTIMER_INTERVAL) <= 0) {
@@ -2298,7 +2298,7 @@ nd6_sysctl_drlist(SYSCTL_HANDLER_ARGS)
 	/*
 	 * XXX locking
 	 */
-	TAILQ_FOREACH(dr, &V_nd_defrouter, dr_entry) {
+	BSD_TAILQ_FOREACH(dr, &V_nd_defrouter, dr_entry) {
 		d.rtaddr.sin6_addr = dr->rtaddr;
 		error = sa6_recoverscope(&d.rtaddr);
 		if (error != 0)
@@ -2337,7 +2337,7 @@ nd6_sysctl_prlist(SYSCTL_HANDLER_ARGS)
 	/*
 	 * XXX locking
 	 */
-	LIST_FOREACH(pr, &V_nd_prefix, ndpr_entry) {
+	BSD_LIST_FOREACH(pr, &V_nd_prefix, ndpr_entry) {
 		p.prefix = pr->ndpr_prefix;
 		if (sa6_recoverscope(&p.prefix)) {
 			log(LOG_ERR, "scope error in prefix list (%s)\n",
@@ -2364,12 +2364,12 @@ nd6_sysctl_prlist(SYSCTL_HANDLER_ARGS)
 		p.refcnt = pr->ndpr_refcnt;
 		p.flags = pr->ndpr_stateflags;
 		p.advrtrs = 0;
-		LIST_FOREACH(pfr, &pr->ndpr_advrtrs, pfr_entry)
+		BSD_LIST_FOREACH(pfr, &pr->ndpr_advrtrs, pfr_entry)
 			p.advrtrs++;
 		error = SYSCTL_OUT(req, &p, sizeof(p));
 		if (error != 0)
 			return (error);
-		LIST_FOREACH(pfr, &pr->ndpr_advrtrs, pfr_entry) {
+		BSD_LIST_FOREACH(pfr, &pr->ndpr_advrtrs, pfr_entry) {
 			s6.sin6_addr = pfr->router->rtaddr;
 			if (sa6_recoverscope(&s6))
 				log(LOG_ERR,

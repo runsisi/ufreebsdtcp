@@ -62,14 +62,14 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/kern/kern_cpu.c 248085 2013-03-09 02:36:32
 struct cf_saved_freq {
 	struct cf_level			level;
 	int				priority;
-	SLIST_ENTRY(cf_saved_freq)	link;
+	BSD_SLIST_ENTRY(cf_saved_freq)	link;
 };
 
 struct cpufreq_softc {
 	struct sx			lock;
 	struct cf_level			curr_level;
 	int				curr_priority;
-	SLIST_HEAD(, cf_saved_freq)	saved_freq;
+	BSD_SLIST_HEAD(, cf_saved_freq)	saved_freq;
 	struct cf_level_lst		all_levels;
 	int				all_count;
 	int				max_mhz;
@@ -82,10 +82,10 @@ struct cpufreq_softc {
 struct cf_setting_array {
 	struct cf_setting		sets[MAX_SETTINGS];
 	int				count;
-	TAILQ_ENTRY(cf_setting_array)	link;
+	BSD_TAILQ_ENTRY(cf_setting_array)	link;
 };
 
-TAILQ_HEAD(cf_setting_lst, cf_setting_array);
+BSD_TAILQ_HEAD(cf_setting_lst, cf_setting_array);
 
 #define CF_MTX_INIT(x)		sx_init((x), "cpufreq lock")
 #define CF_MTX_LOCK(x)		sx_xlock((x))
@@ -156,10 +156,10 @@ cpufreq_attach(device_t dev)
 	parent = device_get_parent(dev);
 	sc->dev = dev;
 	sysctl_ctx_init(&sc->sysctl_ctx);
-	TAILQ_INIT(&sc->all_levels);
+	BSD_TAILQ_INIT(&sc->all_levels);
 	CF_MTX_INIT(&sc->lock);
 	sc->curr_level.total_set.freq = CPUFREQ_VAL_UNKNOWN;
-	SLIST_INIT(&sc->saved_freq);
+	BSD_SLIST_INIT(&sc->saved_freq);
 	/* Try to get nominal CPU freq to use it as maximum later if needed */
 	sc->max_mhz = cpu_get_nominal_mhz(dev);
 	/* If that fails, try to measure the current rate */
@@ -222,8 +222,8 @@ cpufreq_detach(device_t dev)
 	sc = device_get_softc(dev);
 	sysctl_ctx_free(&sc->sysctl_ctx);
 
-	while ((saved_freq = SLIST_FIRST(&sc->saved_freq)) != NULL) {
-		SLIST_REMOVE_HEAD(&sc->saved_freq, link);
+	while ((saved_freq = BSD_SLIST_FIRST(&sc->saved_freq)) != NULL) {
+		BSD_SLIST_REMOVE_HEAD(&sc->saved_freq, link);
 		bsd_free(saved_freq, M_TEMP);
 	}
 
@@ -291,7 +291,7 @@ cf_set_method(device_t dev, const struct cf_level *level, int priority)
 	 * restore the saved level.  If none has been saved, return an error.
 	 */
 	if (level == NULL) {
-		saved_freq = SLIST_FIRST(&sc->saved_freq);
+		saved_freq = BSD_SLIST_FIRST(&sc->saved_freq);
 		if (saved_freq == NULL) {
 			CF_DEBUG("NULL level, no saved level\n");
 			error = ENXIO;
@@ -383,7 +383,7 @@ skip:
 		}
 		curr_freq->level = sc->curr_level;
 		curr_freq->priority = sc->curr_priority;
-		SLIST_INSERT_HEAD(&sc->saved_freq, curr_freq, link);
+		BSD_SLIST_INSERT_HEAD(&sc->saved_freq, curr_freq, link);
 	}
 	sc->curr_level = *level;
 	sc->curr_priority = priority;
@@ -392,7 +392,7 @@ skip:
 	if (saved_freq != NULL) {
 		CF_DEBUG("resetting saved level\n");
 		sc->curr_level.total_set.freq = CPUFREQ_VAL_UNKNOWN;
-		SLIST_REMOVE_HEAD(&sc->saved_freq, link);
+		BSD_SLIST_REMOVE_HEAD(&sc->saved_freq, link);
 		bsd_free(saved_freq, M_TEMP);
 	}
 
@@ -529,7 +529,7 @@ cf_levels_method(device_t dev, struct cf_level *levels, int *count)
 	if (levels == NULL || count == NULL)
 		return (EINVAL);
 
-	TAILQ_INIT(&rel_sets);
+	BSD_TAILQ_INIT(&rel_sets);
 	sc = device_get_softc(dev);
 	error = device_get_children(device_get_parent(dev), &devs, &numdevs);
 	if (error)
@@ -578,7 +578,7 @@ cf_levels_method(device_t dev, struct cf_level *levels, int *count)
 			}
 			bcopy(sets, set_arr->sets, set_count * sizeof(*sets));
 			set_arr->count = set_count;
-			TAILQ_INSERT_TAIL(&rel_sets, set_arr, link);
+			BSD_TAILQ_INSERT_TAIL(&rel_sets, set_arr, link);
 			break;
 		default:
 			error = EINVAL;
@@ -591,7 +591,7 @@ cf_levels_method(device_t dev, struct cf_level *levels, int *count)
 	 * If there are no absolute levels, create a fake one at 100%.  We
 	 * then cache the clockrate for later use as our base frequency.
 	 */
-	if (TAILQ_EMPTY(&sc->all_levels)) {
+	if (BSD_TAILQ_EMPTY(&sc->all_levels)) {
 		if (sc->max_mhz == CPUFREQ_VAL_UNKNOWN) {
 			sc->max_mhz = cpu_get_nominal_mhz(dev);
 			/*
@@ -614,7 +614,7 @@ cf_levels_method(device_t dev, struct cf_level *levels, int *count)
 	}
 
 	/* Create a combined list of absolute + relative levels. */
-	TAILQ_FOREACH(set_arr, &rel_sets, link)
+	BSD_TAILQ_FOREACH(set_arr, &rel_sets, link)
 		cpufreq_expand_set(sc, set_arr);
 
 	/* If the caller doesn't have enough space, return the actual count. */
@@ -626,7 +626,7 @@ cf_levels_method(device_t dev, struct cf_level *levels, int *count)
 
 	/* Finally, output the list of levels. */
 	i = 0;
-	TAILQ_FOREACH(lev, &sc->all_levels, link) {
+	BSD_TAILQ_FOREACH(lev, &sc->all_levels, link) {
 
 		/* Skip levels that have a frequency that is too low. */
 		if (lev->total_set.freq < cf_lowest_freq) {
@@ -642,15 +642,15 @@ cf_levels_method(device_t dev, struct cf_level *levels, int *count)
 
 out:
 	/* Clear all levels since we regenerate them each time. */
-	while ((lev = TAILQ_FIRST(&sc->all_levels)) != NULL) {
-		TAILQ_REMOVE(&sc->all_levels, lev, link);
+	while ((lev = BSD_TAILQ_FIRST(&sc->all_levels)) != NULL) {
+		BSD_TAILQ_REMOVE(&sc->all_levels, lev, link);
 		bsd_free(lev, M_TEMP);
 	}
 	sc->all_count = 0;
 
 	CF_MTX_UNLOCK(&sc->lock);
-	while ((set_arr = TAILQ_FIRST(&rel_sets)) != NULL) {
-		TAILQ_REMOVE(&rel_sets, set_arr, link);
+	while ((set_arr = BSD_TAILQ_FIRST(&rel_sets)) != NULL) {
+		BSD_TAILQ_REMOVE(&rel_sets, set_arr, link);
 		bsd_free(set_arr, M_TEMP);
 	}
 	bsd_free(devs, M_TEMP);
@@ -682,18 +682,18 @@ cpufreq_insert_abs(struct cpufreq_softc *sc, struct cf_setting *sets,
 		level->total_set.dev = NULL;
 		sc->all_count++;
 
-		if (TAILQ_EMPTY(list)) {
+		if (BSD_TAILQ_EMPTY(list)) {
 			CF_DEBUG("adding abs setting %d at head\n",
 			    sets[i].freq);
-			TAILQ_INSERT_HEAD(list, level, link);
+			BSD_TAILQ_INSERT_HEAD(list, level, link);
 			continue;
 		}
 
-		TAILQ_FOREACH_REVERSE(search, list, cf_level_lst, link) {
+		BSD_TAILQ_FOREACH_REVERSE(search, list, cf_level_lst, link) {
 			if (sets[i].freq <= search->total_set.freq) {
 				CF_DEBUG("adding abs setting %d after %d\n",
 				    sets[i].freq, search->total_set.freq);
-				TAILQ_INSERT_AFTER(list, search, level, link);
+				BSD_TAILQ_INSERT_AFTER(list, search, level, link);
 				break;
 			}
 		}
@@ -721,7 +721,7 @@ cpufreq_expand_set(struct cpufreq_softc *sc, struct cf_setting_array *set_arr)
 	 * preferable to 200 Mhz + 25% because absolute settings are more
 	 * efficient since they often change the voltage as well.
 	 */
-	TAILQ_FOREACH_REVERSE(search, &sc->all_levels, cf_level_lst, link) {
+	BSD_TAILQ_FOREACH_REVERSE(search, &sc->all_levels, cf_level_lst, link) {
 		/* Add each setting to the level, duplicating if necessary. */
 		for (i = 0; i < set_arr->count; i++) {
 			set = &set_arr->sets[i];
@@ -820,8 +820,8 @@ cpufreq_dup_set(struct cpufreq_softc *sc, struct cf_level *dup,
 	 * 1600 Mhz/25% even though the latter has a lower total frequency.
 	 */
 	list = &sc->all_levels;
-	KASSERT(!TAILQ_EMPTY(list), ("all levels list empty in dup set"));
-	TAILQ_FOREACH_REVERSE(itr, list, cf_level_lst, link) {
+	KASSERT(!BSD_TAILQ_EMPTY(list), ("all levels list empty in dup set"));
+	BSD_TAILQ_FOREACH_REVERSE(itr, list, cf_level_lst, link) {
 		itr_set = &itr->total_set;
 		if (CPUFREQ_CMP(fill_set->freq, itr_set->freq)) {
 			CF_DEBUG("dup set rejecting %d (dupe)\n",
@@ -833,7 +833,7 @@ cpufreq_dup_set(struct cpufreq_softc *sc, struct cf_level *dup,
 				CF_DEBUG(
 			"dup done, inserting new level %d after %d\n",
 				    fill_set->freq, itr_set->freq);
-				TAILQ_INSERT_AFTER(list, itr, fill, link);
+				BSD_TAILQ_INSERT_AFTER(list, itr, fill, link);
 				sc->all_count++;
 			} else {
 				CF_DEBUG("dup set rejecting %d (abs too big)\n",

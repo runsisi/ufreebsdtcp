@@ -1146,7 +1146,7 @@ linux_elf_modevent(module_t mod, int type, void *data)
 				linux_device_register_handler(*ldhp);
 			mtx_init(&emul_lock, "emuldata lock", NULL, MTX_DEF);
 			sx_init(&emul_shared_lock, "emuldata->shared lock");
-			LIST_INIT(&futex_list);
+			BSD_LIST_INIT(&futex_list);
 			mtx_init(&futex_mtx, "ftllk", NULL, MTX_DEF);
 			linux_exit_tag = EVENTHANDLER_REGISTER(process_exit,
 			    linux_proc_exit, NULL, 1000);

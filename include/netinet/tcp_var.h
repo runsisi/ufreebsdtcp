@@ -48,12 +48,12 @@ VNET_DECLARE(int, tcp_do_rfc1323);
 
 /* TCP segment queue entry */
 struct tseg_qent {
-	LIST_ENTRY(tseg_qent) tqe_q;
+	BSD_LIST_ENTRY(tseg_qent) tqe_q;
 	int	tqe_len;		/* TCP segment data length */
 	struct	tcphdr *tqe_th;		/* a pointer to tcp header */
 	struct	mbuf	*tqe_m;		/* mbuf contains packet */
 };
-LIST_HEAD(tsegqe_head, tseg_qent);
+BSD_LIST_HEAD(tsegqe_head, tseg_qent);
 
 struct sackblk {
 	tcp_seq start;		/* start seq no. of sack block */
@@ -64,7 +64,7 @@ struct sackhole {
 	tcp_seq start;		/* start seq no. of hole */
 	tcp_seq end;		/* end seq no. */
 	tcp_seq rxmit;		/* next seq. no in hole to be retransmitted */
-	TAILQ_ENTRY(sackhole) scblink;	/* scoreboard linkage */
+	BSD_TAILQ_ENTRY(sackhole) scblink;	/* scoreboard linkage */
 };
 
 struct sackhint {
@@ -183,7 +183,7 @@ struct tcpcb {
 	u_char	snd_limited;		/* segments limited transmitted */
 /* SACK related state */
 	int	snd_numholes;		/* number of holes seen by sender */
-	TAILQ_HEAD(sackhole_head, sackhole) snd_holes;
+	BSD_TAILQ_HEAD(sackhole_head, sackhole) snd_holes;
 					/* SACK scoreboard (sorted) */
 	tcp_seq	snd_fack;		/* last seq number(+1) sack'd by rcv'r*/
 	int	rcv_numsacks;		/* # distinct sack blks present */
@@ -352,7 +352,7 @@ struct tcptw {
 	u_int32_t	ts_offset;	/* our timestamp offset */
 	u_int		t_starttime;
 	int		tw_time;
-	TAILQ_ENTRY(tcptw) tw_2msl;
+	BSD_TAILQ_ENTRY(tcptw) tw_2msl;
 };
 
 #define	intotcpcb(ip)	((struct tcpcb *)(ip)->inp_ppcb)

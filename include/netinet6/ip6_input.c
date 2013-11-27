@@ -169,7 +169,7 @@ ip6_init(void)
 	TUNABLE_INT_FETCH("net.inet6.ip6.accept_rtadv", &V_ip6_accept_rtadv);
 	TUNABLE_INT_FETCH("net.inet6.ip6.no_radr", &V_ip6_no_radr);
 
-	TAILQ_INIT(&V_in6_ifaddrhead);
+	BSD_TAILQ_INIT(&V_in6_ifaddrhead);
 
 	/* Initialize packet filter hooks. */
 	V_inet6_pfil_hook.ph_type = PFIL_TYPE_AF;
@@ -698,7 +698,7 @@ passin:
 #define	sa_equal(a1, a2)						\
 	(bcmp((a1), (a2), ((a1))->sin6_len) == 0)
 		IF_ADDR_RLOCK(ifp);
-		TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
+		BSD_TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
 			if (ifa->ifa_addr->sa_family != dst6.sin6_family)
 				continue;
 			if (sa_equal(&dst6, ifa->ifa_addr))

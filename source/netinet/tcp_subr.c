@@ -686,7 +686,7 @@ tcp_newtcpcb(struct inpcb *inp)
 	 * Use the current system default CC algorithm.
 	 */
 	CC_LIST_RLOCK();
-	KASSERT(!STAILQ_EMPTY(&cc_list), ("cc_list is empty!"));
+	KASSERT(!BSD_STAILQ_EMPTY(&cc_list), ("cc_list is empty!"));
 	CC_ALGO(tp) = CC_DEFAULT();
 	CC_LIST_RUNLOCK();
 
@@ -706,7 +706,7 @@ tcp_newtcpcb(struct inpcb *inp)
 	tp->t_vnet = inp->inp_vnet;
 #endif
 	tp->t_timers = &tm->tt;
-	/*	LIST_INIT(&tp->t_segq); */	/* XXX covered by M_ZERO */
+	/*	BSD_LIST_INIT(&tp->t_segq); */	/* XXX covered by M_ZERO */
 	tp->t_maxseg = tp->t_maxopd =
 #ifdef INET6
 		isipv6 ? V_tcp_v6mssdflt :
@@ -724,7 +724,7 @@ tcp_newtcpcb(struct inpcb *inp)
 		tp->t_flags = (TF_REQ_SCALE|TF_REQ_TSTMP);
 	if (V_tcp_do_sack)
 		tp->t_flags |= TF_SACK_PERMIT;
-	TAILQ_INIT(&tp->snd_holes);
+	BSD_TAILQ_INIT(&tp->snd_holes);
 	tp->t_inpcb = inp;	/* XXX */
 	/*
 	 * Init srtt to TCPTV_SRTTBASE (0), so we can tell that we have no
@@ -781,7 +781,7 @@ tcp_ccalgounload(struct cc_algo *unload_algo)
 		 * therefore don't enter the loop below until the connection
 		 * list has stabilised.
 		 */
-		LIST_FOREACH(inp, &V_tcb, inp_list) {
+		BSD_LIST_FOREACH(inp, &V_tcb, inp_list) {
 			INP_WLOCK(inp);
 			/* Important to skip tcptw structs. */
 			if (!(inp->inp_flags & INP_TIMEWAIT) &&
@@ -1006,7 +1006,7 @@ tcp_drain(void)
 	 *	usefull.
 	 */
 		INP_INFO_RLOCK(&V_tcbinfo);
-		LIST_FOREACH(inpb, V_tcbinfo.ipi_listhead, inp_list) {
+		BSD_LIST_FOREACH(inpb, V_tcbinfo.ipi_listhead, inp_list) {
 			if (inpb->inp_flags & INP_TIMEWAIT)
 				continue;
 			INP_WLOCK(inpb);
@@ -1128,8 +1128,8 @@ tcp_pcblist(SYSCTL_HANDLER_ARGS)
 		return (ENOMEM);
 
 	INP_INFO_RLOCK(&V_tcbinfo);
-	for (inp = LIST_FIRST(V_tcbinfo.ipi_listhead), i = 0;
-	    inp != NULL && i < n; inp = LIST_NEXT(inp, inp_list)) {
+	for (inp = BSD_LIST_FIRST(V_tcbinfo.ipi_listhead), i = 0;
+	    inp != NULL && i < n; inp = BSD_LIST_NEXT(inp, inp_list)) {
 		INP_WLOCK(inp);
 		if (inp->inp_gencnt <= gencnt) {
 			/*

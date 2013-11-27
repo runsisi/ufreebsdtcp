@@ -48,7 +48,7 @@ struct inpcb;
  * possibly intercept the packet.
  */
 struct packet_filter_hook {
-        TAILQ_ENTRY(packet_filter_hook) pfil_link;
+        BSD_TAILQ_ENTRY(packet_filter_hook) pfil_link;
 	int	(*pfil_func)(void *, struct mbuf **, struct ifnet *, int,
 		    struct inpcb *);
 	void	*pfil_arg;
@@ -59,7 +59,7 @@ struct packet_filter_hook {
 #define PFIL_WAITOK	0x00000004
 #define PFIL_ALL	(PFIL_IN|PFIL_OUT)
 
-typedef	TAILQ_HEAD(pfil_list, packet_filter_hook) pfil_list_t;
+typedef	BSD_TAILQ_HEAD(pfil_list, packet_filter_hook) pfil_list_t;
 
 #define	PFIL_TYPE_AF		1	/* key is AF_* type */
 #define	PFIL_TYPE_IFNET		2	/* key is ifnet pointer */
@@ -80,7 +80,7 @@ struct pfil_head {
 	} ph_un;
 #define	ph_af		ph_un.phu_val
 #define	ph_ifnet	ph_un.phu_ptr
-	LIST_ENTRY(pfil_head) ph_list;
+	BSD_LIST_ENTRY(pfil_head) ph_list;
 };
 
 int	pfil_add_hook(int (*func)(void *, struct mbuf **, struct ifnet *,
@@ -111,9 +111,9 @@ pfil_hook_get(int dir, struct pfil_head *ph)
 {
 
 	if (dir == PFIL_IN)
-		return (TAILQ_FIRST(&ph->ph_in));
+		return (BSD_TAILQ_FIRST(&ph->ph_in));
 	else if (dir == PFIL_OUT)
-		return (TAILQ_FIRST(&ph->ph_out));
+		return (BSD_TAILQ_FIRST(&ph->ph_out));
 	else
 		return (NULL);
 }

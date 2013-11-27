@@ -132,9 +132,9 @@ struct kevent {
 #define	NOTE_CHILD	0x00000004		/* am a child process */
 
 struct knote;
-SLIST_HEAD(klist, knote);
+BSD_SLIST_HEAD(klist, knote);
 struct kqueue;
-SLIST_HEAD(kqlist, kqueue);
+BSD_SLIST_HEAD(kqlist, kqueue);
 struct knlist {
 	struct	klist	kl_list;
 	void    (*kl_lock)(void *);	/* lock function */
@@ -161,7 +161,7 @@ MALLOC_DECLARE(M_KQUEUE);
 #define KNOTE_LOCKED(list, hint)	knote(list, hint, KNF_LISTLOCKED)
 #define KNOTE_UNLOCKED(list, hint)	knote(list, hint, 0)
 
-#define	KNLIST_EMPTY(list)		SLIST_EMPTY(&(list)->kl_list)
+#define	KNLIST_EMPTY(list)		BSD_SLIST_EMPTY(&(list)->kl_list)
 
 /*
  * Flag indicating hint is a signal.  Used by EVFILT_SIGNAL, and also
@@ -194,10 +194,10 @@ struct filterops {
  * kn_sfflags, kn_sdata, and kn_kevent are protected by the knlist lock.
  */
 struct knote {
-	SLIST_ENTRY(knote)	kn_link;	/* for kq */
-	SLIST_ENTRY(knote)	kn_selnext;	/* for struct selinfo */
+	BSD_SLIST_ENTRY(knote)	kn_link;	/* for kq */
+	BSD_SLIST_ENTRY(knote)	kn_selnext;	/* for struct selinfo */
 	struct			knlist *kn_knlist;	/* f_attach populated */
-	TAILQ_ENTRY(knote)	kn_tqe;
+	BSD_TAILQ_ENTRY(knote)	kn_tqe;
 	struct			kqueue *kn_kq;	/* which queue we are on */
 	struct 			kevent kn_kevent;
 	int			kn_status;	/* protected by kq lock */

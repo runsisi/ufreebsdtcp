@@ -240,9 +240,9 @@ callout_cpu_init(struct callout_cpu *cc)
 	int i;
 
 	mtx_init(&cc->cc_lock, "callout", NULL, MTX_SPIN | MTX_RECURSE);
-	SLIST_INIT(&cc->cc_callfree);
+	BSD_SLIST_INIT(&cc->cc_callfree);
 	for (i = 0; i < callwheelsize; i++) {
-		TAILQ_INIT(&cc->cc_callwheel[i]);
+		BSD_TAILQ_INIT(&cc->cc_callwheel[i]);
 	}
 	cc_cme_cleanup(cc);
 	if (cc->cc_callout == NULL)
@@ -251,7 +251,7 @@ callout_cpu_init(struct callout_cpu *cc)
 		c = &cc->cc_callout[i];
 		callout_init(c, 0);
 		c->c_flags = CALLOUT_LOCAL_ALLOC;
-		SLIST_INSERT_HEAD(&cc->cc_callfree, c, c_links.sle);
+		BSD_SLIST_INSERT_HEAD(&cc->cc_callfree, c, c_links.sle);
 	}
 }
 
@@ -349,7 +349,7 @@ callout_tick(void)
 	cc->cc_firsttick = cc->cc_ticks = ticks;
 	for (; (cc->cc_softticks - cc->cc_ticks) <= 0; cc->cc_softticks++) {
 		bucket = cc->cc_softticks & callwheelmask;
-		if (!TAILQ_EMPTY(&cc->cc_callwheel[bucket])) {
+		if (!BSD_TAILQ_EMPTY(&cc->cc_callwheel[bucket])) {
 			need_softclock = 1;
 			break;
 		}
@@ -378,7 +378,7 @@ callout_tickstofirst(int limit)
 	while( skip < ncallout && skip < limit ) {
 		sc = &cc->cc_callwheel[ (curticks+skip) & callwheelmask ];
 		/* search scanning ticks */
-		TAILQ_FOREACH( c, sc, c_links.tqe ){
+		BSD_TAILQ_FOREACH( c, sc, c_links.tqe ){
 			if (c->c_time - curticks <= ncallout)
 				goto out;
 		}
@@ -427,7 +427,7 @@ callout_cc_add(struct callout *c, struct callout_cpu *cc, int to_ticks,
 	c->c_flags |= (CALLOUT_ACTIVE | CALLOUT_PENDING);
 	c->c_func = func;
 	c->c_time = ticks + to_ticks;
-	TAILQ_INSERT_TAIL(&cc->cc_callwheel[c->c_time & callwheelmask], 
+	BSD_TAILQ_INSERT_TAIL(&cc->cc_callwheel[c->c_time & callwheelmask], 
 	    c, c_links.tqe);
 	if ((c->c_time - cc->cc_firsttick) < 0 &&
 	    callout_new_inserted != NULL) {
@@ -444,7 +444,7 @@ callout_cc_del(struct callout *c, struct callout_cpu *cc)
 	if ((c->c_flags & CALLOUT_LOCAL_ALLOC) == 0)
 		return;
 	c->c_func = NULL;
-	SLIST_INSERT_HEAD(&cc->cc_callfree, c, c_links.sle);
+	BSD_SLIST_INSERT_HEAD(&cc->cc_callfree, c, c_links.sle);
 }
 
 static void
@@ -662,11 +662,11 @@ softclock(void *arg)
 		curticks = cc->cc_softticks;
 		cc->cc_softticks++;
 		bucket = &cc->cc_callwheel[curticks & callwheelmask];
-		c = TAILQ_FIRST(bucket);
+		c = BSD_TAILQ_FIRST(bucket);
 		while (c != NULL) {
 			depth++;
 			if (c->c_time != curticks) {
-				c = TAILQ_NEXT(c, c_links.tqe);
+				c = BSD_TAILQ_NEXT(c, c_links.tqe);
 				++steps;
 				if (steps >= MAX_SOFTCLOCK_STEPS) {
 					cc->cc_next = c;
@@ -678,8 +678,8 @@ softclock(void *arg)
 					steps = 0;
 				}
 			} else {
-				cc->cc_next = TAILQ_NEXT(c, c_links.tqe);
-				TAILQ_REMOVE(bucket, c, c_links.tqe);
+				cc->cc_next = BSD_TAILQ_NEXT(c, c_links.tqe);
+				BSD_TAILQ_REMOVE(bucket, c, c_links.tqe);
 				softclock_call_cc(c, cc, &mpcalls,
 				    &lockcalls, &gcalls);
 				steps = 0;
@@ -724,11 +724,11 @@ timeout(ftn, arg, to_ticks)
 	cc = CC_CPU(timeout_cpu);
 	CC_LOCK(cc);
 	/* Fill in the next free callout structure. */
-	new = SLIST_FIRST(&cc->cc_callfree);
+	new = BSD_SLIST_FIRST(&cc->cc_callfree);
 	if (new == NULL)
 		/* XXX Attempt to malloc first */
 		panic("timeout table full");
-	SLIST_REMOVE_HEAD(&cc->cc_callfree, c_links.sle);
+	BSD_SLIST_REMOVE_HEAD(&cc->cc_callfree, c_links.sle);
 	callout_reset(new, to_ticks, ftn, arg);
 	handle.callout = new;
 	CC_UNLOCK(cc);
@@ -816,9 +816,9 @@ callout_reset_on(struct callout *c, int to_ticks, void (*ftn)(void *),
 	}
 	if (c->c_flags & CALLOUT_PENDING) {
 		if (cc->cc_next == c) {
-			cc->cc_next = TAILQ_NEXT(c, c_links.tqe);
+			cc->cc_next = BSD_TAILQ_NEXT(c, c_links.tqe);
 		}
-		TAILQ_REMOVE(&cc->cc_callwheel[c->c_time & callwheelmask], c,
+		BSD_TAILQ_REMOVE(&cc->cc_callwheel[c->c_time & callwheelmask], c,
 		    c_links.tqe);
 
 		cancelled = 1;
@@ -1029,8 +1029,8 @@ again:
 	CTR3(KTR_CALLOUT, "cancelled %p func %p arg %p",
 	    c, c->c_func, c->c_arg);
 	if (cc->cc_next == c)
-		cc->cc_next = TAILQ_NEXT(c, c_links.tqe);
-	TAILQ_REMOVE(&cc->cc_callwheel[c->c_time & callwheelmask], c,
+		cc->cc_next = BSD_TAILQ_NEXT(c, c_links.tqe);
+	BSD_TAILQ_REMOVE(&cc->cc_callwheel[c->c_time & callwheelmask], c,
 	    c_links.tqe);
 	callout_cc_del(c, cc);
 

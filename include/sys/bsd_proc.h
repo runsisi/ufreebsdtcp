@@ -94,8 +94,8 @@ struct session {
  * (c)		const until freeing
  */
 struct pgrp {
-	LIST_ENTRY(pgrp) pg_hash;	/* (e) Hash chain. */
-	LIST_HEAD(, proc) pg_members;	/* (m + e) Pointer to pgrp members. */
+	BSD_LIST_ENTRY(pgrp) pg_hash;	/* (e) Hash chain. */
+	BSD_LIST_HEAD(, proc) pg_members;	/* (m + e) Pointer to pgrp members. */
 	struct session	*pg_session;	/* (c) Pointer to session. */
 	struct sigiolst	pg_sigiolst;	/* (m) List of sigio sources. */
 	pid_t		pg_id;		/* (c) Process group id. */
@@ -204,11 +204,11 @@ struct rusage_ext {
 struct thread {
 	struct mtx	*volatile td_lock; /* replaces sched lock */
 	struct proc	*td_proc;	/* (*) Associated process. */
-	TAILQ_ENTRY(thread) td_plist;	/* (*) All threads in this proc. */
-	TAILQ_ENTRY(thread) td_runq;	/* (t) Run queue. */
-	TAILQ_ENTRY(thread) td_slpq;	/* (t) Sleep queue. */
-	TAILQ_ENTRY(thread) td_lockq;	/* (t) Lock queue. */
-	LIST_ENTRY(thread) td_hash;	/* (d) Hash chain. */
+	BSD_TAILQ_ENTRY(thread) td_plist;	/* (*) All threads in this proc. */
+	BSD_TAILQ_ENTRY(thread) td_runq;	/* (t) Run queue. */
+	BSD_TAILQ_ENTRY(thread) td_slpq;	/* (t) Sleep queue. */
+	BSD_TAILQ_ENTRY(thread) td_lockq;	/* (t) Lock queue. */
+	BSD_LIST_ENTRY(thread) td_hash;	/* (d) Hash chain. */
 	struct cpuset	*td_cpuset;	/* (t) CPU affinity mask. */
 	struct seltd	*td_sel;	/* Select queue/channel. */
 	struct sleepqueue *td_sleepqueue; /* (k) Associated sleep queue. */
@@ -238,7 +238,7 @@ struct thread {
 	short		td_stopsched;	/* (k) Scheduler stopped. */
 	struct turnstile *td_blocked;	/* (t) Lock thread is blocked on. */
 	const char	*td_lockname;	/* (t) Name of lock blocked on. */
-	LIST_HEAD(, turnstile) td_contested;	/* (q) Contested locks. */
+	BSD_LIST_HEAD(, turnstile) td_contested;	/* (q) Contested locks. */
 	struct lock_list_entry *td_sleeplocks; /* (k) Held sleep locks. */
 	int		td_intr_nesting_level; /* (k) Interrupt recursion. */
 	int		td_pinned;	/* (k) Temporary cpu pin count. */
@@ -482,8 +482,8 @@ do {									\
  * Process structure.
  */
 struct proc {
-	LIST_ENTRY(proc) p_list;	/* (d) List of all processes. */
-	TAILQ_HEAD(, thread) p_threads;	/* (c) all threads. */
+	BSD_LIST_ENTRY(proc) p_list;	/* (d) List of all processes. */
+	BSD_TAILQ_HEAD(, thread) p_threads;	/* (c) all threads. */
 	struct mtx	p_slock;	/* process spin lock */
 	struct ucred	*p_ucred;	/* (c) Process owner's identity. */
 	struct filedesc	*p_fd;		/* (b) Open files. */
@@ -504,11 +504,11 @@ struct proc {
 		PRS_ZOMBIE
 	} p_state;			/* (j/c) Process status. */
 	pid_t		p_pid;		/* (b) Process identifier. */
-	LIST_ENTRY(proc) p_hash;	/* (d) Hash chain. */
-	LIST_ENTRY(proc) p_pglist;	/* (g + e) List of processes in pgrp. */
+	BSD_LIST_ENTRY(proc) p_hash;	/* (d) Hash chain. */
+	BSD_LIST_ENTRY(proc) p_pglist;	/* (g + e) List of processes in pgrp. */
 	struct proc	*p_pptr;	/* (c + e) Pointer to parent process. */
-	LIST_ENTRY(proc) p_sibling;	/* (e) List of sibling processes. */
-	LIST_HEAD(, proc) p_children;	/* (e) Pointer to list of children. */
+	BSD_LIST_ENTRY(proc) p_sibling;	/* (e) List of sibling processes. */
+	BSD_LIST_HEAD(, proc) p_children;	/* (e) Pointer to list of children. */
 	struct mtx	p_mtx;		/* (n) Lock for this struct. */
 	struct ksiginfo *p_ksi;	/* Locked by parent proc lock */
 	sigqueue_t	p_sigqueue;	/* (c) Sigs not delivered to a td. */
@@ -577,8 +577,8 @@ struct proc {
 	void		*p_emuldata;	/* (c) Emulator state data. */
 	struct label	*p_label;	/* (*) Proc (not subject) MAC label. */
 	struct p_sched	*p_sched;	/* (*) Scheduler-specific data. */
-	STAILQ_HEAD(, ktr_request)	p_ktr;	/* (o) KTR event queue. */
-	LIST_HEAD(, mqueue_notifier)	p_mqnotifier; /* (c) mqueue notifiers.*/
+	BSD_STAILQ_HEAD(, ktr_request)	p_ktr;	/* (o) KTR event queue. */
+	BSD_LIST_HEAD(, mqueue_notifier)	p_mqnotifier; /* (c) mqueue notifiers.*/
 	struct kdtrace_proc	*p_dtrace; /* (*) DTrace-specific data. */
 	struct cv	p_pwait;	/* (*) wait cv for exit/exec. */
 	struct cv	p_dbgwait;	/* (*) wait cv for debugger attach
@@ -591,8 +591,8 @@ struct proc {
 	 * track of them for parent to be able to collect the exit
 	 * status of what used to be children.
 	 */
-	LIST_ENTRY(proc) p_orphan;	/* (e) List of orphan processes. */
-	LIST_HEAD(, proc) p_orphans;	/* (e) Pointer to list of orphans. */
+	BSD_LIST_ENTRY(proc) p_orphan;	/* (e) List of orphan processes. */
+	BSD_LIST_HEAD(, proc) p_orphans;	/* (e) Pointer to list of orphans. */
 	u_char		p_throttled;	/* (c) Flag for racct pcpu throttling */
 };
 
@@ -693,11 +693,11 @@ MALLOC_DECLARE(M_SUBPROC);
 #endif
 
 #define	FOREACH_PROC_IN_SYSTEM(p)					\
-	LIST_FOREACH((p), &allproc, p_list)
+	BSD_LIST_FOREACH((p), &allproc, p_list)
 #define	FOREACH_THREAD_IN_PROC(p, td)					\
-	TAILQ_FOREACH((td), &(p)->p_threads, td_plist)
+	BSD_TAILQ_FOREACH((td), &(p)->p_threads, td_plist)
 
-#define	FIRST_THREAD_IN_PROC(p)	TAILQ_FIRST(&(p)->p_threads)
+#define	FIRST_THREAD_IN_PROC(p)	BSD_TAILQ_FIRST(&(p)->p_threads)
 
 /*
  * We use process IDs <= pid_max <= PID_MAX; PID_MAX + 1 must also fit
@@ -804,15 +804,15 @@ extern pid_t pid_max;
 } while (0)
 
 #define	PIDHASH(pid)	(&pidhashtbl[(pid) & pidhash])
-extern LIST_HEAD(pidhashhead, proc) *pidhashtbl;
+extern BSD_LIST_HEAD(pidhashhead, proc) *pidhashtbl;
 extern u_long pidhash;
 #define	TIDHASH(tid)	(&tidhashtbl[(tid) & tidhash])
-extern LIST_HEAD(tidhashhead, thread) *tidhashtbl;
+extern BSD_LIST_HEAD(tidhashhead, thread) *tidhashtbl;
 extern u_long tidhash;
 extern struct rwlock tidhash_lock;
 
 #define	PGRPHASH(pgid)	(&pgrphashtbl[(pgid) & pgrphash])
-extern LIST_HEAD(pgrphashhead, pgrp) *pgrphashtbl;
+extern BSD_LIST_HEAD(pgrphashhead, pgrp) *pgrphashtbl;
 extern u_long pgrphash;
 
 extern struct sx allproc_lock;
@@ -827,9 +827,9 @@ extern int nprocs, maxproc;		/* Current and max number of procs. */
 extern int maxprocperuid;		/* Max procs per uid. */
 extern u_long ps_arg_cache_limit;
 
-LIST_HEAD(proclist, proc);
-TAILQ_HEAD(procqueue, proc);
-TAILQ_HEAD(threadqueue, thread);
+BSD_LIST_HEAD(proclist, proc);
+BSD_TAILQ_HEAD(procqueue, proc);
+BSD_TAILQ_HEAD(threadqueue, thread);
 extern struct proclist allproc;		/* List of all processes. */
 extern struct proclist zombproc;	/* List of zombie processes. */
 extern struct proc *initproc, *pageproc; /* Process slots for init, pager. */

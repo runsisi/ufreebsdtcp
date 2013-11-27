@@ -85,7 +85,7 @@ ifmedia_init(ifm, dontcare_mask, change_callback, status_callback)
 	ifm_stat_cb_t status_callback;
 {
 
-	LIST_INIT(&ifm->ifm_list);
+	BSD_LIST_INIT(&ifm->ifm_list);
 	ifm->ifm_cur = NULL;
 	ifm->ifm_media = 0;
 	ifm->ifm_mask = dontcare_mask;		/* IF don't-care bits */
@@ -99,9 +99,9 @@ ifmedia_removeall(ifm)
 {
 	struct ifmedia_entry *entry;
 
-	for (entry = LIST_FIRST(&ifm->ifm_list); entry;
-	     entry = LIST_FIRST(&ifm->ifm_list)) {
-		LIST_REMOVE(entry, ifm_list);
+	for (entry = BSD_LIST_FIRST(&ifm->ifm_list); entry;
+	     entry = BSD_LIST_FIRST(&ifm->ifm_list)) {
+		BSD_LIST_REMOVE(entry, ifm_list);
 		bsd_free(entry, M_IFADDR);
 	}
 }
@@ -138,7 +138,7 @@ ifmedia_add(ifm, mword, data, aux)
 	entry->ifm_data = data;
 	entry->ifm_aux = aux;
 
-	LIST_INSERT_HEAD(&ifm->ifm_list, entry, ifm_list);
+	BSD_LIST_INSERT_HEAD(&ifm->ifm_list, entry, ifm_list);
 }
 
 /*
@@ -293,7 +293,7 @@ ifmedia_ioctl(ifp, ifr, ifm, cmd)
 		 * to 0 on the first call to know how much space to
 		 * allocate.
 		 */
-		LIST_FOREACH(ep, &ifm->ifm_list, ifm_list)
+		BSD_LIST_FOREACH(ep, &ifm->ifm_list, ifm_list)
 			usermax++;
 
 		/*
@@ -314,9 +314,9 @@ ifmedia_ioctl(ifp, ifr, ifm, cmd)
 			/*
 			 * Get the media words from the interface's list.
 			 */
-			ep = LIST_FIRST(&ifm->ifm_list);
+			ep = BSD_LIST_FIRST(&ifm->ifm_list);
 			for (; ep != NULL && count < ifmr->ifm_count;
-			    ep = LIST_NEXT(ep, ifm_list), count++)
+			    ep = BSD_LIST_NEXT(ep, ifm_list), count++)
 				kptr[count] = ep->ifm_media;
 
 			if (ep != NULL)
@@ -370,7 +370,7 @@ ifmedia_match(ifm, target, mask)
 	match = NULL;
 	mask = ~mask;
 
-	LIST_FOREACH(next, &ifm->ifm_list, ifm_list) {
+	BSD_LIST_FOREACH(next, &ifm->ifm_list, ifm_list) {
 		if ((next->ifm_media & mask) == (target & mask)) {
 #if defined(IFMEDIA_DEBUG) || defined(DIAGNOSTIC)
 			if (match) {

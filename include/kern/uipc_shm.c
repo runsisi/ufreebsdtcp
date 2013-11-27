@@ -87,11 +87,11 @@ struct shm_mapping {
 	char		*sm_path;
 	Fnv32_t		sm_fnv;
 	struct shmfd	*sm_shmfd;
-	LIST_ENTRY(shm_mapping) sm_link;
+	BSD_LIST_ENTRY(shm_mapping) sm_link;
 };
 
 static MALLOC_DEFINE(M_SHMFD, "shmfd", "shared memory file descriptor");
-static LIST_HEAD(, shm_mapping) *shm_dictionary;
+static BSD_LIST_HEAD(, shm_mapping) *shm_dictionary;
 static struct sx shm_dict_lock;
 static struct mtx shm_timestamp_lock;
 static u_long shm_hash;
@@ -449,7 +449,7 @@ shm_lookup(char *path, Fnv32_t fnv)
 {
 	struct shm_mapping *map;
 
-	LIST_FOREACH(map, SHM_HASH(fnv), sm_link) {
+	BSD_LIST_FOREACH(map, SHM_HASH(fnv), sm_link) {
 		if (map->sm_fnv != fnv)
 			continue;
 		if (strcmp(map->sm_path, path) == 0)
@@ -469,7 +469,7 @@ shm_insert(char *path, Fnv32_t fnv, struct shmfd *shmfd)
 	map->sm_fnv = fnv;
 	map->sm_shmfd = shm_hold(shmfd);
 	shmfd->shm_path = path;
-	LIST_INSERT_HEAD(SHM_HASH(fnv), map, sm_link);
+	BSD_LIST_INSERT_HEAD(SHM_HASH(fnv), map, sm_link);
 }
 
 static int
@@ -478,7 +478,7 @@ shm_remove(char *path, Fnv32_t fnv, struct ucred *ucred)
 	struct shm_mapping *map;
 	int error;
 
-	LIST_FOREACH(map, SHM_HASH(fnv), sm_link) {
+	BSD_LIST_FOREACH(map, SHM_HASH(fnv), sm_link) {
 		if (map->sm_fnv != fnv)
 			continue;
 		if (strcmp(map->sm_path, path) == 0) {
@@ -492,7 +492,7 @@ shm_remove(char *path, Fnv32_t fnv, struct ucred *ucred)
 			if (error)
 				return (error);
 			map->sm_shmfd->shm_path = NULL;
-			LIST_REMOVE(map, sm_link);
+			BSD_LIST_REMOVE(map, sm_link);
 			shm_drop(map->sm_shmfd);
 			bsd_free(map->sm_path, M_SHMFD);
 			bsd_free(map, M_SHMFD);

@@ -138,16 +138,16 @@ struct sctp_nat_assoc {
 	int exp;			/**< timer expiration in seconds from uptime */
 	int exp_loc;			/**< current location in timer_Q */
 	int num_Gaddr;		/**< number of global IP addresses in the list */
-	LIST_HEAD(sctpGlobalAddresshead,sctp_GlobalAddress) Gaddr; /**< List of global addresses */
-	LIST_ENTRY (sctp_nat_assoc) list_L; /**< Linked list of pointers for Local table*/
-	LIST_ENTRY (sctp_nat_assoc) list_G; /**< Linked list of pointers for Global table */
-	LIST_ENTRY (sctp_nat_assoc) timer_Q; /**< Linked list of pointers for timer Q */
+	BSD_LIST_HEAD(sctpGlobalAddresshead,sctp_GlobalAddress) Gaddr; /**< List of global addresses */
+	BSD_LIST_ENTRY (sctp_nat_assoc) list_L; /**< Linked list of pointers for Local table*/
+	BSD_LIST_ENTRY (sctp_nat_assoc) list_G; /**< Linked list of pointers for Global table */
+	BSD_LIST_ENTRY (sctp_nat_assoc) timer_Q; /**< Linked list of pointers for timer Q */
 //Using libalias locking
 };
 
 struct sctp_GlobalAddress {
 	struct in_addr g_addr;
-	LIST_ENTRY (sctp_GlobalAddress) list_Gaddr; /**< Linked list of pointers for Global table */
+	BSD_LIST_ENTRY (sctp_GlobalAddress) list_Gaddr; /**< Linked list of pointers for Global table */
 };
 
 /**
@@ -188,7 +188,7 @@ struct sctp_nat_msg {
 struct sctp_nat_timer {
 	int loc_time;			/**< time in seconds for the current location in the queue */
 	int cur_loc;			/**< index of the current location in the circular queue */
-	LIST_HEAD(sctpTimerQ,sctp_nat_assoc) *TimerQ; /**< List of associations at this position in the timer Q */
+	BSD_LIST_HEAD(sctpTimerQ,sctp_nat_assoc) *TimerQ; /**< List of associations at this position in the timer Q */
 };
 
 

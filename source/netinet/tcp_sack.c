@@ -311,9 +311,9 @@ tcp_sackhole_insert(struct tcpcb *tp, tcp_seq start, tcp_seq end,
 
 	/* Insert the new SACK hole into scoreboard. */
 	if (after != NULL)
-		TAILQ_INSERT_AFTER(&tp->snd_holes, after, hole, scblink);
+		BSD_TAILQ_INSERT_AFTER(&tp->snd_holes, after, hole, scblink);
 	else
-		TAILQ_INSERT_TAIL(&tp->snd_holes, hole, scblink);
+		BSD_TAILQ_INSERT_TAIL(&tp->snd_holes, hole, scblink);
 
 	/* Update SACK hint. */
 	if (tp->sackhint.nexthole == NULL)
@@ -331,10 +331,10 @@ tcp_sackhole_remove(struct tcpcb *tp, struct sackhole *hole)
 
 	/* Update SACK hint. */
 	if (tp->sackhint.nexthole == hole)
-		tp->sackhint.nexthole = TAILQ_NEXT(hole, scblink);
+		tp->sackhint.nexthole = BSD_TAILQ_NEXT(hole, scblink);
 
 	/* Remove this SACK hole. */
-	TAILQ_REMOVE(&tp->snd_holes, hole, scblink);
+	BSD_TAILQ_REMOVE(&tp->snd_holes, hole, scblink);
 
 	/* Free this SACK hole. */
 	tcp_sackhole_free(tp, hole);
@@ -359,7 +359,7 @@ tcp_sack_doack(struct tcpcb *tp, struct tcpopt *to, tcp_seq th_ack)
 	 * If SND.UNA will be advanced by SEG.ACK, and if SACK holes exist,
 	 * treat [SND.UNA, SEG.ACK) as if it is a SACK block.
 	 */
-	if (SEQ_LT(tp->snd_una, th_ack) && !TAILQ_EMPTY(&tp->snd_holes)) {
+	if (SEQ_LT(tp->snd_una, th_ack) && !BSD_TAILQ_EMPTY(&tp->snd_holes)) {
 		sack_blocks[num_sack_blks].start = tp->snd_una;
 		sack_blocks[num_sack_blks++].end = th_ack;
 	}
@@ -403,7 +403,7 @@ tcp_sack_doack(struct tcpcb *tp, struct tcpopt *to, tcp_seq th_ack)
 			}
 		}
 	}
-	if (TAILQ_EMPTY(&tp->snd_holes))
+	if (BSD_TAILQ_EMPTY(&tp->snd_holes))
 		/*
 		 * Empty scoreboard. Need to initialize snd_fack (it may be
 		 * uninitialized or have a bogus value). Scoreboard holes
@@ -458,9 +458,9 @@ tcp_sack_doack(struct tcpcb *tp, struct tcpopt *to, tcp_seq th_ack)
 		/* fack is advanced. */
 		tp->snd_fack = sblkp->end;
 	/* We must have at least one SACK hole in scoreboard. */
-	KASSERT(!TAILQ_EMPTY(&tp->snd_holes),
+	KASSERT(!BSD_TAILQ_EMPTY(&tp->snd_holes),
 	    ("SACK scoreboard must not be empty"));
-	cur = TAILQ_LAST(&tp->snd_holes, sackhole_head); /* Last SACK hole. */
+	cur = BSD_TAILQ_LAST(&tp->snd_holes, sackhole_head); /* Last SACK hole. */
 	/*
 	 * Since the incoming sack blocks are sorted, we can process them
 	 * making one sweep of the scoreboard.
@@ -479,7 +479,7 @@ tcp_sack_doack(struct tcpcb *tp, struct tcpopt *to, tcp_seq th_ack)
 			 * SACKs data before the current hole.  Go to the
 			 * previous hole.
 			 */
-			cur = TAILQ_PREV(cur, sackhole_head, scblink);
+			cur = BSD_TAILQ_PREV(cur, sackhole_head, scblink);
 			continue;
 		}
 		tp->sackhint.sack_bytes_rexmit -= (cur->rxmit - cur->start);
@@ -490,7 +490,7 @@ tcp_sack_doack(struct tcpcb *tp, struct tcpopt *to, tcp_seq th_ack)
 			if (SEQ_GEQ(sblkp->end, cur->end)) {
 				/* Acks entire hole, so delete hole. */
 				temp = cur;
-				cur = TAILQ_PREV(cur, sackhole_head, scblink);
+				cur = BSD_TAILQ_PREV(cur, sackhole_head, scblink);
 				tcp_sackhole_remove(tp, temp);
 				/*
 				 * The sack block may ack all or part of the
@@ -536,7 +536,7 @@ tcp_sack_doack(struct tcpcb *tp, struct tcpopt *to, tcp_seq th_ack)
 		 * Accordingly, we advance one or the other.
 		 */
 		if (SEQ_LEQ(sblkp->start, cur->start))
-			cur = TAILQ_PREV(cur, sackhole_head, scblink);
+			cur = BSD_TAILQ_PREV(cur, sackhole_head, scblink);
 		else
 			sblkp--;
 	}
@@ -551,7 +551,7 @@ tcp_free_sackholes(struct tcpcb *tp)
 	struct sackhole *q;
 
 	INP_WLOCK_ASSERT(tp->t_inpcb);
-	while ((q = TAILQ_FIRST(&tp->snd_holes)) != NULL)
+	while ((q = BSD_TAILQ_FIRST(&tp->snd_holes)) != NULL)
 		tcp_sackhole_remove(tp, q);
 	tp->sackhint.sack_bytes_rexmit = 0;
 
@@ -599,7 +599,7 @@ tcp_sack_output_debug(struct tcpcb *tp, int *sack_bytes_rexmt)
 
 	INP_WLOCK_ASSERT(tp->t_inpcb);
 	*sack_bytes_rexmt = 0;
-	TAILQ_FOREACH(p, &tp->snd_holes, scblink) {
+	BSD_TAILQ_FOREACH(p, &tp->snd_holes, scblink) {
 		if (SEQ_LT(p->rxmit, p->end)) {
 			if (SEQ_LT(p->rxmit, tp->snd_una)) {/* old SACK hole */
 				continue;
@@ -640,7 +640,7 @@ tcp_sack_output(struct tcpcb *tp, int *sack_bytes_rexmt)
 	hole = tp->sackhint.nexthole;
 	if (hole == NULL || SEQ_LT(hole->rxmit, hole->end))
 		goto out;
-	while ((hole = TAILQ_NEXT(hole, scblink)) != NULL) {
+	while ((hole = BSD_TAILQ_NEXT(hole, scblink)) != NULL) {
 		if (SEQ_LT(hole->rxmit, hole->end)) {
 			tp->sackhint.nexthole = hole;
 			break;
@@ -658,7 +658,7 @@ out:
 void
 tcp_sack_adjust(struct tcpcb *tp)
 {
-	struct sackhole *p, *cur = TAILQ_FIRST(&tp->snd_holes);
+	struct sackhole *p, *cur = BSD_TAILQ_FIRST(&tp->snd_holes);
 
 	INP_WLOCK_ASSERT(tp->t_inpcb);
 	if (cur == NULL)
@@ -670,7 +670,7 @@ tcp_sack_adjust(struct tcpcb *tp)
 	 * i) snd_nxt lies between end of one hole and beginning of another
 	 * ii) snd_nxt lies between end of last hole and snd_fack
 	 */
-	while ((p = TAILQ_NEXT(cur, scblink)) != NULL) {
+	while ((p = BSD_TAILQ_NEXT(cur, scblink)) != NULL) {
 		if (SEQ_LT(tp->snd_nxt, cur->end))
 			return;
 		if (SEQ_GEQ(tp->snd_nxt, p->start))

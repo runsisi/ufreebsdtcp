@@ -173,7 +173,7 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/netinet/libalias/alias_db.c 252150 2013-06
 #include "alias_mod.h"
 #endif
 
-static		LIST_HEAD(, libalias) instancehead = LIST_HEAD_INITIALIZER(instancehead);
+static		BSD_LIST_HEAD(, libalias) instancehead = BSD_LIST_HEAD_INITIALIZER(instancehead);
 
 
 /*
@@ -324,9 +324,9 @@ struct alias_link {		/* Main data structure */
 #ifndef	NO_USE_SOCKETS
 	int		sockfd;	/* socket descriptor                   */
 #endif
-			LIST_ENTRY    (alias_link) list_out;	/* Linked list of
+			BSD_LIST_ENTRY    (alias_link) list_out;	/* Linked list of
 								 * pointers for     */
-			LIST_ENTRY    (alias_link) list_in;	/* input and output
+			BSD_LIST_ENTRY    (alias_link) list_in;	/* input and output
 								 * lookup tables  */
 
 	union {			/* Auxiliary data                      */
@@ -825,9 +825,9 @@ CleanupAliasData(struct libalias *la)
 
 	LIBALIAS_LOCK_ASSERT(la);
 	for (i = 0; i < LINK_TABLE_OUT_SIZE; i++) {
-		lnk = LIST_FIRST(&la->linkTableOut[i]);
+		lnk = BSD_LIST_FIRST(&la->linkTableOut[i]);
 		while (lnk != NULL) {
-			struct alias_link *link_next = LIST_NEXT(lnk, list_out);
+			struct alias_link *link_next = BSD_LIST_NEXT(lnk, list_out);
 			DeleteLink(lnk);
 			lnk = link_next;
 		}
@@ -843,7 +843,7 @@ IncrementalCleanup(struct libalias *la)
 	struct alias_link *lnk, *lnk_tmp;
 
 	LIBALIAS_LOCK_ASSERT(la);
-	LIST_FOREACH_SAFE(lnk, &la->linkTableOut[la->cleanupIndex++],
+	BSD_LIST_FOREACH_SAFE(lnk, &la->linkTableOut[la->cleanupIndex++],
 	    list_out, lnk_tmp) {
 		if (la->timeStamp - lnk->timestamp > lnk->expire_time)
 			DeleteLink(lnk);
@@ -879,10 +879,10 @@ DeleteLink(struct alias_link *lnk)
 		} while ((curr = next) != head);
 	}
 /* Adjust output table pointers */
-	LIST_REMOVE(lnk, list_out);
+	BSD_LIST_REMOVE(lnk, list_out);
 
 /* Adjust input table pointers */
-	LIST_REMOVE(lnk, list_in);
+	BSD_LIST_REMOVE(lnk, list_in);
 #ifndef	NO_USE_SOCKETS
 /* Close socket, if one has been allocated */
 	if (lnk->sockfd != -1) {
@@ -1049,11 +1049,11 @@ AddLink(struct libalias *la, struct in_addr src_addr, struct in_addr dst_addr,
 		/* Set up pointers for output lookup table */
 		start_point = StartPointOut(src_addr, dst_addr,
 		    src_port, dst_port, link_type);
-		LIST_INSERT_HEAD(&la->linkTableOut[start_point], lnk, list_out);
+		BSD_LIST_INSERT_HEAD(&la->linkTableOut[start_point], lnk, list_out);
 
 		/* Set up pointers for input lookup table */
 		start_point = StartPointIn(alias_addr, lnk->alias_port, link_type);
-		LIST_INSERT_HEAD(&la->linkTableIn[start_point], lnk, list_in);
+		BSD_LIST_INSERT_HEAD(&la->linkTableIn[start_point], lnk, list_in);
 	} else {
 #ifdef LIBALIAS_DEBUG
 		fprintf(stderr, "PacketAlias/AddLink(): ");
@@ -1108,7 +1108,7 @@ _FindLinkOut(struct libalias *la, struct in_addr src_addr,
 
 	LIBALIAS_LOCK_ASSERT(la);
 	i = StartPointOut(src_addr, dst_addr, src_port, dst_port, link_type);
-	LIST_FOREACH(lnk, &la->linkTableOut[i], list_out) {
+	BSD_LIST_FOREACH(lnk, &la->linkTableOut[i], list_out) {
 		if (lnk->dst_addr.s_addr == dst_addr.s_addr &&
 		    lnk->src_addr.s_addr == src_addr.s_addr &&
 		    lnk->src_port == src_port &&
@@ -1209,7 +1209,7 @@ _FindLinkIn(struct libalias *la, struct in_addr dst_addr,
 
 /* Search loop */
 	start_point = StartPointIn(alias_addr, alias_port, link_type);
-	LIST_FOREACH(lnk, &la->linkTableIn[start_point], list_in) {
+	BSD_LIST_FOREACH(lnk, &la->linkTableIn[start_point], list_in) {
 		int flags;
 
 		flags = flags_in | lnk->flags;
@@ -1600,7 +1600,7 @@ FindPptpOutByCallId(struct libalias *la, struct in_addr src_addr,
 
 	LIBALIAS_LOCK_ASSERT(la);
 	i = StartPointOut(src_addr, dst_addr, 0, 0, LINK_PPTP);
-	LIST_FOREACH(lnk, &la->linkTableOut[i], list_out)
+	BSD_LIST_FOREACH(lnk, &la->linkTableOut[i], list_out)
 	    if (lnk->link_type == LINK_PPTP &&
 	    lnk->src_addr.s_addr == src_addr.s_addr &&
 	    lnk->dst_addr.s_addr == dst_addr.s_addr &&
@@ -1621,7 +1621,7 @@ FindPptpOutByPeerCallId(struct libalias *la, struct in_addr src_addr,
 
 	LIBALIAS_LOCK_ASSERT(la);
 	i = StartPointOut(src_addr, dst_addr, 0, 0, LINK_PPTP);
-	LIST_FOREACH(lnk, &la->linkTableOut[i], list_out)
+	BSD_LIST_FOREACH(lnk, &la->linkTableOut[i], list_out)
 	    if (lnk->link_type == LINK_PPTP &&
 	    lnk->src_addr.s_addr == src_addr.s_addr &&
 	    lnk->dst_addr.s_addr == dst_addr.s_addr &&
@@ -1642,7 +1642,7 @@ FindPptpInByCallId(struct libalias *la, struct in_addr dst_addr,
 
 	LIBALIAS_LOCK_ASSERT(la);
 	i = StartPointIn(alias_addr, 0, LINK_PPTP);
-	LIST_FOREACH(lnk, &la->linkTableIn[i], list_in)
+	BSD_LIST_FOREACH(lnk, &la->linkTableIn[i], list_in)
 	    if (lnk->link_type == LINK_PPTP &&
 	    lnk->dst_addr.s_addr == dst_addr.s_addr &&
 	    lnk->alias_addr.s_addr == alias_addr.s_addr &&
@@ -2465,8 +2465,8 @@ static void
 finishoff(void)
 {
 
-	while (!LIST_EMPTY(&instancehead))
-		LibAliasUninit(LIST_FIRST(&instancehead));
+	while (!BSD_LIST_EMPTY(&instancehead))
+		LibAliasUninit(BSD_LIST_FIRST(&instancehead));
 }
 
 struct libalias *
@@ -2488,10 +2488,10 @@ LibAliasInit(struct libalias *la)
 #endif
 
 #ifndef	_KERNEL		/* kernel cleans up on module unload */
-		if (LIST_EMPTY(&instancehead))
+		if (BSD_LIST_EMPTY(&instancehead))
 			atexit(finishoff);
 #endif
-		LIST_INSERT_HEAD(&instancehead, la, instancelist);
+		BSD_LIST_INSERT_HEAD(&instancehead, la, instancelist);
 
 #ifdef	_KERNEL
 		la->timeStamp = time_uptime;
@@ -2503,9 +2503,9 @@ LibAliasInit(struct libalias *la)
 #endif
 
 		for (i = 0; i < LINK_TABLE_OUT_SIZE; i++)
-			LIST_INIT(&la->linkTableOut[i]);
+			BSD_LIST_INIT(&la->linkTableOut[i]);
 		for (i = 0; i < LINK_TABLE_IN_SIZE; i++)
-			LIST_INIT(&la->linkTableIn[i]);
+			BSD_LIST_INIT(&la->linkTableIn[i]);
 #ifdef _KERNEL
 		AliasSctpInit(la);
 #endif
@@ -2567,7 +2567,7 @@ LibAliasUninit(struct libalias *la)
 #ifndef NO_FW_PUNCH
 	UninitPunchFW(la);
 #endif
-	LIST_REMOVE(la, instancelist);
+	BSD_LIST_REMOVE(la, instancelist);
 	LIBALIAS_UNLOCK(la);
 	LIBALIAS_LOCK_DESTROY(la);
 	bsd_free(la);

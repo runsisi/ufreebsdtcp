@@ -324,7 +324,7 @@ sys_thr_exit(struct thread *td, struct thr_exit_args *uap)
 	 */
 	if (p->p_numthreads != 1) {
 		racct_sub(p, RACCT_NTHR, 1);
-		LIST_REMOVE(td, td_hash);
+		BSD_LIST_REMOVE(td, td_hash);
 		rw_wunlock(&tidhash_lock);
 		tdsigcleanup(td);
 		PROC_SLOCK(p);

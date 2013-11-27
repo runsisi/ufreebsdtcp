@@ -35,7 +35,7 @@
 #include <sys/bsd_queue.h>
 
 struct eventhandler_entry {
-	TAILQ_ENTRY(eventhandler_entry)	ee_link;
+	BSD_TAILQ_ENTRY(eventhandler_entry)	ee_link;
 	int				ee_priority;
 #define	EHE_DEAD_PRIORITY	(-1)
 	void				*ee_arg;
@@ -55,8 +55,8 @@ struct eventhandler_list {
 #define EHL_INITTED	(1<<0)
 	u_int				el_runcount;
 	struct mtx			el_lock;
-	TAILQ_ENTRY(eventhandler_list)	el_link;
-	TAILQ_HEAD(,eventhandler_entry)	el_entries;
+	BSD_TAILQ_ENTRY(eventhandler_list)	el_link;
+	BSD_TAILQ_HEAD(,eventhandler_entry)	el_entries;
 };
 
 typedef struct eventhandler_entry	*eventhandler_tag;
@@ -79,7 +79,7 @@ typedef struct eventhandler_entry	*eventhandler_tag;
 	KASSERT((list)->el_runcount > 0,				\
 	    ("eventhandler_invoke: runcount overflow"));		\
 	CTR0(KTR_EVH, "eventhandler_invoke(\"" __STRING(name) "\")");	\
-	TAILQ_FOREACH(_ep, &((list)->el_entries), ee_link) {		\
+	BSD_TAILQ_FOREACH(_ep, &((list)->el_entries), ee_link) {		\
 		if (_ep->ee_priority != EHE_DEAD_PRIORITY) {		\
 			EHL_UNLOCK((list));				\
 			_t = (struct eventhandler_entry_ ## name *)_ep;	\

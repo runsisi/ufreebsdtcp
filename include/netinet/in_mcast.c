@@ -1827,7 +1827,7 @@ inp_lookup_mcast_ifp(const struct inpcb *inp,
 
 			mifp = NULL;
 			IN_IFADDR_RLOCK();
-			TAILQ_FOREACH(ia, &V_in_ifaddrhead, ia_link) {
+			BSD_TAILQ_FOREACH(ia, &V_in_ifaddrhead, ia_link) {
 				mifp = ia->ia_ifp;
 				if (!(mifp->if_flags & IFF_LOOPBACK) &&
 				     (mifp->if_flags & IFF_MULTICAST)) {
@@ -2800,7 +2800,7 @@ sysctl_ip_mcast_filters(SYSCTL_HANDLER_ARGS)
 	IN_MULTI_LOCK();
 
 	IF_ADDR_RLOCK(ifp);
-	TAILQ_FOREACH(ifma, &ifp->if_multiaddrs, ifma_link) {
+	BSD_TAILQ_FOREACH(ifma, &ifp->if_multiaddrs, ifma_link) {
 		if (ifma->ifma_addr->sa_family != AF_INET ||
 		    ifma->ifma_protospec == NULL)
 			continue;

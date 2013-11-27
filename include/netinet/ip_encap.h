@@ -36,7 +36,7 @@
 #ifdef _KERNEL
 
 struct encaptab {
-	LIST_ENTRY(encaptab) chain;
+	BSD_LIST_ENTRY(encaptab) chain;
 	int af;
 	int proto;			/* -1: don't care, I'll check myself */
 	struct sockaddr_storage src;	/* my addr */

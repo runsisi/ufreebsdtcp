@@ -105,7 +105,7 @@ static int devstat_current_devnumber;
 static struct mtx devstat_mutex;
 MTX_SYSINIT(devstat_mutex, &devstat_mutex, "devstat", MTX_DEF);
 
-static struct devstatlist device_statq = STAILQ_HEAD_INITIALIZER(device_statq);
+static struct devstatlist device_statq = BSD_STAILQ_HEAD_INITIALIZER(device_statq);
 static struct devstat *devstat_alloc(void);
 static void devstat_free(struct devstat *);
 static void devstat_add_entry(struct devstat *ds, const void *dev_name, 
@@ -171,12 +171,12 @@ devstat_add_entry(struct devstat *ds, const void *dev_name,
 	 * the list using the order outlined above.
 	 */
 	if (devstat_num_devs == 1)
-		STAILQ_INSERT_TAIL(devstat_head, ds, dev_links);
+		BSD_STAILQ_INSERT_TAIL(devstat_head, ds, dev_links);
 	else {
-		STAILQ_FOREACH(ds_tmp, devstat_head, dev_links) {
+		BSD_STAILQ_FOREACH(ds_tmp, devstat_head, dev_links) {
 			struct devstat *ds_next;
 
-			ds_next = STAILQ_NEXT(ds_tmp, dev_links);
+			ds_next = BSD_STAILQ_NEXT(ds_tmp, dev_links);
 
 			/*
 			 * If we find a break between higher and lower
@@ -187,7 +187,7 @@ devstat_add_entry(struct devstat *ds, const void *dev_name,
 			if ((priority <= ds_tmp->priority)
 			 && ((ds_next == NULL)
 			   || (priority > ds_next->priority))) {
-				STAILQ_INSERT_AFTER(devstat_head, ds_tmp, ds,
+				BSD_STAILQ_INSERT_AFTER(devstat_head, ds_tmp, ds,
 						    dev_links);
 				break;
 			} else if (priority > ds_tmp->priority) {
@@ -196,12 +196,12 @@ devstat_add_entry(struct devstat *ds, const void *dev_name,
 				 * to insert ourselves at the head of the
 				 * list.  If we can't, something is wrong.
 				 */
-				if (ds_tmp == STAILQ_FIRST(devstat_head)) {
-					STAILQ_INSERT_HEAD(devstat_head,
+				if (ds_tmp == BSD_STAILQ_FIRST(devstat_head)) {
+					BSD_STAILQ_INSERT_HEAD(devstat_head,
 							   ds, dev_links);
 					break;
 				} else {
-					STAILQ_INSERT_TAIL(devstat_head,
+					BSD_STAILQ_INSERT_TAIL(devstat_head,
 							   ds, dev_links);
 					printf("devstat_add_entry: HELP! "
 					       "sorting problem detected "
@@ -244,7 +244,7 @@ devstat_remove_entry(struct devstat *ds)
 	atomic_add_acq_int(&ds->sequence1, 1);
 	if (ds->id == NULL) {
 		devstat_num_devs--;
-		STAILQ_REMOVE(devstat_head, ds, devstat, dev_links);
+		BSD_STAILQ_REMOVE(devstat_head, ds, devstat, dev_links);
 	}
 	devstat_free(ds);
 	devstat_generation++;
@@ -432,7 +432,7 @@ sysctl_devstat(SYSCTL_HANDLER_ARGS)
 		return (error);
 
 	mtx_lock(&devstat_mutex);
-	nds = STAILQ_FIRST(&device_statq); 
+	nds = BSD_STAILQ_FIRST(&device_statq); 
 	if (mygen != devstat_generation)
 		error = EBUSY;
 	mtx_unlock(&devstat_mutex);
@@ -448,7 +448,7 @@ sysctl_devstat(SYSCTL_HANDLER_ARGS)
 		if (mygen != devstat_generation)
 			error = EBUSY;
 		else
-			nds = STAILQ_NEXT(nds, dev_links);
+			nds = BSD_STAILQ_NEXT(nds, dev_links);
 		mtx_unlock(&devstat_mutex);
 		if (error != 0)
 			return (error);
@@ -494,12 +494,12 @@ static struct cdevsw devstat_cdevsw = {
 };
 
 struct statspage {
-	TAILQ_ENTRY(statspage)	list;
+	BSD_TAILQ_ENTRY(statspage)	list;
 	struct devstat		*stat;
 	u_int			nfree;
 };
 
-static TAILQ_HEAD(, statspage)	pagelist = TAILQ_HEAD_INITIALIZER(pagelist);
+static BSD_TAILQ_HEAD(, statspage)	pagelist = BSD_TAILQ_HEAD_INITIALIZER(pagelist);
 static MALLOC_DEFINE(M_DEVSTAT, "devstat", "Device statistics");
 
 static int
@@ -510,7 +510,7 @@ devstat_mmap(struct cdev *dev, vm_ooffset_t offset, vm_paddr_t *paddr,
 
 	if (nprot != VM_PROT_READ)
 		return (-1);
-	TAILQ_FOREACH(spp, &pagelist, list) {
+	BSD_TAILQ_FOREACH(spp, &pagelist, list) {
 		if (offset == 0) {
 			*paddr = vtophys(spp->stat);
 			return (0);
@@ -538,7 +538,7 @@ devstat_alloc(void)
 	spp2 = NULL;
 	mtx_lock(&devstat_mutex);
 	for (;;) {
-		TAILQ_FOREACH(spp, &pagelist, list) {
+		BSD_TAILQ_FOREACH(spp, &pagelist, list) {
 			if (spp->nfree > 0)
 				break;
 		}
@@ -554,7 +554,7 @@ devstat_alloc(void)
 		 * just reuse them.
 		 */
 		mtx_lock(&devstat_mutex);
-		TAILQ_FOREACH(spp, &pagelist, list)
+		BSD_TAILQ_FOREACH(spp, &pagelist, list)
 			if (spp->nfree > 0)
 				break;
 		if (spp == NULL) {
@@ -565,7 +565,7 @@ devstat_alloc(void)
 			 * head but the order on the list determine the
 			 * sequence of the mapping so we can't do that.
 			 */
-			TAILQ_INSERT_TAIL(&pagelist, spp, list);
+			BSD_TAILQ_INSERT_TAIL(&pagelist, spp, list);
 		} else
 			break;
 	}
@@ -592,7 +592,7 @@ devstat_free(struct devstat *dsp)
 
 	mtx_assert(&devstat_mutex, MA_OWNED);
 	bzero(dsp, sizeof *dsp);
-	TAILQ_FOREACH(spp, &pagelist, list) {
+	BSD_TAILQ_FOREACH(spp, &pagelist, list) {
 		if (dsp >= spp->stat && dsp < (spp->stat + statsperpage)) {
 			spp->nfree++;
 			return;

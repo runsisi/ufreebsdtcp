@@ -60,9 +60,9 @@ static int make_dev_credv(int flags, struct cdev **dres, struct cdevsw *devsw,
     va_list ap);
 
 static struct cdev_priv_list cdevp_free_list =
-    TAILQ_HEAD_INITIALIZER(cdevp_free_list);
-static SLIST_HEAD(free_cdevsw, cdevsw) cdevsw_gt_post_list =
-    SLIST_HEAD_INITIALIZER(cdevsw_gt_post_list);
+    BSD_TAILQ_HEAD_INITIALIZER(cdevp_free_list);
+static BSD_SLIST_HEAD(free_cdevsw, cdevsw) cdevsw_gt_post_list =
+    BSD_SLIST_HEAD_INITIALIZER(cdevsw_gt_post_list);
 
 void
 dev_lock(void)
@@ -91,19 +91,19 @@ dev_unlock_and_free(void)
 	 * Make the local copy of the list heads while the dev_mtx is
 	 * held. Free it later.
 	 */
-	TAILQ_INIT(&cdp_free);
-	TAILQ_CONCAT(&cdp_free, &cdevp_free_list, cdp_list);
+	BSD_TAILQ_INIT(&cdp_free);
+	BSD_TAILQ_CONCAT(&cdp_free, &cdevp_free_list, cdp_list);
 	csw_free = cdevsw_gt_post_list;
-	SLIST_INIT(&cdevsw_gt_post_list);
+	BSD_SLIST_INIT(&cdevsw_gt_post_list);
 
 	mtx_unlock(&devmtx);
 
-	while ((cdp = TAILQ_FIRST(&cdp_free)) != NULL) {
-		TAILQ_REMOVE(&cdp_free, cdp, cdp_list);
+	while ((cdp = BSD_TAILQ_FIRST(&cdp_free)) != NULL) {
+		BSD_TAILQ_REMOVE(&cdp_free, cdp, cdp_list);
 		devfs_free(&cdp->cdp_c);
 	}
-	while ((csw = SLIST_FIRST(&csw_free)) != NULL) {
-		SLIST_REMOVE_HEAD(&csw_free, d_postfree_list);
+	while ((csw = BSD_SLIST_FIRST(&csw_free)) != NULL) {
+		BSD_SLIST_REMOVE_HEAD(&csw_free, d_postfree_list);
 		bsd_free(csw, M_DEVT);
 	}
 }
@@ -115,7 +115,7 @@ dev_free_devlocked(struct cdev *cdev)
 
 	mtx_assert(&devmtx, MA_OWNED);
 	cdp = cdev2priv(cdev);
-	TAILQ_INSERT_HEAD(&cdevp_free_list, cdp, cdp_list);
+	BSD_TAILQ_INSERT_HEAD(&cdevp_free_list, cdp, cdp_list);
 }
 
 static void
@@ -123,7 +123,7 @@ cdevsw_free_devlocked(struct cdevsw *csw)
 {
 
 	mtx_assert(&devmtx, MA_OWNED);
-	SLIST_INSERT_HEAD(&cdevsw_gt_post_list, csw, d_postfree_list);
+	BSD_SLIST_INSERT_HEAD(&cdevsw_gt_post_list, csw, d_postfree_list);
 }
 
 void
@@ -168,7 +168,7 @@ dev_rel(struct cdev *dev)
 	else 
 #endif
 	if (dev->si_devsw == NULL && dev->si_refcount == 0) {
-		LIST_REMOVE(dev, si_list);
+		BSD_LIST_REMOVE(dev, si_list);
 		flag = 1;
 	}
 	dev_unlock();
@@ -572,7 +572,7 @@ newdev(struct cdevsw *csw, int unit, struct cdev *si)
 	mtx_assert(&devmtx, MA_OWNED);
 	if (csw->d_flags & D_NEEDMINOR) {
 		/* We may want to return an existing device */
-		LIST_FOREACH(si2, &csw->d_devs, si_list) {
+		BSD_LIST_FOREACH(si2, &csw->d_devs, si_list) {
 			if (dev2unit(si2) == unit) {
 				dev_free_devlocked(si);
 				return (si2);
@@ -581,7 +581,7 @@ newdev(struct cdevsw *csw, int unit, struct cdev *si)
 	}
 	si->si_drv0 = unit;
 	si->si_devsw = csw;
-	LIST_INSERT_HEAD(&csw->d_devs, si, si_list);
+	BSD_LIST_INSERT_HEAD(&csw->d_devs, si, si_list);
 	return (si);
 }
 
@@ -671,7 +671,7 @@ prep_cdevsw(struct cdevsw *devsw, int flags)
 
 	if (devsw->d_dump == NULL)	devsw->d_dump = no_dump;
 
-	LIST_INIT(&devsw->d_devs);
+	BSD_LIST_INIT(&devsw->d_devs);
 
 	devsw->d_flags |= D_INIT;
 
@@ -760,7 +760,7 @@ make_dev_credv(int flags, struct cdev **dres, struct cdevsw *devsw, int unit,
 				    res, dev->si_name);
 			}
 			if (dev == dev_new) {
-				LIST_REMOVE(dev, si_list);
+				BSD_LIST_REMOVE(dev, si_list);
 				dev_unlock();
 				devfs_free(dev);
 			} else
@@ -880,7 +880,7 @@ dev_dependsl(struct cdev *pdev, struct cdev *cdev)
 
 	cdev->si_parent = pdev;
 	cdev->si_flags |= SI_CHILD;
-	LIST_INSERT_HEAD(&pdev->si_children, cdev, si_siblings);
+	BSD_LIST_INSERT_HEAD(&pdev->si_children, cdev, si_siblings);
 }
 
 
@@ -1047,17 +1047,17 @@ destroy_devl(struct cdev *dev)
 
 	/* If we are a child, remove us from the parents list */
 	if (dev->si_flags & SI_CHILD) {
-		LIST_REMOVE(dev, si_siblings);
+		BSD_LIST_REMOVE(dev, si_siblings);
 		dev->si_flags &= ~SI_CHILD;
 	}
 
 	/* Kill our children */
-	while (!LIST_EMPTY(&dev->si_children))
-		destroy_devl(LIST_FIRST(&dev->si_children));
+	while (!BSD_LIST_EMPTY(&dev->si_children))
+		destroy_devl(BSD_LIST_FIRST(&dev->si_children));
 
 	/* Remove from clone list */
 	if (dev->si_flags & SI_CLONELIST) {
-		LIST_REMOVE(dev, si_clone);
+		BSD_LIST_REMOVE(dev, si_clone);
 		dev->si_flags &= ~SI_CLONELIST;
 	}
 
@@ -1078,7 +1078,7 @@ destroy_devl(struct cdev *dev)
 	dev_unlock();
 	notify_destroy(dev);
 	mtx_lock(&cdevpriv_mtx);
-	while ((p = LIST_FIRST(&cdev2priv(dev)->cdp_fdpriv)) != NULL) {
+	while ((p = BSD_LIST_FIRST(&cdev2priv(dev)->cdp_fdpriv)) != NULL) {
 		devfs_destroy_cdevpriv(p);
 		mtx_lock(&cdevpriv_mtx);
 	}
@@ -1091,10 +1091,10 @@ destroy_devl(struct cdev *dev)
 
 	if (!(dev->si_flags & SI_ALIAS)) {
 		/* Remove from cdevsw list */
-		LIST_REMOVE(dev, si_list);
+		BSD_LIST_REMOVE(dev, si_list);
 
 		/* If cdevsw has no more struct cdev *'s, clean it */
-		if (LIST_EMPTY(&csw->d_devs)) {
+		if (BSD_LIST_EMPTY(&csw->d_devs)) {
 			fini_cdevsw(csw);
 			wakeup(&csw->d_devs);
 		}
@@ -1103,7 +1103,7 @@ destroy_devl(struct cdev *dev)
 	dev->si_refcount--;	/* Avoid race with dev_rel() */
 
 	if (dev->si_refcount > 0) {
-		LIST_INSERT_HEAD(&dead_cdevsw.d_devs, dev, si_list);
+		BSD_LIST_INSERT_HEAD(&dead_cdevsw.d_devs, dev, si_list);
 	} else {
 		dev_free_devlocked(dev);
 	}
@@ -1171,7 +1171,7 @@ dev_stdclone(char *name, char **namep, const char *stem, int *unit)
  */
 
 struct clonedevs {
-	LIST_HEAD(,cdev)	head;
+	BSD_LIST_HEAD(,cdev)	head;
 };
 
 void
@@ -1179,7 +1179,7 @@ clone_setup(struct clonedevs **cdp)
 {
 
 	*cdp = bsd_malloc(sizeof **cdp, M_DEVBUF, M_WAITOK | M_ZERO);
-	LIST_INIT(&(*cdp)->head);
+	BSD_LIST_INIT(&(*cdp)->head);
 }
 
 int
@@ -1215,7 +1215,7 @@ clone_create(struct clonedevs **cdp, struct cdevsw *csw, int *up,
 	low = extra;
 	de = dl = NULL;
 	cd = *cdp;
-	LIST_FOREACH(dev, &cd->head, si_clone) {
+	BSD_LIST_FOREACH(dev, &cd->head, si_clone) {
 		KASSERT(dev->si_flags & SI_CLONELIST,
 		    ("Dev %p(%s) should be on clonelist", dev, dev->si_name));
 		u = dev2unit(dev);
@@ -1243,7 +1243,7 @@ clone_create(struct clonedevs **cdp, struct cdevsw *csw, int *up,
 	if (dev->si_flags & SI_CLONELIST) {
 		printf("dev %p (%s) is on clonelist\n", dev, dev->si_name);
 		printf("unit=%d, low=%d, extra=0x%x\n", unit, low, extra);
-		LIST_FOREACH(dev, &cd->head, si_clone) {
+		BSD_LIST_FOREACH(dev, &cd->head, si_clone) {
 			printf("\t%p %s\n", dev, dev->si_name);
 		}
 		panic("foo");
@@ -1251,11 +1251,11 @@ clone_create(struct clonedevs **cdp, struct cdevsw *csw, int *up,
 	KASSERT(!(dev->si_flags & SI_CLONELIST),
 	    ("Dev %p(%s) should not be on clonelist", dev, dev->si_name));
 	if (dl != NULL)
-		LIST_INSERT_BEFORE(dl, dev, si_clone);
+		BSD_LIST_INSERT_BEFORE(dl, dev, si_clone);
 	else if (de != NULL)
-		LIST_INSERT_AFTER(de, dev, si_clone);
+		BSD_LIST_INSERT_AFTER(de, dev, si_clone);
 	else
-		LIST_INSERT_HEAD(&cd->head, dev, si_clone);
+		BSD_LIST_INSERT_HEAD(&cd->head, dev, si_clone);
 	dev->si_flags |= SI_CLONELIST;
 	*up = unit;
 	dev_unlock_and_free();
@@ -1277,9 +1277,9 @@ clone_cleanup(struct clonedevs **cdp)
 	if (cd == NULL)
 		return;
 	dev_lock();
-	while (!LIST_EMPTY(&cd->head)) {
-		dev = LIST_FIRST(&cd->head);
-		LIST_REMOVE(dev, si_clone);
+	while (!BSD_LIST_EMPTY(&cd->head)) {
+		dev = BSD_LIST_FIRST(&cd->head);
+		BSD_LIST_REMOVE(dev, si_clone);
 		KASSERT(dev->si_flags & SI_CLONELIST,
 		    ("Dev %p(%s) should be on clonelist", dev, dev->si_name));
 		dev->si_flags &= ~SI_CLONELIST;
@@ -1296,8 +1296,8 @@ clone_cleanup(struct clonedevs **cdp)
 	*cdp = NULL;
 }
 
-static TAILQ_HEAD(, cdev_priv) dev_ddtr =
-	TAILQ_HEAD_INITIALIZER(dev_ddtr);
+static BSD_TAILQ_HEAD(, cdev_priv) dev_ddtr =
+	BSD_TAILQ_HEAD_INITIALIZER(dev_ddtr);
 static struct task dev_dtr_task;
 
 static void
@@ -1309,12 +1309,12 @@ destroy_dev_tq(void *ctx, int pending)
 	void *cb_arg;
 
 	dev_lock();
-	while (!TAILQ_EMPTY(&dev_ddtr)) {
-		cp = TAILQ_FIRST(&dev_ddtr);
+	while (!BSD_TAILQ_EMPTY(&dev_ddtr)) {
+		cp = BSD_TAILQ_FIRST(&dev_ddtr);
 		dev = &cp->cdp_c;
 		KASSERT(cp->cdp_flags & CDP_SCHED_DTR,
 		    ("cdev %p in dev_destroy_tq without CDP_SCHED_DTR", cp));
-		TAILQ_REMOVE(&dev_ddtr, cp, cdp_dtr_list);
+		BSD_TAILQ_REMOVE(&dev_ddtr, cp, cdp_dtr_list);
 		cb = cp->cdp_dtr_cb;
 		cb_arg = cp->cdp_dtr_cb_arg;
 		destroy_devl(dev);
@@ -1346,7 +1346,7 @@ destroy_dev_sched_cbl(struct cdev *dev, void (*cb)(void *), void *arg)
 	cp->cdp_flags |= CDP_SCHED_DTR;
 	cp->cdp_dtr_cb = cb;
 	cp->cdp_dtr_cb_arg = arg;
-	TAILQ_INSERT_TAIL(&dev_ddtr, cp, cdp_dtr_list);
+	BSD_TAILQ_INSERT_TAIL(&dev_ddtr, cp, cdp_dtr_list);
 	dev_unlock();
 	taskqueue_enqueue(taskqueue_swi_giant, &dev_dtr_task);
 	return (1);
@@ -1372,7 +1372,7 @@ destroy_dev_drain(struct cdevsw *csw)
 {
 
 	dev_lock();
-	while (!LIST_EMPTY(&csw->d_devs)) {
+	while (!BSD_LIST_EMPTY(&csw->d_devs)) {
 		msleep(&csw->d_devs, &devmtx, PRIBIO, "devscd", hz/10);
 	}
 	dev_unlock();
@@ -1409,7 +1409,7 @@ DB_SHOW_COMMAND(cdev, db_show_cdev)
 	char buf[512];
 
 	if (!have_addr) {
-		TAILQ_FOREACH(cdp, &cdevp_list, cdp_list) {
+		BSD_TAILQ_FOREACH(cdp, &cdevp_list, cdp_list) {
 			dev = &cdp->cdp_c;
 			db_printf("%s %p\n", dev->si_name, dev);
 			if (db_pager_quit)

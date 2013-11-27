@@ -92,12 +92,12 @@ struct efnet {
 };
 
 struct ef_link {
-	SLIST_ENTRY(ef_link) el_next;
+	BSD_SLIST_ENTRY(ef_link) el_next;
 	struct ifnet	*el_ifp;		/* raw device for this clones */
 	struct efnet	*el_units[EF_NFT];	/* our clones */
 };
 
-static SLIST_HEAD(ef_link_head, ef_link) efdev = {NULL};
+static BSD_SLIST_HEAD(ef_link_head, ef_link) efdev = {NULL};
 static int efcount;
 
 extern int (*ef_inputp)(struct ifnet*, struct ether_header *eh, struct mbuf *m);
@@ -350,7 +350,7 @@ ef_input(struct ifnet *ifp, struct ether_header *eh, struct mbuf *m)
 	 * Check if interface configured for the given frame
 	 */
 	efp = NULL;
-	SLIST_FOREACH(efl, &efdev, el_next) {
+	BSD_SLIST_FOREACH(efl, &efdev, el_next) {
 		if (efl->el_ifp == ifp) {
 			efp = efl->el_units[ft];
 			break;
@@ -505,7 +505,7 @@ ef_load(void)
 		 * this (and other) problems.
 		 */
 		sx_xlock(&ifnet_sxlock);
-		TAILQ_FOREACH(ifp, &V_ifnet, if_link) {
+		BSD_TAILQ_FOREACH(ifp, &V_ifnet, if_link) {
 			if (ifp->if_type != IFT_ETHER) continue;
 			EFDEBUG("Found interface %s\n", ifp->if_xname);
 			efl = (struct ef_link*)bsd_malloc(sizeof(struct ef_link), 
@@ -533,7 +533,7 @@ ef_load(void)
 			if (error) break;
 #endif
 			efcount++;
-			SLIST_INSERT_HEAD(&efdev, efl, el_next);
+			BSD_SLIST_INSERT_HEAD(&efdev, efl, el_next);
 		}
 		sx_xunlock(&ifnet_sxlock);
 		CURVNET_RESTORE();
@@ -541,8 +541,8 @@ ef_load(void)
 	VNET_LIST_RUNLOCK();
 	if (error) {
 		if (efl)
-			SLIST_INSERT_HEAD(&efdev, efl, el_next);
-		SLIST_FOREACH_SAFE(efl, &efdev, el_next, efl_temp) {
+			BSD_SLIST_INSERT_HEAD(&efdev, efl, el_next);
+		BSD_SLIST_FOREACH_SAFE(efl, &efdev, el_next, efl_temp) {
 			for (d = 0; d < EF_NFT; d++)
 				if (efl->el_units[d]) {
 					if (efl->el_units[d]->ef_pifp != NULL)
@@ -553,7 +553,7 @@ ef_load(void)
 		}
 		return error;
 	}
-	SLIST_FOREACH(efl, &efdev, el_next) {
+	BSD_SLIST_FOREACH(efl, &efdev, el_next) {
 		for (d = 0; d < EF_NFT; d++) {
 			efp = efl->el_units[d];
 			if (efp)
@@ -575,7 +575,7 @@ ef_unload(void)
 
 	ef_inputp = NULL;
 	ef_outputp = NULL;
-	SLIST_FOREACH(efl, &efdev, el_next) {
+	BSD_SLIST_FOREACH(efl, &efdev, el_next) {
 		for (d = 0; d < EF_NFT; d++) {
 			efp = efl->el_units[d];
 			if (efp) {

@@ -50,7 +50,7 @@ struct intr_handler {
 	char		 ih_name[MAXCOMLEN + 1]; /* Name of handler. */
 	struct intr_event *ih_event;	/* Event we are connected to. */
 	int		 ih_need;	/* Needs service. */
-	TAILQ_ENTRY(intr_handler) ih_next; /* Next handler for this event. */
+	BSD_TAILQ_ENTRY(intr_handler) ih_next; /* Next handler for this event. */
 	u_char		 ih_pri;	/* Priority of this handler. */
 	struct intr_thread *ih_thread;	/* Ithread for filtered handler. */
 };
@@ -102,8 +102,8 @@ struct intr_handler {
  * if desired.
  */
 struct intr_event {
-	TAILQ_ENTRY(intr_event) ie_list;
-	TAILQ_HEAD(, intr_handler) ie_handlers; /* Interrupt handlers. */
+	BSD_TAILQ_ENTRY(intr_event) ie_list;
+	BSD_TAILQ_HEAD(, intr_handler) ie_handlers; /* Interrupt handlers. */
 	char		ie_name[MAXCOMLEN + 1]; /* Individual event name. */
 	char		ie_fullname[MAXCOMLEN + 1];
 	struct mtx	ie_lock;

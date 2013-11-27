@@ -53,7 +53,7 @@ struct uio;
 /*
  * To avoid including <ufs/ffs/softdep.h> 
  */   
-LIST_HEAD(workhead, worklist);
+BSD_LIST_HEAD(workhead, worklist);
 /*
  * These are currently used only by the soft dependency code, hence
  * are stored once in a global variable. If other subsystems wanted
@@ -105,11 +105,11 @@ struct buf {
 	void	(*b_iodone)(struct buf *);
 	daddr_t b_blkno;		/* Underlying physical block number. */
 	off_t	b_offset;		/* Offset into file. */
-	TAILQ_ENTRY(buf) b_bobufs;	/* (V) Buffer's associated vnode. */
+	BSD_TAILQ_ENTRY(buf) b_bobufs;	/* (V) Buffer's associated vnode. */
 	struct buf	*b_left;	/* (V) splay tree link */
 	struct buf	*b_right;	/* (V) splay tree link */
 	uint32_t	b_vflags;	/* (V) BV_* flags */
-	TAILQ_ENTRY(buf) b_freelist;	/* (Q) Free list position inactive. */
+	BSD_TAILQ_ENTRY(buf) b_freelist;	/* (Q) Free list position inactive. */
 	unsigned short b_qindex;	/* (Q) buffer queue index */
 	uint32_t	b_flags;	/* B_* flags. */
 	b_xflags_t b_xflags;		/* extra flags */
@@ -130,8 +130,8 @@ struct buf {
 		int	pg_reqpage;
 	} b_pager;
 	union	cluster_info {
-		TAILQ_HEAD(cluster_list_head, buf) cluster_head;
-		TAILQ_ENTRY(buf) cluster_entry;
+		BSD_TAILQ_HEAD(cluster_list_head, buf) cluster_head;
+		BSD_TAILQ_ENTRY(buf) cluster_entry;
 	} b_cluster;
 	struct	vm_page *b_pages[btoc(MAXPHYS)];
 	int		b_npages;
@@ -364,7 +364,7 @@ extern const char *buf_wmesg;		/* Default buffer lock message */
 #endif /* _KERNEL */
 
 struct buf_queue_head {
-	TAILQ_HEAD(buf_queue, buf) queue;
+	BSD_TAILQ_HEAD(buf_queue, buf) queue;
 	daddr_t last_pblkno;
 	struct	buf *insert_point;
 	struct	buf *switch_point;

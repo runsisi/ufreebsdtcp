@@ -215,7 +215,7 @@ tcp_hc_init(void)
 	 * Initialize the hash buckets.
 	 */
 	for (i = 0; i < V_tcp_hostcache.hashsize; i++) {
-		TAILQ_INIT(&V_tcp_hostcache.hashbase[i].hch_bucket);
+		BSD_TAILQ_INIT(&V_tcp_hostcache.hashbase[i].hch_bucket);
 		V_tcp_hostcache.hashbase[i].hch_length = 0;
 		mtx_init(&V_tcp_hostcache.hashbase[i].hch_mtx, "tcp_hc_entry",
 			  NULL, MTX_DEF);
@@ -292,7 +292,7 @@ tcp_hc_lookup(struct in_conninfo *inc)
 	/*
 	 * Iterate through entries in bucket row looking for a match.
 	 */
-	TAILQ_FOREACH(hc_entry, &hc_head->hch_bucket, rmx_q) {
+	BSD_TAILQ_FOREACH(hc_entry, &hc_head->hch_bucket, rmx_q) {
 		if (inc->inc_flags & INC_ISIPV6) {
 			if (memcmp(&inc->inc6_faddr, &hc_entry->ip6,
 			    sizeof(inc->inc6_faddr)) == 0)
@@ -349,7 +349,7 @@ tcp_hc_insert(struct in_conninfo *inc)
 	 */
 	if (hc_head->hch_length >= V_tcp_hostcache.bucket_limit ||
 	    V_tcp_hostcache.cache_count >= V_tcp_hostcache.cache_limit) {
-		hc_entry = TAILQ_LAST(&hc_head->hch_bucket, hc_qhead);
+		hc_entry = BSD_TAILQ_LAST(&hc_head->hch_bucket, hc_qhead);
 		/*
 		 * At first we were dropping the last element, just to
 		 * reacquire it in the next two lines again, which isn't very
@@ -363,7 +363,7 @@ tcp_hc_insert(struct in_conninfo *inc)
 			THC_UNLOCK(&hc_head->hch_mtx);
 			return NULL;
 		}
-		TAILQ_REMOVE(&hc_head->hch_bucket, hc_entry, rmx_q);
+		BSD_TAILQ_REMOVE(&hc_head->hch_bucket, hc_entry, rmx_q);
 		V_tcp_hostcache.hashbase[hash].hch_length--;
 		V_tcp_hostcache.cache_count--;
 		TCPSTAT_INC(tcps_hc_bucketoverflow);
@@ -395,7 +395,7 @@ tcp_hc_insert(struct in_conninfo *inc)
 	/*
 	 * Put it upfront.
 	 */
-	TAILQ_INSERT_HEAD(&hc_head->hch_bucket, hc_entry, rmx_q);
+	BSD_TAILQ_INSERT_HEAD(&hc_head->hch_bucket, hc_entry, rmx_q);
 	V_tcp_hostcache.hashbase[hash].hch_length++;
 	V_tcp_hostcache.cache_count++;
 	TCPSTAT_INC(tcps_hc_added);
@@ -496,8 +496,8 @@ tcp_hc_updatemtu(struct in_conninfo *inc, u_long mtu)
 	/*
 	 * Put it upfront so we find it faster next time.
 	 */
-	TAILQ_REMOVE(&hc_entry->rmx_head->hch_bucket, hc_entry, rmx_q);
-	TAILQ_INSERT_HEAD(&hc_entry->rmx_head->hch_bucket, hc_entry, rmx_q);
+	BSD_TAILQ_REMOVE(&hc_entry->rmx_head->hch_bucket, hc_entry, rmx_q);
+	BSD_TAILQ_INSERT_HEAD(&hc_entry->rmx_head->hch_bucket, hc_entry, rmx_q);
 
 	/*
 	 * Unlock bucket row.
@@ -580,8 +580,8 @@ tcp_hc_update(struct in_conninfo *inc, struct hc_metrics_lite *hcml)
 		/* TCPSTAT_INC(tcps_cachedrecvpipe); */
 	}
 
-	TAILQ_REMOVE(&hc_entry->rmx_head->hch_bucket, hc_entry, rmx_q);
-	TAILQ_INSERT_HEAD(&hc_entry->rmx_head->hch_bucket, hc_entry, rmx_q);
+	BSD_TAILQ_REMOVE(&hc_entry->rmx_head->hch_bucket, hc_entry, rmx_q);
+	BSD_TAILQ_INSERT_HEAD(&hc_entry->rmx_head->hch_bucket, hc_entry, rmx_q);
 	THC_UNLOCK(&hc_entry->rmx_head->hch_mtx);
 }
 
@@ -613,7 +613,7 @@ sysctl_tcp_hc_list(SYSCTL_HANDLER_ARGS)
 #define msec(u) (((u) + 500) / 1000)
 	for (i = 0; i < V_tcp_hostcache.hashsize; i++) {
 		THC_LOCK(&V_tcp_hostcache.hashbase[i].hch_mtx);
-		TAILQ_FOREACH(hc_entry, &V_tcp_hostcache.hashbase[i].hch_bucket,
+		BSD_TAILQ_FOREACH(hc_entry, &V_tcp_hostcache.hashbase[i].hch_bucket,
 			      rmx_q) {
 			len = snprintf(p, linesize,
 			    "%-15s %5lu %8lu %6lums %6lums %9lu %8lu %8lu %8lu "
@@ -658,10 +658,10 @@ tcp_hc_purge_internal(int all)
 
 	for (i = 0; i < V_tcp_hostcache.hashsize; i++) {
 		THC_LOCK(&V_tcp_hostcache.hashbase[i].hch_mtx);
-		TAILQ_FOREACH_SAFE(hc_entry,
+		BSD_TAILQ_FOREACH_SAFE(hc_entry,
 		    &V_tcp_hostcache.hashbase[i].hch_bucket, rmx_q, hc_next) {
 			if (all || hc_entry->rmx_expire <= 0) {
-				TAILQ_REMOVE(&V_tcp_hostcache.hashbase[i].hch_bucket,
+				BSD_TAILQ_REMOVE(&V_tcp_hostcache.hashbase[i].hch_bucket,
 					      hc_entry, rmx_q);
 				uma_zfree(V_tcp_hostcache.zone, hc_entry);
 				V_tcp_hostcache.hashbase[i].hch_length--;

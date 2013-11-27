@@ -1254,14 +1254,14 @@ SYSCTL_DECL(_net_bpf);
  * this function via BPF_INTERNAL define
  */
 struct bpf_if {
-	LIST_ENTRY(bpf_if)	bif_next;	/* list of all interfaces */
-	LIST_HEAD(, bpf_d)	bif_dlist;	/* descriptor list */
+	BSD_LIST_ENTRY(bpf_if)	bif_next;	/* list of all interfaces */
+	BSD_LIST_HEAD(, bpf_d)	bif_dlist;	/* descriptor list */
 #ifdef BPF_INTERNAL
 	u_int bif_dlt;				/* link layer type */
 	u_int bif_hdrlen;		/* length of link header */
 	struct ifnet *bif_ifp;		/* corresponding interface */
 	struct rwlock bif_lock;		/* interface lock */
-	LIST_HEAD(, bpf_d)	bif_wlist;	/* writer-only list */
+	BSD_LIST_HEAD(, bpf_d)	bif_wlist;	/* writer-only list */
 	int flags;			/* Interface flags */
 #endif
 };
@@ -1282,7 +1282,7 @@ static __inline int
 bpf_peers_present(struct bpf_if *bpf)
 {
 
-	if (!LIST_EMPTY(&bpf->bif_dlist))
+	if (!BSD_LIST_EMPTY(&bpf->bif_dlist))
 		return (1);
 	return (0);
 }

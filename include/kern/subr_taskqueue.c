@@ -49,14 +49,14 @@ static void	*taskqueue_ih;
 
 struct taskqueue_busy {
 	struct task	*tb_running;
-	TAILQ_ENTRY(taskqueue_busy) tb_link;
+	BSD_TAILQ_ENTRY(taskqueue_busy) tb_link;
 };
 
 struct taskqueue {
-	STAILQ_HEAD(, task)	tq_queue;
+	BSD_STAILQ_HEAD(, task)	tq_queue;
 	taskqueue_enqueue_fn	tq_enqueue;
 	void			*tq_context;
-	TAILQ_HEAD(, taskqueue_busy) tq_active;
+	BSD_TAILQ_HEAD(, taskqueue_busy) tq_active;
 	struct mtx		tq_mutex;
 	struct thread		**tq_threads;
 	int			tq_tcount;
@@ -118,8 +118,8 @@ _taskqueue_create(const char *name __unused, int mflags,
 	if (!queue)
 		return NULL;
 
-	STAILQ_INIT(&queue->tq_queue);
-	TAILQ_INIT(&queue->tq_active);
+	BSD_STAILQ_INIT(&queue->tq_queue);
+	BSD_TAILQ_INIT(&queue->tq_active);
 	queue->tq_enqueue = enqueue;
 	queue->tq_context = context;
 	queue->tq_spin = (mtxflags & MTX_SPIN) != 0;
@@ -157,7 +157,7 @@ taskqueue_free(struct taskqueue *queue)
 	TQ_LOCK(queue);
 	queue->tq_flags &= ~TQ_FLAGS_ACTIVE;
 	taskqueue_terminate(queue->tq_threads, queue);
-	KASSERT(TAILQ_EMPTY(&queue->tq_active), ("Tasks still running?"));
+	KASSERT(BSD_TAILQ_EMPTY(&queue->tq_active), ("Tasks still running?"));
 	KASSERT(queue->tq_callouts == 0, ("Armed timeout tasks"));
 	mtx_destroy(&queue->tq_mutex);
 	bsd_free(queue->tq_threads, M_TASKQUEUE);
@@ -182,20 +182,20 @@ taskqueue_enqueue_locked(struct taskqueue *queue, struct task *task)
 	/*
 	 * Optimise the case when all tasks have the same priority.
 	 */
-	prev = STAILQ_LAST(&queue->tq_queue, task, ta_link);
+	prev = BSD_STAILQ_LAST(&queue->tq_queue, task, ta_link);
 	if (!prev || prev->ta_priority >= task->ta_priority) {
-		STAILQ_INSERT_TAIL(&queue->tq_queue, task, ta_link);
+		BSD_STAILQ_INSERT_TAIL(&queue->tq_queue, task, ta_link);
 	} else {
 		prev = NULL;
-		for (ins = STAILQ_FIRST(&queue->tq_queue); ins;
-		     prev = ins, ins = STAILQ_NEXT(ins, ta_link))
+		for (ins = BSD_STAILQ_FIRST(&queue->tq_queue); ins;
+		     prev = ins, ins = BSD_STAILQ_NEXT(ins, ta_link))
 			if (ins->ta_priority < task->ta_priority)
 				break;
 
 		if (prev)
-			STAILQ_INSERT_AFTER(&queue->tq_queue, prev, task, ta_link);
+			BSD_STAILQ_INSERT_AFTER(&queue->tq_queue, prev, task, ta_link);
 		else
-			STAILQ_INSERT_HEAD(&queue->tq_queue, task, ta_link);
+			BSD_STAILQ_INSERT_HEAD(&queue->tq_queue, task, ta_link);
 	}
 
 	task->ta_pending = 1;
@@ -295,15 +295,15 @@ taskqueue_run_locked(struct taskqueue *queue)
 
 	mtx_assert(&queue->tq_mutex, MA_OWNED);
 	tb.tb_running = NULL;
-	TAILQ_INSERT_TAIL(&queue->tq_active, &tb, tb_link);
+	BSD_TAILQ_INSERT_TAIL(&queue->tq_active, &tb, tb_link);
 
-	while (STAILQ_FIRST(&queue->tq_queue)) {
+	while (BSD_STAILQ_FIRST(&queue->tq_queue)) {
 		/*
 		 * Carefully remove the first task from the queue and
 		 * zero its pending count.
 		 */
-		task = STAILQ_FIRST(&queue->tq_queue);
-		STAILQ_REMOVE_HEAD(&queue->tq_queue, ta_link);
+		task = BSD_STAILQ_FIRST(&queue->tq_queue);
+		BSD_STAILQ_REMOVE_HEAD(&queue->tq_queue, ta_link);
 		pending = task->ta_pending;
 		task->ta_pending = 0;
 		tb.tb_running = task;
@@ -315,7 +315,7 @@ taskqueue_run_locked(struct taskqueue *queue)
 		tb.tb_running = NULL;
 		wakeup(task);
 	}
-	TAILQ_REMOVE(&queue->tq_active, &tb, tb_link);
+	BSD_TAILQ_REMOVE(&queue->tq_active, &tb, tb_link);
 }
 
 void
@@ -333,7 +333,7 @@ task_is_running(struct taskqueue *queue, struct task *task)
 	struct taskqueue_busy *tb;
 
 	mtx_assert(&queue->tq_mutex, MA_OWNED);
-	TAILQ_FOREACH(tb, &queue->tq_active, tb_link) {
+	BSD_TAILQ_FOREACH(tb, &queue->tq_active, tb_link) {
 		if (tb->tb_running == task)
 			return (1);
 	}
@@ -346,7 +346,7 @@ taskqueue_cancel_locked(struct taskqueue *queue, struct task *task,
 {
 
 	if (task->ta_pending > 0)
-		STAILQ_REMOVE(&queue->tq_queue, task, task, ta_link);
+		BSD_STAILQ_REMOVE(&queue->tq_queue, task, task, ta_link);
 	if (pendp != NULL)
 		*pendp = task->ta_pending;
 	task->ta_pending = 0;

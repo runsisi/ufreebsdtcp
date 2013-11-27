@@ -1831,7 +1831,7 @@ vm_map_pmap_enter(vm_map_t map, vm_offset_t addr, vm_prot_t prot,
 	 */
 	for (;
 	     p != NULL && (tmpidx = p->pindex - pindex) < psize;
-	     p = TAILQ_NEXT(p, listq)) {
+	     p = BSD_TAILQ_NEXT(p, listq)) {
 		/*
 		 * don't allow an madvise to blow away our really
 		 * free pages allocating pv entries.

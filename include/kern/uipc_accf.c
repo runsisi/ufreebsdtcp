@@ -53,8 +53,8 @@ MTX_SYSINIT(accept_filter, &accept_filter_mtx, "accept_filter_mtx",
 #define	ACCEPT_FILTER_LOCK()	mtx_lock(&accept_filter_mtx)
 #define	ACCEPT_FILTER_UNLOCK()	mtx_unlock(&accept_filter_mtx)
 
-static SLIST_HEAD(, accept_filter) accept_filtlsthd =
-	SLIST_HEAD_INITIALIZER(accept_filtlsthd);
+static BSD_SLIST_HEAD(, accept_filter) accept_filtlsthd =
+	BSD_SLIST_HEAD_INITIALIZER(accept_filtlsthd);
 
 MALLOC_DEFINE(M_ACCF, "accf", "accept filter data");
 
@@ -76,7 +76,7 @@ accept_filt_add(struct accept_filter *filt)
 	struct accept_filter *p;
 
 	ACCEPT_FILTER_LOCK();
-	SLIST_FOREACH(p, &accept_filtlsthd, accf_next)
+	BSD_SLIST_FOREACH(p, &accept_filtlsthd, accf_next)
 		if (strcmp(p->accf_name, filt->accf_name) == 0)  {
 			if (p->accf_callback != NULL) {
 				ACCEPT_FILTER_UNLOCK();
@@ -90,7 +90,7 @@ accept_filt_add(struct accept_filter *filt)
 		}
 				
 	if (p == NULL)
-		SLIST_INSERT_HEAD(&accept_filtlsthd, filt, accf_next);
+		BSD_SLIST_INSERT_HEAD(&accept_filtlsthd, filt, accf_next);
 	ACCEPT_FILTER_UNLOCK();
 	return (0);
 }
@@ -114,7 +114,7 @@ accept_filt_get(char *name)
 	struct accept_filter *p;
 
 	ACCEPT_FILTER_LOCK();
-	SLIST_FOREACH(p, &accept_filtlsthd, accf_next)
+	BSD_SLIST_FOREACH(p, &accept_filtlsthd, accf_next)
 		if (strcmp(p->accf_name, name) == 0)
 			break;
 	ACCEPT_FILTER_UNLOCK();

@@ -277,7 +277,7 @@ sigqueue_init(sigqueue_t *list, struct proc *p)
 {
 	SIGEMPTYSET(list->sq_signals);
 	SIGEMPTYSET(list->sq_kill);
-	TAILQ_INIT(&list->sq_list);
+	BSD_TAILQ_INIT(&list->sq_list);
 	list->sq_proc = p;
 	list->sq_flags = SQ_INIT;
 }
@@ -305,10 +305,10 @@ sigqueue_get(sigqueue_t *sq, int signo, ksiginfo_t *si)
 		SIGDELSET(sq->sq_kill, signo);
 	}
 
-	TAILQ_FOREACH_SAFE(ksi, &sq->sq_list, ksi_link, next) {
+	BSD_TAILQ_FOREACH_SAFE(ksi, &sq->sq_list, ksi_link, next) {
 		if (ksi->ksi_signo == signo) {
 			if (count == 0) {
-				TAILQ_REMOVE(&sq->sq_list, ksi, ksi_link);
+				BSD_TAILQ_REMOVE(&sq->sq_list, ksi, ksi_link);
 				ksi->ksi_sigq = NULL;
 				ksiginfo_copy(ksi, si);
 				if (ksiginfo_tryfree(ksi) && p != NULL)
@@ -336,13 +336,13 @@ sigqueue_take(ksiginfo_t *ksi)
 		return;
 
 	p = sq->sq_proc;
-	TAILQ_REMOVE(&sq->sq_list, ksi, ksi_link);
+	BSD_TAILQ_REMOVE(&sq->sq_list, ksi, ksi_link);
 	ksi->ksi_sigq = NULL;
 	if (!(ksi->ksi_flags & KSI_EXT) && p != NULL)
 		p->p_pendingcnt--;
 
-	for (kp = TAILQ_FIRST(&sq->sq_list); kp != NULL;
-	     kp = TAILQ_NEXT(kp, ksi_link)) {
+	for (kp = BSD_TAILQ_FIRST(&sq->sq_list); kp != NULL;
+	     kp = BSD_TAILQ_NEXT(kp, ksi_link)) {
 		if (kp->ksi_signo == ksi->ksi_signo)
 			break;
 	}
@@ -367,9 +367,9 @@ sigqueue_add(sigqueue_t *sq, int signo, ksiginfo_t *si)
 	/* directly insert the ksi, don't copy it */
 	if (si->ksi_flags & KSI_INS) {
 		if (si->ksi_flags & KSI_HEAD)
-			TAILQ_INSERT_HEAD(&sq->sq_list, si, ksi_link);
+			BSD_TAILQ_INSERT_HEAD(&sq->sq_list, si, ksi_link);
 		else
-			TAILQ_INSERT_TAIL(&sq->sq_list, si, ksi_link);
+			BSD_TAILQ_INSERT_TAIL(&sq->sq_list, si, ksi_link);
 		si->ksi_sigq = sq;
 		goto out_set_bit;
 	}
@@ -391,9 +391,9 @@ sigqueue_add(sigqueue_t *sq, int signo, ksiginfo_t *si)
 		ksiginfo_copy(si, ksi);
 		ksi->ksi_signo = signo;
 		if (si->ksi_flags & KSI_HEAD)
-			TAILQ_INSERT_HEAD(&sq->sq_list, ksi, ksi_link);
+			BSD_TAILQ_INSERT_HEAD(&sq->sq_list, ksi, ksi_link);
 		else
-			TAILQ_INSERT_TAIL(&sq->sq_list, ksi, ksi_link);
+			BSD_TAILQ_INSERT_TAIL(&sq->sq_list, ksi, ksi_link);
 		ksi->ksi_sigq = sq;
 	}
 
@@ -424,8 +424,8 @@ sigqueue_flush(sigqueue_t *sq)
 	if (p != NULL)
 		PROC_LOCK_ASSERT(p, MA_OWNED);
 
-	while ((ksi = TAILQ_FIRST(&sq->sq_list)) != NULL) {
-		TAILQ_REMOVE(&sq->sq_list, ksi, ksi_link);
+	while ((ksi = BSD_TAILQ_FIRST(&sq->sq_list)) != NULL) {
+		BSD_TAILQ_REMOVE(&sq->sq_list, ksi, ksi_link);
 		ksi->ksi_sigq = NULL;
 		if (ksiginfo_tryfree(ksi) && p != NULL)
 			p->p_pendingcnt--;
@@ -447,12 +447,12 @@ sigqueue_move_set(sigqueue_t *src, sigqueue_t *dst, const sigset_t *set)
 	p1 = src->sq_proc;
 	p2 = dst->sq_proc;
 	/* Move siginfo to target list */
-	TAILQ_FOREACH_SAFE(ksi, &src->sq_list, ksi_link, next) {
+	BSD_TAILQ_FOREACH_SAFE(ksi, &src->sq_list, ksi_link, next) {
 		if (SIGISMEMBER(*set, ksi->ksi_signo)) {
-			TAILQ_REMOVE(&src->sq_list, ksi, ksi_link);
+			BSD_TAILQ_REMOVE(&src->sq_list, ksi, ksi_link);
 			if (p1 != NULL)
 				p1->p_pendingcnt--;
-			TAILQ_INSERT_TAIL(&dst->sq_list, ksi, ksi_link);
+			BSD_TAILQ_INSERT_TAIL(&dst->sq_list, ksi, ksi_link);
 			ksi->ksi_sigq = dst;
 			if (p2 != NULL)
 				p2->p_pendingcnt++;
@@ -492,9 +492,9 @@ sigqueue_delete_set(sigqueue_t *sq, const sigset_t *set)
 	KASSERT(sq->sq_flags & SQ_INIT, ("src sigqueue not inited"));
 
 	/* Remove siginfo queue */
-	TAILQ_FOREACH_SAFE(ksi, &sq->sq_list, ksi_link, next) {
+	BSD_TAILQ_FOREACH_SAFE(ksi, &sq->sq_list, ksi_link, next) {
 		if (SIGISMEMBER(*set, ksi->ksi_signo)) {
-			TAILQ_REMOVE(&sq->sq_list, ksi, ksi_link);
+			BSD_TAILQ_REMOVE(&sq->sq_list, ksi, ksi_link);
 			ksi->ksi_sigq = NULL;
 			if (ksiginfo_tryfree(ksi) && p != NULL)
 				p->p_pendingcnt--;
@@ -1643,7 +1643,7 @@ killpg1(struct thread *td, int sig, int pgid, int all, ksiginfo_t *ksi)
 			}
 		}
 		sx_sunlock(&proctree_lock);
-		LIST_FOREACH(p, &pgrp->pg_members, p_pglist) {
+		BSD_LIST_FOREACH(p, &pgrp->pg_members, p_pglist) {
 			PROC_LOCK(p);	      
 			if (p->p_pid <= 1 || p->p_flag & P_SYSTEM ||
 			    p->p_state == PRS_NEW) {
@@ -1842,7 +1842,7 @@ pgsignal(struct pgrp *pgrp, int sig, int checkctty, ksiginfo_t *ksi)
 
 	if (pgrp) {
 		PGRP_LOCK_ASSERT(pgrp, MA_OWNED);
-		LIST_FOREACH(p, &pgrp->pg_members, p_pglist) {
+		BSD_LIST_FOREACH(p, &pgrp->pg_members, p_pglist) {
 			PROC_LOCK(p);
 			if (p->p_state == PRS_NORMAL &&
 			    (checkctty == 0 || p->p_flag & P_CONTROLT))
@@ -3399,7 +3399,7 @@ pgsigio(sigiop, sig, checkctty)
 		struct proc *p;
 
 		PGRP_LOCK(sigio->sio_pgrp);
-		LIST_FOREACH(p, &sigio->sio_pgrp->pg_members, p_pglist) {
+		BSD_LIST_FOREACH(p, &sigio->sio_pgrp->pg_members, p_pglist) {
 			PROC_LOCK(p);
 			if (p->p_state == PRS_NORMAL &&
 			    CANSIGIO(sigio->sio_ucred, p->p_ucred) &&

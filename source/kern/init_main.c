@@ -458,13 +458,13 @@ proc0_init(void *dummy __unused)
 	/*
 	 * Create process 0 (the swapper).
 	 */
-	LIST_INSERT_HEAD(&allproc, p, p_list);
-	LIST_INSERT_HEAD(PIDHASH(0), p, p_hash);
+	BSD_LIST_INSERT_HEAD(&allproc, p, p_list);
+	BSD_LIST_INSERT_HEAD(PIDHASH(0), p, p_hash);
 	mtx_init(&pgrp0.pg_mtx, "process group", NULL, MTX_DEF | MTX_DUPOK);
 	p->p_pgrp = &pgrp0;
-	LIST_INSERT_HEAD(PGRPHASH(0), &pgrp0, pg_hash);
-	LIST_INIT(&pgrp0.pg_members);
-	LIST_INSERT_HEAD(&pgrp0.pg_members, p, p_pglist);
+	BSD_LIST_INSERT_HEAD(PGRPHASH(0), &pgrp0, pg_hash);
+	BSD_LIST_INIT(&pgrp0.pg_members);
+	BSD_LIST_INSERT_HEAD(&pgrp0.pg_members, p, p_pglist);
 
 	pgrp0.pg_session = &session0;
 	mtx_init(&session0.s_mtx, "session", NULL, MTX_DEF);
@@ -475,11 +475,11 @@ proc0_init(void *dummy __unused)
 	p->p_flag = P_SYSTEM | P_INMEM;
 	p->p_state = PRS_NORMAL;
 	knlist_init_mtx(&p->p_klist, &p->p_mtx);
-	STAILQ_INIT(&p->p_ktr);
+	BSD_STAILQ_INIT(&p->p_ktr);
 	p->p_nice = NZERO;
 	/* pid_max cannot be greater than PID_MAX */
 	td->td_tid = PID_MAX + 1;
-	LIST_INSERT_HEAD(TIDHASH(td->td_tid), td, td_hash);
+	BSD_LIST_INSERT_HEAD(TIDHASH(td->td_tid), td, td_hash);
 	td->td_state = TDS_RUNNING;
 	td->td_pri_class = PRI_TIMESHARE;
 	td->td_user_pri = PUSER;

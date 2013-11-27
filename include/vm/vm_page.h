@@ -111,7 +111,7 @@
  *	field is encapsulated in vm_page_clear_dirty_mask().
  */
 
-TAILQ_HEAD(pglist, vm_page);
+BSD_TAILQ_HEAD(pglist, vm_page);
 
 #if PAGE_SIZE == 4096
 #define VM_PAGE_BITS_ALL 0xffu
@@ -128,8 +128,8 @@ typedef uint64_t vm_page_bits_t;
 #endif
 
 struct vm_page {
-	TAILQ_ENTRY(vm_page) pageq;	/* queue info for FIFO queue or free list (Q) */
-	TAILQ_ENTRY(vm_page) listq;	/* pages in same object (O) 	*/
+	BSD_TAILQ_ENTRY(vm_page) pageq;	/* queue info for FIFO queue or free list (Q) */
+	BSD_TAILQ_ENTRY(vm_page) listq;	/* pages in same object (O) 	*/
 	struct vm_page *left;		/* splay tree link (O)		*/
 	struct vm_page *right;		/* splay tree link (O)		*/
 

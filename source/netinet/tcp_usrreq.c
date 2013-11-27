@@ -1442,7 +1442,7 @@ unlock_and_done:
 			 */
 			error = EINVAL;
 			CC_LIST_RLOCK();
-			STAILQ_FOREACH(algo, &cc_list, entries) {
+			BSD_STAILQ_FOREACH(algo, &cc_list, entries) {
 				if (strncmp(buf, algo->name, TCP_CA_NAME_MAX)
 				    == 0) {
 					/* We've found the requested algo. */
@@ -1471,7 +1471,7 @@ unlock_and_done:
 							 */
 							error = ENOMEM;
 						}
-					break; /* Break the STAILQ_FOREACH. */
+					break; /* Break the BSD_STAILQ_FOREACH. */
 				}
 			}
 			CC_LIST_RUNLOCK();
@@ -1937,7 +1937,7 @@ db_print_tcpcb(struct tcpcb *tp, const char *name, int indent)
 
 	db_print_indent(indent);
 	db_printf("t_segq first: %p   t_segqlen: %d   t_dupacks: %d\n",
-	   LIST_FIRST(&tp->t_segq), tp->t_segqlen, tp->t_dupacks);
+	   BSD_LIST_FIRST(&tp->t_segq), tp->t_segqlen, tp->t_dupacks);
 
 	db_print_indent(indent);
 	db_printf("tt_rexmt: %p   tt_persist: %p   tt_keep: %p\n",
@@ -2026,7 +2026,7 @@ db_print_tcpcb(struct tcpcb *tp, const char *name, int indent)
 
 	db_print_indent(indent);
 	db_printf("snd_numholes: %d  snd_holes first: %p\n",
-	    tp->snd_numholes, TAILQ_FIRST(&tp->snd_holes));
+	    tp->snd_numholes, BSD_TAILQ_FIRST(&tp->snd_holes));
 
 	db_print_indent(indent);
 	db_printf("snd_fack: 0x%08x   rcv_numsacks: %d   sack_newdata: "

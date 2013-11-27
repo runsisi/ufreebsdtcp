@@ -62,8 +62,8 @@ struct inpcbpolicy;
  * numbers, and pointers up (to a socket structure) and down (to a
  * protocol-specific control block) are stored here.
  */
-LIST_HEAD(inpcbhead, inpcb);
-LIST_HEAD(inpcbporthead, inpcbport);
+BSD_LIST_HEAD(inpcbhead, inpcb);
+BSD_LIST_HEAD(inpcbporthead, inpcbport);
 typedef	u_quad_t	inp_gen_t;
 
 /*
@@ -161,13 +161,13 @@ struct	icmp6_filter;
  * The inp_vflag field is overloaded, and would otherwise ideally be (c).
  */
 struct inpcb {
-	LIST_ENTRY(inpcb) inp_hash;	/* (i/p) hash list */
-	LIST_ENTRY(inpcb) inp_pcbgrouphash;	/* (g/i) hash list */
-	LIST_ENTRY(inpcb) inp_list;	/* (i/p) list for all PCBs for proto */
+	BSD_LIST_ENTRY(inpcb) inp_hash;	/* (i/p) hash list */
+	BSD_LIST_ENTRY(inpcb) inp_pcbgrouphash;	/* (g/i) hash list */
+	BSD_LIST_ENTRY(inpcb) inp_list;	/* (i/p) list for all PCBs for proto */
 	void	*inp_ppcb;		/* (i) pointer to per-protocol pcb */
 	struct	inpcbinfo *inp_pcbinfo;	/* (c) PCB list info */
 	struct	inpcbgroup *inp_pcbgroup; /* (g/i) PCB group list */
-	LIST_ENTRY(inpcb) inp_pcbgroup_wild; /* (g/i/p) group wildcard entry */
+	BSD_LIST_ENTRY(inpcb) inp_pcbgroup_wild; /* (g/i/p) group wildcard entry */
 	struct	socket *inp_socket;	/* (i) back pointer to socket */
 	struct	ucred	*inp_cred;	/* (c) cache of socket cred */
 	u_int32_t inp_flow;		/* (i) IPv6 flow information */
@@ -209,7 +209,7 @@ struct inpcb {
 		int	inp6_cksum;
 		short	inp6_hops;
 	} inp_depend6;
-	LIST_ENTRY(inpcb) inp_portlist;	/* (i/p) */
+	BSD_LIST_ENTRY(inpcb) inp_portlist;	/* (i/p) */
 	struct	inpcbport *inp_phd;	/* (i/p) head of this list */
 #define inp_zero_size offsetof(struct inpcb, inp_gencnt)
 	inp_gen_t	inp_gencnt;	/* (c) generation count */
@@ -265,7 +265,7 @@ struct	xinpgen {
 #endif /* _SYS_SOCKETVAR_H_ */
 
 struct inpcbport {
-	LIST_ENTRY(inpcbport) phd_hash;
+	BSD_LIST_ENTRY(inpcbport) phd_hash;
 	struct inpcbhead phd_pcblist;
 	u_short phd_port;
 };

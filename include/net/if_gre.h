@@ -49,7 +49,7 @@ typedef enum {
 
 struct gre_softc {
 	struct ifnet *sc_ifp;
-	LIST_ENTRY(gre_softc) sc_list;
+	BSD_LIST_ENTRY(gre_softc) sc_list;
 	int gre_unit;
 	int gre_flags;
 	u_int	gre_fibnum;	/* use this fib for envelopes */
@@ -175,7 +175,7 @@ struct mobip_h {
 #define GRESKEY		_IOW('i', 108, struct ifreq)
 
 #ifdef _KERNEL
-LIST_HEAD(gre_softc_head, gre_softc);
+BSD_LIST_HEAD(gre_softc_head, gre_softc);
 extern struct mtx gre_mtx;
 extern struct gre_softc_head gre_softc_list;
 

@@ -38,7 +38,7 @@ struct tcphdr;
 struct in_conninfo;
 
 struct toedev {
-	TAILQ_ENTRY(toedev) link;	/* glue for toedev_list */
+	BSD_TAILQ_ENTRY(toedev) link;	/* glue for toedev_list */
 	void *tod_softc;		/* TOE driver private data */
 
 	/*

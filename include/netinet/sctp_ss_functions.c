@@ -52,7 +52,7 @@ sctp_ss_default_init(struct sctp_tcb *stcb, struct sctp_association *asoc,
 {
 	uint16_t i;
 
-	TAILQ_INIT(&asoc->ss_data.out_wheel);
+	BSD_TAILQ_INIT(&asoc->ss_data.out_wheel);
 	/*
 	 * If there is data in the stream queues already, the scheduler of
 	 * an existing association has been changed. We need to add all
@@ -73,10 +73,10 @@ sctp_ss_default_clear(struct sctp_tcb *stcb, struct sctp_association *asoc,
 	if (holds_lock == 0) {
 		SCTP_TCB_SEND_LOCK(stcb);
 	}
-	while (!TAILQ_EMPTY(&asoc->ss_data.out_wheel)) {
-		struct sctp_stream_out *strq = TAILQ_FIRST(&asoc->ss_data.out_wheel);
+	while (!BSD_TAILQ_EMPTY(&asoc->ss_data.out_wheel)) {
+		struct sctp_stream_out *strq = BSD_TAILQ_FIRST(&asoc->ss_data.out_wheel);
 
-		TAILQ_REMOVE(&asoc->ss_data.out_wheel, TAILQ_FIRST(&asoc->ss_data.out_wheel), ss_params.rr.next_spoke);
+		BSD_TAILQ_REMOVE(&asoc->ss_data.out_wheel, BSD_TAILQ_FIRST(&asoc->ss_data.out_wheel), ss_params.rr.next_spoke);
 		strq->ss_params.rr.next_spoke.tqe_next = NULL;
 		strq->ss_params.rr.next_spoke.tqe_prev = NULL;
 	}
@@ -104,10 +104,10 @@ sctp_ss_default_add(struct sctp_tcb *stcb, struct sctp_association *asoc,
 		SCTP_TCB_SEND_LOCK(stcb);
 	}
 	/* Add to wheel if not already on it and stream queue not empty */
-	if (!TAILQ_EMPTY(&strq->outqueue) &&
+	if (!BSD_TAILQ_EMPTY(&strq->outqueue) &&
 	    (strq->ss_params.rr.next_spoke.tqe_next == NULL) &&
 	    (strq->ss_params.rr.next_spoke.tqe_prev == NULL)) {
-		TAILQ_INSERT_TAIL(&asoc->ss_data.out_wheel,
+		BSD_TAILQ_INSERT_TAIL(&asoc->ss_data.out_wheel,
 		    strq, ss_params.rr.next_spoke);
 	}
 	if (holds_lock == 0) {
@@ -119,7 +119,7 @@ sctp_ss_default_add(struct sctp_tcb *stcb, struct sctp_association *asoc,
 static int
 sctp_ss_default_is_empty(struct sctp_tcb *stcb SCTP_UNUSED, struct sctp_association *asoc)
 {
-	if (TAILQ_EMPTY(&asoc->ss_data.out_wheel)) {
+	if (BSD_TAILQ_EMPTY(&asoc->ss_data.out_wheel)) {
 		return (1);
 	} else {
 		return (0);
@@ -138,22 +138,22 @@ sctp_ss_default_remove(struct sctp_tcb *stcb, struct sctp_association *asoc,
 	 * Remove from wheel if stream queue is empty and actually is on the
 	 * wheel
 	 */
-	if (TAILQ_EMPTY(&strq->outqueue) &&
+	if (BSD_TAILQ_EMPTY(&strq->outqueue) &&
 	    (strq->ss_params.rr.next_spoke.tqe_next != NULL ||
 	    strq->ss_params.rr.next_spoke.tqe_prev != NULL)) {
 		if (asoc->last_out_stream == strq) {
-			asoc->last_out_stream = TAILQ_PREV(asoc->last_out_stream,
+			asoc->last_out_stream = BSD_TAILQ_PREV(asoc->last_out_stream,
 			    sctpwheel_listhead,
 			    ss_params.rr.next_spoke);
 			if (asoc->last_out_stream == NULL) {
-				asoc->last_out_stream = TAILQ_LAST(&asoc->ss_data.out_wheel,
+				asoc->last_out_stream = BSD_TAILQ_LAST(&asoc->ss_data.out_wheel,
 				    sctpwheel_listhead);
 			}
 			if (asoc->last_out_stream == strq) {
 				asoc->last_out_stream = NULL;
 			}
 		}
-		TAILQ_REMOVE(&asoc->ss_data.out_wheel, strq, ss_params.rr.next_spoke);
+		BSD_TAILQ_REMOVE(&asoc->ss_data.out_wheel, strq, ss_params.rr.next_spoke);
 		strq->ss_params.rr.next_spoke.tqe_next = NULL;
 		strq->ss_params.rr.next_spoke.tqe_prev = NULL;
 	}
@@ -174,11 +174,11 @@ sctp_ss_default_select(struct sctp_tcb *stcb SCTP_UNUSED, struct sctp_nets *net,
 default_again:
 	/* Find the next stream to use */
 	if (strqt == NULL) {
-		strq = TAILQ_FIRST(&asoc->ss_data.out_wheel);
+		strq = BSD_TAILQ_FIRST(&asoc->ss_data.out_wheel);
 	} else {
-		strq = TAILQ_NEXT(strqt, ss_params.rr.next_spoke);
+		strq = BSD_TAILQ_NEXT(strqt, ss_params.rr.next_spoke);
 		if (strq == NULL) {
-			strq = TAILQ_FIRST(&asoc->ss_data.out_wheel);
+			strq = BSD_TAILQ_FIRST(&asoc->ss_data.out_wheel);
 		}
 	}
 
@@ -193,9 +193,9 @@ default_again:
 	 */
 	if (net != NULL && strq != NULL &&
 	    SCTP_BASE_SYSCTL(sctp_cmt_on_off) == 0) {
-		if (TAILQ_FIRST(&strq->outqueue) &&
-		    TAILQ_FIRST(&strq->outqueue)->net != NULL &&
-		    TAILQ_FIRST(&strq->outqueue)->net != net) {
+		if (BSD_TAILQ_FIRST(&strq->outqueue) &&
+		    BSD_TAILQ_FIRST(&strq->outqueue)->net != NULL &&
+		    BSD_TAILQ_FIRST(&strq->outqueue)->net != net) {
 			if (strq == asoc->last_out_stream) {
 				return (NULL);
 			} else {
@@ -254,20 +254,20 @@ sctp_ss_rr_add(struct sctp_tcb *stcb, struct sctp_association *asoc,
 	if (holds_lock == 0) {
 		SCTP_TCB_SEND_LOCK(stcb);
 	}
-	if (!TAILQ_EMPTY(&strq->outqueue) &&
+	if (!BSD_TAILQ_EMPTY(&strq->outqueue) &&
 	    (strq->ss_params.rr.next_spoke.tqe_next == NULL) &&
 	    (strq->ss_params.rr.next_spoke.tqe_prev == NULL)) {
-		if (TAILQ_EMPTY(&asoc->ss_data.out_wheel)) {
-			TAILQ_INSERT_HEAD(&asoc->ss_data.out_wheel, strq, ss_params.rr.next_spoke);
+		if (BSD_TAILQ_EMPTY(&asoc->ss_data.out_wheel)) {
+			BSD_TAILQ_INSERT_HEAD(&asoc->ss_data.out_wheel, strq, ss_params.rr.next_spoke);
 		} else {
-			strqt = TAILQ_FIRST(&asoc->ss_data.out_wheel);
+			strqt = BSD_TAILQ_FIRST(&asoc->ss_data.out_wheel);
 			while (strqt != NULL && (strqt->stream_no < strq->stream_no)) {
-				strqt = TAILQ_NEXT(strqt, ss_params.rr.next_spoke);
+				strqt = BSD_TAILQ_NEXT(strqt, ss_params.rr.next_spoke);
 			}
 			if (strqt != NULL) {
-				TAILQ_INSERT_BEFORE(strqt, strq, ss_params.rr.next_spoke);
+				BSD_TAILQ_INSERT_BEFORE(strqt, strq, ss_params.rr.next_spoke);
 			} else {
-				TAILQ_INSERT_TAIL(&asoc->ss_data.out_wheel, strq, ss_params.rr.next_spoke);
+				BSD_TAILQ_INSERT_TAIL(&asoc->ss_data.out_wheel, strq, ss_params.rr.next_spoke);
 			}
 		}
 	}
@@ -299,11 +299,11 @@ sctp_ss_rrp_packet_done(struct sctp_tcb *stcb SCTP_UNUSED, struct sctp_nets *net
 rrp_again:
 	/* Find the next stream to use */
 	if (strqt == NULL) {
-		strq = TAILQ_FIRST(&asoc->ss_data.out_wheel);
+		strq = BSD_TAILQ_FIRST(&asoc->ss_data.out_wheel);
 	} else {
-		strq = TAILQ_NEXT(strqt, ss_params.rr.next_spoke);
+		strq = BSD_TAILQ_NEXT(strqt, ss_params.rr.next_spoke);
 		if (strq == NULL) {
-			strq = TAILQ_FIRST(&asoc->ss_data.out_wheel);
+			strq = BSD_TAILQ_FIRST(&asoc->ss_data.out_wheel);
 		}
 	}
 
@@ -318,9 +318,9 @@ rrp_again:
 	 */
 	if (net != NULL && strq != NULL &&
 	    SCTP_BASE_SYSCTL(sctp_cmt_on_off) == 0) {
-		if (TAILQ_FIRST(&strq->outqueue) &&
-		    TAILQ_FIRST(&strq->outqueue)->net != NULL &&
-		    TAILQ_FIRST(&strq->outqueue)->net != net) {
+		if (BSD_TAILQ_FIRST(&strq->outqueue) &&
+		    BSD_TAILQ_FIRST(&strq->outqueue)->net != NULL &&
+		    BSD_TAILQ_FIRST(&strq->outqueue)->net != net) {
 			if (strq == asoc->last_out_stream) {
 				strq = NULL;
 			} else {
@@ -345,13 +345,13 @@ sctp_ss_prio_clear(struct sctp_tcb *stcb, struct sctp_association *asoc,
 	if (holds_lock == 0) {
 		SCTP_TCB_SEND_LOCK(stcb);
 	}
-	while (!TAILQ_EMPTY(&asoc->ss_data.out_wheel)) {
-		struct sctp_stream_out *strq = TAILQ_FIRST(&asoc->ss_data.out_wheel);
+	while (!BSD_TAILQ_EMPTY(&asoc->ss_data.out_wheel)) {
+		struct sctp_stream_out *strq = BSD_TAILQ_FIRST(&asoc->ss_data.out_wheel);
 
 		if (clear_values) {
 			strq->ss_params.prio.priority = 0;
 		}
-		TAILQ_REMOVE(&asoc->ss_data.out_wheel, TAILQ_FIRST(&asoc->ss_data.out_wheel), ss_params.prio.next_spoke);
+		BSD_TAILQ_REMOVE(&asoc->ss_data.out_wheel, BSD_TAILQ_FIRST(&asoc->ss_data.out_wheel), ss_params.prio.next_spoke);
 		strq->ss_params.prio.next_spoke.tqe_next = NULL;
 		strq->ss_params.prio.next_spoke.tqe_prev = NULL;
 
@@ -387,20 +387,20 @@ sctp_ss_prio_add(struct sctp_tcb *stcb, struct sctp_association *asoc,
 		SCTP_TCB_SEND_LOCK(stcb);
 	}
 	/* Add to wheel if not already on it and stream queue not empty */
-	if (!TAILQ_EMPTY(&strq->outqueue) &&
+	if (!BSD_TAILQ_EMPTY(&strq->outqueue) &&
 	    (strq->ss_params.prio.next_spoke.tqe_next == NULL) &&
 	    (strq->ss_params.prio.next_spoke.tqe_prev == NULL)) {
-		if (TAILQ_EMPTY(&asoc->ss_data.out_wheel)) {
-			TAILQ_INSERT_HEAD(&asoc->ss_data.out_wheel, strq, ss_params.prio.next_spoke);
+		if (BSD_TAILQ_EMPTY(&asoc->ss_data.out_wheel)) {
+			BSD_TAILQ_INSERT_HEAD(&asoc->ss_data.out_wheel, strq, ss_params.prio.next_spoke);
 		} else {
-			strqt = TAILQ_FIRST(&asoc->ss_data.out_wheel);
+			strqt = BSD_TAILQ_FIRST(&asoc->ss_data.out_wheel);
 			while (strqt != NULL && strqt->ss_params.prio.priority < strq->ss_params.prio.priority) {
-				strqt = TAILQ_NEXT(strqt, ss_params.prio.next_spoke);
+				strqt = BSD_TAILQ_NEXT(strqt, ss_params.prio.next_spoke);
 			}
 			if (strqt != NULL) {
-				TAILQ_INSERT_BEFORE(strqt, strq, ss_params.prio.next_spoke);
+				BSD_TAILQ_INSERT_BEFORE(strqt, strq, ss_params.prio.next_spoke);
 			} else {
-				TAILQ_INSERT_TAIL(&asoc->ss_data.out_wheel, strq, ss_params.prio.next_spoke);
+				BSD_TAILQ_INSERT_TAIL(&asoc->ss_data.out_wheel, strq, ss_params.prio.next_spoke);
 			}
 		}
 	}
@@ -422,21 +422,21 @@ sctp_ss_prio_remove(struct sctp_tcb *stcb, struct sctp_association *asoc,
 	 * Remove from wheel if stream queue is empty and actually is on the
 	 * wheel
 	 */
-	if (TAILQ_EMPTY(&strq->outqueue) &&
+	if (BSD_TAILQ_EMPTY(&strq->outqueue) &&
 	    (strq->ss_params.prio.next_spoke.tqe_next != NULL ||
 	    strq->ss_params.prio.next_spoke.tqe_prev != NULL)) {
 		if (asoc->last_out_stream == strq) {
-			asoc->last_out_stream = TAILQ_PREV(asoc->last_out_stream, sctpwheel_listhead,
+			asoc->last_out_stream = BSD_TAILQ_PREV(asoc->last_out_stream, sctpwheel_listhead,
 			    ss_params.prio.next_spoke);
 			if (asoc->last_out_stream == NULL) {
-				asoc->last_out_stream = TAILQ_LAST(&asoc->ss_data.out_wheel,
+				asoc->last_out_stream = BSD_TAILQ_LAST(&asoc->ss_data.out_wheel,
 				    sctpwheel_listhead);
 			}
 			if (asoc->last_out_stream == strq) {
 				asoc->last_out_stream = NULL;
 			}
 		}
-		TAILQ_REMOVE(&asoc->ss_data.out_wheel, strq, ss_params.prio.next_spoke);
+		BSD_TAILQ_REMOVE(&asoc->ss_data.out_wheel, strq, ss_params.prio.next_spoke);
 		strq->ss_params.prio.next_spoke.tqe_next = NULL;
 		strq->ss_params.prio.next_spoke.tqe_prev = NULL;
 	}
@@ -456,14 +456,14 @@ sctp_ss_prio_select(struct sctp_tcb *stcb SCTP_UNUSED, struct sctp_nets *net,
 prio_again:
 	/* Find the next stream to use */
 	if (strqt == NULL) {
-		strq = TAILQ_FIRST(&asoc->ss_data.out_wheel);
+		strq = BSD_TAILQ_FIRST(&asoc->ss_data.out_wheel);
 	} else {
-		strqn = TAILQ_NEXT(strqt, ss_params.prio.next_spoke);
+		strqn = BSD_TAILQ_NEXT(strqt, ss_params.prio.next_spoke);
 		if (strqn != NULL &&
 		    strqn->ss_params.prio.priority == strqt->ss_params.prio.priority) {
 			strq = strqn;
 		} else {
-			strq = TAILQ_FIRST(&asoc->ss_data.out_wheel);
+			strq = BSD_TAILQ_FIRST(&asoc->ss_data.out_wheel);
 		}
 	}
 
@@ -478,9 +478,9 @@ prio_again:
 	 */
 	if (net != NULL && strq != NULL &&
 	    SCTP_BASE_SYSCTL(sctp_cmt_on_off) == 0) {
-		if (TAILQ_FIRST(&strq->outqueue) &&
-		    TAILQ_FIRST(&strq->outqueue)->net != NULL &&
-		    TAILQ_FIRST(&strq->outqueue)->net != net) {
+		if (BSD_TAILQ_FIRST(&strq->outqueue) &&
+		    BSD_TAILQ_FIRST(&strq->outqueue)->net != NULL &&
+		    BSD_TAILQ_FIRST(&strq->outqueue)->net != net) {
 			if (strq == asoc->last_out_stream) {
 				return (NULL);
 			} else {
@@ -527,13 +527,13 @@ sctp_ss_fb_clear(struct sctp_tcb *stcb, struct sctp_association *asoc,
 	if (holds_lock == 0) {
 		SCTP_TCB_SEND_LOCK(stcb);
 	}
-	while (!TAILQ_EMPTY(&asoc->ss_data.out_wheel)) {
-		struct sctp_stream_out *strq = TAILQ_FIRST(&asoc->ss_data.out_wheel);
+	while (!BSD_TAILQ_EMPTY(&asoc->ss_data.out_wheel)) {
+		struct sctp_stream_out *strq = BSD_TAILQ_FIRST(&asoc->ss_data.out_wheel);
 
 		if (clear_values) {
 			strq->ss_params.fb.rounds = -1;
 		}
-		TAILQ_REMOVE(&asoc->ss_data.out_wheel, TAILQ_FIRST(&asoc->ss_data.out_wheel), ss_params.fb.next_spoke);
+		BSD_TAILQ_REMOVE(&asoc->ss_data.out_wheel, BSD_TAILQ_FIRST(&asoc->ss_data.out_wheel), ss_params.fb.next_spoke);
 		strq->ss_params.fb.next_spoke.tqe_next = NULL;
 		strq->ss_params.fb.next_spoke.tqe_prev = NULL;
 	}
@@ -565,12 +565,12 @@ sctp_ss_fb_add(struct sctp_tcb *stcb, struct sctp_association *asoc,
 	if (holds_lock == 0) {
 		SCTP_TCB_SEND_LOCK(stcb);
 	}
-	if (!TAILQ_EMPTY(&strq->outqueue) &&
+	if (!BSD_TAILQ_EMPTY(&strq->outqueue) &&
 	    (strq->ss_params.fb.next_spoke.tqe_next == NULL) &&
 	    (strq->ss_params.fb.next_spoke.tqe_prev == NULL)) {
 		if (strq->ss_params.fb.rounds < 0)
-			strq->ss_params.fb.rounds = TAILQ_FIRST(&strq->outqueue)->length;
-		TAILQ_INSERT_TAIL(&asoc->ss_data.out_wheel, strq, ss_params.fb.next_spoke);
+			strq->ss_params.fb.rounds = BSD_TAILQ_FIRST(&strq->outqueue)->length;
+		BSD_TAILQ_INSERT_TAIL(&asoc->ss_data.out_wheel, strq, ss_params.fb.next_spoke);
 	}
 	if (holds_lock == 0) {
 		SCTP_TCB_SEND_UNLOCK(stcb);
@@ -590,21 +590,21 @@ sctp_ss_fb_remove(struct sctp_tcb *stcb, struct sctp_association *asoc,
 	 * Remove from wheel if stream queue is empty and actually is on the
 	 * wheel
 	 */
-	if (TAILQ_EMPTY(&strq->outqueue) &&
+	if (BSD_TAILQ_EMPTY(&strq->outqueue) &&
 	    (strq->ss_params.fb.next_spoke.tqe_next != NULL ||
 	    strq->ss_params.fb.next_spoke.tqe_prev != NULL)) {
 		if (asoc->last_out_stream == strq) {
-			asoc->last_out_stream = TAILQ_PREV(asoc->last_out_stream, sctpwheel_listhead,
+			asoc->last_out_stream = BSD_TAILQ_PREV(asoc->last_out_stream, sctpwheel_listhead,
 			    ss_params.fb.next_spoke);
 			if (asoc->last_out_stream == NULL) {
-				asoc->last_out_stream = TAILQ_LAST(&asoc->ss_data.out_wheel,
+				asoc->last_out_stream = BSD_TAILQ_LAST(&asoc->ss_data.out_wheel,
 				    sctpwheel_listhead);
 			}
 			if (asoc->last_out_stream == strq) {
 				asoc->last_out_stream = NULL;
 			}
 		}
-		TAILQ_REMOVE(&asoc->ss_data.out_wheel, strq, ss_params.fb.next_spoke);
+		BSD_TAILQ_REMOVE(&asoc->ss_data.out_wheel, strq, ss_params.fb.next_spoke);
 		strq->ss_params.fb.next_spoke.tqe_next = NULL;
 		strq->ss_params.fb.next_spoke.tqe_prev = NULL;
 	}
@@ -621,27 +621,27 @@ sctp_ss_fb_select(struct sctp_tcb *stcb SCTP_UNUSED, struct sctp_nets *net,
 	struct sctp_stream_out *strq = NULL, *strqt;
 
 	if (asoc->last_out_stream == NULL ||
-	    TAILQ_FIRST(&asoc->ss_data.out_wheel) == TAILQ_LAST(&asoc->ss_data.out_wheel, sctpwheel_listhead)) {
-		strqt = TAILQ_FIRST(&asoc->ss_data.out_wheel);
+	    BSD_TAILQ_FIRST(&asoc->ss_data.out_wheel) == BSD_TAILQ_LAST(&asoc->ss_data.out_wheel, sctpwheel_listhead)) {
+		strqt = BSD_TAILQ_FIRST(&asoc->ss_data.out_wheel);
 	} else {
-		strqt = TAILQ_NEXT(asoc->last_out_stream, ss_params.fb.next_spoke);
+		strqt = BSD_TAILQ_NEXT(asoc->last_out_stream, ss_params.fb.next_spoke);
 	}
 	do {
 		if ((strqt != NULL) &&
 		    ((SCTP_BASE_SYSCTL(sctp_cmt_on_off) > 0) ||
 		    (SCTP_BASE_SYSCTL(sctp_cmt_on_off) == 0 &&
-		    (net == NULL || (TAILQ_FIRST(&strqt->outqueue) && TAILQ_FIRST(&strqt->outqueue)->net == NULL) ||
-		    (net != NULL && TAILQ_FIRST(&strqt->outqueue) && TAILQ_FIRST(&strqt->outqueue)->net != NULL &&
-		    TAILQ_FIRST(&strqt->outqueue)->net == net))))) {
+		    (net == NULL || (BSD_TAILQ_FIRST(&strqt->outqueue) && BSD_TAILQ_FIRST(&strqt->outqueue)->net == NULL) ||
+		    (net != NULL && BSD_TAILQ_FIRST(&strqt->outqueue) && BSD_TAILQ_FIRST(&strqt->outqueue)->net != NULL &&
+		    BSD_TAILQ_FIRST(&strqt->outqueue)->net == net))))) {
 			if ((strqt->ss_params.fb.rounds >= 0) && (strq == NULL ||
 			    strqt->ss_params.fb.rounds < strq->ss_params.fb.rounds)) {
 				strq = strqt;
 			}
 		}
 		if (strqt != NULL) {
-			strqt = TAILQ_NEXT(strqt, ss_params.fb.next_spoke);
+			strqt = BSD_TAILQ_NEXT(strqt, ss_params.fb.next_spoke);
 		} else {
-			strqt = TAILQ_FIRST(&asoc->ss_data.out_wheel);
+			strqt = BSD_TAILQ_FIRST(&asoc->ss_data.out_wheel);
 		}
 	} while (strqt != strq);
 	return (strq);
@@ -656,13 +656,13 @@ sctp_ss_fb_scheduled(struct sctp_tcb *stcb SCTP_UNUSED, struct sctp_nets *net SC
 	int subtract;
 
 	subtract = strq->ss_params.fb.rounds;
-	TAILQ_FOREACH(strqt, &asoc->ss_data.out_wheel, ss_params.fb.next_spoke) {
+	BSD_TAILQ_FOREACH(strqt, &asoc->ss_data.out_wheel, ss_params.fb.next_spoke) {
 		strqt->ss_params.fb.rounds -= subtract;
 		if (strqt->ss_params.fb.rounds < 0)
 			strqt->ss_params.fb.rounds = 0;
 	}
-	if (TAILQ_FIRST(&strq->outqueue)) {
-		strq->ss_params.fb.rounds = TAILQ_FIRST(&strq->outqueue)->length;
+	if (BSD_TAILQ_FIRST(&strq->outqueue)) {
+		strq->ss_params.fb.rounds = BSD_TAILQ_FIRST(&strq->outqueue)->length;
 	} else {
 		strq->ss_params.fb.rounds = -1;
 	}
@@ -687,7 +687,7 @@ sctp_ss_fcfs_init(struct sctp_tcb *stcb, struct sctp_association *asoc,
 	struct sctp_stream_queue_pending *sp;
 	uint16_t i;
 
-	TAILQ_INIT(&asoc->ss_data.out_list);
+	BSD_TAILQ_INIT(&asoc->ss_data.out_list);
 	/*
 	 * If there is data in the stream queues already, the scheduler of
 	 * an existing association has been changed. We can only cycle
@@ -696,11 +696,11 @@ sctp_ss_fcfs_init(struct sctp_tcb *stcb, struct sctp_association *asoc,
 	while (add_more) {
 		add_more = 0;
 		for (i = 0; i < stcb->asoc.streamoutcnt; i++) {
-			sp = TAILQ_FIRST(&stcb->asoc.strmout[i].outqueue);
+			sp = BSD_TAILQ_FIRST(&stcb->asoc.strmout[i].outqueue);
 			x = 0;
 			/* Find n. message in current stream queue */
 			while (sp != NULL && x < n) {
-				sp = TAILQ_NEXT(sp, next);
+				sp = BSD_TAILQ_NEXT(sp, next);
 				x++;
 			}
 			if (sp != NULL) {
@@ -721,8 +721,8 @@ sctp_ss_fcfs_clear(struct sctp_tcb *stcb, struct sctp_association *asoc,
 		if (holds_lock == 0) {
 			SCTP_TCB_SEND_LOCK(stcb);
 		}
-		while (!TAILQ_EMPTY(&asoc->ss_data.out_list)) {
-			TAILQ_REMOVE(&asoc->ss_data.out_list, TAILQ_FIRST(&asoc->ss_data.out_list), ss_next);
+		while (!BSD_TAILQ_EMPTY(&asoc->ss_data.out_list)) {
+			BSD_TAILQ_REMOVE(&asoc->ss_data.out_list, BSD_TAILQ_FIRST(&asoc->ss_data.out_list), ss_next);
 		}
 		if (holds_lock == 0) {
 			SCTP_TCB_SEND_UNLOCK(stcb);
@@ -748,7 +748,7 @@ sctp_ss_fcfs_add(struct sctp_tcb *stcb, struct sctp_association *asoc,
 	}
 	if (sp && (sp->ss_next.tqe_next == NULL) &&
 	    (sp->ss_next.tqe_prev == NULL)) {
-		TAILQ_INSERT_TAIL(&asoc->ss_data.out_list, sp, ss_next);
+		BSD_TAILQ_INSERT_TAIL(&asoc->ss_data.out_list, sp, ss_next);
 	}
 	if (holds_lock == 0) {
 		SCTP_TCB_SEND_UNLOCK(stcb);
@@ -759,7 +759,7 @@ sctp_ss_fcfs_add(struct sctp_tcb *stcb, struct sctp_association *asoc,
 static int
 sctp_ss_fcfs_is_empty(struct sctp_tcb *stcb SCTP_UNUSED, struct sctp_association *asoc)
 {
-	if (TAILQ_EMPTY(&asoc->ss_data.out_list)) {
+	if (BSD_TAILQ_EMPTY(&asoc->ss_data.out_list)) {
 		return (1);
 	} else {
 		return (0);
@@ -777,7 +777,7 @@ sctp_ss_fcfs_remove(struct sctp_tcb *stcb, struct sctp_association *asoc,
 	if (sp &&
 	    ((sp->ss_next.tqe_next != NULL) ||
 	    (sp->ss_next.tqe_prev != NULL))) {
-		TAILQ_REMOVE(&asoc->ss_data.out_list, sp, ss_next);
+		BSD_TAILQ_REMOVE(&asoc->ss_data.out_list, sp, ss_next);
 	}
 	if (holds_lock == 0) {
 		SCTP_TCB_SEND_UNLOCK(stcb);
@@ -793,7 +793,7 @@ sctp_ss_fcfs_select(struct sctp_tcb *stcb SCTP_UNUSED, struct sctp_nets *net,
 	struct sctp_stream_out *strq;
 	struct sctp_stream_queue_pending *sp;
 
-	sp = TAILQ_FIRST(&asoc->ss_data.out_list);
+	sp = BSD_TAILQ_FIRST(&asoc->ss_data.out_list);
 default_again:
 	if (sp != NULL) {
 		strq = &asoc->strmout[sp->stream];
@@ -812,10 +812,10 @@ default_again:
 	 */
 	if (net != NULL && strq != NULL &&
 	    SCTP_BASE_SYSCTL(sctp_cmt_on_off) == 0) {
-		if (TAILQ_FIRST(&strq->outqueue) &&
-		    TAILQ_FIRST(&strq->outqueue)->net != NULL &&
-		    TAILQ_FIRST(&strq->outqueue)->net != net) {
-			sp = TAILQ_NEXT(sp, ss_next);
+		if (BSD_TAILQ_FIRST(&strq->outqueue) &&
+		    BSD_TAILQ_FIRST(&strq->outqueue)->net != NULL &&
+		    BSD_TAILQ_FIRST(&strq->outqueue)->net != net) {
+			sp = BSD_TAILQ_NEXT(sp, ss_next);
 			goto default_again;
 		}
 	}

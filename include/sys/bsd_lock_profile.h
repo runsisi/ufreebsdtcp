@@ -32,7 +32,7 @@
 #define _SYS_LOCK_PROFILE_H_
 
 struct lock_profile_object;
-LIST_HEAD(lpohead, lock_profile_object);
+BSD_LIST_HEAD(lpohead, lock_profile_object);
 
 #ifdef _KERNEL
 #ifdef LOCK_PROFILING

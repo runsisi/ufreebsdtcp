@@ -62,18 +62,18 @@ sctp_audit_retranmission_queue(struct sctp_association *asoc)
 	    asoc->sent_queue_cnt);
 	asoc->sent_queue_retran_cnt = 0;
 	asoc->sent_queue_cnt = 0;
-	TAILQ_FOREACH(chk, &asoc->sent_queue, sctp_next) {
+	BSD_TAILQ_FOREACH(chk, &asoc->sent_queue, sctp_next) {
 		if (chk->sent == SCTP_DATAGRAM_RESEND) {
 			sctp_ucount_incr(asoc->sent_queue_retran_cnt);
 		}
 		asoc->sent_queue_cnt++;
 	}
-	TAILQ_FOREACH(chk, &asoc->control_send_queue, sctp_next) {
+	BSD_TAILQ_FOREACH(chk, &asoc->control_send_queue, sctp_next) {
 		if (chk->sent == SCTP_DATAGRAM_RESEND) {
 			sctp_ucount_incr(asoc->sent_queue_retran_cnt);
 		}
 	}
-	TAILQ_FOREACH(chk, &asoc->asconf_send_queue, sctp_next) {
+	BSD_TAILQ_FOREACH(chk, &asoc->asconf_send_queue, sctp_next) {
 		if (chk->sent == SCTP_DATAGRAM_RESEND) {
 			sctp_ucount_incr(asoc->sent_queue_retran_cnt);
 		}
@@ -189,7 +189,7 @@ sctp_find_alternate_net(struct sctp_tcb *stcb,
 
 	if (stcb->asoc.numnets == 1) {
 		/* No others but net */
-		return (TAILQ_FIRST(&stcb->asoc.nets));
+		return (BSD_TAILQ_FIRST(&stcb->asoc.nets));
 	}
 	/*
 	 * JRS 5/14/07 - If mode is set to 2, use the CMT PF find alternate
@@ -200,7 +200,7 @@ sctp_find_alternate_net(struct sctp_tcb *stcb,
 	 * tie, choose the destination that was most recently active.
 	 */
 	if (mode == 2) {
-		TAILQ_FOREACH(mnet, &stcb->asoc.nets, sctp_next) {
+		BSD_TAILQ_FOREACH(mnet, &stcb->asoc.nets, sctp_next) {
 			/*
 			 * JRS 5/14/07 - If the destination is unreachable
 			 * or unconfirmed, skip it.
@@ -300,7 +300,7 @@ sctp_find_alternate_net(struct sctp_tcb *stcb,
 	 * choosing an alternate net.
 	 */ 
 	else if (mode == 1) {
-		TAILQ_FOREACH(mnet, &stcb->asoc.nets, sctp_next) {
+		BSD_TAILQ_FOREACH(mnet, &stcb->asoc.nets, sctp_next) {
 			if (((mnet->dest_state & SCTP_ADDR_REACHABLE) != SCTP_ADDR_REACHABLE) ||
 			    (mnet->dest_state & SCTP_ADDR_UNCONFIRMED)) {
 				/*
@@ -342,19 +342,19 @@ sctp_find_alternate_net(struct sctp_tcb *stcb,
 	once = 0;
 
 	if (mnet == NULL) {
-		mnet = TAILQ_FIRST(&stcb->asoc.nets);
+		mnet = BSD_TAILQ_FIRST(&stcb->asoc.nets);
 		if (mnet == NULL) {
 			return (NULL);
 		}
 	}
 	do {
-		alt = TAILQ_NEXT(mnet, sctp_next);
+		alt = BSD_TAILQ_NEXT(mnet, sctp_next);
 		if (alt == NULL) {
 			once++;
 			if (once > 1) {
 				break;
 			}
-			alt = TAILQ_FIRST(&stcb->asoc.nets);
+			alt = BSD_TAILQ_FIRST(&stcb->asoc.nets);
 			if (alt == NULL) {
 				return (NULL);
 			}
@@ -383,15 +383,15 @@ sctp_find_alternate_net(struct sctp_tcb *stcb,
 		mnet = net;
 		do {
 			if (mnet == NULL) {
-				return (TAILQ_FIRST(&stcb->asoc.nets));
+				return (BSD_TAILQ_FIRST(&stcb->asoc.nets));
 			}
-			alt = TAILQ_NEXT(mnet, sctp_next);
+			alt = BSD_TAILQ_NEXT(mnet, sctp_next);
 			if (alt == NULL) {
 				once++;
 				if (once > 1) {
 					break;
 				}
-				alt = TAILQ_FIRST(&stcb->asoc.nets);
+				alt = BSD_TAILQ_FIRST(&stcb->asoc.nets);
 			}
 			/* sa_ignore NO_NULL_CHK */
 			if ((!(alt->dest_state & SCTP_ADDR_UNCONFIRMED)) &&
@@ -436,7 +436,7 @@ sctp_recover_sent_list(struct sctp_tcb *stcb)
 	struct sctp_association *asoc;
 
 	asoc = &stcb->asoc;
-	TAILQ_FOREACH_SAFE(chk, &asoc->sent_queue, sctp_next, nchk) {
+	BSD_TAILQ_FOREACH_SAFE(chk, &asoc->sent_queue, sctp_next, nchk) {
 		if (SCTP_TSN_GE(asoc->last_acked_seq, chk->rec.data.TSN_seq)) {
 			SCTP_PRINTF("Found chk:%p tsn:%x <= last_acked_seq:%x\n",
 			    (void *)chk, chk->rec.data.TSN_seq, asoc->last_acked_seq);
@@ -445,7 +445,7 @@ sctp_recover_sent_list(struct sctp_tcb *stcb)
 					asoc->strmout[chk->rec.data.stream_number].chunks_on_queues--;
 				}
 			}
-			TAILQ_REMOVE(&asoc->sent_queue, chk, sctp_next);
+			BSD_TAILQ_REMOVE(&asoc->sent_queue, chk, sctp_next);
 			if (chk->pr_sctp_on) {
 				if (asoc->pr_sctp_cnt != 0)
 					asoc->pr_sctp_cnt--;
@@ -464,7 +464,7 @@ sctp_recover_sent_list(struct sctp_tcb *stcb)
 		}
 	}
 	SCTP_PRINTF("after recover order is as follows\n");
-	TAILQ_FOREACH(chk, &asoc->sent_queue, sctp_next) {
+	BSD_TAILQ_FOREACH(chk, &asoc->sent_queue, sctp_next) {
 		SCTP_PRINTF("chk:%p TSN:%x\n", (void *)chk, chk->rec.data.TSN_seq);
 	}
 }
@@ -549,7 +549,7 @@ sctp_mark_all_for_resend(struct sctp_tcb *stcb,
 #ifndef INVARIANTS
 start_again:
 #endif
-	TAILQ_FOREACH_SAFE(chk, &stcb->asoc.sent_queue, sctp_next, nchk) {
+	BSD_TAILQ_FOREACH_SAFE(chk, &stcb->asoc.sent_queue, sctp_next, nchk) {
 		if (SCTP_TSN_GE(stcb->asoc.last_acked_seq, chk->rec.data.TSN_seq)) {
 			/* Strange case our list got out of order? */
 			SCTP_PRINTF("Our list is out of order? last_acked:%x chk:%x",
@@ -688,10 +688,10 @@ start_again:
 				atomic_add_int(&alt->ref_count, 1);
 			} else {
 				chk->no_fr_allowed = 0;
-				if (TAILQ_EMPTY(&stcb->asoc.send_queue)) {
+				if (BSD_TAILQ_EMPTY(&stcb->asoc.send_queue)) {
 					chk->rec.data.fast_retran_tsn = stcb->asoc.sending_seq;
 				} else {
-					chk->rec.data.fast_retran_tsn = (TAILQ_FIRST(&stcb->asoc.send_queue))->rec.data.TSN_seq;
+					chk->rec.data.fast_retran_tsn = (BSD_TAILQ_FIRST(&stcb->asoc.send_queue))->rec.data.TSN_seq;
 				}
 			}
 			/*
@@ -736,7 +736,7 @@ start_again:
 	 * Now check for a ECN Echo that may be stranded And include the
 	 * cnt_mk'd to have all resends in the control queue.
 	 */
-	TAILQ_FOREACH(chk, &stcb->asoc.control_send_queue, sctp_next) {
+	BSD_TAILQ_FOREACH(chk, &stcb->asoc.control_send_queue, sctp_next) {
 		if (chk->sent == SCTP_DATAGRAM_RESEND) {
 			cnt_mk++;
 		}
@@ -776,13 +776,13 @@ start_again:
 		stcb->asoc.total_flight = 0;
 		stcb->asoc.total_flight_count = 0;
 		/* Clear all networks flight size */
-		TAILQ_FOREACH(lnets, &stcb->asoc.nets, sctp_next) {
+		BSD_TAILQ_FOREACH(lnets, &stcb->asoc.nets, sctp_next) {
 			lnets->flight_size = 0;
 			SCTPDBG(SCTP_DEBUG_TIMER4,
 			    "Net:%p c-f cwnd:%d ssthresh:%d\n",
 			    (void *)lnets, lnets->cwnd, lnets->ssthresh);
 		}
-		TAILQ_FOREACH(chk, &stcb->asoc.sent_queue, sctp_next) {
+		BSD_TAILQ_FOREACH(chk, &stcb->asoc.sent_queue, sctp_next) {
 			if (chk->sent < SCTP_DATAGRAM_RESEND) {
 				if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_FLIGHT_LOGGING_ENABLE) {
 					sctp_misc_ints(SCTP_FLIGHT_LOG_UP,
@@ -815,7 +815,7 @@ sctp_t3rxt_timer(struct sctp_inpcb *inp,
 	if (SCTP_BASE_SYSCTL(sctp_logging_level) & SCTP_CWND_LOGGING_ENABLE) {
 		struct sctp_nets *lnet;
 
-		TAILQ_FOREACH(lnet, &stcb->asoc.nets, sctp_next) {
+		BSD_TAILQ_FOREACH(lnet, &stcb->asoc.nets, sctp_next) {
 			if (net == lnet) {
 				sctp_log_cwnd(stcb, lnet, 1, SCTP_CWND_LOG_FROM_T3);
 			} else {
@@ -1043,7 +1043,7 @@ sctp_cookie_timer(struct sctp_inpcb *inp,
 	struct sctp_tmit_chunk *cookie;
 
 	/* first before all else we must find the cookie */
-	TAILQ_FOREACH(cookie, &stcb->asoc.control_send_queue, sctp_next) {
+	BSD_TAILQ_FOREACH(cookie, &stcb->asoc.control_send_queue, sctp_next) {
 		if (cookie->rec.chunk_id.id == SCTP_COOKIE_ECHO) {
 			break;
 		}
@@ -1142,7 +1142,7 @@ sctp_strreset_timer(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 	atomic_add_int(&alt->ref_count, 1);
 
 	/* See if a ECN Echo is also stranded */
-	TAILQ_FOREACH(chk, &stcb->asoc.control_send_queue, sctp_next) {
+	BSD_TAILQ_FOREACH(chk, &stcb->asoc.control_send_queue, sctp_next) {
 		if ((chk->whoTo == net) &&
 		    (chk->rec.chunk_id.id == SCTP_ECN_ECHO)) {
 			sctp_free_remote_addr(chk->whoTo);
@@ -1179,7 +1179,7 @@ sctp_asconf_timer(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 	struct sctp_tmit_chunk *asconf, *chk;
 
 	/* is this a first send, or a retransmission? */
-	if (TAILQ_EMPTY(&stcb->asoc.asconf_send_queue)) {
+	if (BSD_TAILQ_EMPTY(&stcb->asoc.asconf_send_queue)) {
 		/* compose a new ASCONF chunk and send it */
 		sctp_send_asconf(stcb, net, SCTP_ADDR_NOT_LOCKED);
 	} else {
@@ -1188,7 +1188,7 @@ sctp_asconf_timer(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 		 */
 
 		/* find the existing ASCONF */
-		asconf = TAILQ_FIRST(&stcb->asoc.asconf_send_queue);
+		asconf = BSD_TAILQ_FIRST(&stcb->asoc.asconf_send_queue);
 		if (asconf == NULL) {
 			return (0);
 		}
@@ -1222,7 +1222,7 @@ sctp_asconf_timer(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 			atomic_add_int(&alt->ref_count, 1);
 		}
 		/* See if an ECN Echo is also stranded */
-		TAILQ_FOREACH(chk, &stcb->asoc.control_send_queue, sctp_next) {
+		BSD_TAILQ_FOREACH(chk, &stcb->asoc.control_send_queue, sctp_next) {
 			if ((chk->whoTo == net) &&
 			    (chk->rec.chunk_id.id == SCTP_ECN_ECHO)) {
 				sctp_free_remote_addr(chk->whoTo);
@@ -1234,7 +1234,7 @@ sctp_asconf_timer(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 				atomic_add_int(&alt->ref_count, 1);
 			}
 		}
-		TAILQ_FOREACH(chk, &stcb->asoc.asconf_send_queue, sctp_next) {
+		BSD_TAILQ_FOREACH(chk, &stcb->asoc.asconf_send_queue, sctp_next) {
 			if (chk->whoTo != alt) {
 				sctp_free_remote_addr(chk->whoTo);
 				chk->whoTo = alt;
@@ -1364,8 +1364,8 @@ sctp_audit_stream_queues_for_size(struct sctp_inpcb *inp,
 	}
 	/* Check to see if some data queued, if so report it */
 	for (i = 0; i < stcb->asoc.streamoutcnt; i++) {
-		if (!TAILQ_EMPTY(&stcb->asoc.strmout[i].outqueue)) {
-			TAILQ_FOREACH(sp, &stcb->asoc.strmout[i].outqueue, next) {
+		if (!BSD_TAILQ_EMPTY(&stcb->asoc.strmout[i].outqueue)) {
+			BSD_TAILQ_FOREACH(sp, &stcb->asoc.strmout[i].outqueue, next) {
 				if (sp->msg_is_complete)
 					being_filled++;
 				chks_in_queue++;
@@ -1379,8 +1379,8 @@ sctp_audit_stream_queues_for_size(struct sctp_inpcb *inp,
 	if (chks_in_queue) {
 		/* call the output queue function */
 		sctp_chunk_output(inp, stcb, SCTP_OUTPUT_FROM_T3, SCTP_SO_NOT_LOCKED);
-		if ((TAILQ_EMPTY(&stcb->asoc.send_queue)) &&
-		    (TAILQ_EMPTY(&stcb->asoc.sent_queue))) {
+		if ((BSD_TAILQ_EMPTY(&stcb->asoc.send_queue)) &&
+		    (BSD_TAILQ_EMPTY(&stcb->asoc.sent_queue))) {
 			/*
 			 * Probably should go in and make it go back through
 			 * and add fragments allowed
@@ -1429,8 +1429,8 @@ sctp_heartbeat_timer(struct sctp_inpcb *inp, struct sctp_tcb *stcb,
 		net->partial_bytes_acked = 0;
 	}
 	if ((stcb->asoc.total_output_queue_size > 0) &&
-	    (TAILQ_EMPTY(&stcb->asoc.send_queue)) &&
-	    (TAILQ_EMPTY(&stcb->asoc.sent_queue))) {
+	    (BSD_TAILQ_EMPTY(&stcb->asoc.send_queue)) &&
+	    (BSD_TAILQ_EMPTY(&stcb->asoc.sent_queue))) {
 		sctp_audit_stream_queues_for_size(inp, stcb);
 	}
 	if (!(net->dest_state & SCTP_ADDR_NOHB) &&
@@ -1550,8 +1550,8 @@ sctp_autoclose_timer(struct sctp_inpcb *inp,
 			 */
 			sctp_chunk_output(inp, stcb, SCTP_OUTPUT_FROM_AUTOCLOSE_TMR, SCTP_SO_NOT_LOCKED);
 			/* Are we clean? */
-			if (TAILQ_EMPTY(&asoc->send_queue) &&
-			    TAILQ_EMPTY(&asoc->sent_queue)) {
+			if (BSD_TAILQ_EMPTY(&asoc->send_queue) &&
+			    BSD_TAILQ_EMPTY(&asoc->sent_queue)) {
 				/*
 				 * there is nothing queued to send, so I'm
 				 * done...

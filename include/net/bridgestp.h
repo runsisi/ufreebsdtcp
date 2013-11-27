@@ -275,7 +275,7 @@ struct bstp_tcn_unit {
 };
 
 struct bstp_port {
-	LIST_ENTRY(bstp_port)	bp_next;
+	BSD_LIST_ENTRY(bstp_port)	bp_next;
 	struct ifnet		*bp_ifp;	/* parent if */
 	struct bstp_state	*bp_bs;
 	uint8_t			bp_active;
@@ -333,7 +333,7 @@ struct bstp_port {
  * Software state for each bridge STP.
  */
 struct bstp_state {
-	LIST_ENTRY(bstp_state)	bs_list;
+	BSD_LIST_ENTRY(bstp_state)	bs_list;
 	uint8_t			bs_running;
 	struct mtx		bs_mtx;
 	struct bstp_pri_vector	bs_bridge_pv;
@@ -356,7 +356,7 @@ struct bstp_state {
 	struct callout		bs_bstpcallout;	/* STP callout */
 	struct bstp_timer	bs_link_timer;
 	struct timeval		bs_last_tc_time;
-	LIST_HEAD(, bstp_port)	bs_bplist;
+	BSD_LIST_HEAD(, bstp_port)	bs_bplist;
 	bstp_state_cb_t		bs_state_cb;
 	bstp_rtage_cb_t		bs_rtage_cb;
 	struct vnet		*bs_vnet;

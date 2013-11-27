@@ -143,15 +143,15 @@
     (h)->uh_hashmask)
 
 #define UMA_HASH_INSERT(h, s, mem)					\
-		SLIST_INSERT_HEAD(&(h)->uh_slab_hash[UMA_HASH((h),	\
+		BSD_SLIST_INSERT_HEAD(&(h)->uh_slab_hash[UMA_HASH((h),	\
 		    (mem))], (s), us_hlink)
 #define UMA_HASH_REMOVE(h, s, mem)					\
-		SLIST_REMOVE(&(h)->uh_slab_hash[UMA_HASH((h),		\
+		BSD_SLIST_REMOVE(&(h)->uh_slab_hash[UMA_HASH((h),		\
 		    (mem))], (s), uma_slab, us_hlink)
 
 /* Hash table for freed address -> slab translation */
 
-SLIST_HEAD(slabhead, uma_slab);
+BSD_SLIST_HEAD(slabhead, uma_slab);
 
 struct uma_hash {
 	struct slabhead	*uh_slab_hash;	/* Hash table for slabs */
@@ -173,7 +173,7 @@ struct uma_hash {
  */
 
 struct uma_bucket {
-	LIST_ENTRY(uma_bucket)	ub_link;	/* Link into the zone */
+	BSD_LIST_ENTRY(uma_bucket)	ub_link;	/* Link into the zone */
 	int16_t	ub_cnt;				/* Count of free items. */
 	int16_t	ub_entries;			/* Max items. */
 	void	*ub_bucket[];			/* actual allocation storage */
@@ -197,16 +197,16 @@ typedef struct uma_cache * uma_cache_t;
  *
  */
 struct uma_keg {
-	LIST_ENTRY(uma_keg)	uk_link;	/* List of all kegs */
+	BSD_LIST_ENTRY(uma_keg)	uk_link;	/* List of all kegs */
 
 	struct mtx	uk_lock;	/* Lock for the keg */
 	struct uma_hash	uk_hash;
 
 	const char	*uk_name;		/* Name of creating zone. */
-	LIST_HEAD(,uma_zone)	uk_zones;	/* Keg's zones */
-	LIST_HEAD(,uma_slab)	uk_part_slab;	/* partially allocated slabs */
-	LIST_HEAD(,uma_slab)	uk_free_slab;	/* empty slab list */
-	LIST_HEAD(,uma_slab)	uk_full_slab;	/* full slabs */
+	BSD_LIST_HEAD(,uma_zone)	uk_zones;	/* Keg's zones */
+	BSD_LIST_HEAD(,uma_slab)	uk_part_slab;	/* partially allocated slabs */
+	BSD_LIST_HEAD(,uma_slab)	uk_free_slab;	/* empty slab list */
+	BSD_LIST_HEAD(,uma_slab)	uk_full_slab;	/* full slabs */
 
 	u_int32_t	uk_recurse;	/* Allocation recursion count */
 	u_int32_t	uk_align;	/* Alignment mask */
@@ -238,10 +238,10 @@ typedef struct uma_keg	* uma_keg_t;
 struct uma_slab_head {
 	uma_keg_t	us_keg;			/* Keg we live in */
 	union {
-		LIST_ENTRY(uma_slab)	_us_link;	/* slabs in zone */
+		BSD_LIST_ENTRY(uma_slab)	_us_link;	/* slabs in zone */
 		unsigned long	_us_size;	/* Size of allocation */
 	} us_type;
-	SLIST_ENTRY(uma_slab)	us_hlink;	/* Link for hash table */
+	BSD_SLIST_ENTRY(uma_slab)	us_hlink;	/* Link for hash table */
 	u_int8_t	*us_data;		/* First item */
 	u_int8_t	us_flags;		/* Page flags see uma.h */
 	u_int8_t	us_freecount;	/* How many are free? */
@@ -293,7 +293,7 @@ typedef uma_slab_t (*uma_slaballoc)(uma_zone_t, uma_keg_t, int);
     sizeof(struct uma_slab_head))
 
 struct uma_klink {
-	LIST_ENTRY(uma_klink)	kl_link;
+	BSD_LIST_ENTRY(uma_klink)	kl_link;
 	uma_keg_t		kl_keg;
 };
 typedef struct uma_klink *uma_klink_t;
@@ -308,11 +308,11 @@ struct uma_zone {
 	const char	*uz_name;	/* Text name of the zone */
 	struct mtx	*uz_lock;	/* Lock for the zone (keg's lock) */
 
-	LIST_ENTRY(uma_zone)	uz_link;	/* List of all zones in keg */
-	LIST_HEAD(,uma_bucket)	uz_full_bucket;	/* full buckets */
-	LIST_HEAD(,uma_bucket)	uz_free_bucket;	/* Buckets for frees */
+	BSD_LIST_ENTRY(uma_zone)	uz_link;	/* List of all zones in keg */
+	BSD_LIST_HEAD(,uma_bucket)	uz_full_bucket;	/* full buckets */
+	BSD_LIST_HEAD(,uma_bucket)	uz_free_bucket;	/* Buckets for frees */
 
-	LIST_HEAD(,uma_klink)	uz_kegs;	/* List of kegs. */
+	BSD_LIST_HEAD(,uma_klink)	uz_kegs;	/* List of kegs. */
 	struct uma_klink	uz_klink;	/* klink for first keg. */
 
 	uma_slaballoc	uz_slab;	/* Allocate a slab from the backend. */
@@ -397,7 +397,7 @@ hash_sfind(struct uma_hash *hash, u_int8_t *data)
 
         hval = UMA_HASH(hash, data);
 
-        SLIST_FOREACH(slab, &hash->uh_slab_hash[hval], us_hlink) {
+        BSD_SLIST_FOREACH(slab, &hash->uh_slab_hash[hval], us_hlink) {
                 if ((u_int8_t *)slab->us_data == data)
                         return (slab);
         }

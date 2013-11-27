@@ -164,11 +164,11 @@ vm_object_zdtor(void *mem, int size, void *arg)
 	vm_object_t object;
 
 	object = (vm_object_t)mem;
-	KASSERT(TAILQ_EMPTY(&object->memq),
+	KASSERT(BSD_TAILQ_EMPTY(&object->memq),
 	    ("object %p has resident pages",
 	    object));
 #if VM_NRESERVLEVEL > 0
-	KASSERT(LIST_EMPTY(&object->rvq),
+	KASSERT(BSD_LIST_EMPTY(&object->rvq),
 	    ("object %p has reservations",
 	    object));
 #endif
@@ -207,8 +207,8 @@ void
 _vm_object_allocate(objtype_t type, vm_pindex_t size, vm_object_t object)
 {
 
-	TAILQ_INIT(&object->memq);
-	LIST_INIT(&object->shadow_head);
+	BSD_TAILQ_INIT(&object->memq);
+	BSD_LIST_INIT(&object->shadow_head);
 
 	object->root = NULL;
 	object->type = type;
@@ -226,12 +226,12 @@ _vm_object_allocate(objtype_t type, vm_pindex_t size, vm_object_t object)
 	object->backing_object = NULL;
 	object->backing_object_offset = (vm_ooffset_t) 0;
 #if VM_NRESERVLEVEL > 0
-	LIST_INIT(&object->rvq);
+	BSD_LIST_INIT(&object->rvq);
 #endif
 	object->cache = NULL;
 
 	mtx_lock(&vm_object_list_mtx);
-	TAILQ_INSERT_TAIL(&vm_object_list, object, object_list);
+	BSD_TAILQ_INSERT_TAIL(&vm_object_list, object, object_list);
 	mtx_unlock(&vm_object_list_mtx);
 }
 
@@ -243,7 +243,7 @@ _vm_object_allocate(objtype_t type, vm_pindex_t size, vm_object_t object)
 void
 vm_object_init(void)
 {
-	TAILQ_INIT(&vm_object_list);
+	BSD_TAILQ_INIT(&vm_object_list);
 	mtx_init(&vm_object_list_mtx, "vm object_list", NULL, MTX_DEF);
 	
 	VM_OBJECT_LOCK_INIT(kernel_object, "kernel object");
@@ -305,7 +305,7 @@ vm_object_set_memattr(vm_object_t object, vm_memattr_t memattr)
 	case OBJT_SG:
 	case OBJT_SWAP:
 	case OBJT_VNODE:
-		if (!TAILQ_EMPTY(&object->memq))
+		if (!BSD_TAILQ_EMPTY(&object->memq))
 			return (KERN_FAILURE);
 		break;
 	case OBJT_DEAD:
@@ -538,7 +538,7 @@ vm_object_deallocate(vm_object_t object)
 			     object->type == OBJT_SWAP)) {
 				vm_object_t robject;
 
-				robject = LIST_FIRST(&object->shadow_head);
+				robject = BSD_LIST_FIRST(&object->shadow_head);
 				KASSERT(robject != NULL,
 				    ("vm_object_deallocate: ref_count: %d, shadow_count: %d",
 					 object->ref_count,
@@ -614,7 +614,7 @@ doterm:
 		temp = object->backing_object;
 		if (temp != NULL) {
 			VM_OBJECT_LOCK(temp);
-			LIST_REMOVE(object, shadow_list);
+			BSD_LIST_REMOVE(object, shadow_list);
 			temp->shadow_count--;
 			VM_OBJECT_UNLOCK(temp);
 			object->backing_object = NULL;
@@ -644,7 +644,7 @@ vm_object_destroy(vm_object_t object)
 	 * Remove the object from the global object list.
 	 */
 	mtx_lock(&vm_object_list_mtx);
-	TAILQ_REMOVE(&vm_object_list, object, object_list);
+	BSD_TAILQ_REMOVE(&vm_object_list, object, object_list);
 	mtx_unlock(&vm_object_list_mtx);
 
 	/*
@@ -722,7 +722,7 @@ vm_object_terminate(vm_object_t object)
 	 * from the object.  Rather than incrementally removing each page from
 	 * the object, the page and object are reset to any empty state. 
 	 */
-	TAILQ_FOREACH_SAFE(p, &object->memq, listq, p_next) {
+	BSD_TAILQ_FOREACH_SAFE(p, &object->memq, listq, p_next) {
 		KASSERT(!p->busy && (p->oflags & VPO_BUSY) == 0,
 		    ("vm_object_terminate: freeing busy page %p", p));
 		vm_page_lock(p);
@@ -747,14 +747,14 @@ vm_object_terminate(vm_object_t object)
 	 */
 	if (object->resident_page_count != 0) {
 		object->root = NULL;
-		TAILQ_INIT(&object->memq);
+		BSD_TAILQ_INIT(&object->memq);
 		object->resident_page_count = 0;
 		if (object->type == OBJT_VNODE)
 			vdrop(object->handle);
 	}
 
 #if VM_NRESERVLEVEL > 0
-	if (__predict_false(!LIST_EMPTY(&object->rvq)))
+	if (__predict_false(!BSD_LIST_EMPTY(&object->rvq)))
 		vm_reserv_break_all(object);
 #endif
 	if (__predict_false(object->cache != NULL))
@@ -843,7 +843,7 @@ rescan:
 		pi = p->pindex;
 		if (pi >= tend)
 			break;
-		np = TAILQ_NEXT(p, listq);
+		np = BSD_TAILQ_NEXT(p, listq);
 		if (p->valid == 0)
 			continue;
 		if (vm_page_sleep_if_busy(p, TRUE, "vpcwai")) {
@@ -931,7 +931,7 @@ vm_object_page_collect_flush(vm_object_t object, vm_page_t p, int pagerflags,
 		mreq++;
 	}
 
-	for (tp = p_first, i = 0; i < count; tp = TAILQ_NEXT(tp, listq), i++)
+	for (tp = p_first, i = 0; i < count; tp = BSD_TAILQ_NEXT(tp, listq), i++)
 		ma[i] = tp;
 
 	vm_pageout_flush(ma, count, pagerflags, mreq, &runlen, eio);
@@ -1247,7 +1247,7 @@ vm_object_shadow(
 	result->backing_object_offset = *offset;
 	if (source != NULL) {
 		VM_OBJECT_LOCK(source);
-		LIST_INSERT_HEAD(&source->shadow_head, result, shadow_list);
+		BSD_LIST_INSERT_HEAD(&source->shadow_head, result, shadow_list);
 		source->shadow_count++;
 #if VM_NRESERVLEVEL > 0
 		result->flags |= source->flags & OBJ_COLORED;
@@ -1313,7 +1313,7 @@ vm_object_split(vm_map_entry_t entry)
 			VM_OBJECT_LOCK(orig_object);
 			return;
 		}
-		LIST_INSERT_HEAD(&source->shadow_head,
+		BSD_LIST_INSERT_HEAD(&source->shadow_head,
 				  new_object, shadow_list);
 		source->shadow_count++;
 		vm_object_reference_locked(source);	/* for new_object */
@@ -1335,7 +1335,7 @@ retry:
 	m = vm_page_find_least(orig_object, offidxstart);
 	for (; m != NULL && (idx = m->pindex - offidxstart) < size;
 	    m = m_next) {
-		m_next = TAILQ_NEXT(m, listq);
+		m_next = BSD_TAILQ_NEXT(m, listq);
 
 		/*
 		 * We must wait for pending I/O to complete before we can
@@ -1372,7 +1372,7 @@ retry:
 			    new_object);
 	}
 	VM_OBJECT_UNLOCK(orig_object);
-	TAILQ_FOREACH(m, &new_object->memq, listq)
+	BSD_TAILQ_FOREACH(m, &new_object->memq, listq)
 		vm_page_wakeup(m);
 	VM_OBJECT_UNLOCK(new_object);
 	entry->object.vm_object = new_object;
@@ -1423,9 +1423,9 @@ vm_object_backing_scan(vm_object_t object, int op)
 	/*
 	 * Our scan
 	 */
-	p = TAILQ_FIRST(&backing_object->memq);
+	p = BSD_TAILQ_FIRST(&backing_object->memq);
 	while (p) {
-		vm_page_t next = TAILQ_NEXT(p, listq);
+		vm_page_t next = BSD_TAILQ_NEXT(p, listq);
 		vm_pindex_t new_pindex = p->pindex - backing_offset_index;
 
 		if (op & OBSC_TEST_ALL_SHADOWED) {
@@ -1495,7 +1495,7 @@ vm_object_backing_scan(vm_object_t object, int op)
 					 * should not have changed so we
 					 * just restart our scan.
 					 */
-					p = TAILQ_FIRST(&backing_object->memq);
+					p = BSD_TAILQ_FIRST(&backing_object->memq);
 					continue;
 				}
 			}
@@ -1692,7 +1692,7 @@ vm_object_collapse(vm_object_t object)
 			/*
 			 * Break any reservations from backing_object.
 			 */
-			if (__predict_false(!LIST_EMPTY(&backing_object->rvq)))
+			if (__predict_false(!BSD_LIST_EMPTY(&backing_object->rvq)))
 				vm_reserv_break_all(backing_object);
 #endif
 
@@ -1722,12 +1722,12 @@ vm_object_collapse(vm_object_t object)
 			 * backing_object->backing_object moves from within 
 			 * backing_object to within object.
 			 */
-			LIST_REMOVE(object, shadow_list);
+			BSD_LIST_REMOVE(object, shadow_list);
 			backing_object->shadow_count--;
 			if (backing_object->backing_object) {
 				VM_OBJECT_LOCK(backing_object->backing_object);
-				LIST_REMOVE(backing_object, shadow_list);
-				LIST_INSERT_HEAD(
+				BSD_LIST_REMOVE(backing_object, shadow_list);
+				BSD_LIST_INSERT_HEAD(
 				    &backing_object->backing_object->shadow_head,
 				    object, shadow_list);
 				/*
@@ -1772,13 +1772,13 @@ vm_object_collapse(vm_object_t object)
 			 * chain.  Deallocating backing_object will not remove
 			 * it, since its reference count is at least 2.
 			 */
-			LIST_REMOVE(object, shadow_list);
+			BSD_LIST_REMOVE(object, shadow_list);
 			backing_object->shadow_count--;
 
 			new_backing_object = backing_object->backing_object;
 			if ((object->backing_object = new_backing_object) != NULL) {
 				VM_OBJECT_LOCK(new_backing_object);
-				LIST_INSERT_HEAD(
+				BSD_LIST_INSERT_HEAD(
 				    &new_backing_object->shadow_head,
 				    object,
 				    shadow_list
@@ -1853,7 +1853,7 @@ again:
 	 * greater than or equal to the parameter "start" or (2) NULL. 
 	 */
 	for (; p != NULL && (p->pindex < end || end == 0); p = next) {
-		next = TAILQ_NEXT(p, listq);
+		next = BSD_TAILQ_NEXT(p, listq);
 
 		/*
 		 * If the page is wired for any reason besides the existence
@@ -1947,7 +1947,7 @@ vm_object_page_cache(vm_object_t object, vm_pindex_t start, vm_pindex_t end)
 	 */
 	mtx = NULL;
 	for (; p != NULL && (p->pindex < end || end == 0); p = next) {
-		next = TAILQ_NEXT(p, listq);
+		next = BSD_TAILQ_NEXT(p, listq);
 
 		/*
 		 * Avoid releasing and reacquiring the same page lock.
@@ -2008,7 +2008,7 @@ vm_object_populate(vm_object_t object, vm_pindex_t start, vm_pindex_t end)
 		m = vm_page_lookup(object, start);
 		while (m != NULL && m->pindex < pindex) {
 			vm_page_wakeup(m);
-			m = TAILQ_NEXT(m, listq);
+			m = BSD_TAILQ_NEXT(m, listq);
 		}
 	}
 	return (pindex == end);
@@ -2223,7 +2223,7 @@ DB_SHOW_COMMAND(vmochk, vm_object_check)
 	 * make sure that internal objs are in a map somewhere
 	 * and none have zero ref counts.
 	 */
-	TAILQ_FOREACH(object, &vm_object_list, object_list) {
+	BSD_TAILQ_FOREACH(object, &vm_object_list, object_list) {
 		if (object->handle == NULL &&
 		    (object->type == OBJT_DEFAULT || object->type == OBJT_SWAP)) {
 			if (object->ref_count == 0) {
@@ -2276,7 +2276,7 @@ DB_SHOW_COMMAND(object, vm_object_print_static)
 
 	db_indent += 2;
 	count = 0;
-	TAILQ_FOREACH(p, &object->memq, listq) {
+	BSD_TAILQ_FOREACH(p, &object->memq, listq) {
 		if (count == 0)
 			db_iprintf("memory:=");
 		else if (count == 6) {
@@ -2318,7 +2318,7 @@ DB_SHOW_COMMAND(vmopag, vm_object_print_pages)
 	int rcount, nl, c;
 
 	nl = 0;
-	TAILQ_FOREACH(object, &vm_object_list, object_list) {
+	BSD_TAILQ_FOREACH(object, &vm_object_list, object_list) {
 		db_printf("new object: %p\n", (void *)object);
 		if (nl > 18) {
 			c = cngetc();
@@ -2330,10 +2330,10 @@ DB_SHOW_COMMAND(vmopag, vm_object_print_pages)
 		rcount = 0;
 		fidx = 0;
 		pa = -1;
-		TAILQ_FOREACH(m, &object->memq, listq) {
+		BSD_TAILQ_FOREACH(m, &object->memq, listq) {
 			if (m->pindex > 128)
 				break;
-			if ((prev_m = TAILQ_PREV(m, pglist, listq)) != NULL &&
+			if ((prev_m = BSD_TAILQ_PREV(m, pglist, listq)) != NULL &&
 			    prev_m->pindex + 1 != m->pindex) {
 				if (rcount) {
 					db_printf(" index(%ld)run(%d)pa(0x%lx)\n",

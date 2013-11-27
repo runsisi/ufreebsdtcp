@@ -179,7 +179,7 @@ rm_cleanIPI(void *arg)
 		if (tracker->rmp_rmlock == rm && tracker->rmp_flags == 0) {
 			tracker->rmp_flags = RMPF_ONQUEUE;
 			mtx_lock_spin(&rm_spinlock);
-			LIST_INSERT_HEAD(&rm->rm_activeReaders, tracker,
+			BSD_LIST_INSERT_HEAD(&rm->rm_activeReaders, tracker,
 			    rmp_qentry);
 			mtx_unlock_spin(&rm_spinlock);
 		}
@@ -199,7 +199,7 @@ rm_init_flags(struct rmlock *rm, const char *name, int opts)
 	if (opts & RM_RECURSE)
 		liflags |= LO_RECURSABLE;
 	rm->rm_writecpus = all_cpus;
-	LIST_INIT(&rm->rm_activeReaders);
+	BSD_LIST_INIT(&rm->rm_activeReaders);
 	if (opts & RM_SLEEPABLE) {
 		liflags |= RM_SLEEPABLE;
 		sx_init_flags(&rm->rm_lock_sx, "rmlock_sx", SX_RECURSE);
@@ -294,7 +294,7 @@ _rm_rlock_hard(struct rmlock *rm, struct rm_priotracker *tracker, int trylock)
 			if ((atracker->rmp_rmlock == rm) &&
 			    (atracker->rmp_thread == tracker->rmp_thread)) {
 				mtx_lock_spin(&rm_spinlock);
-				LIST_INSERT_HEAD(&rm->rm_activeReaders,
+				BSD_LIST_INSERT_HEAD(&rm->rm_activeReaders,
 				    tracker, rmp_qentry);
 				tracker->rmp_flags = RMPF_ONQUEUE;
 				mtx_unlock_spin(&rm_spinlock);
@@ -390,7 +390,7 @@ _rm_unlock_hard(struct thread *td,struct rm_priotracker *tracker)
 		return;
 
 	mtx_lock_spin(&rm_spinlock);
-	LIST_REMOVE(tracker, rmp_qentry);
+	BSD_LIST_REMOVE(tracker, rmp_qentry);
 
 	if (tracker->rmp_flags & RMPF_SIGNAL) {
 		struct rmlock *rm;
@@ -468,7 +468,7 @@ _rm_wlock(struct rmlock *rm)
 #endif
 
 		mtx_lock_spin(&rm_spinlock);
-		while ((prio = LIST_FIRST(&rm->rm_activeReaders)) != NULL) {
+		while ((prio = BSD_LIST_FIRST(&rm->rm_activeReaders)) != NULL) {
 			ts = turnstile_trywait(&rm->lock_object);
 			prio->rmp_flags = RMPF_ONQUEUE | RMPF_SIGNAL;
 			mtx_unlock_spin(&rm_spinlock);

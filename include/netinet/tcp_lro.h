@@ -32,7 +32,7 @@
 
 struct lro_entry
 {
-	SLIST_ENTRY(lro_entry)	next;
+	BSD_SLIST_ENTRY(lro_entry)	next;
 	struct mbuf		*m_head;
 	struct mbuf		*m_tail;
 	union {
@@ -60,7 +60,7 @@ struct lro_entry
 	uint16_t		window;
 	uint16_t		timestamp;	/* flag, not a TCP hdr field. */
 };
-SLIST_HEAD(lro_head, lro_entry);
+BSD_SLIST_HEAD(lro_head, lro_entry);
 
 #define	le_ip4			leip.ip4
 #define	le_ip6			leip.ip6

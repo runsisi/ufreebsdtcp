@@ -354,8 +354,8 @@ static void
 vnet_if_init(const void *unused __unused)
 {
 
-	TAILQ_INIT(&V_ifnet);
-	TAILQ_INIT(&V_ifg_head);
+	BSD_TAILQ_INIT(&V_ifnet);
+	BSD_TAILQ_INIT(&V_ifg_head);
 	IFNET_WLOCK();
 	if_grow();				/* create initial table */
 	IFNET_WUNLOCK();
@@ -380,9 +380,9 @@ static void
 vnet_if_uninit(const void *unused __unused)
 {
 
-	VNET_ASSERT(TAILQ_EMPTY(&V_ifnet), ("%s:%d tailq &V_ifnet=%p "
+	VNET_ASSERT(BSD_TAILQ_EMPTY(&V_ifnet), ("%s:%d tailq &V_ifnet=%p "
 	    "not empty", __func__, __LINE__, &V_ifnet));
-	VNET_ASSERT(TAILQ_EMPTY(&V_ifg_head), ("%s:%d tailq &V_ifg_head=%p "
+	VNET_ASSERT(BSD_TAILQ_EMPTY(&V_ifg_head), ("%s:%d tailq &V_ifg_head=%p "
 	    "not empty", __func__, __LINE__, &V_ifg_head));
 
 	bsd_free((caddr_t)V_ifindex_table, M_IFNET);
@@ -452,10 +452,10 @@ if_alloc(u_char type)
 	TASK_INIT(&ifp->if_linktask, 0, do_link_state_change, ifp);
 	ifp->if_afdata_initialized = 0;
 	IF_AFDATA_LOCK_INIT(ifp);
-	TAILQ_INIT(&ifp->if_addrhead);
-	TAILQ_INIT(&ifp->if_prefixhead);
-	TAILQ_INIT(&ifp->if_multiaddrs);
-	TAILQ_INIT(&ifp->if_groups);
+	BSD_TAILQ_INIT(&ifp->if_addrhead);
+	BSD_TAILQ_INIT(&ifp->if_prefixhead);
+	BSD_TAILQ_INIT(&ifp->if_multiaddrs);
+	BSD_TAILQ_INIT(&ifp->if_groups);
 #ifdef MAC
 	mac_ifnet_init(ifp);
 #endif
@@ -667,7 +667,7 @@ if_attach_internal(struct ifnet *ifp, int vmove)
 		sdl->sdl_len = masklen;
 		while (namelen != 0)
 			sdl->sdl_data[--namelen] = 0xff;
-		TAILQ_INSERT_HEAD(&ifp->if_addrhead, ifa, ifa_link);
+		BSD_TAILQ_INSERT_HEAD(&ifp->if_addrhead, ifa, ifa_link);
 		/* Reliably crash if used uninitialized. */
 		ifp->if_broadcastaddr = NULL;
 
@@ -687,7 +687,7 @@ if_attach_internal(struct ifnet *ifp, int vmove)
 		 * of the interface.
 		 */
 		for (ifa = ifp->if_addr; ifa != NULL;
-		    ifa = TAILQ_NEXT(ifa, ifa_link)) {
+		    ifa = BSD_TAILQ_NEXT(ifa, ifa_link)) {
 			if (ifa->ifa_addr->sa_family == AF_LINK) {
 				sdl = (struct sockaddr_dl *)ifa->ifa_addr;
 				sdl->sdl_index = ifp->if_index;
@@ -697,7 +697,7 @@ if_attach_internal(struct ifnet *ifp, int vmove)
 #endif
 
 	IFNET_WLOCK();
-	TAILQ_INSERT_TAIL(&V_ifnet, ifp, if_link);
+	BSD_TAILQ_INSERT_TAIL(&V_ifnet, ifp, if_link);
 #ifdef VIMAGE
 	curvnet->vnet_ifcnt++;
 #endif
@@ -721,7 +721,7 @@ if_attachdomain(void *dummy)
 	int s;
 
 	s = splnet();
-	TAILQ_FOREACH(ifp, &V_ifnet, if_link)
+	BSD_TAILQ_FOREACH(ifp, &V_ifnet, if_link)
 		if_attachdomain1(ifp);
 	splx(s);
 }
@@ -773,7 +773,7 @@ if_purgeaddrs(struct ifnet *ifp)
 {
 	struct ifaddr *ifa, *next;
 
-	TAILQ_FOREACH_SAFE(ifa, &ifp->if_addrhead, ifa_link, next) {
+	BSD_TAILQ_FOREACH_SAFE(ifa, &ifp->if_addrhead, ifa_link, next) {
 		if (ifa->ifa_addr->sa_family == AF_LINK)
 			continue;
 #ifdef INET
@@ -797,7 +797,7 @@ if_purgeaddrs(struct ifnet *ifp)
 			continue;
 		}
 #endif /* INET6 */
-		TAILQ_REMOVE(&ifp->if_addrhead, ifa, ifa_link);
+		BSD_TAILQ_REMOVE(&ifp->if_addrhead, ifa, ifa_link);
 		ifa_free(ifa);
 	}
 }
@@ -813,7 +813,7 @@ if_purgemaddrs(struct ifnet *ifp)
 	struct ifmultiaddr *next;
 
 	IF_ADDR_WLOCK(ifp);
-	TAILQ_FOREACH_SAFE(ifma, &ifp->if_multiaddrs, ifma_link, next)
+	BSD_TAILQ_FOREACH_SAFE(ifma, &ifp->if_multiaddrs, ifma_link, next)
 		if_delmulti_locked(ifp, ifma, 1);
 	IF_ADDR_WUNLOCK(ifp);
 }
@@ -847,9 +847,9 @@ if_detach_internal(struct ifnet *ifp, int vmove)
  	int found = 0;
 
 	IFNET_WLOCK();
-	TAILQ_FOREACH(iter, &V_ifnet, if_link)
+	BSD_TAILQ_FOREACH(iter, &V_ifnet, if_link)
 		if (iter == ifp) {
-			TAILQ_REMOVE(&V_ifnet, ifp, if_link);
+			BSD_TAILQ_REMOVE(&V_ifnet, ifp, if_link);
 			found = 1;
 			break;
 		}
@@ -912,9 +912,9 @@ if_detach_internal(struct ifnet *ifp, int vmove)
 		ifp->if_addr = NULL;
 
 		/* We can now free link ifaddr. */
-		if (!TAILQ_EMPTY(&ifp->if_addrhead)) {
-			ifa = TAILQ_FIRST(&ifp->if_addrhead);
-			TAILQ_REMOVE(&ifp->if_addrhead, ifa, ifa_link);
+		if (!BSD_TAILQ_EMPTY(&ifp->if_addrhead)) {
+			ifa = BSD_TAILQ_FIRST(&ifp->if_addrhead);
+			BSD_TAILQ_REMOVE(&ifp->if_addrhead, ifa, ifa_link);
 			ifa_free(ifa);
 		}
 	}
@@ -1119,7 +1119,7 @@ if_addgroup(struct ifnet *ifp, const char *groupname)
 		return (EINVAL);
 
 	IFNET_WLOCK();
-	TAILQ_FOREACH(ifgl, &ifp->if_groups, ifgl_next)
+	BSD_TAILQ_FOREACH(ifgl, &ifp->if_groups, ifgl_next)
 		if (!strcmp(ifgl->ifgl_group->ifg_group, groupname)) {
 			IFNET_WUNLOCK();
 			return (EEXIST);
@@ -1138,7 +1138,7 @@ if_addgroup(struct ifnet *ifp, const char *groupname)
 		return (ENOMEM);
 	}
 
-	TAILQ_FOREACH(ifg, &V_ifg_head, ifg_next)
+	BSD_TAILQ_FOREACH(ifg, &V_ifg_head, ifg_next)
 		if (!strcmp(ifg->ifg_group, groupname))
 			break;
 
@@ -1152,9 +1152,9 @@ if_addgroup(struct ifnet *ifp, const char *groupname)
 		}
 		strlcpy(ifg->ifg_group, groupname, sizeof(ifg->ifg_group));
 		ifg->ifg_refcnt = 0;
-		TAILQ_INIT(&ifg->ifg_members);
+		BSD_TAILQ_INIT(&ifg->ifg_members);
 		EVENTHANDLER_INVOKE(group_attach_event, ifg);
-		TAILQ_INSERT_TAIL(&V_ifg_head, ifg, ifg_next);
+		BSD_TAILQ_INSERT_TAIL(&V_ifg_head, ifg, ifg_next);
 	}
 
 	ifg->ifg_refcnt++;
@@ -1162,8 +1162,8 @@ if_addgroup(struct ifnet *ifp, const char *groupname)
 	ifgm->ifgm_ifp = ifp;
 
 	IF_ADDR_WLOCK(ifp);
-	TAILQ_INSERT_TAIL(&ifg->ifg_members, ifgm, ifgm_next);
-	TAILQ_INSERT_TAIL(&ifp->if_groups, ifgl, ifgl_next);
+	BSD_TAILQ_INSERT_TAIL(&ifg->ifg_members, ifgm, ifgm_next);
+	BSD_TAILQ_INSERT_TAIL(&ifp->if_groups, ifgl, ifgl_next);
 	IF_ADDR_WUNLOCK(ifp);
 
 	IFNET_WUNLOCK();
@@ -1183,7 +1183,7 @@ if_delgroup(struct ifnet *ifp, const char *groupname)
 	struct ifg_member	*ifgm;
 
 	IFNET_WLOCK();
-	TAILQ_FOREACH(ifgl, &ifp->if_groups, ifgl_next)
+	BSD_TAILQ_FOREACH(ifgl, &ifp->if_groups, ifgl_next)
 		if (!strcmp(ifgl->ifgl_group->ifg_group, groupname))
 			break;
 	if (ifgl == NULL) {
@@ -1192,20 +1192,20 @@ if_delgroup(struct ifnet *ifp, const char *groupname)
 	}
 
 	IF_ADDR_WLOCK(ifp);
-	TAILQ_REMOVE(&ifp->if_groups, ifgl, ifgl_next);
+	BSD_TAILQ_REMOVE(&ifp->if_groups, ifgl, ifgl_next);
 	IF_ADDR_WUNLOCK(ifp);
 
-	TAILQ_FOREACH(ifgm, &ifgl->ifgl_group->ifg_members, ifgm_next)
+	BSD_TAILQ_FOREACH(ifgm, &ifgl->ifgl_group->ifg_members, ifgm_next)
 		if (ifgm->ifgm_ifp == ifp)
 			break;
 
 	if (ifgm != NULL) {
-		TAILQ_REMOVE(&ifgl->ifgl_group->ifg_members, ifgm, ifgm_next);
+		BSD_TAILQ_REMOVE(&ifgl->ifgl_group->ifg_members, ifgm, ifgm_next);
 		bsd_free(ifgm, M_TEMP);
 	}
 
 	if (--ifgl->ifgl_group->ifg_refcnt == 0) {
-		TAILQ_REMOVE(&V_ifg_head, ifgl->ifgl_group, ifg_next);
+		BSD_TAILQ_REMOVE(&V_ifg_head, ifgl->ifgl_group, ifg_next);
 		EVENTHANDLER_INVOKE(group_detach_event, ifgl->ifgl_group);
 		bsd_free(ifgl->ifgl_group, M_TEMP);
 	}
@@ -1229,27 +1229,27 @@ if_delgroups(struct ifnet *ifp)
 	char groupname[IFNAMSIZ];
 
 	IFNET_WLOCK();
-	while (!TAILQ_EMPTY(&ifp->if_groups)) {
-		ifgl = TAILQ_FIRST(&ifp->if_groups);
+	while (!BSD_TAILQ_EMPTY(&ifp->if_groups)) {
+		ifgl = BSD_TAILQ_FIRST(&ifp->if_groups);
 
 		strlcpy(groupname, ifgl->ifgl_group->ifg_group, IFNAMSIZ);
 
 		IF_ADDR_WLOCK(ifp);
-		TAILQ_REMOVE(&ifp->if_groups, ifgl, ifgl_next);
+		BSD_TAILQ_REMOVE(&ifp->if_groups, ifgl, ifgl_next);
 		IF_ADDR_WUNLOCK(ifp);
 
-		TAILQ_FOREACH(ifgm, &ifgl->ifgl_group->ifg_members, ifgm_next)
+		BSD_TAILQ_FOREACH(ifgm, &ifgl->ifgl_group->ifg_members, ifgm_next)
 			if (ifgm->ifgm_ifp == ifp)
 				break;
 
 		if (ifgm != NULL) {
-			TAILQ_REMOVE(&ifgl->ifgl_group->ifg_members, ifgm,
+			BSD_TAILQ_REMOVE(&ifgl->ifgl_group->ifg_members, ifgm,
 			    ifgm_next);
 			bsd_free(ifgm, M_TEMP);
 		}
 
 		if (--ifgl->ifgl_group->ifg_refcnt == 0) {
-			TAILQ_REMOVE(&V_ifg_head, ifgl->ifgl_group, ifg_next);
+			BSD_TAILQ_REMOVE(&V_ifg_head, ifgl->ifgl_group, ifg_next);
 			EVENTHANDLER_INVOKE(group_detach_event,
 			    ifgl->ifgl_group);
 			bsd_free(ifgl->ifgl_group, M_TEMP);
@@ -1279,7 +1279,7 @@ if_getgroup(struct ifgroupreq *data, struct ifnet *ifp)
 
 	if (ifgr->ifgr_len == 0) {
 		IF_ADDR_RLOCK(ifp);
-		TAILQ_FOREACH(ifgl, &ifp->if_groups, ifgl_next)
+		BSD_TAILQ_FOREACH(ifgl, &ifp->if_groups, ifgl_next)
 			ifgr->ifgr_len += sizeof(struct ifg_req);
 		IF_ADDR_RUNLOCK(ifp);
 		return (0);
@@ -1289,7 +1289,7 @@ if_getgroup(struct ifgroupreq *data, struct ifnet *ifp)
 	ifgp = ifgr->ifgr_groups;
 	/* XXX: wire */
 	IF_ADDR_RLOCK(ifp);
-	TAILQ_FOREACH(ifgl, &ifp->if_groups, ifgl_next) {
+	BSD_TAILQ_FOREACH(ifgl, &ifp->if_groups, ifgl_next) {
 		if (len < sizeof(ifgrq)) {
 			IF_ADDR_RUNLOCK(ifp);
 			return (EINVAL);
@@ -1322,7 +1322,7 @@ if_getgroupmembers(struct ifgroupreq *data)
 	int			 len, error;
 
 	IFNET_RLOCK();
-	TAILQ_FOREACH(ifg, &V_ifg_head, ifg_next)
+	BSD_TAILQ_FOREACH(ifg, &V_ifg_head, ifg_next)
 		if (!strcmp(ifg->ifg_group, ifgr->ifgr_name))
 			break;
 	if (ifg == NULL) {
@@ -1331,7 +1331,7 @@ if_getgroupmembers(struct ifgroupreq *data)
 	}
 
 	if (ifgr->ifgr_len == 0) {
-		TAILQ_FOREACH(ifgm, &ifg->ifg_members, ifgm_next)
+		BSD_TAILQ_FOREACH(ifgm, &ifg->ifg_members, ifgm_next)
 			ifgr->ifgr_len += sizeof(ifgrq);
 		IFNET_RUNLOCK();
 		return (0);
@@ -1339,7 +1339,7 @@ if_getgroupmembers(struct ifgroupreq *data)
 
 	len = ifgr->ifgr_len;
 	ifgp = ifgr->ifgr_groups;
-	TAILQ_FOREACH(ifgm, &ifg->ifg_members, ifgm_next) {
+	BSD_TAILQ_FOREACH(ifgm, &ifg->ifg_members, ifgm_next) {
 		if (len < sizeof(ifgrq)) {
 			IFNET_RUNLOCK();
 			return (EINVAL);
@@ -1544,9 +1544,9 @@ ifa_ifwithaddr_internal(struct sockaddr *addr, int getref)
 	struct ifaddr *ifa;
 
 	IFNET_RLOCK_NOSLEEP();
-	TAILQ_FOREACH(ifp, &V_ifnet, if_link) {
+	BSD_TAILQ_FOREACH(ifp, &V_ifnet, if_link) {
 		IF_ADDR_RLOCK(ifp);
-		TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
+		BSD_TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
 			if (ifa->ifa_addr->sa_family != addr->sa_family)
 				continue;
 			if (sa_equal(addr, ifa->ifa_addr)) {
@@ -1599,9 +1599,9 @@ ifa_ifwithbroadaddr(struct sockaddr *addr)
 	struct ifaddr *ifa;
 
 	IFNET_RLOCK_NOSLEEP();
-	TAILQ_FOREACH(ifp, &V_ifnet, if_link) {
+	BSD_TAILQ_FOREACH(ifp, &V_ifnet, if_link) {
 		IF_ADDR_RLOCK(ifp);
-		TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
+		BSD_TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
 			if (ifa->ifa_addr->sa_family != addr->sa_family)
 				continue;
 			if ((ifp->if_flags & IFF_BROADCAST) &&
@@ -1632,11 +1632,11 @@ ifa_ifwithdstaddr(struct sockaddr *addr)
 	struct ifaddr *ifa;
 
 	IFNET_RLOCK_NOSLEEP();
-	TAILQ_FOREACH(ifp, &V_ifnet, if_link) {
+	BSD_TAILQ_FOREACH(ifp, &V_ifnet, if_link) {
 		if ((ifp->if_flags & IFF_POINTOPOINT) == 0)
 			continue;
 		IF_ADDR_RLOCK(ifp);
-		TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
+		BSD_TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
 			if (ifa->ifa_addr->sa_family != addr->sa_family)
 				continue;
 			if (ifa->ifa_dstaddr != NULL &&
@@ -1684,9 +1684,9 @@ ifa_ifwithnet(struct sockaddr *addr, int ignore_ptp)
 	 * when we move onto the next interface.
 	 */
 	IFNET_RLOCK_NOSLEEP();
-	TAILQ_FOREACH(ifp, &V_ifnet, if_link) {
+	BSD_TAILQ_FOREACH(ifp, &V_ifnet, if_link) {
 		IF_ADDR_RLOCK(ifp);
-		TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
+		BSD_TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
 			char *cp, *cp2, *cp3;
 
 			if (ifa->ifa_addr->sa_family != af)
@@ -1782,7 +1782,7 @@ ifaof_ifpforaddr(struct sockaddr *addr, struct ifnet *ifp)
 	if (af >= AF_MAX)
 		return (NULL);
 	IF_ADDR_RLOCK(ifp);
-	TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
+	BSD_TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
 		if (ifa->ifa_addr->sa_family != af)
 			continue;
 		if (ifa_maybe == NULL)
@@ -1860,7 +1860,7 @@ if_unroute(struct ifnet *ifp, int flag, int fam)
 
 	ifp->if_flags &= ~flag;
 	getmicrotime(&ifp->if_lastchange);
-	TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link)
+	BSD_TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link)
 		if (fam == PF_UNSPEC || (fam == ifa->ifa_addr->sa_family))
 			pfctlinput(PRC_IFDOWN, ifa->ifa_addr);
 	ifp->if_qflush(ifp);
@@ -1884,7 +1884,7 @@ if_route(struct ifnet *ifp, int flag, int fam)
 
 	ifp->if_flags |= flag;
 	getmicrotime(&ifp->if_lastchange);
-	TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link)
+	BSD_TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link)
 		if (fam == PF_UNSPEC || (fam == ifa->ifa_addr->sa_family))
 			pfctlinput(PRC_IFUP, ifa->ifa_addr);
 	if (ifp->if_carp)
@@ -2016,7 +2016,7 @@ ifunit_ref(const char *name)
 	struct ifnet *ifp;
 
 	IFNET_RLOCK_NOSLEEP();
-	TAILQ_FOREACH(ifp, &V_ifnet, if_link) {
+	BSD_TAILQ_FOREACH(ifp, &V_ifnet, if_link) {
 		if (strncmp(name, ifp->if_xname, IFNAMSIZ) == 0 &&
 		    !(ifp->if_flags & IFF_DYING))
 			break;
@@ -2033,7 +2033,7 @@ ifunit(const char *name)
 	struct ifnet *ifp;
 
 	IFNET_RLOCK_NOSLEEP();
-	TAILQ_FOREACH(ifp, &V_ifnet, if_link) {
+	BSD_TAILQ_FOREACH(ifp, &V_ifnet, if_link) {
 		if (strncmp(name, ifp->if_xname, IFNAMSIZ) == 0)
 			break;
 	}
@@ -2774,7 +2774,7 @@ again:
 	valid_len = 0;
 
 	IFNET_RLOCK();
-	TAILQ_FOREACH(ifp, &V_ifnet, if_link) {
+	BSD_TAILQ_FOREACH(ifp, &V_ifnet, if_link) {
 		int addrs;
 
 		/*
@@ -2792,7 +2792,7 @@ again:
 
 		addrs = 0;
 		IF_ADDR_RLOCK(ifp);
-		TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
+		BSD_TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
 			struct sockaddr *sa = ifa->ifa_addr;
 
 			if (prison_if(curthread->td_ucred, sa) != 0)
@@ -2869,7 +2869,7 @@ if_findmulti(struct ifnet *ifp, struct sockaddr *sa)
 
 	IF_ADDR_LOCK_ASSERT(ifp);
 
-	TAILQ_FOREACH(ifma, &ifp->if_multiaddrs, ifma_link) {
+	BSD_TAILQ_FOREACH(ifma, &ifp->if_multiaddrs, ifma_link) {
 		if (sa->sa_family == AF_LINK) {
 			if (sa_dl_equal(ifma->ifma_addr, sa))
 				break;
@@ -3031,7 +3031,7 @@ if_addmulti(struct ifnet *ifp, struct sockaddr *sa,
 				error = ENOMEM;
 				goto free_llsa_out;
 			}
-			TAILQ_INSERT_HEAD(&ifp->if_multiaddrs, ll_ifma,
+			BSD_TAILQ_INSERT_HEAD(&ifp->if_multiaddrs, ll_ifma,
 			    ifma_link);
 		} else
 			ll_ifma->ifma_refcount++;
@@ -3043,7 +3043,7 @@ if_addmulti(struct ifnet *ifp, struct sockaddr *sa,
 	 * referenced link layer address.  Add the primary address to the
 	 * ifnet address list.
 	 */
-	TAILQ_INSERT_HEAD(&ifp->if_multiaddrs, ifma, ifma_link);
+	BSD_TAILQ_INSERT_HEAD(&ifp->if_multiaddrs, ifma, ifma_link);
 
 	if (retifma != NULL)
 		*retifma = ifma;
@@ -3095,7 +3095,7 @@ if_delmulti(struct ifnet *ifp, struct sockaddr *sa)
 	struct ifnet *oifp;
 
 	IFNET_RLOCK_NOSLEEP();
-	TAILQ_FOREACH(oifp, &V_ifnet, if_link)
+	BSD_TAILQ_FOREACH(oifp, &V_ifnet, if_link)
 		if (ifp == oifp)
 			break;
 	if (ifp != oifp)
@@ -3135,7 +3135,7 @@ if_delallmulti(struct ifnet *ifp)
 	struct ifmultiaddr *next;
 
 	IF_ADDR_WLOCK(ifp);
-	TAILQ_FOREACH_SAFE(ifma, &ifp->if_multiaddrs, ifma_link, next)
+	BSD_TAILQ_FOREACH_SAFE(ifma, &ifp->if_multiaddrs, ifma_link, next)
 		if_delmulti_locked(ifp, ifma, 0);
 	IF_ADDR_WUNLOCK(ifp);
 }
@@ -3160,7 +3160,7 @@ if_delmulti_ifma(struct ifmultiaddr *ifma)
 		struct ifnet *oifp;
 
 		IFNET_RLOCK_NOSLEEP();
-		TAILQ_FOREACH(oifp, &V_ifnet, if_link)
+		BSD_TAILQ_FOREACH(oifp, &V_ifnet, if_link)
 			if (ifp == oifp)
 				break;
 		if (ifp != oifp) {
@@ -3247,7 +3247,7 @@ if_delmulti_locked(struct ifnet *ifp, struct ifmultiaddr *ifma, int detaching)
 			ll_ifma->ifma_ifp = NULL;	/* XXX */
 		if (--ll_ifma->ifma_refcount == 0) {
 			if (ifp != NULL) {
-				TAILQ_REMOVE(&ifp->if_multiaddrs, ll_ifma,
+				BSD_TAILQ_REMOVE(&ifp->if_multiaddrs, ll_ifma,
 				    ifma_link);
 			}
 			if_freemulti(ll_ifma);
@@ -3255,7 +3255,7 @@ if_delmulti_locked(struct ifnet *ifp, struct ifmultiaddr *ifma, int detaching)
 	}
 
 	if (ifp != NULL)
-		TAILQ_REMOVE(&ifp->if_multiaddrs, ifma, ifma_link);
+		BSD_TAILQ_REMOVE(&ifp->if_multiaddrs, ifma, ifma_link);
 
 	if_freemulti(ifma);
 
@@ -3335,7 +3335,7 @@ if_setlladdr(struct ifnet *ifp, const u_char *lladdr, int len)
 		 * Also send gratuitous ARPs to notify other nodes about
 		 * the address change.
 		 */
-		TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
+		BSD_TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
 			if (ifa->ifa_addr->sa_family == AF_INET)
 				arp_ifinit(ifp, ifa);
 		}

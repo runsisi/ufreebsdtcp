@@ -119,10 +119,10 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/kern/subr_sleepqueue.c 251147 2013-05-30 1
  *  c - sleep queue chain lock
  */
 struct sleepqueue {
-	TAILQ_HEAD(, thread) sq_blocked[NR_SLEEPQS];	/* (c) Blocked threads. */
+	BSD_TAILQ_HEAD(, thread) sq_blocked[NR_SLEEPQS];	/* (c) Blocked threads. */
 	u_int sq_blockedcnt[NR_SLEEPQS];	/* (c) N. of blocked threads. */
-	LIST_ENTRY(sleepqueue) sq_hash;		/* (c) Chain and free list. */
-	LIST_HEAD(, sleepqueue) sq_free;	/* (c) Free queues. */
+	BSD_LIST_ENTRY(sleepqueue) sq_hash;		/* (c) Chain and free list. */
+	BSD_LIST_HEAD(, sleepqueue) sq_free;	/* (c) Free queues. */
 	void	*sq_wchan;			/* (c) Wait channel. */
 	int	sq_type;			/* (c) Queue type. */
 #ifdef INVARIANTS
@@ -131,7 +131,7 @@ struct sleepqueue {
 };
 
 struct sleepqueue_chain {
-	LIST_HEAD(, sleepqueue) sc_queues;	/* List of sleep queues. */
+	BSD_LIST_HEAD(, sleepqueue) sc_queues;	/* List of sleep queues. */
 	struct mtx sc_lock;			/* Spin lock for this chain. */
 #ifdef SLEEPQUEUE_PROFILING
 	u_int	sc_depth;			/* Length of sc_queues. */
@@ -185,7 +185,7 @@ init_sleepqueues(void)
 	int i;
 
 	for (i = 0; i < SC_TABLESIZE; i++) {
-		LIST_INIT(&sleepq_chains[i].sc_queues);
+		BSD_LIST_INIT(&sleepq_chains[i].sc_queues);
 		mtx_init(&sleepq_chains[i].sc_lock, "sleepq chain", NULL,
 		    MTX_SPIN | MTX_RECURSE);
 #ifdef SLEEPQUEUE_PROFILING
@@ -256,7 +256,7 @@ sleepq_lookup(void *wchan)
 	KASSERT(wchan != NULL, ("%s: invalid NULL wait channel", __func__));
 	sc = SC_LOOKUP(wchan);
 	mtx_assert(&sc->sc_lock, MA_OWNED);
-	LIST_FOREACH(sq, &sc->sc_queues, sq_hash)
+	BSD_LIST_FOREACH(sq, &sc->sc_queues, sq_hash)
 		if (sq->sq_wchan == wchan)
 			return (sq);
 	return (NULL);
@@ -313,12 +313,12 @@ sleepq_add(void *wchan, struct lock_object *lock, const char *wmesg, int flags,
 
 		sq = td->td_sleepqueue;
 		for (i = 0; i < NR_SLEEPQS; i++) {
-			KASSERT(TAILQ_EMPTY(&sq->sq_blocked[i]),
+			KASSERT(BSD_TAILQ_EMPTY(&sq->sq_blocked[i]),
 			    ("thread's sleep queue %d is not empty", i));
 			KASSERT(sq->sq_blockedcnt[i] == 0,
 			    ("thread's sleep queue %d count mismatches", i));
 		}
-		KASSERT(LIST_EMPTY(&sq->sq_free),
+		KASSERT(BSD_LIST_EMPTY(&sq->sq_free),
 		    ("thread's sleep queue has a non-empty free list"));
 		KASSERT(sq->sq_wchan == NULL, ("stale sq_wchan pointer"));
 		sq->sq_lock = lock;
@@ -332,17 +332,17 @@ sleepq_add(void *wchan, struct lock_object *lock, const char *wmesg, int flags,
 		}
 #endif
 		sq = td->td_sleepqueue;
-		LIST_INSERT_HEAD(&sc->sc_queues, sq, sq_hash);
+		BSD_LIST_INSERT_HEAD(&sc->sc_queues, sq, sq_hash);
 		sq->sq_wchan = wchan;
 		sq->sq_type = flags & SLEEPQ_TYPE;
 	} else {
 		MPASS(wchan == sq->sq_wchan);
 		MPASS(lock == sq->sq_lock);
 		MPASS((flags & SLEEPQ_TYPE) == sq->sq_type);
-		LIST_INSERT_HEAD(&sq->sq_free, td->td_sleepqueue, sq_hash);
+		BSD_LIST_INSERT_HEAD(&sq->sq_free, td->td_sleepqueue, sq_hash);
 	}
 	thread_lock(td);
-	TAILQ_INSERT_TAIL(&sq->sq_blocked[queue], td, td_slpq);
+	BSD_TAILQ_INSERT_TAIL(&sq->sq_blocked[queue], td, td_slpq);
 	sq->sq_blockedcnt[queue]++;
 	td->td_sleepqueue = NULL;
 	td->td_sqqueue = queue;
@@ -723,14 +723,14 @@ sleepq_resume_thread(struct sleepqueue *sq, struct thread *td, int pri)
 
 	/* Remove the thread from the queue. */
 	sq->sq_blockedcnt[td->td_sqqueue]--;
-	TAILQ_REMOVE(&sq->sq_blocked[td->td_sqqueue], td, td_slpq);
+	BSD_TAILQ_REMOVE(&sq->sq_blocked[td->td_sqqueue], td, td_slpq);
 
 	/*
 	 * Get a sleep queue for this thread.  If this is the last waiter,
 	 * use the queue itself and take it out of the chain, otherwise,
 	 * remove a queue from the free list.
 	 */
-	if (LIST_EMPTY(&sq->sq_free)) {
+	if (BSD_LIST_EMPTY(&sq->sq_free)) {
 		td->td_sleepqueue = sq;
 #ifdef INVARIANTS
 		sq->sq_wchan = NULL;
@@ -739,8 +739,8 @@ sleepq_resume_thread(struct sleepqueue *sq, struct thread *td, int pri)
 		sc->sc_depth--;
 #endif
 	} else
-		td->td_sleepqueue = LIST_FIRST(&sq->sq_free);
-	LIST_REMOVE(td->td_sleepqueue, sq_hash);
+		td->td_sleepqueue = BSD_LIST_FIRST(&sq->sq_free);
+	BSD_LIST_REMOVE(td->td_sleepqueue, sq_hash);
 
 	td->td_wmesg = NULL;
 	td->td_wchan = NULL;
@@ -780,7 +780,7 @@ sleepq_dtor(void *mem, int size, void *arg)
 
 	sq = mem;
 	for (i = 0; i < NR_SLEEPQS; i++) {
-		MPASS(TAILQ_EMPTY(&sq->sq_blocked[i]));
+		MPASS(BSD_TAILQ_EMPTY(&sq->sq_blocked[i]));
 		MPASS(sq->sq_blockedcnt[i] == 0);
 	}
 }
@@ -798,10 +798,10 @@ sleepq_init(void *mem, int size, int flags)
 	bzero(mem, size);
 	sq = mem;
 	for (i = 0; i < NR_SLEEPQS; i++) {
-		TAILQ_INIT(&sq->sq_blocked[i]);
+		BSD_TAILQ_INIT(&sq->sq_blocked[i]);
 		sq->sq_blockedcnt[i] = 0;
 	}
-	LIST_INIT(&sq->sq_free);
+	BSD_LIST_INIT(&sq->sq_free);
 	return (0);
 }
 
@@ -831,7 +831,7 @@ sleepq_signal(void *wchan, int flags, int pri, int queue)
 	 * the tail of sleep queues.
 	 */
 	besttd = NULL;
-	TAILQ_FOREACH(td, &sq->sq_blocked[queue], td_slpq) {
+	BSD_TAILQ_FOREACH(td, &sq->sq_blocked[queue], td_slpq) {
 		if (besttd == NULL || td->td_priority < besttd->td_priority)
 			besttd = td;
 	}
@@ -863,7 +863,7 @@ sleepq_broadcast(void *wchan, int flags, int pri, int queue)
 
 	/* Resume all blocked threads on the sleep queue. */
 	wakeup_swapper = 0;
-	TAILQ_FOREACH_SAFE(td, &sq->sq_blocked[queue], td_slpq, tdn) {
+	BSD_TAILQ_FOREACH_SAFE(td, &sq->sq_blocked[queue], td_slpq, tdn) {
 		thread_lock(td);
 		if (sleepq_resume_thread(sq, td, pri))
 			wakeup_swapper = 1;
@@ -1027,12 +1027,12 @@ sleepq_abort(struct thread *td, int intrval)
 #define	SLEEPQ_PROF_LOCATIONS	1024
 #define	SLEEPQ_SBUFSIZE		512
 struct sleepq_prof {
-	LIST_ENTRY(sleepq_prof) sp_link;
+	BSD_LIST_ENTRY(sleepq_prof) sp_link;
 	const char	*sp_wmesg;
 	long		sp_count;
 };
 
-LIST_HEAD(sqphead, sleepq_prof);
+BSD_LIST_HEAD(sqphead, sleepq_prof);
 
 struct sqphead sleepq_prof_free;
 struct sqphead sleepq_hash[SC_TABLESIZE];
@@ -1048,15 +1048,15 @@ sleepq_profile(const char *wmesg)
 	mtx_lock_spin(&sleepq_prof_lock);
 	if (prof_enabled == 0)
 		goto unlock;
-	LIST_FOREACH(sp, &sleepq_hash[SC_HASH(wmesg)], sp_link)
+	BSD_LIST_FOREACH(sp, &sleepq_hash[SC_HASH(wmesg)], sp_link)
 		if (sp->sp_wmesg == wmesg)
 			goto done;
-	sp = LIST_FIRST(&sleepq_prof_free);
+	sp = BSD_LIST_FIRST(&sleepq_prof_free);
 	if (sp == NULL)
 		goto unlock;
 	sp->sp_wmesg = wmesg;
-	LIST_REMOVE(sp, sp_link);
-	LIST_INSERT_HEAD(&sleepq_hash[SC_HASH(wmesg)], sp, sp_link);
+	BSD_LIST_REMOVE(sp, sp_link);
+	BSD_LIST_INSERT_HEAD(&sleepq_hash[SC_HASH(wmesg)], sp, sp_link);
 done:
 	sp->sp_count++;
 unlock:
@@ -1075,13 +1075,13 @@ sleepq_prof_reset(void)
 	enabled = prof_enabled;
 	prof_enabled = 0;
 	for (i = 0; i < SC_TABLESIZE; i++)
-		LIST_INIT(&sleepq_hash[i]);
-	LIST_INIT(&sleepq_prof_free);
+		BSD_LIST_INIT(&sleepq_hash[i]);
+	BSD_LIST_INIT(&sleepq_prof_free);
 	for (i = 0; i < SLEEPQ_PROF_LOCATIONS; i++) {
 		sp = &sleepq_profent[i];
 		sp->sp_wmesg = NULL;
 		sp->sp_count = 0;
-		LIST_INSERT_HEAD(&sleepq_prof_free, sp, sp_link);
+		BSD_LIST_INSERT_HEAD(&sleepq_prof_free, sp, sp_link);
 	}
 	prof_enabled = enabled;
 	mtx_unlock_spin(&sleepq_prof_lock);
@@ -1146,7 +1146,7 @@ dump_sleepq_prof_stats(SYSCTL_HANDLER_ARGS)
 	prof_enabled = 0;
 	mtx_unlock_spin(&sleepq_prof_lock);
 	for (i = 0; i < SC_TABLESIZE; i++) {
-		LIST_FOREACH(sp, &sleepq_hash[i], sp_link) {
+		BSD_LIST_FOREACH(sp, &sleepq_hash[i], sp_link) {
 			sbuf_printf(sb, "%s\t%ld\n",
 			    sp->sp_wmesg, sp->sp_count);
 		}
@@ -1190,7 +1190,7 @@ DB_SHOW_COMMAND(sleepq, db_show_sleepqueue)
 	 */
 	wchan = (void *)addr;
 	sc = SC_LOOKUP(wchan);
-	LIST_FOREACH(sq, &sc->sc_queues, sq_hash)
+	BSD_LIST_FOREACH(sq, &sc->sc_queues, sq_hash)
 		if (sq->sq_wchan == wchan)
 			goto found;
 
@@ -1199,7 +1199,7 @@ DB_SHOW_COMMAND(sleepq, db_show_sleepqueue)
 	 * indicated.
 	 */
 	for (i = 0; i < SC_TABLESIZE; i++)
-		LIST_FOREACH(sq, &sleepq_chains[i].sc_queues, sq_hash) {
+		BSD_LIST_FOREACH(sq, &sleepq_chains[i].sc_queues, sq_hash) {
 			if (sq == (struct sleepqueue *)addr)
 				goto found;
 		}
@@ -1219,10 +1219,10 @@ found:
 	db_printf("Blocked threads:\n");
 	for (i = 0; i < NR_SLEEPQS; i++) {
 		db_printf("\nQueue[%d]:\n", i);
-		if (TAILQ_EMPTY(&sq->sq_blocked[i]))
+		if (BSD_TAILQ_EMPTY(&sq->sq_blocked[i]))
 			db_printf("\tempty\n");
 		else
-			TAILQ_FOREACH(td, &sq->sq_blocked[0],
+			BSD_TAILQ_FOREACH(td, &sq->sq_blocked[0],
 				      td_slpq) {
 				db_printf("\t%p (tid %d, pid %d, \"%s\")\n", td,
 					  td->td_tid, td->td_proc->p_pid,

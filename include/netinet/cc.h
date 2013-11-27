@@ -55,7 +55,7 @@
 #include <netinet/tcp.h>
 
 /* Global CC vars. */
-extern STAILQ_HEAD(cc_head, cc_algo) cc_list;
+extern BSD_STAILQ_HEAD(cc_head, cc_algo) cc_list;
 extern const int tcprexmtthresh;
 extern struct cc_algo newreno_cc_algo;
 
@@ -143,7 +143,7 @@ struct cc_algo {
 	/* Called when data transfer resumes after an idle period. */
 	void	(*after_idle)(struct cc_var *ccv);
 
-	STAILQ_ENTRY (cc_algo) entries;
+	BSD_STAILQ_ENTRY (cc_algo) entries;
 };
 
 /* Macro to obtain the CC algo's struct ptr. */

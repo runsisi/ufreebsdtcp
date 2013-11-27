@@ -63,7 +63,7 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/kern/kern_loginclass.c 225617 2011-09-16 1
 
 static MALLOC_DEFINE(M_LOGINCLASS, "loginclass", "loginclass structures");
 
-LIST_HEAD(, loginclass)	loginclasses;
+BSD_LIST_HEAD(, loginclass)	loginclasses;
 
 /*
  * Lock protecting loginclasses list.
@@ -92,7 +92,7 @@ loginclass_free(struct loginclass *lc)
 	mtx_lock(&loginclasses_lock);
 	if (refcount_release(&lc->lc_refcount)) {
 		racct_destroy(&lc->lc_racct);
-		LIST_REMOVE(lc, lc_next);
+		BSD_LIST_REMOVE(lc, lc_next);
 		mtx_unlock(&loginclasses_lock);
 		bsd_free(lc, M_LOGINCLASS);
 
@@ -120,7 +120,7 @@ loginclass_find(const char *name)
 	racct_create(&newlc->lc_racct);
 
 	mtx_lock(&loginclasses_lock);
-	LIST_FOREACH(lc, &loginclasses, lc_next) {
+	BSD_LIST_FOREACH(lc, &loginclasses, lc_next) {
 		if (strcmp(name, lc->lc_name) != 0)
 			continue;
 
@@ -135,7 +135,7 @@ loginclass_find(const char *name)
 	/* Add new loginclass. */
 	strcpy(newlc->lc_name, name);
 	refcount_init(&newlc->lc_refcount, 1);
-	LIST_INSERT_HEAD(&loginclasses, newlc, lc_next);
+	BSD_LIST_INSERT_HEAD(&loginclasses, newlc, lc_next);
 	mtx_unlock(&loginclasses_lock);
 
 	return (newlc);
@@ -225,7 +225,7 @@ loginclass_racct_foreach(void (*callback)(struct racct *racct,
 	struct loginclass *lc;
 
 	mtx_lock(&loginclasses_lock);
-	LIST_FOREACH(lc, &loginclasses, lc_next)
+	BSD_LIST_FOREACH(lc, &loginclasses, lc_next)
 		(callback)(lc->lc_racct, arg2, arg3);
 	mtx_unlock(&loginclasses_lock);
 }

@@ -95,7 +95,7 @@
  */
 static struct mtx gif_mtx;
 static MALLOC_DEFINE(M_GIF, "gif", "Generic Tunnel Interface");
-static VNET_DEFINE(LIST_HEAD(, gif_softc), gif_softc_list);
+static VNET_DEFINE(BSD_LIST_HEAD(, gif_softc), gif_softc_list);
 #define	V_gif_softc_list	VNET(gif_softc_list)
 
 void	(*ng_gif_input_p)(struct ifnet *ifp, struct mbuf **mp, int af);
@@ -193,7 +193,7 @@ gif_clone_create(ifc, unit, params)
 		(*ng_gif_attach_p)(GIF2IFP(sc));
 
 	mtx_lock(&gif_mtx);
-	LIST_INSERT_HEAD(&V_gif_softc_list, sc, gif_list);
+	BSD_LIST_INSERT_HEAD(&V_gif_softc_list, sc, gif_list);
 	mtx_unlock(&gif_mtx);
 
 	return (0);
@@ -209,7 +209,7 @@ gif_clone_destroy(ifp)
 	struct gif_softc *sc = ifp->if_softc;
 
 	mtx_lock(&gif_mtx);
-	LIST_REMOVE(sc, gif_list);
+	BSD_LIST_REMOVE(sc, gif_list);
 	mtx_unlock(&gif_mtx);
 
 	gif_delete_tunnel(ifp);
@@ -241,7 +241,7 @@ static void
 vnet_gif_init(const void *unused __unused)
 {
 
-	LIST_INIT(&V_gif_softc_list);
+	BSD_LIST_INIT(&V_gif_softc_list);
 }
 VNET_SYSINIT(vnet_gif_init, SI_SUB_PSEUDO, SI_ORDER_MIDDLE, vnet_gif_init,
     NULL);
@@ -909,7 +909,7 @@ gif_set_tunnel(ifp, src, dst)
 	int error = 0; 
 
 	mtx_lock(&gif_mtx);
-	LIST_FOREACH(sc2, &V_gif_softc_list, gif_list) {
+	BSD_LIST_FOREACH(sc2, &V_gif_softc_list, gif_list) {
 		if (sc2 == sc)
 			continue;
 		if (!sc2->gif_pdst || !sc2->gif_psrc)

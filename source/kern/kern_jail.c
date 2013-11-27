@@ -106,7 +106,7 @@ struct prison prison0 = {
 	.pr_devfs_rsnum = 0,
 	.pr_childmax	= JAIL_MAX,
 	.pr_hostuuid	= DEFAULT_HOSTUUID,
-	.pr_children	= LIST_HEAD_INITIALIZER(prison0.pr_children),
+	.pr_children	= BSD_LIST_HEAD_INITIALIZER(prison0.pr_children),
 #ifdef VIMAGE
 	.pr_flags	= PR_HOST|PR_VNET|_PR_IP_SADDRSEL,
 #else
@@ -119,8 +119,8 @@ MTX_SYSINIT(prison0, &prison0.pr_mtx, "jail mutex", MTX_DEF);
 /* allprison, allprison_racct and lastprid are protected by allprison_lock. */
 struct	sx allprison_lock;
 SX_SYSINIT(allprison_lock, &allprison_lock, "allprison");
-struct	prisonlist allprison = TAILQ_HEAD_INITIALIZER(allprison);
-LIST_HEAD(, prison_racct) allprison_racct;
+struct	prisonlist allprison = BSD_TAILQ_HEAD_INITIALIZER(allprison);
+BSD_LIST_HEAD(, prison_racct) allprison_racct;
 int	lastprid = 0;
 
 static int do_jail_attach(struct thread *td, struct prison *pr);
@@ -973,7 +973,7 @@ kern_jail_set(struct thread *td, struct uio *optuio, int flags)
 		goto done_unlock_list;
 
 	/* By now, all parameters should have been noted. */
-	TAILQ_FOREACH(opt, opts, link) {
+	BSD_TAILQ_FOREACH(opt, opts, link) {
 		if (!opt->seen && strcmp(opt->name, "errmsg")) {
 			error = EINVAL;
 			vfs_opterror(opts, "unknown parameter: %s", opt->name);
@@ -1193,11 +1193,11 @@ kern_jail_set(struct thread *td, struct uio *optuio, int flags)
  findnext:
 			if (jid == JAIL_MAX)
 				jid = 1;
-			TAILQ_FOREACH(tpr, &allprison, pr_list) {
+			BSD_TAILQ_FOREACH(tpr, &allprison, pr_list) {
 				if (tpr->pr_id < jid)
 					continue;
 				if (tpr->pr_id > jid || tpr->pr_ref == 0) {
-					TAILQ_INSERT_BEFORE(tpr, pr, pr_list);
+					BSD_TAILQ_INSERT_BEFORE(tpr, pr, pr_list);
 					break;
 				}
 				if (jid == lastprid) {
@@ -1218,15 +1218,15 @@ kern_jail_set(struct thread *td, struct uio *optuio, int flags)
 			 * The jail already has a jid (that did not yet exist),
 			 * so just find where to insert it.
 			 */
-			TAILQ_FOREACH(tpr, &allprison, pr_list)
+			BSD_TAILQ_FOREACH(tpr, &allprison, pr_list)
 				if (tpr->pr_id >= jid) {
-					TAILQ_INSERT_BEFORE(tpr, pr, pr_list);
+					BSD_TAILQ_INSERT_BEFORE(tpr, pr, pr_list);
 					break;
 				}
 		}
 		if (tpr == NULL)
-			TAILQ_INSERT_TAIL(&allprison, pr, pr_list);
-		LIST_INSERT_HEAD(&ppr->pr_children, pr, pr_sibling);
+			BSD_TAILQ_INSERT_TAIL(&allprison, pr, pr_list);
+		BSD_LIST_INSERT_HEAD(&ppr->pr_children, pr, pr_sibling);
 		for (tpr = ppr; tpr != NULL; tpr = tpr->pr_parent)
 			tpr->pr_childcount++;
 
@@ -1290,7 +1290,7 @@ kern_jail_set(struct thread *td, struct uio *optuio, int flags)
 		pr->pr_enforce_statfs = JAIL_DEFAULT_ENFORCE_STATFS;
 		pr->pr_devfs_rsnum = ppr->pr_devfs_rsnum;
 
-		LIST_INIT(&pr->pr_children);
+		BSD_LIST_INIT(&pr->pr_children);
 		mtx_init(&pr->pr_mtx, "jail mutex", NULL, MTX_DEF | MTX_DUPOK);
 
 #ifdef VIMAGE
@@ -1941,7 +1941,7 @@ kern_jail_get(struct thread *td, struct uio *optuio, int flags)
 	sx_slock(&allprison_lock);
 	error = vfs_copyopt(opts, "lastjid", &jid, sizeof(jid));
 	if (error == 0) {
-		TAILQ_FOREACH(pr, &allprison, pr_list) {
+		BSD_TAILQ_FOREACH(pr, &allprison, pr_list) {
 			if (pr->pr_id > jid && prison_ischild(mypr, pr)) {
 				mtx_lock(&pr->pr_mtx);
 				if (pr->pr_ref > 0 &&
@@ -2137,7 +2137,7 @@ kern_jail_get(struct thread *td, struct uio *optuio, int flags)
 	prison_deref(pr, PD_DEREF | PD_LIST_SLOCKED);
 
 	/* By now, all parameters should have been noted. */
-	TAILQ_FOREACH(opt, opts, link) {
+	BSD_TAILQ_FOREACH(opt, opts, link) {
 		if (!opt->seen && strcmp(opt->name, "errmsg")) {
 			error = EINVAL;
 			vfs_opterror(opts, "unknown parameter: %s", opt->name);
@@ -2147,7 +2147,7 @@ kern_jail_get(struct thread *td, struct uio *optuio, int flags)
 
 	/* Write the fetched parameters back to userspace. */
 	error = 0;
-	TAILQ_FOREACH(opt, opts, link) {
+	BSD_TAILQ_FOREACH(opt, opts, link) {
 		if (opt->pos >= 0 && opt->pos != errmsg_pos) {
 			pos = 2 * opt->pos + 1;
 			optuio->uio_iov[pos].iov_len = opt->len;
@@ -2219,7 +2219,7 @@ sys_jail_remove(struct thread *td, struct jail_remove_args *uap)
 	/* Remove all descendants of this prison, then remove this prison. */
 	pr->pr_ref++;
 	pr->pr_flags |= PR_REMOVE;
-	if (!LIST_EMPTY(&pr->pr_children)) {
+	if (!BSD_LIST_EMPTY(&pr->pr_children)) {
 		mtx_unlock(&pr->pr_mtx);
 		lpr = NULL;
 		FOREACH_PRISON_DESCENDANT(pr, cpr, descend) {
@@ -2283,7 +2283,7 @@ prison_remove_one(struct prison *pr)
 	 * Kill all processes unfortunate enough to be attached to this prison.
 	 */
 	sx_slock(&allproc_lock);
-	LIST_FOREACH(p, &allproc, p_list) {
+	BSD_LIST_FOREACH(p, &allproc, p_list) {
 		PROC_LOCK(p);
 		if (p->p_state != PRS_NEW && p->p_ucred &&
 		    p->p_ucred->cr_prison == pr)
@@ -2416,7 +2416,7 @@ prison_find(int prid)
 	struct prison *pr;
 
 	sx_assert(&allprison_lock, SX_LOCKED);
-	TAILQ_FOREACH(pr, &allprison, pr_list) {
+	BSD_TAILQ_FOREACH(pr, &allprison, pr_list) {
 		if (pr->pr_id == prid) {
 			mtx_lock(&pr->pr_mtx);
 			if (pr->pr_ref > 0)
@@ -2577,8 +2577,8 @@ prison_deref(struct prison *pr, int flags)
 		} else if (!(flags & PD_LIST_XLOCKED))
 			sx_xlock(&allprison_lock);
 
-		TAILQ_REMOVE(&allprison, pr, pr_list);
-		LIST_REMOVE(pr, pr_sibling);
+		BSD_TAILQ_REMOVE(&allprison, pr, pr_list);
+		BSD_LIST_REMOVE(pr, pr_sibling);
 		ppr = pr->pr_parent;
 		for (tpr = ppr; tpr != NULL; tpr = tpr->pr_parent)
 			tpr->pr_childcount--;
@@ -4405,7 +4405,7 @@ prison_racct_foreach(void (*callback)(struct racct *racct,
 	struct prison_racct *prr;
 
 	sx_slock(&allprison_lock);
-	LIST_FOREACH(prr, &allprison_racct, prr_next)
+	BSD_LIST_FOREACH(prr, &allprison_racct, prr_next)
 		(callback)(prr->prr_racct, arg2, arg3);
 	sx_sunlock(&allprison_lock);
 }
@@ -4420,7 +4420,7 @@ prison_racct_find_locked(const char *name)
 	if (name[0] == '\0' || strlen(name) >= MAXHOSTNAMELEN)
 		return (NULL);
 
-	LIST_FOREACH(prr, &allprison_racct, prr_next) {
+	BSD_LIST_FOREACH(prr, &allprison_racct, prr_next) {
 		if (strcmp(name, prr->prr_name) != 0)
 			continue;
 
@@ -4435,7 +4435,7 @@ prison_racct_find_locked(const char *name)
 
 	strcpy(prr->prr_name, name);
 	refcount_init(&prr->prr_refcount, 1);
-	LIST_INSERT_HEAD(&allprison_racct, prr, prr_next);
+	BSD_LIST_INSERT_HEAD(&allprison_racct, prr, prr_next);
 
 	return (prr);
 }
@@ -4466,7 +4466,7 @@ prison_racct_free_locked(struct prison_racct *prr)
 
 	if (refcount_release(&prr->prr_refcount)) {
 		racct_destroy(&prr->prr_racct);
-		LIST_REMOVE(prr, prr_next);
+		BSD_LIST_REMOVE(prr, prr_next);
 		bsd_free(prr, M_PRISON_RACCT);
 	}
 }
@@ -4591,8 +4591,8 @@ db_show_prison(struct prison *pr)
 	db_printf(" devfs_rsnum     = %d\n", pr->pr_devfs_rsnum);
 	db_printf(" children.max    = %d\n", pr->pr_childmax);
 	db_printf(" children.cur    = %d\n", pr->pr_childcount);
-	db_printf(" child           = %p\n", LIST_FIRST(&pr->pr_children));
-	db_printf(" sibling         = %p\n", LIST_NEXT(pr, pr_sibling));
+	db_printf(" child           = %p\n", BSD_LIST_FIRST(&pr->pr_children));
+	db_printf(" sibling         = %p\n", BSD_LIST_NEXT(pr, pr_sibling));
 	db_printf(" flags           = 0x%x", pr->pr_flags);
 	for (fi = 0; fi < sizeof(pr_flag_names) / sizeof(pr_flag_names[0]);
 	    fi++)
@@ -4646,7 +4646,7 @@ DB_SHOW_COMMAND(prison, db_show_prison_command)
 		 */
 		db_show_prison(&prison0);
 		if (!db_pager_quit) {
-			TAILQ_FOREACH(pr, &allprison, pr_list) {
+			BSD_TAILQ_FOREACH(pr, &allprison, pr_list) {
 				db_show_prison(pr);
 				if (db_pager_quit)
 					break;
@@ -4659,12 +4659,12 @@ DB_SHOW_COMMAND(prison, db_show_prison_command)
 		pr = &prison0;
 	else {
 		/* Look for a prison with the ID and with references. */
-		TAILQ_FOREACH(pr, &allprison, pr_list)
+		BSD_TAILQ_FOREACH(pr, &allprison, pr_list)
 			if (pr->pr_id == addr && pr->pr_ref > 0)
 				break;
 		if (pr == NULL)
 			/* Look again, without requiring a reference. */
-			TAILQ_FOREACH(pr, &allprison, pr_list)
+			BSD_TAILQ_FOREACH(pr, &allprison, pr_list)
 				if (pr->pr_id == addr)
 					break;
 		if (pr == NULL)

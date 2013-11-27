@@ -645,7 +645,7 @@ struct pmc_descr {
  */
 
 struct pmc_target {
-	LIST_ENTRY(pmc_target)	pt_next;
+	BSD_LIST_ENTRY(pmc_target)	pt_next;
 	struct pmc_process	*pt_process; /* target descriptor */
 };
 
@@ -673,8 +673,8 @@ struct pmc_target {
  */
 
 struct pmc {
-	LIST_HEAD(,pmc_target)	pm_targets;	/* list of target processes */
-	LIST_ENTRY(pmc)		pm_next;	/* owner's list */
+	BSD_LIST_HEAD(,pmc_target)	pm_targets;	/* list of target processes */
+	BSD_LIST_ENTRY(pmc)		pm_next;	/* owner's list */
 
 	/*
 	 * System-wide PMCs are allocated on a CPU and are not moved
@@ -754,7 +754,7 @@ struct pmc_targetstate {
 };
 
 struct pmc_process {
-	LIST_ENTRY(pmc_process) pp_next;	/* hash chain */
+	BSD_LIST_ENTRY(pmc_process) pp_next;	/* hash chain */
 	int		pp_refcnt;		/* reference count */
 	uint32_t	pp_flags;		/* flags PMC_PP_* */
 	struct proc	*pp_proc;		/* target thread */
@@ -776,10 +776,10 @@ struct pmc_process {
  */
 
 struct pmc_owner  {
-	LIST_ENTRY(pmc_owner)	po_next;	/* hash chain */
-	LIST_ENTRY(pmc_owner)	po_ssnext;	/* list of SS PMC owners */
-	LIST_HEAD(, pmc)	po_pmcs;	/* owned PMC list */
-	TAILQ_HEAD(, pmclog_buffer) po_logbuffers; /* (o) logbuffer list */
+	BSD_LIST_ENTRY(pmc_owner)	po_next;	/* hash chain */
+	BSD_LIST_ENTRY(pmc_owner)	po_ssnext;	/* list of SS PMC owners */
+	BSD_LIST_HEAD(, pmc)	po_pmcs;	/* owned PMC list */
+	BSD_TAILQ_HEAD(, pmclog_buffer) po_logbuffers; /* (o) logbuffer list */
 	struct mtx		po_mtx;		/* spin lock for (o) */
 	struct proc		*po_owner;	/* owner proc */
 	uint32_t		po_flags;	/* (k) flags PMC_PO_* */

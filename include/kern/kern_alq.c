@@ -72,8 +72,8 @@ struct alq {
 	struct mtx	aq_mtx;		/* Queue lock */
 	struct vnode	*aq_vp;		/* Open vnode handle */
 	struct ucred	*aq_cred;	/* Credentials of the opening thread */
-	LIST_ENTRY(alq)	aq_act;		/* List of active queues */
-	LIST_ENTRY(alq)	aq_link;	/* List of all queues */
+	BSD_LIST_ENTRY(alq)	aq_act;		/* List of active queues */
+	BSD_LIST_ENTRY(alq)	aq_link;	/* List of all queues */
 };
 
 #define	AQ_WANTED	0x0001		/* Wakeup sleeper when io is done */
@@ -94,8 +94,8 @@ static MALLOC_DEFINE(M_ALD, "ALD", "ALD");
  * The ald_mtx protects the ald_queues list and the ald_active list.
  */
 static struct mtx ald_mtx;
-static LIST_HEAD(, alq) ald_queues;
-static LIST_HEAD(, alq) ald_active;
+static BSD_LIST_HEAD(, alq) ald_queues;
+static BSD_LIST_HEAD(, alq) ald_active;
 static int ald_shutingdown = 0;
 struct thread *ald_thread;
 static struct proc *ald_proc;
@@ -134,7 +134,7 @@ ald_add(struct alq *alq)
 		error = EBUSY;
 		goto done;
 	}
-	LIST_INSERT_HEAD(&ald_queues, alq, aq_link);
+	BSD_LIST_INSERT_HEAD(&ald_queues, alq, aq_link);
 done:
 	ALD_UNLOCK();
 	return (error);
@@ -156,7 +156,7 @@ ald_rem(struct alq *alq)
 		error = EBUSY;
 		goto done;
 	}
-	LIST_REMOVE(alq, aq_link);
+	BSD_LIST_REMOVE(alq, aq_link);
 done:
 	ALD_UNLOCK();
 	return (error);
@@ -168,14 +168,14 @@ done:
 static void
 ald_activate(struct alq *alq)
 {
-	LIST_INSERT_HEAD(&ald_active, alq, aq_act);
+	BSD_LIST_INSERT_HEAD(&ald_active, alq, aq_act);
 	wakeup(&ald_active);
 }
 
 static void
 ald_deactivate(struct alq *alq)
 {
-	LIST_REMOVE(alq, aq_act);
+	BSD_LIST_REMOVE(alq, aq_act);
 	alq->aq_flags &= ~AQ_ACTIVE;
 }
 
@@ -183,8 +183,8 @@ static void
 ald_startup(void *unused)
 {
 	mtx_init(&ald_mtx, "ALDmtx", NULL, MTX_DEF|MTX_QUIET);
-	LIST_INIT(&ald_queues);
-	LIST_INIT(&ald_active);
+	BSD_LIST_INIT(&ald_queues);
+	BSD_LIST_INIT(&ald_active);
 }
 
 static void
@@ -201,7 +201,7 @@ ald_daemon(void)
 	ALD_LOCK();
 
 	for (;;) {
-		while ((alq = LIST_FIRST(&ald_active)) == NULL &&
+		while ((alq = BSD_LIST_FIRST(&ald_active)) == NULL &&
 		    !ald_shutingdown)
 			mtx_sleep(&ald_active, &ald_mtx, PWAIT, "aldslp", 0);
 
@@ -235,8 +235,8 @@ ald_shutdown(void *arg, int howto)
 	ald_shutingdown = 1;
 
 	/* Shutdown all ALQs prior to terminating the ald_daemon. */
-	while ((alq = LIST_FIRST(&ald_queues)) != NULL) {
-		LIST_REMOVE(alq, aq_link);
+	while ((alq = BSD_LIST_FIRST(&ald_queues)) != NULL) {
+		BSD_LIST_REMOVE(alq, aq_link);
 		ALD_UNLOCK();
 		alq_shutdown(alq);
 		ALD_LOCK();
@@ -939,7 +939,7 @@ alq_load_handler(module_t mod, int what, void *arg)
 	case MOD_QUIESCE:
 		ALD_LOCK();
 		/* Only allow unload if there are no open queues. */
-		if (LIST_FIRST(&ald_queues) == NULL) {
+		if (BSD_LIST_FIRST(&ald_queues) == NULL) {
 			ald_shutingdown = 1;
 			ALD_UNLOCK();
 			EVENTHANDLER_DEREGISTER(shutdown_pre_sync,

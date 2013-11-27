@@ -240,7 +240,7 @@ struct	pv_entry;
 struct	pv_chunk;
 
 struct md_page {
-	TAILQ_HEAD(,pv_entry)	pv_list;
+	BSD_TAILQ_HEAD(,pv_entry)	pv_list;
 	int			pat_mode;
 };
 
@@ -251,7 +251,7 @@ struct md_page {
 struct pmap {
 	struct mtx		pm_mtx;
 	pml4_entry_t		*pm_pml4;	/* KVA of level 4 page table */
-	TAILQ_HEAD(,pv_chunk)	pm_pvchunk;	/* list of mappings in pmap */
+	BSD_TAILQ_HEAD(,pv_chunk)	pm_pvchunk;	/* list of mappings in pmap */
 	cpuset_t		pm_active;	/* active on cpus */
 	/* spare u_int here due to padding */
 	struct pmap_statistics	pm_stats;	/* pmap statistics */
@@ -282,7 +282,7 @@ extern struct pmap	kernel_pmap_store;
  */
 typedef struct pv_entry {
 	vm_offset_t	pv_va;		/* virtual address for mapping */
-	TAILQ_ENTRY(pv_entry)	pv_list;
+	BSD_TAILQ_ENTRY(pv_entry)	pv_list;
 } *pv_entry_t;
 
 /*
@@ -293,9 +293,9 @@ typedef struct pv_entry {
 #define	_NPCPV	168
 struct pv_chunk {
 	pmap_t			pc_pmap;
-	TAILQ_ENTRY(pv_chunk)	pc_list;
+	BSD_TAILQ_ENTRY(pv_chunk)	pc_list;
 	uint64_t		pc_map[_NPCM];	/* bitmap; 1 = free */
-	TAILQ_ENTRY(pv_chunk)	pc_lru;
+	BSD_TAILQ_ENTRY(pv_chunk)	pc_lru;
 	struct pv_entry		pc_pventry[_NPCPV];
 };
 

@@ -159,7 +159,7 @@ SYSCTL_VNET_STRUCT(_net_inet_ip, IPCTL_STATS, stats, CTLFLAG_RW,
     "IP statistics (struct ipstat, netinet/ip_var.h)");
 
 static VNET_DEFINE(uma_zone_t, ipq_zone);
-static VNET_DEFINE(TAILQ_HEAD(ipqhead, ipq), ipq[IPREASS_NHASH]);
+static VNET_DEFINE(BSD_TAILQ_HEAD(ipqhead, ipq), ipq[IPREASS_NHASH]);
 static struct mtx ipqlock;
 
 #define	V_ipq_zone		VNET(ipq_zone)
@@ -283,12 +283,12 @@ ip_init(void)
 
 	V_ip_id = time_second & 0xffff;
 
-	TAILQ_INIT(&V_in_ifaddrhead);
+	BSD_TAILQ_INIT(&V_in_ifaddrhead);
 	V_in_ifaddrhashtbl = hashinit(INADDR_NHASH, M_IFADDR, &V_in_ifaddrhmask);
 
 	/* Initialize IP reassembly queue. */
 	for (i = 0; i < IPREASS_NHASH; i++)
-		TAILQ_INIT(&V_ipq[i]);
+		BSD_TAILQ_INIT(&V_ipq[i]);
 	V_maxnipq = nmbclusters / 32;
 	V_maxfragsperpacket = 16;
 	V_ipq_zone = uma_zcreate("ipq", sizeof(struct ipq), NULL, NULL, NULL,
@@ -557,7 +557,7 @@ passin:
 	 * we receive might be for us (and let the upper layers deal
 	 * with it).
 	 */
-	if (TAILQ_EMPTY(&V_in_ifaddrhead) &&
+	if (BSD_TAILQ_EMPTY(&V_in_ifaddrhead) &&
 	    (m->m_flags & (M_MCAST|M_BCAST)) == 0)
 		goto ours;
 
@@ -587,7 +587,7 @@ passin:
 	 * Check for exact addresses in the hash bucket.
 	 */
 	/* IN_IFADDR_RLOCK(); */
-	LIST_FOREACH(ia, INADDR_HASH(ip->ip_dst.s_addr), ia_hash) {
+	BSD_LIST_FOREACH(ia, INADDR_HASH(ip->ip_dst.s_addr), ia_hash) {
 		/*
 		 * If the address matches, verify that the packet
 		 * arrived via the correct interface if checking is
@@ -612,7 +612,7 @@ passin:
 	 */
 	if (ifp != NULL && ifp->if_flags & IFF_BROADCAST) {
 		IF_ADDR_RLOCK(ifp);
-	        TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
+	        BSD_TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
 			if (ifa->ifa_addr->sa_family != AF_INET)
 				continue;
 			ia = ifatoia(ifa);
@@ -866,7 +866,7 @@ ip_reass(struct mbuf *m)
 	 * Look for queue of fragments
 	 * of this datagram.
 	 */
-	TAILQ_FOREACH(fp, head, ipq_list)
+	BSD_TAILQ_FOREACH(fp, head, ipq_list)
 		if (ip->ip_id == fp->ipq_id &&
 		    ip->ip_src.s_addr == fp->ipq_src.s_addr &&
 		    ip->ip_dst.s_addr == fp->ipq_dst.s_addr &&
@@ -887,10 +887,10 @@ ip_reass(struct mbuf *m)
 		 * drop something from the tail of the current queue
 		 * before proceeding further
 		 */
-		struct ipq *q = TAILQ_LAST(head, ipqhead);
+		struct ipq *q = BSD_TAILQ_LAST(head, ipqhead);
 		if (q == NULL) {   /* gak */
 			for (i = 0; i < IPREASS_NHASH; i++) {
-				struct ipq *r = TAILQ_LAST(&V_ipq[i], ipqhead);
+				struct ipq *r = BSD_TAILQ_LAST(&V_ipq[i], ipqhead);
 				if (r) {
 					IPSTAT_ADD(ips_fragtimeout,
 					    r->ipq_nfrags);
@@ -955,7 +955,7 @@ found:
 		}
 		mac_ipq_create(m, fp);
 #endif
-		TAILQ_INSERT_HEAD(head, fp, ipq_list);
+		BSD_TAILQ_INSERT_HEAD(head, fp, ipq_list);
 		V_nipq++;
 		fp->ipq_nfrags = 1;
 		fp->ipq_ttl = IPFRAGTTL;
@@ -1123,7 +1123,7 @@ found:
 	ip->ip_len = (ip->ip_hl << 2) + next;
 	ip->ip_src = fp->ipq_src;
 	ip->ip_dst = fp->ipq_dst;
-	TAILQ_REMOVE(head, fp, ipq_list);
+	BSD_TAILQ_REMOVE(head, fp, ipq_list);
 	V_nipq--;
 	uma_zfree(V_ipq_zone, fp);
 	m->m_len += (ip->ip_hl << 2);
@@ -1163,7 +1163,7 @@ ip_freef(struct ipqhead *fhp, struct ipq *fp)
 		fp->ipq_frags = q->m_nextpkt;
 		m_freem(q);
 	}
-	TAILQ_REMOVE(fhp, fp, ipq_list);
+	BSD_TAILQ_REMOVE(fhp, fp, ipq_list);
 	uma_zfree(V_ipq_zone, fp);
 	V_nipq--;
 }
@@ -1185,11 +1185,11 @@ ip_slowtimo(void)
 	VNET_FOREACH(vnet_iter) {
 		CURVNET_SET(vnet_iter);
 		for (i = 0; i < IPREASS_NHASH; i++) {
-			for(fp = TAILQ_FIRST(&V_ipq[i]); fp;) {
+			for(fp = BSD_TAILQ_FIRST(&V_ipq[i]); fp;) {
 				struct ipq *fpp;
 
 				fpp = fp;
-				fp = TAILQ_NEXT(fp, ipq_list);
+				fp = BSD_TAILQ_NEXT(fp, ipq_list);
 				if(--fpp->ipq_ttl == 0) {
 					IPSTAT_ADD(ips_fragtimeout,
 					    fpp->ipq_nfrags);
@@ -1205,11 +1205,11 @@ ip_slowtimo(void)
 		if (V_maxnipq >= 0 && V_nipq > V_maxnipq) {
 			for (i = 0; i < IPREASS_NHASH; i++) {
 				while (V_nipq > V_maxnipq &&
-				    !TAILQ_EMPTY(&V_ipq[i])) {
+				    !BSD_TAILQ_EMPTY(&V_ipq[i])) {
 					IPSTAT_ADD(ips_fragdropped,
-					    TAILQ_FIRST(&V_ipq[i])->ipq_nfrags);
+					    BSD_TAILQ_FIRST(&V_ipq[i])->ipq_nfrags);
 					ip_freef(&V_ipq[i],
-					    TAILQ_FIRST(&V_ipq[i]));
+					    BSD_TAILQ_FIRST(&V_ipq[i]));
 				}
 			}
 		}
@@ -1230,10 +1230,10 @@ ip_drain_locked(void)
 	IPQ_LOCK_ASSERT();
 
 	for (i = 0; i < IPREASS_NHASH; i++) {
-		while(!TAILQ_EMPTY(&V_ipq[i])) {
+		while(!BSD_TAILQ_EMPTY(&V_ipq[i])) {
 			IPSTAT_ADD(ips_fragdropped,
-			    TAILQ_FIRST(&V_ipq[i])->ipq_nfrags);
-			ip_freef(&V_ipq[i], TAILQ_FIRST(&V_ipq[i]));
+			    BSD_TAILQ_FIRST(&V_ipq[i])->ipq_nfrags);
+			ip_freef(&V_ipq[i], BSD_TAILQ_FIRST(&V_ipq[i]));
 		}
 	}
 }

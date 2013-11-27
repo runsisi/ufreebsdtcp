@@ -103,7 +103,7 @@ struct ktr_request {
 		struct	ktr_fault ktr_fault;
 		struct	ktr_faultend ktr_faultend;
 	} ktr_data;
-	STAILQ_ENTRY(ktr_request) ktr_list;
+	BSD_STAILQ_ENTRY(ktr_request) ktr_list;
 };
 
 static int data_lengths[] = {
@@ -123,7 +123,7 @@ static int data_lengths[] = {
 	sizeof(struct ktr_faultend),		/* KTR_FAULTEND */
 };
 
-static STAILQ_HEAD(, ktr_request) ktr_free;
+static BSD_STAILQ_HEAD(, ktr_request) ktr_free;
 
 static SYSCTL_NODE(_kern, OID_AUTO, ktrace, CTLFLAG_RD, 0, "KTRACE options");
 
@@ -192,10 +192,10 @@ ktrace_init(void *dummy)
 
 	mtx_init(&ktrace_mtx, "ktrace", NULL, MTX_DEF | MTX_QUIET);
 	sx_init(&ktrace_sx, "ktrace_sx");
-	STAILQ_INIT(&ktr_free);
+	BSD_STAILQ_INIT(&ktr_free);
 	for (i = 0; i < ktr_requestpool; i++) {
 		req = bsd_malloc(sizeof(struct ktr_request), M_KTRACE, M_WAITOK);
-		STAILQ_INSERT_HEAD(&ktr_free, req, ktr_list);
+		BSD_STAILQ_INSERT_HEAD(&ktr_free, req, ktr_list);
 	}
 }
 SYSINIT(ktrace_init, SI_SUB_KTRACE, SI_ORDER_ANY, ktrace_init, NULL);
@@ -235,7 +235,7 @@ SYSCTL_PROC(_kern_ktrace, OID_AUTO, request_pool, CTLTYPE_UINT|CTLFLAG_RW,
 static u_int
 ktrace_resize_pool(u_int oldsize, u_int newsize)
 {
-	STAILQ_HEAD(, ktr_request) ktr_new;
+	BSD_STAILQ_HEAD(, ktr_request) ktr_new;
 	struct ktr_request *req;
 	int bound;
 
@@ -247,23 +247,23 @@ ktrace_resize_pool(u_int oldsize, u_int newsize)
 		mtx_lock(&ktrace_mtx);
 		/* Shrink pool down to newsize if possible. */
 		while (bound++ < 0) {
-			req = STAILQ_FIRST(&ktr_free);
+			req = BSD_STAILQ_FIRST(&ktr_free);
 			if (req == NULL)
 				break;
-			STAILQ_REMOVE_HEAD(&ktr_free, ktr_list);
+			BSD_STAILQ_REMOVE_HEAD(&ktr_free, ktr_list);
 			ktr_requestpool--;
 			bsd_free(req, M_KTRACE);
 		}
 	} else {
 		/* Grow pool up to newsize. */
-		STAILQ_INIT(&ktr_new);
+		BSD_STAILQ_INIT(&ktr_new);
 		while (bound-- > 0) {
 			req = bsd_malloc(sizeof(struct ktr_request), M_KTRACE,
 			    M_WAITOK);
-			STAILQ_INSERT_HEAD(&ktr_new, req, ktr_list);
+			BSD_STAILQ_INSERT_HEAD(&ktr_new, req, ktr_list);
 		}
 		mtx_lock(&ktrace_mtx);
-		STAILQ_CONCAT(&ktr_free, &ktr_new);
+		BSD_STAILQ_CONCAT(&ktr_free, &ktr_new);
 		ktr_requestpool += (newsize - oldsize);
 	}
 	mtx_unlock(&ktrace_mtx);
@@ -286,9 +286,9 @@ ktr_getrequest_entered(struct thread *td, int type)
 		mtx_unlock(&ktrace_mtx);
 		return (NULL);
 	}
-	req = STAILQ_FIRST(&ktr_free);
+	req = BSD_STAILQ_FIRST(&ktr_free);
 	if (req != NULL) {
-		STAILQ_REMOVE_HEAD(&ktr_free, ktr_list);
+		BSD_STAILQ_REMOVE_HEAD(&ktr_free, ktr_list);
 		req->ktr_header.ktr_type = type;
 		if (p->p_traceflag & KTRFAC_DROP) {
 			req->ktr_header.ktr_type |= KTR_DROP;
@@ -338,7 +338,7 @@ ktr_enqueuerequest(struct thread *td, struct ktr_request *req)
 {
 
 	mtx_lock(&ktrace_mtx);
-	STAILQ_INSERT_TAIL(&td->td_proc->p_ktr, req, ktr_list);
+	BSD_STAILQ_INSERT_TAIL(&td->td_proc->p_ktr, req, ktr_list);
 	mtx_unlock(&ktrace_mtx);
 }
 
@@ -353,20 +353,20 @@ static void
 ktr_drain(struct thread *td)
 {
 	struct ktr_request *queued_req;
-	STAILQ_HEAD(, ktr_request) local_queue;
+	BSD_STAILQ_HEAD(, ktr_request) local_queue;
 
 	ktrace_assert(td);
 	sx_assert(&ktrace_sx, SX_XLOCKED);
 
-	STAILQ_INIT(&local_queue);
+	BSD_STAILQ_INIT(&local_queue);
 
-	if (!STAILQ_EMPTY(&td->td_proc->p_ktr)) {
+	if (!BSD_STAILQ_EMPTY(&td->td_proc->p_ktr)) {
 		mtx_lock(&ktrace_mtx);
-		STAILQ_CONCAT(&local_queue, &td->td_proc->p_ktr);
+		BSD_STAILQ_CONCAT(&local_queue, &td->td_proc->p_ktr);
 		mtx_unlock(&ktrace_mtx);
 
-		while ((queued_req = STAILQ_FIRST(&local_queue))) {
-			STAILQ_REMOVE_HEAD(&local_queue, ktr_list);
+		while ((queued_req = BSD_STAILQ_FIRST(&local_queue))) {
+			BSD_STAILQ_REMOVE_HEAD(&local_queue, ktr_list);
 			ktr_writerequest(td, queued_req);
 			ktr_freerequest(queued_req);
 		}
@@ -408,7 +408,7 @@ ktr_freerequest_locked(struct ktr_request *req)
 	mtx_assert(&ktrace_mtx, MA_OWNED);
 	if (req->ktr_buffer != NULL)
 		bsd_free(req->ktr_buffer, M_KTRACE);
-	STAILQ_INSERT_HEAD(&ktr_free, req, ktr_list);
+	BSD_STAILQ_INSERT_HEAD(&ktr_free, req, ktr_list);
 }
 
 /*
@@ -429,8 +429,8 @@ ktr_freeproc(struct proc *p, struct ucred **uc, struct vnode **vp)
 		*vp = p->p_tracevp;
 	p->p_tracevp = NULL;
 	p->p_traceflag = 0;
-	while ((req = STAILQ_FIRST(&p->p_ktr)) != NULL) {
-		STAILQ_REMOVE_HEAD(&p->p_ktr, ktr_list);
+	while ((req = BSD_STAILQ_FIRST(&p->p_ktr)) != NULL) {
+		BSD_STAILQ_REMOVE_HEAD(&p->p_ktr, ktr_list);
 		ktr_freerequest_locked(req);
 	}
 }
@@ -925,7 +925,7 @@ sys_ktrace(td, uap)
 		 */
 		PGRP_UNLOCK(pg);
 		nfound = 0;
-		LIST_FOREACH(p, &pg->pg_members, p_pglist) {
+		BSD_LIST_FOREACH(p, &pg->pg_members, p_pglist) {
 			PROC_LOCK(p);
 			if (p->p_state == PRS_NEW ||
 			    p_cansee(td, p) != 0) {
@@ -1096,13 +1096,13 @@ ktrsetchildren(td, top, ops, facs, vp)
 		 * otherwise do any siblings, and if done with this level,
 		 * follow back up the tree (but not past top).
 		 */
-		if (!LIST_EMPTY(&p->p_children))
-			p = LIST_FIRST(&p->p_children);
+		if (!BSD_LIST_EMPTY(&p->p_children))
+			p = BSD_LIST_FIRST(&p->p_children);
 		else for (;;) {
 			if (p == top)
 				return (ret);
-			if (LIST_NEXT(p, p_sibling)) {
-				p = LIST_NEXT(p, p_sibling);
+			if (BSD_LIST_NEXT(p, p_sibling)) {
+				p = BSD_LIST_NEXT(p, p_sibling);
 				break;
 			}
 			p = p->p_pptr;

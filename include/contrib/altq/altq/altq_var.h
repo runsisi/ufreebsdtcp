@@ -40,7 +40,7 @@
  * filter structure for altq common classifier
  */
 struct acc_filter {
-	LIST_ENTRY(acc_filter)	f_chain;
+	BSD_LIST_ENTRY(acc_filter)	f_chain;
 	void			*f_class;	/* pointer to the class */
 	u_long			f_handle;	/* filter id */
 	u_int32_t		f_fbmask;	/* filter bitmask */
@@ -78,7 +78,7 @@ struct acc_filter {
 
 struct acc_classifier {
 	u_int32_t			acc_fbmask;
-	LIST_HEAD(filt, acc_filter)	acc_filters[ACC_FILTER_TABLESIZE];
+	BSD_LIST_HEAD(filt, acc_filter)	acc_filters[ACC_FILTER_TABLESIZE];
 
 #if (__FreeBSD_version > 500000)
 	struct	mtx acc_mtx;
@@ -145,19 +145,19 @@ typedef u_long ioctlcmd_t;
 
 /*
  * queue macros:
- * the interface of TAILQ_LAST macro changed after the introduction
+ * the interface of BSD_TAILQ_LAST macro changed after the introduction
  * of softupdate. redefine it here to make it work with pre-2.2.7.
  */
-#undef TAILQ_LAST
-#define	TAILQ_LAST(head, headname) \
+#undef BSD_TAILQ_LAST
+#define	BSD_TAILQ_LAST(head, headname) \
 	(*(((struct headname *)((head)->tqh_last))->tqh_last))
 
-#ifndef TAILQ_EMPTY
-#define	TAILQ_EMPTY(head) ((head)->tqh_first == NULL)
+#ifndef BSD_TAILQ_EMPTY
+#define	BSD_TAILQ_EMPTY(head) ((head)->tqh_first == NULL)
 #endif
-#ifndef TAILQ_FOREACH
-#define TAILQ_FOREACH(var, head, field)					\
-	for (var = TAILQ_FIRST(head); var; var = TAILQ_NEXT(var, field))
+#ifndef BSD_TAILQ_FOREACH
+#define BSD_TAILQ_FOREACH(var, head, field)					\
+	for (var = BSD_TAILQ_FIRST(head); var; var = BSD_TAILQ_NEXT(var, field))
 #endif
 
 /* macro for timeout/untimeout */

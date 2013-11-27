@@ -84,7 +84,7 @@ struct proto_handler {
 	    struct alias_data *);                
 	int (*protohandler)(struct libalias *,                  /* Aliasing * function. */
 	    struct ip *, struct alias_data *);                 
-	LIST_ENTRY(proto_handler) entries;
+	BSD_LIST_ENTRY(proto_handler) entries;
 };
 
 
@@ -103,7 +103,7 @@ struct dll {
 					 * to any symbols from a loaded module 					 
 					 * via dlsym(). 
 					 */
-	SLIST_ENTRY(dll)        next;
+	BSD_SLIST_ENTRY(dll)        next;
 };
 
 /* Functions used with protocol handlers. */

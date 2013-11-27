@@ -2749,10 +2749,10 @@ typedef struct include {
         YY_BUFFER_STATE  buffer;
         int              lineno;
         char            *filename;
-	SLIST_ENTRY(include) links;
+	BSD_SLIST_ENTRY(include) links;
 }include_t;
 
-SLIST_HEAD(, include) include_stack;
+BSD_SLIST_HEAD(, include) include_stack;
 
 void
 include_file(char *file_name, include_type type)
@@ -2800,7 +2800,7 @@ include_file(char *file_name, include_type type)
 		include->buffer = YY_CURRENT_BUFFER;
 		include->lineno = yylineno;
 		include->filename = yyfilename;
-		SLIST_INSERT_HEAD(&include_stack, include, links);
+		BSD_SLIST_INSERT_HEAD(&include_stack, include, links);
 	}
 	yy_switch_to_buffer(yy_create_buffer(newfile, YY_BUF_SIZE));
 	yylineno = 1;
@@ -2853,7 +2853,7 @@ expand_macro(struct symbol *macro_symbol)
 	}
 
 	/* Cleanup replacement text. */
-	STAILQ_FOREACH(marg, &macro_symbol->info.macroinfo->args, links) {
+	BSD_STAILQ_FOREACH(marg, &macro_symbol->info.macroinfo->args, links) {
 		bsd_free(marg->replacement_text);
 	}
 }
@@ -2877,7 +2877,7 @@ next_substitution(struct symbol *mac_symbol, const char *body_pos,
 	do {
 		search_pos = *next_match;
 
-		STAILQ_FOREACH(marg, &mac_symbol->info.macroinfo->args, links) {
+		BSD_STAILQ_FOREACH(marg, &mac_symbol->info.macroinfo->args, links) {
 
 			retval = regexec(&marg->arg_regex, search_pos, 2,
 					 matches, 0);
@@ -2907,7 +2907,7 @@ yywrap(void)
 		yy_switch_to_buffer(include->buffer);
 		yylineno = include->lineno;
 		yyfilename = include->filename;
-		SLIST_REMOVE_HEAD(&include_stack, links);
+		BSD_SLIST_REMOVE_HEAD(&include_stack, links);
 		bsd_free(include);
 		return (0);
 	}

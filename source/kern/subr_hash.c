@@ -49,7 +49,7 @@ hashinit_flags(int elements, struct malloc_type *type, u_long *hashmask,
     int flags)
 {
 	long hashsize;
-	LIST_HEAD(generic, generic) *hashtbl;
+	BSD_LIST_HEAD(generic, generic) *hashtbl;
 	int i;
 
 	KASSERT(elements > 0, ("%s: bad elements", __func__));
@@ -70,7 +70,7 @@ hashinit_flags(int elements, struct malloc_type *type, u_long *hashmask,
 
 	if (hashtbl != NULL) {
 		for (i = 0; i < hashsize; i++)
-			LIST_INIT(&hashtbl[i]);
+			BSD_LIST_INIT(&hashtbl[i]);
 		*hashmask = hashsize - 1;
 	}
 	return (hashtbl);
@@ -89,11 +89,11 @@ hashinit(int elements, struct malloc_type *type, u_long *hashmask)
 void
 hashdestroy(void *vhashtbl, struct malloc_type *type, u_long hashmask)
 {
-	LIST_HEAD(generic, generic) *hashtbl, *hp;
+	BSD_LIST_HEAD(generic, generic) *hashtbl, *hp;
 
 	hashtbl = vhashtbl;
 	for (hp = hashtbl; hp <= &hashtbl[hashmask]; hp++)
-		KASSERT(LIST_EMPTY(hp), ("%s: hash not empty", __func__));
+		KASSERT(BSD_LIST_EMPTY(hp), ("%s: hash not empty", __func__));
 	bsd_free(hashtbl, type);
 }
 
@@ -109,7 +109,7 @@ void *
 phashinit(int elements, struct malloc_type *type, u_long *nentries)
 {
 	long hashsize;
-	LIST_HEAD(generic, generic) *hashtbl;
+	BSD_LIST_HEAD(generic, generic) *hashtbl;
 	int i;
 
 	KASSERT(elements > 0, ("%s: bad elements", __func__));
@@ -122,7 +122,7 @@ phashinit(int elements, struct malloc_type *type, u_long *nentries)
 	hashsize = primes[i - 1];
 	hashtbl = bsd_malloc((u_long)hashsize * sizeof(*hashtbl), type, M_WAITOK);
 	for (i = 0; i < hashsize; i++)
-		LIST_INIT(&hashtbl[i]);
+		BSD_LIST_INIT(&hashtbl[i]);
 	*nentries = hashsize;
 	return (hashtbl);
 }

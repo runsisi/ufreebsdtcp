@@ -41,7 +41,7 @@
  * Per-link MLD state.
  */
 struct mld_ifinfo {
-	LIST_ENTRY(mld_ifinfo) mli_link;
+	BSD_LIST_ENTRY(mld_ifinfo) mli_link;
 	struct ifnet *mli_ifp;	/* interface this instance belongs to */
 	uint32_t mli_version;	/* MLDv1 Host Compatibility Mode */
 	uint32_t mli_v1_timer;	/* MLDv1 Querier Present timer (s) */
@@ -51,7 +51,7 @@ struct mld_ifinfo {
 	uint32_t mli_qi;	/* MLDv2 Query Interval (s) */
 	uint32_t mli_qri;	/* MLDv2 Query Response Interval (s) */
 	uint32_t mli_uri;	/* MLDv2 Unsolicited Report Interval (s) */
-	SLIST_HEAD(,in6_multi)	mli_relinmhead; /* released groups */
+	BSD_SLIST_HEAD(,in6_multi)	mli_relinmhead; /* released groups */
 	struct ifqueue	 mli_gq;	/* queue of general query responses */
 };
 #define MLIF_SILENT	0x00000001	/* Do not use MLD on this ifp */

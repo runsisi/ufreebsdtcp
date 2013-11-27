@@ -60,7 +60,7 @@ struct buf_ops;
 
 extern struct buf_ops buf_ops_bio;
 
-TAILQ_HEAD(buflists, buf);
+BSD_TAILQ_HEAD(buflists, buf);
 
 /* A Buffer splay list */
 struct bufv {
@@ -96,7 +96,7 @@ struct bufobj {
 	struct buf_ops	*bo_ops;	/* - Buffer operations */
 	int		bo_bsize;	/* - Block size for i/o */
 	struct vm_object *bo_object;	/* v Place to store VM object */
-	LIST_ENTRY(bufobj) bo_synclist;	/* S dirty vnode list */
+	BSD_LIST_ENTRY(bufobj) bo_synclist;	/* S dirty vnode list */
 	void		*bo_private;	/* private pointer */
 	struct vnode	*__bo_vnode;	/*
 					 * XXX: This vnode pointer is here

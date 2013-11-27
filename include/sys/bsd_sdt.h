@@ -133,7 +133,7 @@ struct sdt_provider;
 struct sdt_argtype {
 	int	ndx;			/* Argument index. */
 	const char *type;		/* Argument type string. */
-	TAILQ_ENTRY(sdt_argtype)
+	BSD_TAILQ_ENTRY(sdt_argtype)
 			argtype_entry;	/* Argument type list entry. */
 	struct sdt_probe
 			*probe;		/* Ptr to the probe structure. */
@@ -144,9 +144,9 @@ struct sdt_probe {
 	sdt_state_t	state;
 	struct sdt_provider
 			*prov;		/* Ptr to the provider structure. */
-	TAILQ_ENTRY(sdt_probe)
+	BSD_TAILQ_ENTRY(sdt_probe)
 			probe_entry;	/* SDT probe list entry. */
-	TAILQ_HEAD(argtype_list_head, sdt_argtype) argtype_list;
+	BSD_TAILQ_HEAD(argtype_list_head, sdt_argtype) argtype_list;
 	const char	*mod;
 	const char	*func;
 	const char	*name;
@@ -156,9 +156,9 @@ struct sdt_probe {
 
 struct sdt_provider {
 	const char *name;		/* Provider name. */
-	TAILQ_ENTRY(sdt_provider)
+	BSD_TAILQ_ENTRY(sdt_provider)
 			prov_entry;	/* SDT provider list entry. */
-	TAILQ_HEAD(probe_list_head, sdt_probe) probe_list;
+	BSD_TAILQ_HEAD(probe_list_head, sdt_probe) probe_list;
 	uintptr_t	id;		/* DTrace provider ID. */
 };
 

@@ -303,7 +303,7 @@ in6_selectsrc(struct sockaddr_in6 *dstsock, struct ip6_pktopts *opts,
 
 	rule = 0;
 	IN6_IFADDR_RLOCK();
-	TAILQ_FOREACH(ia, &V_in6_ifaddrhead, ia_link) {
+	BSD_TAILQ_FOREACH(ia, &V_in6_ifaddrhead, ia_link) {
 		int new_scope = -1, new_matchlen = -1;
 		struct in6_addrpolicy *new_policy = NULL;
 		u_int32_t srczone, osrczone, dstzone;
@@ -1030,11 +1030,11 @@ in6_src_ioctl(u_long cmd, caddr_t data)
  * XXX implementation using binary tree should be more efficient.
  */
 struct addrsel_policyent {
-	TAILQ_ENTRY(addrsel_policyent) ape_entry;
+	BSD_TAILQ_ENTRY(addrsel_policyent) ape_entry;
 	struct in6_addrpolicy ape_policy;
 };
 
-TAILQ_HEAD(addrsel_policyhead, addrsel_policyent);
+BSD_TAILQ_HEAD(addrsel_policyhead, addrsel_policyent);
 
 static VNET_DEFINE(struct addrsel_policyhead, addrsel_policytab);
 #define	V_addrsel_policytab		VNET(addrsel_policytab)
@@ -1043,7 +1043,7 @@ static void
 init_policy_queue(void)
 {
 
-	TAILQ_INIT(&V_addrsel_policytab);
+	BSD_TAILQ_INIT(&V_addrsel_policytab);
 }
 
 static int
@@ -1057,7 +1057,7 @@ add_addrsel_policyent(struct in6_addrpolicy *newpolicy)
 	ADDRSEL_LOCK();
 
 	/* duplication check */
-	TAILQ_FOREACH(pol, &V_addrsel_policytab, ape_entry) {
+	BSD_TAILQ_FOREACH(pol, &V_addrsel_policytab, ape_entry) {
 		if (IN6_ARE_ADDR_EQUAL(&newpolicy->addr.sin6_addr,
 				       &pol->ape_policy.addr.sin6_addr) &&
 		    IN6_ARE_ADDR_EQUAL(&newpolicy->addrmask.sin6_addr,
@@ -1074,7 +1074,7 @@ add_addrsel_policyent(struct in6_addrpolicy *newpolicy)
 	/* XXX: should validate entry */
 	new->ape_policy = *newpolicy;
 
-	TAILQ_INSERT_TAIL(&V_addrsel_policytab, new, ape_entry);
+	BSD_TAILQ_INSERT_TAIL(&V_addrsel_policytab, new, ape_entry);
 	ADDRSEL_UNLOCK();
 	ADDRSEL_XUNLOCK();
 
@@ -1090,7 +1090,7 @@ delete_addrsel_policyent(struct in6_addrpolicy *key)
 	ADDRSEL_LOCK();
 
 	/* search for the entry in the table */
-	TAILQ_FOREACH(pol, &V_addrsel_policytab, ape_entry) {
+	BSD_TAILQ_FOREACH(pol, &V_addrsel_policytab, ape_entry) {
 		if (IN6_ARE_ADDR_EQUAL(&key->addr.sin6_addr,
 		    &pol->ape_policy.addr.sin6_addr) &&
 		    IN6_ARE_ADDR_EQUAL(&key->addrmask.sin6_addr,
@@ -1104,7 +1104,7 @@ delete_addrsel_policyent(struct in6_addrpolicy *key)
 		return (ESRCH);
 	}
 
-	TAILQ_REMOVE(&V_addrsel_policytab, pol, ape_entry);
+	BSD_TAILQ_REMOVE(&V_addrsel_policytab, pol, ape_entry);
 	ADDRSEL_UNLOCK();
 	ADDRSEL_XUNLOCK();
 	bsd_free(pol, M_IFADDR);
@@ -1120,7 +1120,7 @@ walk_addrsel_policy(int (*callback)(struct in6_addrpolicy *, void *),
 	int error = 0;
 
 	ADDRSEL_SLOCK();
-	TAILQ_FOREACH(pol, &V_addrsel_policytab, ape_entry) {
+	BSD_TAILQ_FOREACH(pol, &V_addrsel_policytab, ape_entry) {
 		if ((error = (*callback)(&pol->ape_policy, w)) != 0) {
 			ADDRSEL_SUNLOCK();
 			return (error);
@@ -1149,7 +1149,7 @@ match_addrsel_policy(struct sockaddr_in6 *key)
 	int matchlen, bestmatchlen = -1;
 	u_char *mp, *ep, *k, *p, m;
 
-	TAILQ_FOREACH(pent, &V_addrsel_policytab, ape_entry) {
+	BSD_TAILQ_FOREACH(pent, &V_addrsel_policytab, ape_entry) {
 		matchlen = 0;
 
 		pol = &pent->ape_policy;

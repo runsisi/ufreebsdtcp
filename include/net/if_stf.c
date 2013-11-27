@@ -388,7 +388,7 @@ stf_getsrcifa6(ifp)
 	struct in_addr in;
 
 	if_addr_rlock(ifp);
-	TAILQ_FOREACH(ia, &ifp->if_addrhead, ifa_link) {
+	BSD_TAILQ_FOREACH(ia, &ifp->if_addrhead, ifa_link) {
 		if (ia->ifa_addr->sa_family != AF_INET6)
 			continue;
 		sin6 = (struct sockaddr_in6 *)ia->ifa_addr;
@@ -396,7 +396,7 @@ stf_getsrcifa6(ifp)
 			continue;
 
 		bcopy(GET_V4(&sin6->sin6_addr), &in, sizeof(in));
-		LIST_FOREACH(ia4, INADDR_HASH(in.s_addr), ia_hash)
+		BSD_LIST_FOREACH(ia4, INADDR_HASH(in.s_addr), ia_hash)
 			if (ia4->ia_addr.sin_addr.s_addr == in.s_addr)
 				break;
 		if (ia4 == NULL)
@@ -624,9 +624,9 @@ stf_checkaddr4(sc, in, inifp)
 	 * reject packets with broadcast
 	 */
 	IN_IFADDR_RLOCK();
-	for (ia4 = TAILQ_FIRST(&V_in_ifaddrhead);
+	for (ia4 = BSD_TAILQ_FIRST(&V_in_ifaddrhead);
 	     ia4;
-	     ia4 = TAILQ_NEXT(ia4, ia_link))
+	     ia4 = BSD_TAILQ_NEXT(ia4, ia_link))
 	{
 		if ((ia4->ia_ifa.ifa_ifp->if_flags & IFF_BROADCAST) == 0)
 			continue;

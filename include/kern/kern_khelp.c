@@ -54,7 +54,7 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/kern/kern_khelp.c 252541 2013-07-03 05:58:
 static struct rwlock khelp_list_lock;
 RW_SYSINIT(khelplistlock, &khelp_list_lock, "helper list lock");
 
-static TAILQ_HEAD(helper_head, helper) helpers = TAILQ_HEAD_INITIALIZER(helpers);
+static BSD_TAILQ_HEAD(helper_head, helper) helpers = BSD_TAILQ_HEAD_INITIALIZER(helpers);
 
 /* Private function prototypes. */
 static inline void khelp_remove_osd(struct helper *h, struct osd *hosd);
@@ -99,16 +99,16 @@ khelp_register_helper(struct helper *h)
 		 * the way osd_set() works, a sorted list ensures
 		 * khelp_init_osd() will operate with improved efficiency.
 		 */
-		TAILQ_FOREACH(tmph, &helpers, h_next) {
+		BSD_TAILQ_FOREACH(tmph, &helpers, h_next) {
 			if (tmph->h_id < h->h_id) {
-				TAILQ_INSERT_BEFORE(tmph, h, h_next);
+				BSD_TAILQ_INSERT_BEFORE(tmph, h, h_next);
 				inserted = 1;
 				break;
 			}
 		}
 
 		if (!inserted)
-			TAILQ_INSERT_TAIL(&helpers, h, h_next);
+			BSD_TAILQ_INSERT_TAIL(&helpers, h, h_next);
 		KHELP_LIST_WUNLOCK();
 	}
 
@@ -126,9 +126,9 @@ khelp_deregister_helper(struct helper *h)
 		error = EBUSY;
 	else {
 		error = ENOENT;
-		TAILQ_FOREACH(tmph, &helpers, h_next) {
+		BSD_TAILQ_FOREACH(tmph, &helpers, h_next) {
 			if (tmph == h) {
-				TAILQ_REMOVE(&helpers, h, h_next);
+				BSD_TAILQ_REMOVE(&helpers, h, h_next);
 				error = 0;
 				break;
 			}
@@ -157,7 +157,7 @@ khelp_init_osd(uint32_t classes, struct osd *hosd)
 	error = 0;
 
 	KHELP_LIST_RLOCK();
-	TAILQ_FOREACH(h, &helpers, h_next) {
+	BSD_TAILQ_FOREACH(h, &helpers, h_next) {
 		/* If helper is correct class and needs to store OSD... */
 		if (h->h_classes & classes && h->h_flags & HELPER_NEEDS_OSD) {
 			hdata = uma_zalloc(h->h_zone, M_NOWAIT);
@@ -172,7 +172,7 @@ khelp_init_osd(uint32_t classes, struct osd *hosd)
 
 	if (error) {
 		/* Delete OSD that was assigned prior to the error. */
-		TAILQ_FOREACH(h, &helpers, h_next) {
+		BSD_TAILQ_FOREACH(h, &helpers, h_next) {
 			if (h->h_classes & classes)
 				khelp_remove_osd(h, hosd);
 		}
@@ -199,7 +199,7 @@ khelp_destroy_osd(struct osd *hosd)
 	 * XXXLAS: Would be nice to use something like osd_exit() here but it
 	 * doesn't have the right semantics for this purpose.
 	 */
-	TAILQ_FOREACH(h, &helpers, h_next)
+	BSD_TAILQ_FOREACH(h, &helpers, h_next)
 		khelp_remove_osd(h, hosd);
 	KHELP_LIST_RUNLOCK();
 
@@ -242,7 +242,7 @@ khelp_get_id(char *hname)
 	id = -1;
 
 	KHELP_LIST_RLOCK();
-	TAILQ_FOREACH(h, &helpers, h_next) {
+	BSD_TAILQ_FOREACH(h, &helpers, h_next) {
 		if (strncmp(h->h_name, hname, HELPER_NAME_MAXLEN) == 0) {
 			id = h->h_id;
 			break;
@@ -292,7 +292,7 @@ khelp_new_hhook_registered(struct hhook_head *hhh, uint32_t flags)
 	int error, i;
 
 	KHELP_LIST_RLOCK();
-	TAILQ_FOREACH(h, &helpers, h_next) {
+	BSD_TAILQ_FOREACH(h, &helpers, h_next) {
 		for (i = 0; i < h->h_nhooks; i++) {
 			if (hhh->hhh_type != h->h_hooks[i].hook_type ||
 			    hhh->hhh_id != h->h_hooks[i].hook_id)

@@ -464,8 +464,8 @@ tbr_timeout(arg)
 	VNET_FOREACH(vnet_iter) {
 		CURVNET_SET(vnet_iter);
 #endif
-		for (ifp = TAILQ_FIRST(&V_ifnet); ifp;
-		    ifp = TAILQ_NEXT(ifp, if_list)) {
+		for (ifp = BSD_TAILQ_FIRST(&V_ifnet); ifp;
+		    ifp = BSD_TAILQ_NEXT(ifp, if_list)) {
 			/* read from if_snd unlocked */
 			if (!TBR_IS_ENABLED(&ifp->if_snd))
 				continue;
@@ -1457,16 +1457,16 @@ acc_add_filter(classifier, filter, class, phandle)
 	s = splimp();
 #endif
 	prev = NULL;
-	LIST_FOREACH(tmp, &classifier->acc_filters[i], f_chain) {
+	BSD_LIST_FOREACH(tmp, &classifier->acc_filters[i], f_chain) {
 		if (tmp->f_filter.ff_ruleno > afp->f_filter.ff_ruleno)
 			prev = tmp;
 		else
 			break;
 	}
 	if (prev == NULL)
-		LIST_INSERT_HEAD(&classifier->acc_filters[i], afp, f_chain);
+		BSD_LIST_INSERT_HEAD(&classifier->acc_filters[i], afp, f_chain);
 	else
-		LIST_INSERT_AFTER(prev, afp, f_chain);
+		BSD_LIST_INSERT_AFTER(prev, afp, f_chain);
 	splx(s);
 
 	*phandle = afp->f_handle;
@@ -1489,7 +1489,7 @@ acc_delete_filter(classifier, handle)
 #else
 	s = splimp();
 #endif
-	LIST_REMOVE(afp, f_chain);
+	BSD_LIST_REMOVE(afp, f_chain);
 	splx(s);
 
 	bsd_free(afp, M_DEVBUF);
@@ -1519,9 +1519,9 @@ acc_discard_filters(classifier, class, all)
 #endif
 	for (i = 0; i < ACC_FILTER_TABLESIZE; i++) {
 		do {
-			LIST_FOREACH(afp, &classifier->acc_filters[i], f_chain)
+			BSD_LIST_FOREACH(afp, &classifier->acc_filters[i], f_chain)
 				if (all || afp->f_class == class) {
-					LIST_REMOVE(afp, f_chain);
+					BSD_LIST_REMOVE(afp, f_chain);
 					bsd_free(afp, M_DEVBUF);
 					/* start again from the head */
 					break;
@@ -1555,7 +1555,7 @@ acc_classify(clfier, m, af)
 
 		if ((classifier->acc_fbmask & FIMB4_ALL) == FIMB4_TOS) {
 			/* only tos is used */
-			LIST_FOREACH(afp,
+			BSD_LIST_FOREACH(afp,
 				 &classifier->acc_filters[ACC_WILDCARD_INDEX],
 				 f_chain)
 				if (apply_tosfilter4(afp->f_fbmask,
@@ -1566,7 +1566,7 @@ acc_classify(clfier, m, af)
 			(~(FIMB4_PROTO|FIMB4_SPORT|FIMB4_DPORT) & FIMB4_ALL))
 		    == 0) {
 			/* only proto and ports are used */
-			LIST_FOREACH(afp,
+			BSD_LIST_FOREACH(afp,
 				 &classifier->acc_filters[ACC_WILDCARD_INDEX],
 				 f_chain)
 				if (apply_ppfilter4(afp->f_fbmask,
@@ -1581,7 +1581,7 @@ acc_classify(clfier, m, af)
 				 * go through this loop twice.  first for dst
 				 * hash, second for wildcards.
 				 */
-				LIST_FOREACH(afp, &classifier->acc_filters[i],
+				BSD_LIST_FOREACH(afp, &classifier->acc_filters[i],
 					     f_chain)
 					if (apply_filter4(afp->f_fbmask,
 							  &afp->f_filter, fp))
@@ -1614,7 +1614,7 @@ acc_classify(clfier, m, af)
 		/* go through this loop twice.  first for flow hash, second
 		   for wildcards. */
 		do {
-			LIST_FOREACH(afp, &classifier->acc_filters[i], f_chain)
+			BSD_LIST_FOREACH(afp, &classifier->acc_filters[i], f_chain)
 				if (apply_filter6(afp->f_fbmask,
 					(struct flow_filter6 *)&afp->f_filter,
 					fp6))
@@ -1773,10 +1773,10 @@ get_filt_handle(classifier, i)
 	while (1) {
 		handle = handle_number++ & 0x000fffff;
 
-		if (LIST_EMPTY(&classifier->acc_filters[i]))
+		if (BSD_LIST_EMPTY(&classifier->acc_filters[i]))
 			break;
 
-		LIST_FOREACH(afp, &classifier->acc_filters[i], f_chain)
+		BSD_LIST_FOREACH(afp, &classifier->acc_filters[i], f_chain)
 			if ((afp->f_handle & 0x000fffff) == handle)
 				break;
 		if (afp == NULL)
@@ -1798,7 +1798,7 @@ filth_to_filtp(classifier, handle)
 
 	i = ACC_GET_HINDEX(handle);
 
-	LIST_FOREACH(afp, &classifier->acc_filters[i], f_chain)
+	BSD_LIST_FOREACH(afp, &classifier->acc_filters[i], f_chain)
 		if (afp->f_handle == handle)
 			return (afp);
 
@@ -1868,13 +1868,13 @@ filt2fibmask(filt)
  */
 
 struct ip4_frag {
-    TAILQ_ENTRY(ip4_frag) ip4f_chain;
+    BSD_TAILQ_ENTRY(ip4_frag) ip4f_chain;
     char    ip4f_valid;
     u_short ip4f_id;
     struct flowinfo_in ip4f_info;
 };
 
-static TAILQ_HEAD(ip4f_list, ip4_frag) ip4f_list; /* IPv4 fragment cache */
+static BSD_TAILQ_HEAD(ip4f_list, ip4_frag) ip4f_list; /* IPv4 fragment cache */
 
 #define	IP4F_TABSIZE		16	/* IPv4 fragment cache size */
 
@@ -1886,7 +1886,7 @@ ip4f_cache(ip, fin)
 {
 	struct ip4_frag *fp;
 
-	if (TAILQ_EMPTY(&ip4f_list)) {
+	if (BSD_TAILQ_EMPTY(&ip4f_list)) {
 		/* first time call, allocate fragment cache entries. */
 		if (ip4f_init() < 0)
 			/* allocation failed! */
@@ -1912,8 +1912,8 @@ ip4f_lookup(ip, fin)
 {
 	struct ip4_frag *fp;
 
-	for (fp = TAILQ_FIRST(&ip4f_list); fp != NULL && fp->ip4f_valid;
-	     fp = TAILQ_NEXT(fp, ip4f_chain))
+	for (fp = BSD_TAILQ_FIRST(&ip4f_list); fp != NULL && fp->ip4f_valid;
+	     fp = BSD_TAILQ_NEXT(fp, ip4f_chain))
 		if (ip->ip_id == fp->ip4f_id &&
 		    ip->ip_src.s_addr == fp->ip4f_info.fi_src.s_addr &&
 		    ip->ip_dst.s_addr == fp->ip4f_info.fi_dst.s_addr &&
@@ -1942,7 +1942,7 @@ ip4f_init(void)
 	struct ip4_frag *fp;
 	int i;
 
-	TAILQ_INIT(&ip4f_list);
+	BSD_TAILQ_INIT(&ip4f_list);
 	for (i=0; i<IP4F_TABSIZE; i++) {
 		fp = bsd_malloc(sizeof(struct ip4_frag),
 		       M_DEVBUF, M_NOWAIT);
@@ -1953,7 +1953,7 @@ ip4f_init(void)
 			return (0);
 		}
 		fp->ip4f_valid = 0;
-		TAILQ_INSERT_TAIL(&ip4f_list, fp, ip4f_chain);
+		BSD_TAILQ_INSERT_TAIL(&ip4f_list, fp, ip4f_chain);
 	}
 	return (0);
 }
@@ -1964,10 +1964,10 @@ ip4f_alloc(void)
 	struct ip4_frag *fp;
 
 	/* reclaim an entry at the tail, put it at the head */
-	fp = TAILQ_LAST(&ip4f_list, ip4f_list);
-	TAILQ_REMOVE(&ip4f_list, fp, ip4f_chain);
+	fp = BSD_TAILQ_LAST(&ip4f_list, ip4f_list);
+	BSD_TAILQ_REMOVE(&ip4f_list, fp, ip4f_chain);
 	fp->ip4f_valid = 1;
-	TAILQ_INSERT_HEAD(&ip4f_list, fp, ip4f_chain);
+	BSD_TAILQ_INSERT_HEAD(&ip4f_list, fp, ip4f_chain);
 	return (fp);
 }
 
@@ -1975,9 +1975,9 @@ static void
 ip4f_free(fp)
 	struct ip4_frag *fp;
 {
-	TAILQ_REMOVE(&ip4f_list, fp, ip4f_chain);
+	BSD_TAILQ_REMOVE(&ip4f_list, fp, ip4f_chain);
 	fp->ip4f_valid = 0;
-	TAILQ_INSERT_TAIL(&ip4f_list, fp, ip4f_chain);
+	BSD_TAILQ_INSERT_TAIL(&ip4f_list, fp, ip4f_chain);
 }
 
 #endif /* ALTQ3_CLFIER_COMPAT */

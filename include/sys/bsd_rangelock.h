@@ -53,7 +53,7 @@ struct rl_q_entry;
  * to the preceding requests conflicting with it.
  */
 struct rangelock {
-	TAILQ_HEAD(, rl_q_entry) rl_waiters;
+	BSD_TAILQ_HEAD(, rl_q_entry) rl_waiters;
 	struct rl_q_entry	*rl_currdep;
 };
 

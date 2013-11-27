@@ -220,13 +220,13 @@ struct runtime_sc {
 
 /* for TAILQ based ellist and actlist implementation */
 struct hfsc_class;
-typedef TAILQ_HEAD(_eligible, hfsc_class) ellist_t;
-typedef TAILQ_ENTRY(hfsc_class) elentry_t;
-typedef TAILQ_HEAD(_active, hfsc_class) actlist_t;
-typedef TAILQ_ENTRY(hfsc_class) actentry_t;
-#define	ellist_first(s)		TAILQ_FIRST(s)
-#define	actlist_first(s)	TAILQ_FIRST(s)
-#define	actlist_last(s)		TAILQ_LAST(s, _active)
+typedef BSD_TAILQ_HEAD(_eligible, hfsc_class) ellist_t;
+typedef BSD_TAILQ_ENTRY(hfsc_class) elentry_t;
+typedef BSD_TAILQ_HEAD(_active, hfsc_class) actlist_t;
+typedef BSD_TAILQ_ENTRY(hfsc_class) actentry_t;
+#define	ellist_first(s)		BSD_TAILQ_FIRST(s)
+#define	actlist_first(s)	BSD_TAILQ_FIRST(s)
+#define	actlist_last(s)		BSD_TAILQ_LAST(s, _active)
 
 struct hfsc_class {
 	u_int		cl_id;		/* class id (just for debug) */

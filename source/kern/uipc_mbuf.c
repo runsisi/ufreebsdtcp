@@ -389,7 +389,7 @@ m_sanity(struct mbuf *m0, int sanitize)
 
 		/* m_tags may only be attached to first mbuf in chain. */
 		if (m != m0 && m->m_flags & M_PKTHDR &&
-		    !SLIST_EMPTY(&m->m_pkthdr.tags)) {
+		    !BSD_SLIST_EMPTY(&m->m_pkthdr.tags)) {
 			if (sanitize) {
 				m_tag_delete_chain(m, NULL);
 				/* put in 0xDEADC0DE perhaps? */
@@ -432,7 +432,7 @@ m_move_pkthdr(struct mbuf *to, struct mbuf *from)
 	/* see below for why these are not enabled */
 	M_ASSERTPKTHDR(to);
 	/* Note: with MAC, this may not be a good assertion. */
-	KASSERT(SLIST_EMPTY(&to->m_pkthdr.tags),
+	KASSERT(BSD_SLIST_EMPTY(&to->m_pkthdr.tags),
 	    ("m_move_pkthdr: to has tags"));
 #endif
 #ifdef MAC
@@ -446,7 +446,7 @@ m_move_pkthdr(struct mbuf *to, struct mbuf *from)
 	if ((to->m_flags & M_EXT) == 0)
 		to->m_data = to->m_pktdat;
 	to->m_pkthdr = from->m_pkthdr;		/* especially tags */
-	SLIST_INIT(&from->m_pkthdr.tags);	/* purge tags from src */
+	BSD_SLIST_INIT(&from->m_pkthdr.tags);	/* purge tags from src */
 	from->m_flags &= ~M_PKTHDR;
 }
 
@@ -469,7 +469,7 @@ m_dup_pkthdr(struct mbuf *to, struct mbuf *from, int how)
 	 */
 	M_ASSERTPKTHDR(to);
 	/* Note: with MAC, this may not be a good assertion. */
-	KASSERT(SLIST_EMPTY(&to->m_pkthdr.tags), ("m_dup_pkthdr: to has tags"));
+	KASSERT(BSD_SLIST_EMPTY(&to->m_pkthdr.tags), ("m_dup_pkthdr: to has tags"));
 #endif
 	MBUF_CHECKSLEEP(how);
 #ifdef MAC
@@ -480,7 +480,7 @@ m_dup_pkthdr(struct mbuf *to, struct mbuf *from, int how)
 	if ((to->m_flags & M_EXT) == 0)
 		to->m_data = to->m_pktdat;
 	to->m_pkthdr = from->m_pkthdr;
-	SLIST_INIT(&to->m_pkthdr.tags);
+	BSD_SLIST_INIT(&to->m_pkthdr.tags);
 	return (m_tag_copy_chain(to, from, MBTOM(how)));
 }
 

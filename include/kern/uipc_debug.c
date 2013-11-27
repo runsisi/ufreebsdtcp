@@ -457,8 +457,8 @@ db_print_socket(struct socket *so, const char *socketname, int indent)
 
 	db_print_indent(indent);
 	db_printf("so_head: %p   ", so->so_head);
-	db_printf("so_incomp first: %p   ", TAILQ_FIRST(&so->so_incomp));
-	db_printf("so_comp first: %p\n", TAILQ_FIRST(&so->so_comp));
+	db_printf("so_incomp first: %p   ", BSD_TAILQ_FIRST(&so->so_incomp));
+	db_printf("so_comp first: %p\n", BSD_TAILQ_FIRST(&so->so_comp));
 
 	db_print_indent(indent);
 	/* so_list skipped */
@@ -471,7 +471,7 @@ db_print_socket(struct socket *so, const char *socketname, int indent)
 	db_print_indent(indent);
 	db_printf("so_sigio: %p   ", so->so_sigio);
 	db_printf("so_oobmark: %lu   ", so->so_oobmark);
-	db_printf("so_aiojobq first: %p\n", TAILQ_FIRST(&so->so_aiojobq));
+	db_printf("so_aiojobq first: %p\n", BSD_TAILQ_FIRST(&so->so_aiojobq));
 
 	db_print_sockbuf(&so->so_rcv, "so_rcv", indent);
 	db_print_sockbuf(&so->so_snd, "so_snd", indent);

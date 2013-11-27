@@ -117,10 +117,10 @@ static struct unp_head	unp_dhead;	/* (l) List of datagram sockets. */
 static struct unp_head	unp_sphead;	/* (l) List of seqpacket sockets. */
 
 struct unp_defer {
-	SLIST_ENTRY(unp_defer) ud_link;
+	BSD_SLIST_ENTRY(unp_defer) ud_link;
 	struct file *ud_fp;
 };
-static SLIST_HEAD(, unp_defer) unp_defers;
+static BSD_SLIST_HEAD(, unp_defer) unp_defers;
 static int unp_defers_count;
 
 static const struct sockaddr	sun_noname = { sizeof(sun_noname), AF_LOCAL };
@@ -419,7 +419,7 @@ uipc_attach(struct socket *so, int proto, struct thread *td)
 	unp = uma_zalloc(unp_zone, M_NOWAIT | M_ZERO);
 	if (unp == NULL)
 		return (ENOBUFS);
-	LIST_INIT(&unp->unp_refs);
+	BSD_LIST_INIT(&unp->unp_refs);
 	UNP_PCB_LOCK_INIT(unp);
 	unp->unp_socket = so;
 	so->so_pcb = unp;
@@ -430,15 +430,15 @@ uipc_attach(struct socket *so, int proto, struct thread *td)
 	unp_count++;
 	switch (so->so_type) {
 	case SOCK_STREAM:
-		LIST_INSERT_HEAD(&unp_shead, unp, unp_link);
+		BSD_LIST_INSERT_HEAD(&unp_shead, unp, unp_link);
 		break;
 
 	case SOCK_DGRAM:
-		LIST_INSERT_HEAD(&unp_dhead, unp, unp_link);
+		BSD_LIST_INSERT_HEAD(&unp_dhead, unp, unp_link);
 		break;
 
 	case SOCK_SEQPACKET:
-		LIST_INSERT_HEAD(&unp_sphead, unp, unp_link);
+		BSD_LIST_INSERT_HEAD(&unp_sphead, unp, unp_link);
 		break;
 
 	default:
@@ -630,7 +630,7 @@ uipc_detach(struct socket *so)
 	UNP_LINK_WLOCK();
 	UNP_LIST_LOCK();
 	UNP_PCB_LOCK(unp);
-	LIST_REMOVE(unp, unp_link);
+	BSD_LIST_REMOVE(unp, unp_link);
 	unp->unp_gencnt = ++unp_gencnt;
 	--unp_count;
 	UNP_LIST_UNLOCK();
@@ -653,8 +653,8 @@ uipc_detach(struct socket *so)
 	 * We hold the linkage lock exclusively, so it's OK to acquire
 	 * multiple pcb locks at a time.
 	 */
-	while (!LIST_EMPTY(&unp->unp_refs)) {
-		struct unpcb *ref = LIST_FIRST(&unp->unp_refs);
+	while (!BSD_LIST_EMPTY(&unp->unp_refs)) {
+		struct unpcb *ref = BSD_LIST_FIRST(&unp->unp_refs);
 
 		UNP_PCB_LOCK(ref);
 		unp_drop(ref, ECONNRESET);
@@ -1421,7 +1421,7 @@ unp_connect2(struct socket *so, struct socket *so2, int req)
 
 	switch (so->so_type) {
 	case SOCK_DGRAM:
-		LIST_INSERT_HEAD(&unp2->unp_refs, unp, unp_reflink);
+		BSD_LIST_INSERT_HEAD(&unp2->unp_refs, unp, unp_reflink);
 		soisconnected(so);
 		break;
 
@@ -1456,7 +1456,7 @@ unp_disconnect(struct unpcb *unp, struct unpcb *unp2)
 	unp->unp_conn = NULL;
 	switch (unp->unp_socket->so_type) {
 	case SOCK_DGRAM:
-		LIST_REMOVE(unp, unp_reflink);
+		BSD_LIST_REMOVE(unp, unp_reflink);
 		so = unp->unp_socket;
 		SOCK_LOCK(so);
 		so->so_state &= ~SS_ISCONNECTED;
@@ -1543,8 +1543,8 @@ unp_pcblist(SYSCTL_HANDLER_ARGS)
 	unp_list = bsd_malloc(n * sizeof *unp_list, M_TEMP, M_WAITOK);
 
 	UNP_LIST_LOCK();
-	for (unp = LIST_FIRST(head), i = 0; unp && i < n;
-	     unp = LIST_NEXT(unp, unp_link)) {
+	for (unp = BSD_LIST_FIRST(head), i = 0; unp && i < n;
+	     unp = BSD_LIST_NEXT(unp, unp_link)) {
 		UNP_PCB_LOCK(unp);
 		if (unp->unp_gencnt <= gencnt) {
 			if (cr_cansee(req->td->td_ucred,
@@ -1794,10 +1794,10 @@ unp_init(void)
 	uma_zone_set_max(unp_zone, maxsockets);
 	EVENTHANDLER_REGISTER(maxsockets_change, unp_zone_change,
 	    NULL, EVENTHANDLER_PRI_ANY);
-	LIST_INIT(&unp_dhead);
-	LIST_INIT(&unp_shead);
-	LIST_INIT(&unp_sphead);
-	SLIST_INIT(&unp_defers);
+	BSD_LIST_INIT(&unp_dhead);
+	BSD_LIST_INIT(&unp_shead);
+	BSD_LIST_INIT(&unp_sphead);
+	BSD_SLIST_INIT(&unp_defers);
 	TIMEOUT_TASK_INIT(taskqueue_thread, &unp_gc_task, 0, unp_gc, NULL);
 	TASK_INIT(&unp_defer_task, 0, unp_process_defers, NULL);
 	UNP_LINK_LOCK_INIT();
@@ -2025,7 +2025,7 @@ unp_discard(struct file *fp)
 		dr = bsd_malloc(sizeof(*dr), M_TEMP, M_WAITOK);
 		dr->ud_fp = fp;
 		UNP_DEFERRED_LOCK();
-		SLIST_INSERT_HEAD(&unp_defers, dr, ud_link);
+		BSD_SLIST_INSERT_HEAD(&unp_defers, dr, ud_link);
 		UNP_DEFERRED_UNLOCK();
 		atomic_add_int(&unp_defers_count, 1);
 		taskqueue_enqueue(taskqueue_thread, &unp_defer_task);
@@ -2037,21 +2037,21 @@ static void
 unp_process_defers(void *arg __unused, int pending)
 {
 	struct unp_defer *dr;
-	SLIST_HEAD(, unp_defer) drl;
+	BSD_SLIST_HEAD(, unp_defer) drl;
 	int count;
 
-	SLIST_INIT(&drl);
+	BSD_SLIST_INIT(&drl);
 	for (;;) {
 		UNP_DEFERRED_LOCK();
-		if (SLIST_FIRST(&unp_defers) == NULL) {
+		if (BSD_SLIST_FIRST(&unp_defers) == NULL) {
 			UNP_DEFERRED_UNLOCK();
 			break;
 		}
-		SLIST_SWAP(&unp_defers, &drl, unp_defer);
+		BSD_SLIST_SWAP(&unp_defers, &drl, unp_defer);
 		UNP_DEFERRED_UNLOCK();
 		count = 0;
-		while ((dr = SLIST_FIRST(&drl)) != NULL) {
-			SLIST_REMOVE_HEAD(&drl, ud_link);
+		while ((dr = BSD_SLIST_FIRST(&drl)) != NULL) {
+			BSD_SLIST_REMOVE_HEAD(&drl, ud_link);
 			closef(dr->ud_fp, NULL);
 			bsd_free(dr, M_TEMP);
 			count++;
@@ -2150,7 +2150,7 @@ unp_gc_process(struct unpcb *unp)
 	 * Mark all sockets in our accept queue.
 	 */
 	ACCEPT_LOCK();
-	TAILQ_FOREACH(soa, &so->so_comp, so_list) {
+	BSD_TAILQ_FOREACH(soa, &so->so_comp, so_list) {
 		SOCKBUF_LOCK(&soa->so_rcv);
 		unp_scan(soa->so_rcv.sb_mb, unp_accessable);
 		SOCKBUF_UNLOCK(&soa->so_rcv);
@@ -2183,7 +2183,7 @@ unp_gc(__unused void *arg, int pending)
 	 * First clear all gc flags from previous runs.
 	 */
 	for (head = heads; *head != NULL; head++)
-		LIST_FOREACH(unp, *head, unp_link)
+		BSD_LIST_FOREACH(unp, *head, unp_link)
 			unp->unp_gcflag = 0;
 
 	/*
@@ -2196,7 +2196,7 @@ unp_gc(__unused void *arg, int pending)
 		unp_unreachable = 0;
 		unp_marked = 0;
 		for (head = heads; *head != NULL; head++)
-			LIST_FOREACH(unp, *head, unp_link)
+			BSD_LIST_FOREACH(unp, *head, unp_link)
 				unp_gc_process(unp);
 	} while (unp_marked);
 	UNP_LIST_UNLOCK();
@@ -2216,7 +2216,7 @@ unp_gc(__unused void *arg, int pending)
 	UNP_LINK_RLOCK();
 	UNP_LIST_LOCK();
 	for (total = 0, head = heads; *head != NULL; head++)
-		LIST_FOREACH(unp, *head, unp_link)
+		BSD_LIST_FOREACH(unp, *head, unp_link)
 			if ((unp->unp_gcflag & UNPGC_DEAD) != 0) {
 				f = unp->unp_file;
 				if (unp->unp_msgcount == 0 || f == NULL ||
@@ -2414,7 +2414,7 @@ db_print_unprefs(int indent, struct unp_head *uh)
 	int counter;
 
 	counter = 0;
-	LIST_FOREACH(unp, uh, unp_reflink) {
+	BSD_LIST_FOREACH(unp, uh, unp_reflink) {
 		if (counter % 4 == 0)
 			db_print_indent(indent);
 		db_printf("%p  ", unp);

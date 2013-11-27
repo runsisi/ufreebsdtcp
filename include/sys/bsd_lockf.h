@@ -61,12 +61,12 @@ struct vop_advlockasync_args;
  * (c)		const until freeing
  */
 struct lockf_edge {
-	LIST_ENTRY(lockf_edge) le_outlink; /* (s) link from's out-edge list */
-	LIST_ENTRY(lockf_edge) le_inlink; /* (s) link to's in-edge list */
+	BSD_LIST_ENTRY(lockf_edge) le_outlink; /* (s) link from's out-edge list */
+	BSD_LIST_ENTRY(lockf_edge) le_inlink; /* (s) link to's in-edge list */
 	struct lockf_entry *le_from;	/* (c) out-going from here */
 	struct lockf_entry *le_to;	/* (s) in-coming to here */
 };
-LIST_HEAD(lockf_edge_list, lockf_edge);
+BSD_LIST_HEAD(lockf_edge_list, lockf_edge);
 
 struct lockf_entry {
 	short	lf_flags;	    /* (c) Semantics: F_POSIX, F_FLOCK, F_WAIT */
@@ -77,12 +77,12 @@ struct lockf_entry {
 	struct	vnode *lf_vnode;    /* (c) File being locked (only valid for active lock) */
 	struct	inode *lf_inode;    /* (c) Back pointer to the inode */
 	struct	task *lf_async_task;/* (c) Async lock callback */
-	LIST_ENTRY(lockf_entry) lf_link;  /* (s) Linkage for lock lists */
+	BSD_LIST_ENTRY(lockf_entry) lf_link;  /* (s) Linkage for lock lists */
 	struct lockf_edge_list lf_outedges; /* (s) list of out-edges */
 	struct lockf_edge_list lf_inedges; /* (s) list of out-edges */
 	int	lf_refs;	    /* (s) ref count */
 };
-LIST_HEAD(lockf_entry_list, lockf_entry);
+BSD_LIST_HEAD(lockf_entry_list, lockf_entry);
 
 /*
  * Extra lf_flags bits used by the implementation
@@ -112,13 +112,13 @@ LIST_HEAD(lockf_entry_list, lockf_entry);
  * structure while some thread is still using it.
  */
 struct lockf {
-	LIST_ENTRY(lockf) ls_link;	/* (S) all active lockf states */
+	BSD_LIST_ENTRY(lockf) ls_link;	/* (S) all active lockf states */
 	struct	sx	ls_lock;
 	struct	lockf_entry_list ls_active; /* (s) Active locks */
 	struct	lockf_entry_list ls_pending; /* (s) Pending locks */
 	int		ls_threads;	/* (i) Thread count */
 };
-LIST_HEAD(lockf_list, lockf);
+BSD_LIST_HEAD(lockf_list, lockf);
 
 typedef int lf_iterator(struct vnode *, struct flock *, void *);
 

@@ -109,7 +109,7 @@ sysctl_find_oidname(const char *name, struct sysctl_oid_list *list)
 	struct sysctl_oid *oidp;
 
 	SYSCTL_ASSERT_XLOCKED();
-	SLIST_FOREACH(oidp, list, oid_link) {
+	BSD_SLIST_FOREACH(oidp, list, oid_link) {
 		if (strcmp(oidp->oid_name, name) == 0) {
 			return (oidp);
 		}
@@ -183,15 +183,15 @@ sysctl_register_oid(struct sysctl_oid *oidp)
 	 * Insert the oid into the parent's list in order.
 	 */
 	q = NULL;
-	SLIST_FOREACH(p, parent, oid_link) {
+	BSD_SLIST_FOREACH(p, parent, oid_link) {
 		if (oidp->oid_number < p->oid_number)
 			break;
 		q = p;
 	}
 	if (q)
-		SLIST_INSERT_AFTER(q, oidp, oid_link);
+		BSD_SLIST_INSERT_AFTER(q, oidp, oid_link);
 	else
-		SLIST_INSERT_HEAD(parent, oidp, oid_link);
+		BSD_SLIST_INSERT_HEAD(parent, oidp, oid_link);
 }
 
 void
@@ -205,9 +205,9 @@ sysctl_unregister_oid(struct sysctl_oid *oidp)
 	if (oidp->oid_number == OID_AUTO) {
 		error = EINVAL;
 	} else {
-		SLIST_FOREACH(p, oidp->oid_parent, oid_link) {
+		BSD_SLIST_FOREACH(p, oidp->oid_parent, oid_link) {
 			if (p == oidp) {
-				SLIST_REMOVE(oidp->oid_parent, oidp,
+				BSD_SLIST_REMOVE(oidp->oid_parent, oidp,
 				    sysctl_oid, oid_link);
 				error = 0;
 				break;
@@ -238,7 +238,7 @@ sysctl_ctx_init(struct sysctl_ctx_list *c)
 	 * new nodes to a context until after this function has
 	 * returned.
 	 */
-	TAILQ_INIT(c);
+	BSD_TAILQ_INIT(c);
 	return (0);
 }
 
@@ -257,7 +257,7 @@ sysctl_ctx_free(struct sysctl_ctx_list *clist)
 	 * XXX better solution for now...
 	 */
 	SYSCTL_XLOCK();
-	TAILQ_FOREACH(e, clist, link) {
+	BSD_TAILQ_FOREACH(e, clist, link) {
 		error = sysctl_remove_oid_locked(e->entry, 0, 0);
 		if (error)
 			break;
@@ -268,21 +268,21 @@ sysctl_ctx_free(struct sysctl_ctx_list *clist)
 	 * e contains the entry that was not unregistered
 	 */
 	if (error)
-		e1 = TAILQ_PREV(e, sysctl_ctx_list, link);
+		e1 = BSD_TAILQ_PREV(e, sysctl_ctx_list, link);
 	else
-		e1 = TAILQ_LAST(clist, sysctl_ctx_list);
+		e1 = BSD_TAILQ_LAST(clist, sysctl_ctx_list);
 	while (e1 != NULL) {
 		sysctl_register_oid(e1->entry);
-		e1 = TAILQ_PREV(e1, sysctl_ctx_list, link);
+		e1 = BSD_TAILQ_PREV(e1, sysctl_ctx_list, link);
 	}
 	if (error) {
 		SYSCTL_XUNLOCK();
 		return(EBUSY);
 	}
 	/* Now really delete the entries */
-	e = TAILQ_FIRST(clist);
+	e = BSD_TAILQ_FIRST(clist);
 	while (e != NULL) {
-		e1 = TAILQ_NEXT(e, link);
+		e1 = BSD_TAILQ_NEXT(e, link);
 		error = sysctl_remove_oid_locked(e->entry, 1, 0);
 		if (error)
 			panic("sysctl_remove_oid: corrupt tree, entry: %s",
@@ -305,7 +305,7 @@ sysctl_ctx_entry_add(struct sysctl_ctx_list *clist, struct sysctl_oid *oidp)
 		return(NULL);
 	e = bsd_malloc(sizeof(struct sysctl_ctx_entry), M_SYSCTLOID, M_WAITOK);
 	e->entry = oidp;
-	TAILQ_INSERT_HEAD(clist, e, link);
+	BSD_TAILQ_INSERT_HEAD(clist, e, link);
 	return (e);
 }
 
@@ -318,7 +318,7 @@ sysctl_ctx_entry_find(struct sysctl_ctx_list *clist, struct sysctl_oid *oidp)
 	SYSCTL_ASSERT_XLOCKED();
 	if (clist == NULL || oidp == NULL)
 		return(NULL);
-	TAILQ_FOREACH(e, clist, link) {
+	BSD_TAILQ_FOREACH(e, clist, link) {
 		if(e->entry == oidp)
 			return(e);
 	}
@@ -340,7 +340,7 @@ sysctl_ctx_entry_del(struct sysctl_ctx_list *clist, struct sysctl_oid *oidp)
 	SYSCTL_XLOCK();
 	e = sysctl_ctx_entry_find(clist, oidp);
 	if (e != NULL) {
-		TAILQ_REMOVE(clist, e, link);
+		BSD_TAILQ_REMOVE(clist, e, link);
 		SYSCTL_XUNLOCK();
 		bsd_free(e, M_SYSCTLOID);
 		return (0);
@@ -376,7 +376,7 @@ sysctl_remove_name(struct sysctl_oid *parent, const char *name,
 
 	error = ENOENT;
 	SYSCTL_XLOCK();
-	SLIST_FOREACH_SAFE(p, SYSCTL_CHILDREN(parent), oid_link, tmp) {
+	BSD_SLIST_FOREACH_SAFE(p, SYSCTL_CHILDREN(parent), oid_link, tmp) {
 		if (strcmp(p->oid_name, name) == 0) {
 			error = sysctl_remove_oid_locked(p, del, recurse);
 			break;
@@ -410,7 +410,7 @@ sysctl_remove_oid_locked(struct sysctl_oid *oidp, int del, int recurse)
 	 */
 	if ((oidp->oid_kind & CTLTYPE) == CTLTYPE_NODE) {
 		if (oidp->oid_refcnt == 1) {
-			SLIST_FOREACH_SAFE(p,
+			BSD_SLIST_FOREACH_SAFE(p,
 			    SYSCTL_CHILDREN(oidp), oid_link, tmp) {
 				if (!recurse)
 					return (ENOTEMPTY);
@@ -485,7 +485,7 @@ sysctl_add_oid(struct sysctl_ctx_list *clist, struct sysctl_oid_list *parent,
 	}
 	oidp = bsd_malloc(sizeof(struct sysctl_oid), M_SYSCTLOID, M_WAITOK|M_ZERO);
 	oidp->oid_parent = parent;
-	SLIST_NEXT(oidp, oid_link) = NULL;
+	BSD_SLIST_NEXT(oidp, oid_link) = NULL;
 	oidp->oid_number = number;
 	oidp->oid_refcnt = 1;
 	oidp->oid_name = strdup(name, M_SYSCTLOID);
@@ -495,7 +495,7 @@ sysctl_add_oid(struct sysctl_ctx_list *clist, struct sysctl_oid_list *parent,
 		/* Allocate space for children */
 		SYSCTL_CHILDREN_SET(oidp, bsd_malloc(sizeof(struct sysctl_oid_list),
 		    M_SYSCTLOID, M_WAITOK));
-		SLIST_INIT(SYSCTL_CHILDREN(oidp));
+		BSD_SLIST_INIT(SYSCTL_CHILDREN(oidp));
 		oidp->oid_arg2 = arg2;
 	} else {
 		oidp->oid_arg1 = arg1;
@@ -602,7 +602,7 @@ sysctl_sysctl_debug_dump_node(struct sysctl_oid_list *l, int i)
 	struct sysctl_oid *oidp;
 
 	SYSCTL_ASSERT_XLOCKED();
-	SLIST_FOREACH(oidp, l, oid_link) {
+	BSD_SLIST_FOREACH(oidp, l, oid_link) {
 
 		for (k=0; k<i; k++)
 			printf(" ");
@@ -681,7 +681,7 @@ sysctl_sysctl_name(SYSCTL_HANDLER_ARGS)
 			continue;
 		}
 		lsp2 = 0;
-		SLIST_FOREACH(oid, lsp, oid_link) {
+		BSD_SLIST_FOREACH(oid, lsp, oid_link) {
 			if (oid->oid_number != *name)
 				continue;
 
@@ -728,7 +728,7 @@ sysctl_sysctl_next_ls(struct sysctl_oid_list *lsp, int *name, u_int namelen,
 
 	SYSCTL_ASSERT_XLOCKED();
 	*len = level;
-	SLIST_FOREACH(oidp, lsp, oid_link) {
+	BSD_SLIST_FOREACH(oidp, lsp, oid_link) {
 		*next = oidp->oid_number;
 		*oidpp = oidp;
 
@@ -818,8 +818,8 @@ name2oid(char *name, int *oid, int *len, struct sysctl_oid **oidpp)
 	for (*len = 0; *len < CTL_MAXNAME;) {
 		p = strsep(&name, ".");
 
-		oidp = SLIST_FIRST(lsp);
-		for (;; oidp = SLIST_NEXT(oidp, oid_link)) {
+		oidp = BSD_SLIST_FIRST(lsp);
+		for (;; oidp = BSD_SLIST_NEXT(oidp, oid_link)) {
 			if (oidp == NULL)
 				return (ENOENT);
 			if (strcmp(p, oidp->oid_name) == 0)
@@ -1365,7 +1365,7 @@ sysctl_find_oid(int *name, u_int namelen, struct sysctl_oid **noid,
 	lsp = &sysctl__children;
 	indx = 0;
 	while (indx < CTL_MAXNAME) {
-		SLIST_FOREACH(oid, lsp, oid_link) {
+		BSD_SLIST_FOREACH(oid, lsp, oid_link) {
 			if (oid->oid_number == name[indx])
 				break;
 		}

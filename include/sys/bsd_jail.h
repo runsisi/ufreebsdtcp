@@ -151,13 +151,13 @@ struct prison_racct;
  *   (d) set only during destruction of jail, no mutex needed
  */
 struct prison {
-	TAILQ_ENTRY(prison) pr_list;			/* (a) all prisons */
+	BSD_TAILQ_ENTRY(prison) pr_list;			/* (a) all prisons */
 	int		 pr_id;				/* (c) prison id */
 	int		 pr_ref;			/* (p) refcount */
 	int		 pr_uref;			/* (p) user (alive) refcount */
 	unsigned	 pr_flags;			/* (p) PR_* flags */
-	LIST_HEAD(, prison) pr_children;		/* (a) list of child jails */
-	LIST_ENTRY(prison) pr_sibling;			/* (a) next in parent's list */
+	BSD_LIST_HEAD(, prison) pr_children;		/* (a) list of child jails */
+	BSD_LIST_ENTRY(prison) pr_sibling;			/* (a) next in parent's list */
 	struct prison	*pr_parent;			/* (c) containing jail */
 	struct mtx	 pr_mtx;
 	struct task	 pr_task;			/* (d) destroy task */
@@ -187,7 +187,7 @@ struct prison {
 };
 
 struct prison_racct {
-	LIST_ENTRY(prison_racct) prr_next;
+	BSD_LIST_ENTRY(prison_racct) prr_next;
 	char		prr_name[MAXHOSTNAMELEN];
 	u_int		prr_refcount;
 	struct racct	*prr_racct;
@@ -261,7 +261,7 @@ prison_unlock(struct prison *pr)
 
 /* Traverse a prison's immediate children. */
 #define	FOREACH_PRISON_CHILD(ppr, cpr)					\
-	LIST_FOREACH(cpr, &(ppr)->pr_children, pr_sibling)
+	BSD_LIST_FOREACH(cpr, &(ppr)->pr_children, pr_sibling)
 
 /*
  * Preorder traversal of all of a prison's descendants.
@@ -270,12 +270,12 @@ prison_unlock(struct prison *pr)
  */
 #define	FOREACH_PRISON_DESCENDANT(ppr, cpr, descend)			\
 	for ((cpr) = (ppr), (descend) = 1;				\
-	    ((cpr) = (((descend) && !LIST_EMPTY(&(cpr)->pr_children))	\
-	      ? LIST_FIRST(&(cpr)->pr_children)				\
+	    ((cpr) = (((descend) && !BSD_LIST_EMPTY(&(cpr)->pr_children))	\
+	      ? BSD_LIST_FIRST(&(cpr)->pr_children)				\
 	      : ((cpr) == (ppr)						\
 		 ? NULL							\
-		 : (((descend) = LIST_NEXT(cpr, pr_sibling) != NULL)	\
-		    ? LIST_NEXT(cpr, pr_sibling)			\
+		 : (((descend) = BSD_LIST_NEXT(cpr, pr_sibling) != NULL)	\
+		    ? BSD_LIST_NEXT(cpr, pr_sibling)			\
 		    : (cpr)->pr_parent))));)				\
 		if (!(descend))						\
 			;						\
@@ -286,13 +286,13 @@ prison_unlock(struct prison *pr)
  */
 #define	FOREACH_PRISON_DESCENDANT_LOCKED(ppr, cpr, descend)		\
 	for ((cpr) = (ppr), (descend) = 1;				\
-	    ((cpr) = (((descend) && !LIST_EMPTY(&(cpr)->pr_children))	\
-	      ? LIST_FIRST(&(cpr)->pr_children)				\
+	    ((cpr) = (((descend) && !BSD_LIST_EMPTY(&(cpr)->pr_children))	\
+	      ? BSD_LIST_FIRST(&(cpr)->pr_children)				\
 	      : ((cpr) == (ppr)						\
 		 ? NULL							\
 		 : ((prison_unlock(cpr),				\
-		    (descend) = LIST_NEXT(cpr, pr_sibling) != NULL)	\
-		    ? LIST_NEXT(cpr, pr_sibling)			\
+		    (descend) = BSD_LIST_NEXT(cpr, pr_sibling) != NULL)	\
+		    ? BSD_LIST_NEXT(cpr, pr_sibling)			\
 		    : (cpr)->pr_parent))));)				\
 		if ((descend) ? (prison_lock(cpr), 0) : 1)		\
 			;						\
@@ -303,13 +303,13 @@ prison_unlock(struct prison *pr)
  */
 #define	FOREACH_PRISON_DESCENDANT_LOCKED_LEVEL(ppr, cpr, descend, level)\
 	for ((cpr) = (ppr), (descend) = 1, (level) = 0;			\
-	    ((cpr) = (((descend) && !LIST_EMPTY(&(cpr)->pr_children))	\
-	      ? (level++, LIST_FIRST(&(cpr)->pr_children))		\
+	    ((cpr) = (((descend) && !BSD_LIST_EMPTY(&(cpr)->pr_children))	\
+	      ? (level++, BSD_LIST_FIRST(&(cpr)->pr_children))		\
 	      : ((cpr) == (ppr)						\
 		 ? NULL							\
 		 : ((prison_unlock(cpr),				\
-		    (descend) = LIST_NEXT(cpr, pr_sibling) != NULL)	\
-		    ? LIST_NEXT(cpr, pr_sibling)			\
+		    (descend) = BSD_LIST_NEXT(cpr, pr_sibling) != NULL)	\
+		    ? BSD_LIST_NEXT(cpr, pr_sibling)			\
 		    : (level--, (cpr)->pr_parent)))));)			\
 		if ((descend) ? (prison_lock(cpr), 0) : 1)		\
 			;						\
@@ -320,7 +320,7 @@ prison_unlock(struct prison *pr)
  */
 extern struct	prison prison0;
 
-TAILQ_HEAD(prisonlist, prison);
+BSD_TAILQ_HEAD(prisonlist, prison);
 extern struct	prisonlist allprison;
 extern struct	sx allprison_lock;
 

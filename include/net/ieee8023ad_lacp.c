@@ -484,7 +484,7 @@ lacp_tick(void *arg)
 	struct lacp_softc *lsc = arg;
 	struct lacp_port *lp;
 
-	LIST_FOREACH(lp, &lsc->lsc_ports, lp_next) {
+	BSD_LIST_FOREACH(lp, &lsc->lsc_ports, lp_next) {
 		if ((lp->lp_state & LACP_STATE_AGGREGATION) == 0)
 			continue;
 
@@ -539,7 +539,7 @@ lacp_port_create(struct lagg_port *lgp)
 	lp->lp_lsc = lsc;
 	lp->lp_ifma = rifma;
 
-	LIST_INSERT_HEAD(&lsc->lsc_ports, lp, lp_next);
+	BSD_LIST_INSERT_HEAD(&lsc->lsc_ports, lp, lp_next);
 
 	lacp_fill_actorinfo(lp, &lp->lp_actor);
 	lacp_fill_markerinfo(lp, &lp->lp_marker);
@@ -574,7 +574,7 @@ lacp_port_destroy(struct lagg_port *lgp)
 	if (!lgp->lp_detaching)
 		if_delmulti_ifma(lp->lp_ifma);
 
-	LIST_REMOVE(lp, lp_next);
+	BSD_LIST_REMOVE(lp, lp_next);
 	LACP_UNLOCK(lsc);
 	bsd_free(lp, M_DEVBUF);
 }
@@ -661,7 +661,7 @@ lacp_disable_distributing(struct lacp_port *lp)
 		return;
 	}
 
-	KASSERT(!TAILQ_EMPTY(&la->la_ports), ("no aggregator ports"));
+	KASSERT(!BSD_TAILQ_EMPTY(&la->la_ports), ("no aggregator ports"));
 	KASSERT(la->la_nports > 0, ("nports invalid (%d)", la->la_nports));
 	KASSERT(la->la_refcnt >= la->la_nports, ("aggregator refcnt invalid"));
 
@@ -670,7 +670,7 @@ lacp_disable_distributing(struct lacp_port *lp)
 	    lacp_format_lagid_aggregator(la, buf, sizeof(buf)),
 	    la->la_nports, la->la_nports - 1));
 
-	TAILQ_REMOVE(&la->la_ports, lp, lp_dist_q);
+	BSD_TAILQ_REMOVE(&la->la_ports, lp, lp_dist_q);
 	la->la_nports--;
 
 	if (lsc->lsc_active_aggregator == la) {
@@ -702,7 +702,7 @@ lacp_enable_distributing(struct lacp_port *lp)
 	    la->la_nports, la->la_nports + 1));
 
 	KASSERT(la->la_refcnt > la->la_nports, ("aggregator refcnt invalid"));
-	TAILQ_INSERT_HEAD(&la->la_ports, lp, lp_dist_q);
+	BSD_TAILQ_INSERT_HEAD(&la->la_ports, lp, lp_dist_q);
 	la->la_nports++;
 
 	lp->lp_state |= LACP_STATE_DISTRIBUTING;
@@ -743,8 +743,8 @@ lacp_attach(struct lagg_softc *sc)
 	lsc->lsc_hashkey = arc4random();
 	lsc->lsc_active_aggregator = NULL;
 	LACP_LOCK_INIT(lsc);
-	TAILQ_INIT(&lsc->lsc_aggregators);
-	LIST_INIT(&lsc->lsc_ports);
+	BSD_TAILQ_INIT(&lsc->lsc_aggregators);
+	BSD_LIST_INIT(&lsc->lsc_ports);
 
 	callout_init_mtx(&lsc->lsc_transit_callout, &lsc->lsc_mtx, 0);
 	callout_init_mtx(&lsc->lsc_callout, &lsc->lsc_mtx, 0);
@@ -761,7 +761,7 @@ lacp_detach(struct lagg_softc *sc)
 {
 	struct lacp_softc *lsc = LACP_SOFTC(sc);
 
-	KASSERT(TAILQ_EMPTY(&lsc->lsc_aggregators),
+	KASSERT(BSD_TAILQ_EMPTY(&lsc->lsc_aggregators),
 	    ("aggregators still active"));
 	KASSERT(lsc->lsc_active_aggregator == NULL,
 	    ("aggregator still attached"));
@@ -846,7 +846,7 @@ lacp_suppress_distributing(struct lacp_softc *lsc, struct lacp_aggregator *la)
 	lsc->lsc_suppress_distributing = TRUE;
 
 	/* send a marker frame down each port to verify the queues are empty */
-	LIST_FOREACH(lp, &lsc->lsc_ports, lp_next) {
+	BSD_LIST_FOREACH(lp, &lsc->lsc_ports, lp_next) {
 		lp->lp_flags |= LACP_PORT_MARK;
 		lacp_xmit_marker(lp);
 	}
@@ -885,7 +885,7 @@ lacp_aggregator_bandwidth(struct lacp_aggregator *la)
 	struct lacp_port *lp;
 	uint64_t speed;
 
-	lp = TAILQ_FIRST(&la->la_ports);
+	lp = BSD_TAILQ_FIRST(&la->la_ports);
 	if (lp == NULL) {
 		return (0);
 	}
@@ -916,7 +916,7 @@ lacp_select_active_aggregator(struct lacp_softc *lsc)
 
 	LACP_TRACE(NULL);
 
-	TAILQ_FOREACH(la, &lsc->lsc_aggregators, la_q) {
+	BSD_TAILQ_FOREACH(la, &lsc->lsc_aggregators, la_q) {
 		uint64_t speed;
 
 		if (la->la_nports == 0) {
@@ -945,7 +945,7 @@ lacp_select_active_aggregator(struct lacp_softc *lsc)
 
 	KASSERT(best_la == NULL || best_la->la_nports > 0,
 	    ("invalid aggregator refcnt"));
-	KASSERT(best_la == NULL || !TAILQ_EMPTY(&best_la->la_ports),
+	KASSERT(best_la == NULL || !BSD_TAILQ_EMPTY(&best_la->la_ports),
 	    ("invalid aggregator list"));
 
 	if (lsc->lsc_active_aggregator != best_la) {
@@ -990,7 +990,7 @@ lacp_update_portmap(struct lacp_softc *lsc)
 	if (la != NULL && la->la_nports > 0) {
 		p->pm_count = la->la_nports;
 		i = 0;
-		TAILQ_FOREACH(lp, &la->la_ports, lp_dist_q)
+		BSD_TAILQ_FOREACH(lp, &la->la_ports, lp_dist_q)
 			p->pm_map[i++] = lp;
 		KASSERT(i == p->pm_count, ("Invalid port count"));
 	}
@@ -1073,7 +1073,7 @@ lacp_aggregator_delref(struct lacp_softc *lsc, struct lacp_aggregator *la)
 	KASSERT(la->la_refcnt == 0, ("refcount not zero"));
 	KASSERT(lsc->lsc_active_aggregator != la, ("aggregator active"));
 
-	TAILQ_REMOVE(&lsc->lsc_aggregators, la, la_q);
+	BSD_TAILQ_REMOVE(&lsc->lsc_aggregators, la, la_q);
 
 	bsd_free(la, M_DEVBUF);
 }
@@ -1091,9 +1091,9 @@ lacp_aggregator_get(struct lacp_softc *lsc, struct lacp_port *lp)
 	if (la) {
 		la->la_refcnt = 1;
 		la->la_nports = 0;
-		TAILQ_INIT(&la->la_ports);
+		BSD_TAILQ_INIT(&la->la_ports);
 		la->la_pending = 0;
-		TAILQ_INSERT_TAIL(&lsc->lsc_aggregators, la, la_q);
+		BSD_TAILQ_INSERT_TAIL(&lsc->lsc_aggregators, la, la_q);
 	}
 
 	return (la);
@@ -1204,7 +1204,7 @@ lacp_select(struct lacp_port *lp)
 	    lacp_format_lagid(&lp->lp_actor, &lp->lp_partner,
 	    buf, sizeof(buf))));
 
-	TAILQ_FOREACH(la, &lsc->lsc_aggregators, la_q) {
+	BSD_TAILQ_FOREACH(la, &lsc->lsc_aggregators, la_q) {
 		if (lacp_aggregator_is_compatible(la, lp)) {
 			break;
 		}
@@ -1755,7 +1755,7 @@ lacp_marker_input(struct lacp_port *lp, struct mbuf *m)
 
 		if (lsc->lsc_suppress_distributing) {
 			/* Check if any ports are waiting for a response */
-			LIST_FOREACH(lp2, &lsc->lsc_ports, lp_next) {
+			BSD_LIST_FOREACH(lp2, &lsc->lsc_ports, lp_next) {
 				if (lp2->lp_flags & LACP_PORT_MARK) {
 					pending = 1;
 					break;

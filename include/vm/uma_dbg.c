@@ -202,7 +202,7 @@ uma_dbg_getslab(uma_zone_t zone, void *item)
 	if (zone->uz_flags & UMA_ZONE_VTOSLAB) {
 		slab = vtoslab((vm_offset_t)mem);
 	} else {
-		keg = LIST_FIRST(&zone->uz_kegs)->kl_keg;
+		keg = BSD_LIST_FIRST(&zone->uz_kegs)->kl_keg;
 		if (keg->uk_flags & UMA_ZONE_HASH)
 			slab = hash_sfind(&keg->uk_hash, mem);
 		else

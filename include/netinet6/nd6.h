@@ -233,9 +233,9 @@ struct	in6_ndifreq {
 		(((MIN_RANDOM_FACTOR * (x >> 10)) + (arc4random() & \
 		((MAX_RANDOM_FACTOR - MIN_RANDOM_FACTOR) * (x >> 10)))) /1000)
 
-TAILQ_HEAD(nd_drhead, nd_defrouter);
+BSD_TAILQ_HEAD(nd_drhead, nd_defrouter);
 struct	nd_defrouter {
-	TAILQ_ENTRY(nd_defrouter) dr_entry;
+	BSD_TAILQ_ENTRY(nd_defrouter) dr_entry;
 	struct	in6_addr rtaddr;
 	u_char	flags;		/* flags on RA message */
 	u_short	rtlifetime;
@@ -260,7 +260,7 @@ struct nd_prefixctl {
 
 struct nd_prefix {
 	struct ifnet *ndpr_ifp;
-	LIST_ENTRY(nd_prefix) ndpr_entry;
+	BSD_LIST_ENTRY(nd_prefix) ndpr_entry;
 	struct sockaddr_in6 ndpr_prefix;	/* prefix */
 	struct in6_addr ndpr_mask; /* netmask derived from the prefix */
 
@@ -274,7 +274,7 @@ struct nd_prefix {
 	struct prf_ra ndpr_flags;
 	u_int32_t ndpr_stateflags; /* actual state flags */
 	/* list of routers that advertise the prefix: */
-	LIST_HEAD(pr_rtrhead, nd_pfxrouter) ndpr_advrtrs;
+	BSD_LIST_HEAD(pr_rtrhead, nd_pfxrouter) ndpr_advrtrs;
 	u_char	ndpr_plen;
 	int	ndpr_refcnt;	/* reference couter from addresses */
 };
@@ -311,11 +311,11 @@ struct inet6_ndpr_msghdr {
 #define prm_rrf_decrprefd	prm_flags.prf_rr.decrprefd
 
 struct nd_pfxrouter {
-	LIST_ENTRY(nd_pfxrouter) pfr_entry;
+	BSD_LIST_ENTRY(nd_pfxrouter) pfr_entry;
 	struct nd_defrouter *router;
 };
 
-LIST_HEAD(nd_prhead, nd_prefix);
+BSD_LIST_HEAD(nd_prhead, nd_prefix);
 
 /* nd6.c */
 VNET_DECLARE(int, nd6_prune);

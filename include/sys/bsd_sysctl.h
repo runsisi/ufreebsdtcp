@@ -152,7 +152,7 @@ struct sysctl_req {
 	int		flags;
 };
 
-SLIST_HEAD(sysctl_oid_list, sysctl_oid);
+BSD_SLIST_HEAD(sysctl_oid_list, sysctl_oid);
 
 /*
  * This describes one "oid" in the MIB tree.  Potentially more nodes can
@@ -160,7 +160,7 @@ SLIST_HEAD(sysctl_oid_list, sysctl_oid);
  */
 struct sysctl_oid {
 	struct sysctl_oid_list *oid_parent;
-	SLIST_ENTRY(sysctl_oid) oid_link;
+	BSD_SLIST_ENTRY(sysctl_oid) oid_link;
 	int		oid_number;
 	u_int		oid_kind;
 	void		*oid_arg1;
@@ -210,10 +210,10 @@ void sysctl_unregister_oid(struct sysctl_oid *oidp);
 /* All dynamically created sysctls can be tracked in a context list. */
 struct sysctl_ctx_entry {
 	struct sysctl_oid *entry;
-	TAILQ_ENTRY(sysctl_ctx_entry) link;
+	BSD_TAILQ_ENTRY(sysctl_ctx_entry) link;
 };
 
-TAILQ_HEAD(sysctl_ctx_list, sysctl_ctx_entry);
+BSD_TAILQ_HEAD(sysctl_ctx_list, sysctl_ctx_entry);
 
 #define SYSCTL_NODE_CHILDREN(parent, name) \
 	sysctl_##parent##_##name##_children

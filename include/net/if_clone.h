@@ -49,7 +49,7 @@
  * (i)		locked by ifc_mtx mtx
  */
 struct if_clone {
-	LIST_ENTRY(if_clone) ifc_list;	/* (e) On list of cloners */
+	BSD_LIST_ENTRY(if_clone) ifc_list;	/* (e) On list of cloners */
 	const char *ifc_name;		/* (c) Name of device, e.g. `gif' */
 	int ifc_maxunit;		/* (c) Maximum unit number */
 	unsigned char *ifc_units;	/* (i) Bitmap to handle units. */
@@ -66,7 +66,7 @@ struct if_clone {
 
 	long ifc_refcnt;		/* (i) Refrence count. */
 	struct mtx ifc_mtx;		/* Muted to protect members. */
-	LIST_HEAD(, ifnet) ifc_iflist;	/* (i) List of cloned interfaces */
+	BSD_LIST_HEAD(, ifnet) ifc_iflist;	/* (i) List of cloned interfaces */
 };
 
 void	if_clone_init(void);

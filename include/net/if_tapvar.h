@@ -61,7 +61,7 @@ struct tap_softc {
 	struct sigio	*tap_sigio;		/* information for async I/O */
 	struct selinfo	 tap_rsel;		/* read select               */
 
-	SLIST_ENTRY(tap_softc)	tap_next;	/* next device in chain      */
+	BSD_SLIST_ENTRY(tap_softc)	tap_next;	/* next device in chain      */
 	struct cdev *tap_dev;
 	struct mtx	 tap_mtx;		/* per-softc mutex */
 };

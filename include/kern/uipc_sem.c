@@ -89,11 +89,11 @@ struct ksem_mapping {
 	char		*km_path;
 	Fnv32_t		km_fnv;
 	struct ksem	*km_ksem;
-	LIST_ENTRY(ksem_mapping) km_link;
+	BSD_LIST_ENTRY(ksem_mapping) km_link;
 };
 
 static MALLOC_DEFINE(M_KSEM, "ksem", "semaphore file descriptor");
-static LIST_HEAD(, ksem_mapping) *ksem_dictionary;
+static BSD_LIST_HEAD(, ksem_mapping) *ksem_dictionary;
 static struct sx ksem_dict_lock;
 static struct mtx ksem_count_lock;
 static struct mtx sem_lock;
@@ -387,7 +387,7 @@ ksem_lookup(char *path, Fnv32_t fnv)
 {
 	struct ksem_mapping *map;
 
-	LIST_FOREACH(map, KSEM_HASH(fnv), km_link) {
+	BSD_LIST_FOREACH(map, KSEM_HASH(fnv), km_link) {
 		if (map->km_fnv != fnv)
 			continue;
 		if (strcmp(map->km_path, path) == 0)
@@ -407,7 +407,7 @@ ksem_insert(char *path, Fnv32_t fnv, struct ksem *ks)
 	map->km_fnv = fnv;
 	map->km_ksem = ksem_hold(ks);
 	ks->ks_path = path;
-	LIST_INSERT_HEAD(KSEM_HASH(fnv), map, km_link);
+	BSD_LIST_INSERT_HEAD(KSEM_HASH(fnv), map, km_link);
 }
 
 static int
@@ -416,7 +416,7 @@ ksem_remove(char *path, Fnv32_t fnv, struct ucred *ucred)
 	struct ksem_mapping *map;
 	int error;
 
-	LIST_FOREACH(map, KSEM_HASH(fnv), km_link) {
+	BSD_LIST_FOREACH(map, KSEM_HASH(fnv), km_link) {
 		if (map->km_fnv != fnv)
 			continue;
 		if (strcmp(map->km_path, path) == 0) {
@@ -429,7 +429,7 @@ ksem_remove(char *path, Fnv32_t fnv, struct ucred *ucred)
 			if (error)
 				return (error);
 			map->km_ksem->ks_path = NULL;
-			LIST_REMOVE(map, km_link);
+			BSD_LIST_REMOVE(map, km_link);
 			ksem_drop(map->km_ksem);
 			bsd_free(map->km_path, M_KSEM);
 			bsd_free(map, M_KSEM);

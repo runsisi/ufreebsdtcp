@@ -36,7 +36,7 @@
 #include <sys/bsd_event.h>		/* for struct klist */
 
 struct selfd;
-TAILQ_HEAD(selfdlist, selfd);
+BSD_TAILQ_HEAD(selfdlist, selfd);
 
 /*
  * Used to maintain information about processes that wish to be
@@ -48,7 +48,7 @@ struct selinfo {
 	struct mtx		*si_mtx;	/* Lock for tdlist. */
 };
 
-#define	SEL_WAITING(si)		(!TAILQ_EMPTY(&(si)->si_tdlist))
+#define	SEL_WAITING(si)		(!BSD_TAILQ_EMPTY(&(si)->si_tdlist))
 
 #ifdef _KERNEL
 void	seldrain(struct selinfo *sip);

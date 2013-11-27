@@ -93,8 +93,8 @@ TUNABLE_INT("hw.intr_storm_threshold", &intr_storm_threshold);
 SYSCTL_INT(_hw, OID_AUTO, intr_storm_threshold, CTLFLAG_RW,
     &intr_storm_threshold, 0,
     "Number of consecutive interrupts before storm protection is enabled");
-static TAILQ_HEAD(, intr_event) event_list =
-    TAILQ_HEAD_INITIALIZER(event_list);
+static BSD_TAILQ_HEAD(, intr_event) event_list =
+    BSD_TAILQ_HEAD_INITIALIZER(event_list);
 static struct mtx event_lock;
 MTX_SYSINIT(intr_event_list, &event_lock, "intr event list", MTX_DEF);
 
@@ -173,10 +173,10 @@ ithread_update(struct intr_thread *ithd)
 	td = ithd->it_thread;
 
 	/* Determine the overall priority of this event. */
-	if (TAILQ_EMPTY(&ie->ie_handlers))
+	if (BSD_TAILQ_EMPTY(&ie->ie_handlers))
 		pri = PRI_MAX_ITHD;
 	else
-		pri = TAILQ_FIRST(&ie->ie_handlers)->ih_pri;
+		pri = BSD_TAILQ_FIRST(&ie->ie_handlers)->ih_pri;
 
 	/* Update name and priority. */
 	strlcpy(td->td_name, ie->ie_fullname, sizeof(td->td_name));
@@ -206,7 +206,7 @@ intr_event_update(struct intr_event *ie)
 	space = 1;
 
 	/* Run through all the handlers updating values. */
-	TAILQ_FOREACH(ih, &ie->ie_handlers, ih_next) {
+	BSD_TAILQ_FOREACH(ih, &ie->ie_handlers, ih_next) {
 		if (strlen(ie->ie_fullname) + strlen(ih->ih_name) + 1 <
 		    sizeof(ie->ie_fullname)) {
 			strcat(ie->ie_fullname, " ");
@@ -268,7 +268,7 @@ intr_event_create(struct intr_event **event, void *source, int flags, int irq,
 	ie->ie_flags = flags;
 	ie->ie_irq = irq;
 	ie->ie_cpu = NOCPU;
-	TAILQ_INIT(&ie->ie_handlers);
+	BSD_TAILQ_INIT(&ie->ie_handlers);
 	mtx_init(&ie->ie_lock, "intr event", NULL, MTX_DEF);
 
 	va_start(ap, fmt);
@@ -276,7 +276,7 @@ intr_event_create(struct intr_event **event, void *source, int flags, int irq,
 	va_end(ap);
 	strlcpy(ie->ie_fullname, ie->ie_name, sizeof(ie->ie_fullname));
 	mtx_lock(&event_lock);
-	TAILQ_INSERT_TAIL(&event_list, ie, ie_list);
+	BSD_TAILQ_INSERT_TAIL(&event_list, ie, ie_list);
 	mtx_unlock(&event_lock);
 	if (event != NULL)
 		*event = ie;
@@ -358,10 +358,10 @@ intr_lookup(int irq)
 	struct intr_event *ie;
 
 	mtx_lock(&event_lock);
-	TAILQ_FOREACH(ie, &event_list, ie_list)
+	BSD_TAILQ_FOREACH(ie, &event_list, ie_list)
 		if (ie->ie_irq == irq &&
 		    (ie->ie_flags & IE_SOFT) == 0 &&
-		    TAILQ_FIRST(&ie->ie_handlers) != NULL)
+		    BSD_TAILQ_FIRST(&ie->ie_handlers) != NULL)
 			break;
 	mtx_unlock(&event_lock);
 	return (ie);
@@ -422,12 +422,12 @@ intr_event_destroy(struct intr_event *ie)
 
 	mtx_lock(&event_lock);
 	mtx_lock(&ie->ie_lock);
-	if (!TAILQ_EMPTY(&ie->ie_handlers)) {
+	if (!BSD_TAILQ_EMPTY(&ie->ie_handlers)) {
 		mtx_unlock(&ie->ie_lock);
 		mtx_unlock(&event_lock);
 		return (EBUSY);
 	}
-	TAILQ_REMOVE(&event_list, ie, ie_list);
+	BSD_TAILQ_REMOVE(&event_list, ie, ie_list);
 #ifndef notyet
 	if (ie->ie_thread != NULL) {
 		ithread_destroy(ie->ie_thread);
@@ -536,9 +536,9 @@ intr_event_add_handler(struct intr_event *ie, const char *name,
 
 	/* We can only have one exclusive handler in a event. */
 	mtx_lock(&ie->ie_lock);
-	if (!TAILQ_EMPTY(&ie->ie_handlers)) {
+	if (!BSD_TAILQ_EMPTY(&ie->ie_handlers)) {
 		if ((flags & INTR_EXCL) ||
-		    (TAILQ_FIRST(&ie->ie_handlers)->ih_flags & IH_EXCLUSIVE)) {
+		    (BSD_TAILQ_FIRST(&ie->ie_handlers)->ih_flags & IH_EXCLUSIVE)) {
 			mtx_unlock(&ie->ie_lock);
 			bsd_free(ih, M_ITHREAD);
 			return (EINVAL);
@@ -563,14 +563,14 @@ intr_event_add_handler(struct intr_event *ie, const char *name,
 	}
 
 	/* Add the new handler to the event in priority order. */
-	TAILQ_FOREACH(temp_ih, &ie->ie_handlers, ih_next) {
+	BSD_TAILQ_FOREACH(temp_ih, &ie->ie_handlers, ih_next) {
 		if (temp_ih->ih_pri > ih->ih_pri)
 			break;
 	}
 	if (temp_ih == NULL)
-		TAILQ_INSERT_TAIL(&ie->ie_handlers, ih, ih_next);
+		BSD_TAILQ_INSERT_TAIL(&ie->ie_handlers, ih, ih_next);
 	else
-		TAILQ_INSERT_BEFORE(temp_ih, ih, ih_next);
+		BSD_TAILQ_INSERT_BEFORE(temp_ih, ih, ih_next);
 	intr_event_update(ie);
 
 	CTR3(KTR_INTR, "%s: added %s to %s", __func__, ih->ih_name,
@@ -610,9 +610,9 @@ intr_event_add_handler(struct intr_event *ie, const char *name,
 
 	/* We can only have one exclusive handler in a event. */
 	mtx_lock(&ie->ie_lock);
-	if (!TAILQ_EMPTY(&ie->ie_handlers)) {
+	if (!BSD_TAILQ_EMPTY(&ie->ie_handlers)) {
 		if ((flags & INTR_EXCL) ||
-		    (TAILQ_FIRST(&ie->ie_handlers)->ih_flags & IH_EXCLUSIVE)) {
+		    (BSD_TAILQ_FIRST(&ie->ie_handlers)->ih_flags & IH_EXCLUSIVE)) {
 			mtx_unlock(&ie->ie_lock);
 			bsd_free(ih, M_ITHREAD);
 			return (EINVAL);
@@ -646,14 +646,14 @@ intr_event_add_handler(struct intr_event *ie, const char *name,
 	}
 
 	/* Add the new handler to the event in priority order. */
-	TAILQ_FOREACH(temp_ih, &ie->ie_handlers, ih_next) {
+	BSD_TAILQ_FOREACH(temp_ih, &ie->ie_handlers, ih_next) {
 		if (temp_ih->ih_pri > ih->ih_pri)
 			break;
 	}
 	if (temp_ih == NULL)
-		TAILQ_INSERT_TAIL(&ie->ie_handlers, ih, ih_next);
+		BSD_TAILQ_INSERT_TAIL(&ie->ie_handlers, ih, ih_next);
 	else
-		TAILQ_INSERT_BEFORE(temp_ih, ih, ih_next);
+		BSD_TAILQ_INSERT_BEFORE(temp_ih, ih, ih_next);
 	intr_event_update(ie);
 
 	CTR3(KTR_INTR, "%s: added %s to %s", __func__, ih->ih_name,
@@ -680,7 +680,7 @@ intr_event_describe_handler(struct intr_event *ie, void *cookie,
 
 	mtx_lock(&ie->ie_lock);
 #ifdef INVARIANTS
-	TAILQ_FOREACH(ih, &ie->ie_handlers, ih_next) {
+	BSD_TAILQ_FOREACH(ih, &ie->ie_handlers, ih_next) {
 		if (ih == cookie)
 			break;
 	}
@@ -804,7 +804,7 @@ intr_event_remove_handler(void *cookie)
 	CTR3(KTR_INTR, "%s: removing %s from %s", __func__, handler->ih_name,
 	    ie->ie_name);
 #ifdef INVARIANTS
-	TAILQ_FOREACH(ih, &ie->ie_handlers, ih_next)
+	BSD_TAILQ_FOREACH(ih, &ie->ie_handlers, ih_next)
 		if (ih == handler)
 			goto ok;
 	mtx_unlock(&ie->ie_lock);
@@ -818,7 +818,7 @@ ok:
 	 * CPU!
 	 */
 	if (ie->ie_thread == NULL) {
-		TAILQ_REMOVE(&ie->ie_handlers, handler, ih_next);
+		BSD_TAILQ_REMOVE(&ie->ie_handlers, handler, ih_next);
 		mtx_unlock(&ie->ie_lock);
 		bsd_free(handler, M_ITHREAD);
 		return (0);
@@ -843,7 +843,7 @@ ok:
 		 */
 		atomic_store_rel_int(&ie->ie_thread->it_need, 1);
 	} else
-		TAILQ_REMOVE(&ie->ie_handlers, handler, ih_next);
+		BSD_TAILQ_REMOVE(&ie->ie_handlers, handler, ih_next);
 	thread_unlock(ie->ie_thread->it_thread);
 	while (handler->ih_flags & IH_DEAD)
 		msleep(handler, &ie->ie_lock, 0, "iev_rmh", 0);
@@ -855,7 +855,7 @@ ok:
 	 * interrupt.
 	 */
 	dead = 1;
-	TAILQ_FOREACH(ih, &ie->ie_handlers, ih_next) {
+	BSD_TAILQ_FOREACH(ih, &ie->ie_handlers, ih_next) {
 		if (!(ih->ih_flags & IH_FAST)) {
 			dead = 0;
 			break;
@@ -883,7 +883,7 @@ intr_event_schedule_thread(struct intr_event *ie)
 	/*
 	 * If no ithread or no handlers, then we have a stray interrupt.
 	 */
-	if (ie == NULL || TAILQ_EMPTY(&ie->ie_handlers) ||
+	if (ie == NULL || BSD_TAILQ_EMPTY(&ie->ie_handlers) ||
 	    ie->ie_thread == NULL)
 		return (EINVAL);
 
@@ -951,7 +951,7 @@ intr_event_remove_handler(void *cookie)
 	CTR3(KTR_INTR, "%s: removing %s from %s", __func__, handler->ih_name,
 	    ie->ie_name);
 #ifdef INVARIANTS
-	TAILQ_FOREACH(ih, &ie->ie_handlers, ih_next)
+	BSD_TAILQ_FOREACH(ih, &ie->ie_handlers, ih_next)
 		if (ih == handler)
 			goto ok;
 	mtx_unlock(&ie->ie_lock);
@@ -965,7 +965,7 @@ ok:
 	 * XXX: Note that an INTR_FAST handler might be running on another CPU!
 	 */
 	if (ie->ie_thread == NULL && handler->ih_thread == NULL) {
-		TAILQ_REMOVE(&ie->ie_handlers, handler, ih_next);
+		BSD_TAILQ_REMOVE(&ie->ie_handlers, handler, ih_next);
 		mtx_unlock(&ie->ie_lock);
 		bsd_free(handler, M_ITHREAD);
 		return (0);
@@ -992,7 +992,7 @@ ok:
 		 */
 		atomic_store_rel_int(&it->it_need, 1);
 	} else
-		TAILQ_REMOVE(&ie->ie_handlers, handler, ih_next);
+		BSD_TAILQ_REMOVE(&ie->ie_handlers, handler, ih_next);
 	thread_unlock(it->it_thread);
 	while (handler->ih_flags & IH_DEAD)
 		msleep(handler, &ie->ie_lock, 0, "iev_rmh", 0);
@@ -1012,7 +1012,7 @@ ok:
 	 * interrupt.
 	 */
 	dead = 1;
-	TAILQ_FOREACH(ih, &ie->ie_handlers, ih_next) {
+	BSD_TAILQ_FOREACH(ih, &ie->ie_handlers, ih_next) {
 		if (handler != NULL) {
 			dead = 0;
 			break;
@@ -1039,7 +1039,7 @@ intr_event_schedule_thread(struct intr_event *ie, struct intr_thread *it)
 	/*
 	 * If no ithread or no handlers, then we have a stray interrupt.
 	 */
-	if (ie == NULL || TAILQ_EMPTY(&ie->ie_handlers) || it == NULL)
+	if (ie == NULL || BSD_TAILQ_EMPTY(&ie->ie_handlers) || it == NULL)
 		return (EINVAL);
 
 	ctd = curthread;
@@ -1203,7 +1203,7 @@ priv_ithread_execute_handler(struct proc *p, struct intr_handler *ih)
 	 */
 	if (ih->ih_flags & IH_DEAD) {
 		mtx_lock(&ie->ie_lock);
-		TAILQ_REMOVE(&ie->ie_handlers, ih, ih_next);
+		BSD_TAILQ_REMOVE(&ie->ie_handlers, ih, ih_next);
 		ih->ih_flags &= ~IH_DEAD;
 		wakeup(ih);
 		mtx_unlock(&ie->ie_lock);
@@ -1232,14 +1232,14 @@ intr_event_execute_handlers(struct proc *p, struct intr_event *ie)
 {
 	struct intr_handler *ih, *ihn;
 
-	TAILQ_FOREACH_SAFE(ih, &ie->ie_handlers, ih_next, ihn) {
+	BSD_TAILQ_FOREACH_SAFE(ih, &ie->ie_handlers, ih_next, ihn) {
 		/*
 		 * If this handler is marked for death, remove it from
 		 * the list of handlers and wake up the sleeper.
 		 */
 		if (ih->ih_flags & IH_DEAD) {
 			mtx_lock(&ie->ie_lock);
-			TAILQ_REMOVE(&ie->ie_handlers, ih, ih_next);
+			BSD_TAILQ_REMOVE(&ie->ie_handlers, ih, ih_next);
 			ih->ih_flags &= ~IH_DEAD;
 			wakeup(ih);
 			mtx_unlock(&ie->ie_lock);
@@ -1417,7 +1417,7 @@ intr_event_handle(struct intr_event *ie, struct trapframe *frame)
 	td = curthread;
 
 	/* An interrupt with no event or handlers is a stray interrupt. */
-	if (ie == NULL || TAILQ_EMPTY(&ie->ie_handlers))
+	if (ie == NULL || BSD_TAILQ_EMPTY(&ie->ie_handlers))
 		return (EINVAL);
 
 	/*
@@ -1432,7 +1432,7 @@ intr_event_handle(struct intr_event *ie, struct trapframe *frame)
 	critical_enter();
 	oldframe = td->td_intr_frame;
 	td->td_intr_frame = frame;
-	TAILQ_FOREACH(ih, &ie->ie_handlers, ih_next) {
+	BSD_TAILQ_FOREACH(ih, &ie->ie_handlers, ih_next) {
 		if (ih->ih_filter == NULL) {
 			thread = 1;
 			continue;
@@ -1612,7 +1612,7 @@ intr_filter_loop(struct intr_event *ie, struct trapframe *frame,
 
 	ret = 0;
 	thread_only = 0;
-	TAILQ_FOREACH(ih, &ie->ie_handlers, ih_next) {
+	BSD_TAILQ_FOREACH(ih, &ie->ie_handlers, ih_next) {
 		/*
 		 * Execute fast interrupt handlers directly.
 		 * To support clock handlers, if a handler registers
@@ -1677,7 +1677,7 @@ intr_event_handle(struct intr_event *ie, struct trapframe *frame)
 	ithd = NULL;
 	td = curthread;
 
-	if (ie == NULL || TAILQ_EMPTY(&ie->ie_handlers))
+	if (ie == NULL || BSD_TAILQ_EMPTY(&ie->ie_handlers))
 		return (EINVAL);
 
 	td->td_intr_nesting_level++;
@@ -1846,7 +1846,7 @@ db_dump_intr_event(struct intr_event *ie, int handlers)
 	db_printf("\n");
 
 	if (handlers)
-		TAILQ_FOREACH(ih, &ie->ie_handlers, ih_next)
+		BSD_TAILQ_FOREACH(ih, &ie->ie_handlers, ih_next)
 		    db_dump_intrhand(ih);
 }
 
@@ -1860,8 +1860,8 @@ DB_SHOW_COMMAND(intr, db_show_intr)
 
 	verbose = index(modif, 'v') != NULL;
 	all = index(modif, 'a') != NULL;
-	TAILQ_FOREACH(ie, &event_list, ie_list) {
-		if (!all && TAILQ_EMPTY(&ie->ie_handlers))
+	BSD_TAILQ_FOREACH(ie, &event_list, ie_list) {
+		if (!all && BSD_TAILQ_EMPTY(&ie->ie_handlers))
 			continue;
 		db_dump_intr_event(ie, verbose);
 		if (db_pager_quit)

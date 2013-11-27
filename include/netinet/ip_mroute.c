@@ -162,7 +162,7 @@ static VNET_DEFINE(u_long, mfchash);
 static u_long mfchashsize;			/* Hash size */
 static VNET_DEFINE(u_char *, nexpire);		/* 0..mfchashsize-1 */
 #define	V_nexpire		VNET(nexpire)
-static VNET_DEFINE(LIST_HEAD(mfchashhdr, mfc)*, mfchashtbl);
+static VNET_DEFINE(BSD_LIST_HEAD(mfchashhdr, mfc)*, mfchashtbl);
 #define	V_mfchashtbl		VNET(mfchashtbl)
 
 static struct mtx mfc_mtx;
@@ -384,10 +384,10 @@ mfc_find(struct in_addr *o, struct in_addr *g)
 
 	MFC_LOCK_ASSERT();
 
-	LIST_FOREACH(rt, &V_mfchashtbl[MFCHASH(*o, *g)], mfc_hash) {
+	BSD_LIST_FOREACH(rt, &V_mfchashtbl[MFCHASH(*o, *g)], mfc_hash) {
 		if (in_hosteq(rt->mfc_origin, *o) &&
 		    in_hosteq(rt->mfc_mcastgrp, *g) &&
-		    TAILQ_EMPTY(&rt->mfc_stall))
+		    BSD_TAILQ_EMPTY(&rt->mfc_stall))
 			break;
 	}
 
@@ -633,8 +633,8 @@ if_detached_event(void *arg __unused, struct ifnet *ifp)
 		continue;
 	for (i = 0; i < mfchashsize; i++) {
 		struct mfc *rt, *nrt;
-		for (rt = LIST_FIRST(&V_mfchashtbl[i]); rt; rt = nrt) {
-			nrt = LIST_NEXT(rt, mfc_hash);
+		for (rt = BSD_LIST_FIRST(&V_mfchashtbl[i]); rt; rt = nrt) {
+			nrt = BSD_LIST_NEXT(rt, mfc_hash);
 			if (rt->mfc_parent == vifi) {
 				expire_mfc(rt);
 			}
@@ -758,8 +758,8 @@ X_ip_mrouter_done(void)
      */
     for (i = 0; i < mfchashsize; i++) {
 	struct mfc *rt, *nrt;
-	for (rt = LIST_FIRST(&V_mfchashtbl[i]); rt; rt = nrt) {
-		nrt = LIST_NEXT(rt, mfc_hash);
+	for (rt = BSD_LIST_FIRST(&V_mfchashtbl[i]); rt; rt = nrt) {
+		nrt = BSD_LIST_NEXT(rt, mfc_hash);
 		expire_mfc(rt);
 	}
     }
@@ -823,7 +823,7 @@ set_api_config(uint32_t *apival)
     MFC_LOCK();
 
     for (i = 0; i < mfchashsize; i++) {
-	if (LIST_FIRST(&V_mfchashtbl[i]) != NULL) {
+	if (BSD_LIST_FIRST(&V_mfchashtbl[i]) != NULL) {
 	    *apival = 0;
 	    return EPERM;
 	}
@@ -1035,13 +1035,13 @@ expire_mfc(struct mfc *rt)
 
 	free_bw_list(rt->mfc_bw_meter);
 
-	TAILQ_FOREACH_SAFE(rte, &rt->mfc_stall, rte_link, nrte) {
+	BSD_TAILQ_FOREACH_SAFE(rte, &rt->mfc_stall, rte_link, nrte) {
 		m_freem(rte->m);
-		TAILQ_REMOVE(&rt->mfc_stall, rte, rte_link);
+		BSD_TAILQ_REMOVE(&rt->mfc_stall, rte, rte_link);
 		bsd_free(rte, M_MRTABLE);
 	}
 
-	LIST_REMOVE(rt, mfc_hash);
+	BSD_LIST_REMOVE(rt, mfc_hash);
 	bsd_free(rt, M_MRTABLE);
 }
 
@@ -1078,16 +1078,16 @@ add_mfc(struct mfcctl2 *mfccp)
      */
     nstl = 0;
     hash = MFCHASH(mfccp->mfcc_origin, mfccp->mfcc_mcastgrp);
-    LIST_FOREACH(rt, &V_mfchashtbl[hash], mfc_hash) {
+    BSD_LIST_FOREACH(rt, &V_mfchashtbl[hash], mfc_hash) {
 	if (in_hosteq(rt->mfc_origin, mfccp->mfcc_origin) &&
 	    in_hosteq(rt->mfc_mcastgrp, mfccp->mfcc_mcastgrp) &&
-	    !TAILQ_EMPTY(&rt->mfc_stall)) {
+	    !BSD_TAILQ_EMPTY(&rt->mfc_stall)) {
 		CTR5(KTR_IPMF,
 		    "%s: add mfc orig %s group %lx parent %x qh %p",
 		    __func__, inet_ntoa(mfccp->mfcc_origin),
 		    (u_long)ntohl(mfccp->mfcc_mcastgrp.s_addr),
 		    mfccp->mfcc_parent,
-		    TAILQ_FIRST(&rt->mfc_stall));
+		    BSD_TAILQ_FIRST(&rt->mfc_stall));
 		if (nstl++)
 			CTR1(KTR_IPMF, "%s: multiple matches", __func__);
 
@@ -1096,11 +1096,11 @@ add_mfc(struct mfcctl2 *mfccp)
 		V_nexpire[hash]--;
 
 		/* Free queued packets, but attempt to forward them first. */
-		TAILQ_FOREACH_SAFE(rte, &rt->mfc_stall, rte_link, nrte) {
+		BSD_TAILQ_FOREACH_SAFE(rte, &rt->mfc_stall, rte_link, nrte) {
 			if (rte->ifp != NULL)
 				ip_mdq(rte->m, rte->ifp, rt, -1);
 			m_freem(rte->m);
-			TAILQ_REMOVE(&rt->mfc_stall, rte, rte_link);
+			BSD_TAILQ_REMOVE(&rt->mfc_stall, rte, rte_link);
 			rt->mfc_nstall--;
 			bsd_free(rte, M_MRTABLE);
 		}
@@ -1112,7 +1112,7 @@ add_mfc(struct mfcctl2 *mfccp)
      */
     if (nstl == 0) {
 	CTR1(KTR_IPMF, "%s: adding mfc w/o upcall", __func__);
-	LIST_FOREACH(rt, &V_mfchashtbl[hash], mfc_hash) {
+	BSD_LIST_FOREACH(rt, &V_mfchashtbl[hash], mfc_hash) {
 		if (in_hosteq(rt->mfc_origin, mfccp->mfcc_origin) &&
 		    in_hosteq(rt->mfc_mcastgrp, mfccp->mfcc_mcastgrp)) {
 			init_mfc_params(rt, mfccp);
@@ -1132,14 +1132,14 @@ add_mfc(struct mfcctl2 *mfccp)
 	    }
 
 	    init_mfc_params(rt, mfccp);
-	    TAILQ_INIT(&rt->mfc_stall);
+	    BSD_TAILQ_INIT(&rt->mfc_stall);
 	    rt->mfc_nstall = 0;
 
 	    rt->mfc_expire     = 0;
 	    rt->mfc_bw_meter = NULL;
 
 	    /* insert new entry at head of hash chain */
-	    LIST_INSERT_HEAD(&V_mfchashtbl[hash], rt, mfc_hash);
+	    BSD_LIST_INSERT_HEAD(&V_mfchashtbl[hash], rt, mfc_hash);
 	}
     }
 
@@ -1179,7 +1179,7 @@ del_mfc(struct mfcctl2 *mfccp)
     free_bw_list(rt->mfc_bw_meter);
     rt->mfc_bw_meter = NULL;
 
-    LIST_REMOVE(rt, mfc_hash);
+    BSD_LIST_REMOVE(rt, mfc_hash);
     bsd_free(rt, M_MRTABLE);
 
     MFC_UNLOCK();
@@ -1318,10 +1318,10 @@ X_ip_mforward(struct ip *ip, struct ifnet *ifp, struct mbuf *m,
 
 	/* is there an upcall waiting for this flow ? */
 	hash = MFCHASH(ip->ip_src, ip->ip_dst);
-	LIST_FOREACH(rt, &V_mfchashtbl[hash], mfc_hash) {
+	BSD_LIST_FOREACH(rt, &V_mfchashtbl[hash], mfc_hash) {
 		if (in_hosteq(ip->ip_src, rt->mfc_origin) &&
 		    in_hosteq(ip->ip_dst, rt->mfc_mcastgrp) &&
-		    !TAILQ_EMPTY(&rt->mfc_stall))
+		    !BSD_TAILQ_EMPTY(&rt->mfc_stall))
 			break;
 	}
 
@@ -1398,12 +1398,12 @@ fail:
 	    rt->mfc_wrong_if = 0;
 	    timevalclear(&rt->mfc_last_assert);
 
-	    TAILQ_INIT(&rt->mfc_stall);
+	    BSD_TAILQ_INIT(&rt->mfc_stall);
 	    rt->mfc_nstall = 0;
 
 	    /* link into table */
-	    LIST_INSERT_HEAD(&V_mfchashtbl[hash], rt, mfc_hash);
-	    TAILQ_INSERT_HEAD(&rt->mfc_stall, rte, rte_link);
+	    BSD_LIST_INSERT_HEAD(&V_mfchashtbl[hash], rt, mfc_hash);
+	    BSD_TAILQ_INSERT_HEAD(&rt->mfc_stall, rte, rte_link);
 	    rt->mfc_nstall++;
 
 	} else {
@@ -1417,7 +1417,7 @@ non_fatal:
 		VIF_UNLOCK();
 		return (0);
 	    }
-	    TAILQ_INSERT_TAIL(&rt->mfc_stall, rte, rte_link);
+	    BSD_TAILQ_INSERT_TAIL(&rt->mfc_stall, rte, rte_link);
 	    rt->mfc_nstall++;
 	}
 
@@ -1449,10 +1449,10 @@ expire_upcalls(void *arg)
 	if (V_nexpire[i] == 0)
 	    continue;
 
-	for (rt = LIST_FIRST(&V_mfchashtbl[i]); rt; rt = nrt) {
-		nrt = LIST_NEXT(rt, mfc_hash);
+	for (rt = BSD_LIST_FIRST(&V_mfchashtbl[i]); rt; rt = nrt) {
+		nrt = BSD_LIST_NEXT(rt, mfc_hash);
 
-		if (TAILQ_EMPTY(&rt->mfc_stall))
+		if (BSD_TAILQ_EMPTY(&rt->mfc_stall))
 			continue;
 
 		if (rt->mfc_expire == 0 || --rt->mfc_expire > 0)
@@ -2795,7 +2795,7 @@ sysctl_mfctable(SYSCTL_HANDLER_ARGS)
 
 	MFC_LOCK();
 	for (i = 0; i < mfchashsize; i++) {
-		LIST_FOREACH(rt, &V_mfchashtbl[i], mfc_hash) {
+		BSD_LIST_FOREACH(rt, &V_mfchashtbl[i], mfc_hash) {
 			error = SYSCTL_OUT(req, rt, sizeof(struct mfc));
 			if (error)
 				goto out_locked;

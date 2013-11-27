@@ -177,14 +177,14 @@ vm_map_t pager_map;
 static int bswneeded;
 static vm_offset_t swapbkva;		/* swap buffers kva */
 struct mtx pbuf_mtx;
-static TAILQ_HEAD(swqueue, buf) bswlist;
+static BSD_TAILQ_HEAD(swqueue, buf) bswlist;
 
 void
 vm_pager_init()
 {
 	struct pagerops **pgops;
 
-	TAILQ_INIT(&bswlist);
+	BSD_TAILQ_INIT(&bswlist);
 	/*
 	 * Initialize known pagers
 	 */
@@ -205,9 +205,9 @@ vm_pager_bufferinit()
 	 * Now set up swap and physical I/O buffer headers.
 	 */
 	for (i = 0; i < nswbuf; i++, bp++) {
-		TAILQ_INSERT_HEAD(&bswlist, bp, b_freelist);
+		BSD_TAILQ_INSERT_HEAD(&bswlist, bp, b_freelist);
 		BUF_LOCKINIT(bp);
-		LIST_INIT(&bp->b_dep);
+		BSD_LIST_INIT(&bp->b_dep);
 		bp->b_rcred = bp->b_wcred = NOCRED;
 		bp->b_xflags = 0;
 	}
@@ -270,7 +270,7 @@ vm_pager_object_lookup(struct pagerlst *pg_list, void *handle)
 {
 	vm_object_t object;
 
-	TAILQ_FOREACH(object, pg_list, pager_object_list) {
+	BSD_TAILQ_FOREACH(object, pg_list, pager_object_list) {
 		if (object->handle == handle) {
 			VM_OBJECT_LOCK(object);
 			if ((object->flags & OBJ_DEAD) == 0) {
@@ -341,14 +341,14 @@ getpbuf(int *pfreecnt)
 		}
 
 		/* get a bp from the swap buffer header pool */
-		if ((bp = TAILQ_FIRST(&bswlist)) != NULL)
+		if ((bp = BSD_TAILQ_FIRST(&bswlist)) != NULL)
 			break;
 
 		bswneeded = 1;
 		msleep(&bswneeded, &pbuf_mtx, PVM, "wswbuf1", 0);
 		/* loop in case someone else grabbed one */
 	}
-	TAILQ_REMOVE(&bswlist, bp, b_freelist);
+	BSD_TAILQ_REMOVE(&bswlist, bp, b_freelist);
 	if (pfreecnt)
 		--*pfreecnt;
 	mtx_unlock(&pbuf_mtx);
@@ -369,11 +369,11 @@ trypbuf(int *pfreecnt)
 	struct buf *bp;
 
 	mtx_lock(&pbuf_mtx);
-	if (*pfreecnt == 0 || (bp = TAILQ_FIRST(&bswlist)) == NULL) {
+	if (*pfreecnt == 0 || (bp = BSD_TAILQ_FIRST(&bswlist)) == NULL) {
 		mtx_unlock(&pbuf_mtx);
 		return NULL;
 	}
-	TAILQ_REMOVE(&bswlist, bp, b_freelist);
+	BSD_TAILQ_REMOVE(&bswlist, bp, b_freelist);
 
 	--*pfreecnt;
 
@@ -409,7 +409,7 @@ relpbuf(struct buf *bp, int *pfreecnt)
 	BUF_UNLOCK(bp);
 
 	mtx_lock(&pbuf_mtx);
-	TAILQ_INSERT_HEAD(&bswlist, bp, b_freelist);
+	BSD_TAILQ_INSERT_HEAD(&bswlist, bp, b_freelist);
 
 	if (bswneeded) {
 		bswneeded = 0;
@@ -471,7 +471,7 @@ pbrelvp(struct buf *bp)
 
 	/* XXX REMOVE ME */
 	BO_LOCK(bp->b_bufobj);
-	if (TAILQ_NEXT(bp, b_bobufs) != NULL) {
+	if (BSD_TAILQ_NEXT(bp, b_bobufs) != NULL) {
 		panic(
 		    "relpbuf(): b_vp was probably reassignbuf()d %p %x",
 		    bp,
@@ -496,7 +496,7 @@ pbrelbo(struct buf *bp)
 
 	/* XXX REMOVE ME */
 	BO_LOCK(bp->b_bufobj);
-	if (TAILQ_NEXT(bp, b_bobufs) != NULL) {
+	if (BSD_TAILQ_NEXT(bp, b_bobufs) != NULL) {
 		panic(
 		    "relpbuf(): b_vp was probably reassignbuf()d %p %x",
 		    bp,

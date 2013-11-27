@@ -292,7 +292,7 @@ nexus_print_all_resources(device_t dev)
 	struct resource_list *rl = &ndev->nx_resources;
 	int retval = 0;
 
-	if (STAILQ_FIRST(rl))
+	if (BSD_STAILQ_FIRST(rl))
 		retval += printf(" at");
 
 	retval += resource_list_print_type(rl, "port", SYS_RES_IOPORT, "%#lx");

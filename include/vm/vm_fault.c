@@ -1461,7 +1461,7 @@ vm_fault_additional_pages(m, rbehind, rahead, marray, reqpage)
 			startpindex = pindex - rbehind;
 		}
 
-		if ((rtm = TAILQ_PREV(m, pglist, listq)) != NULL &&
+		if ((rtm = BSD_TAILQ_PREV(m, pglist, listq)) != NULL &&
 		    rtm->pindex >= startpindex)
 			startpindex = rtm->pindex + 1;
 
@@ -1501,7 +1501,7 @@ vm_fault_additional_pages(m, rbehind, rahead, marray, reqpage)
 	 * scan forward for the read ahead pages
 	 */
 	endpindex = tpindex + rahead;
-	if ((rtm = TAILQ_NEXT(m, listq)) != NULL && rtm->pindex < endpindex)
+	if ((rtm = BSD_TAILQ_NEXT(m, listq)) != NULL && rtm->pindex < endpindex)
 		endpindex = rtm->pindex;
 	if (endpindex > object->size)
 		endpindex = object->size;

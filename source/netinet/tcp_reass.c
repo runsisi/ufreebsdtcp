@@ -142,8 +142,8 @@ tcp_reass_flush(struct tcpcb *tp)
 
 	INP_WLOCK_ASSERT(tp->t_inpcb);
 
-	while ((qe = LIST_FIRST(&tp->t_segq)) != NULL) {
-		LIST_REMOVE(qe, tqe_q);
+	while ((qe = BSD_LIST_FIRST(&tp->t_segq)) != NULL) {
+		BSD_LIST_REMOVE(qe, tqe_q);
 		m_freem(qe->tqe_m);
 		uma_zfree(V_tcp_reass_zone, qe);
 		tp->t_segqlen--;
@@ -256,7 +256,7 @@ tcp_reass(struct tcpcb *tp, struct tcphdr *th, int *tlenp, struct mbuf *m)
 	/*
 	 * Find a segment which begins after this one does.
 	 */
-	LIST_FOREACH(q, &tp->t_segq, tqe_q) {
+	BSD_LIST_FOREACH(q, &tp->t_segq, tqe_q) {
 		if (SEQ_GT(q->tqe_th->th_seq, th->th_seq))
 			break;
 		p = q;
@@ -310,8 +310,8 @@ tcp_reass(struct tcpcb *tp, struct tcphdr *th, int *tlenp, struct mbuf *m)
 			break;
 		}
 
-		nq = LIST_NEXT(q, tqe_q);
-		LIST_REMOVE(q, tqe_q);
+		nq = BSD_LIST_NEXT(q, tqe_q);
+		BSD_LIST_REMOVE(q, tqe_q);
 		m_freem(q->tqe_m);
 		uma_zfree(V_tcp_reass_zone, q);
 		tp->t_segqlen--;
@@ -324,11 +324,11 @@ tcp_reass(struct tcpcb *tp, struct tcphdr *th, int *tlenp, struct mbuf *m)
 	te->tqe_len = *tlenp;
 
 	if (p == NULL) {
-		LIST_INSERT_HEAD(&tp->t_segq, te, tqe_q);
+		BSD_LIST_INSERT_HEAD(&tp->t_segq, te, tqe_q);
 	} else {
 		KASSERT(te != &tqs, ("%s: temporary stack based entry not "
 		    "first element in queue", __func__));
-		LIST_INSERT_AFTER(p, te, tqe_q);
+		BSD_LIST_INSERT_AFTER(p, te, tqe_q);
 	}
 
 present:
@@ -338,15 +338,15 @@ present:
 	 */
 	if (!TCPS_HAVEESTABLISHED(tp->t_state))
 		return (0);
-	q = LIST_FIRST(&tp->t_segq);
+	q = BSD_LIST_FIRST(&tp->t_segq);
 	if (!q || q->tqe_th->th_seq != tp->rcv_nxt)
 		return (0);
 	SOCKBUF_LOCK(&so->so_rcv);
 	do {
 		tp->rcv_nxt += q->tqe_len;
 		flags = q->tqe_th->th_flags & TH_FIN;
-		nq = LIST_NEXT(q, tqe_q);
-		LIST_REMOVE(q, tqe_q);
+		nq = BSD_LIST_NEXT(q, tqe_q);
+		BSD_LIST_REMOVE(q, tqe_q);
 		if (so->so_rcv.sb_state & SBS_CANTRCVMORE)
 			m_freem(q->tqe_m);
 		else

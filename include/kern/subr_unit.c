@@ -172,7 +172,7 @@ mtx_assert(struct mtx *mp, int flag)
  * The bitmap is the same size as struct unr to optimize memory management.
  */
 struct unr {
-	TAILQ_ENTRY(unr)	list;
+	BSD_TAILQ_ENTRY(unr)	list;
 	u_int			len;
 	void			*ptr;
 };
@@ -190,7 +190,7 @@ CTASSERT(sizeof(struct unr) == sizeof(struct unrb));
 /* Header element for a unr number space. */
 
 struct unrhdr {
-	TAILQ_HEAD(unrhd,unr)	head;
+	BSD_TAILQ_HEAD(unrhd,unr)	head;
 	u_int			low;	/* Lowest item */
 	u_int			high;	/* Highest item */
 	u_int			busy;	/* Count of allocated items */
@@ -198,7 +198,7 @@ struct unrhdr {
 	u_int			first;	/* items in allocated from start */
 	u_int			last;	/* items free at end */
 	struct mtx		*mtx;
-	TAILQ_HEAD(unrfr,unr)	ppfree;	/* Items to be freed after mtx
+	BSD_TAILQ_HEAD(unrfr,unr)	ppfree;	/* Items to be freed after mtx
 					   lock dropped */
 };
 
@@ -220,7 +220,7 @@ check_unrhdr(struct unrhdr *uh, int line)
 
 	y = uh->first;
 	z = 0;
-	TAILQ_FOREACH(up, &uh->head, list) {
+	BSD_TAILQ_FOREACH(up, &uh->head, list) {
 		z++;
 		if (up->ptr != uh && up->ptr != NULL) {
 			ub = up->ptr;
@@ -288,7 +288,7 @@ delete_unr(struct unrhdr *uh, void *ptr)
 
 	uh->alloc--;
 	up = ptr;
-	TAILQ_INSERT_TAIL(&uh->ppfree, up, list);
+	BSD_TAILQ_INSERT_TAIL(&uh->ppfree, up, list);
 }
 
 void
@@ -297,8 +297,8 @@ clean_unrhdrl(struct unrhdr *uh)
 	struct unr *up;
 
 	mtx_assert(uh->mtx, MA_OWNED);
-	while ((up = TAILQ_FIRST(&uh->ppfree)) != NULL) {
-		TAILQ_REMOVE(&uh->ppfree, up, list);
+	while ((up = BSD_TAILQ_FIRST(&uh->ppfree)) != NULL) {
+		BSD_TAILQ_REMOVE(&uh->ppfree, up, list);
 		mtx_unlock(uh->mtx);
 		Free(up);
 		mtx_lock(uh->mtx);
@@ -333,8 +333,8 @@ new_unrhdr(int low, int high, struct mtx *mutex)
 		uh->mtx = mutex;
 	else
 		uh->mtx = &unitmtx;
-	TAILQ_INIT(&uh->head);
-	TAILQ_INIT(&uh->ppfree);
+	BSD_TAILQ_INIT(&uh->head);
+	BSD_TAILQ_INIT(&uh->ppfree);
 	uh->low = low;
 	uh->high = high;
 	uh->first = 0;
@@ -350,7 +350,7 @@ delete_unrhdr(struct unrhdr *uh)
 	check_unrhdr(uh, __LINE__);
 	KASSERT(uh->busy == 0, ("unrhdr has %u allocations", uh->busy));
 	KASSERT(uh->alloc == 0, ("UNR memory leak in delete_unrhdr"));
-	KASSERT(TAILQ_FIRST(&uh->ppfree) == NULL,
+	KASSERT(BSD_TAILQ_FIRST(&uh->ppfree) == NULL,
 	    ("unrhdr has postponed item for free"));
 	Free(uh);
 }
@@ -383,7 +383,7 @@ optimize_unr(struct unrhdr *uh)
 	 */
 	us = NULL;
 	ba = 0;
-	TAILQ_FOREACH(uf, &uh->head, list) {
+	BSD_TAILQ_FOREACH(uf, &uh->head, list) {
 		if (uf->len >= NBITS)
 			continue;
 		a = 1;
@@ -392,7 +392,7 @@ optimize_unr(struct unrhdr *uh)
 		l = uf->len;
 		up = uf;
 		while (1) {
-			up = TAILQ_NEXT(up, list);
+			up = BSD_TAILQ_NEXT(up, list);
 			if (up == NULL)
 				break;
 			if ((up->len + l) > NBITS)
@@ -416,8 +416,8 @@ optimize_unr(struct unrhdr *uh)
 	 * a bit
 	 */
 	if (!is_bitmap(uh, us)) {
-		uf = TAILQ_NEXT(us, list);
-		TAILQ_REMOVE(&uh->head, us, list);
+		uf = BSD_TAILQ_NEXT(us, list);
+		BSD_TAILQ_REMOVE(&uh->head, us, list);
 		a = us->len;
 		l = us->ptr == uh ? 1 : 0;
 		ub = (void *)us;
@@ -456,7 +456,7 @@ optimize_unr(struct unrhdr *uh)
 	}
 	ub = us->ptr;
 	while (1) {
-		uf = TAILQ_NEXT(us, list);
+		uf = BSD_TAILQ_NEXT(us, list);
 		if (uf == NULL)
 			return (1);
 		if (uf->len + us->len > NBITS)
@@ -464,13 +464,13 @@ optimize_unr(struct unrhdr *uh)
 		if (uf->ptr == NULL) {
 			bit_nclear(ub->map, us->len, us->len + uf->len - 1);
 			us->len += uf->len;
-			TAILQ_REMOVE(&uh->head, uf, list);
+			BSD_TAILQ_REMOVE(&uh->head, uf, list);
 			delete_unr(uh, uf);
 		} else if (uf->ptr == uh) {
 			bit_nset(ub->map, us->len, us->len + uf->len - 1);
 			ub->busy += uf->len;
 			us->len += uf->len;
-			TAILQ_REMOVE(&uh->head, uf, list);
+			BSD_TAILQ_REMOVE(&uh->head, uf, list);
 			delete_unr(uh, uf);
 		} else {
 			ubf = uf->ptr;
@@ -482,7 +482,7 @@ optimize_unr(struct unrhdr *uh)
 					bit_clear(ub->map, us->len);
 				}
 			}
-			TAILQ_REMOVE(&uh->head, uf, list);
+			BSD_TAILQ_REMOVE(&uh->head, uf, list);
 			delete_unr(uh, ubf);
 			delete_unr(uh, uf);
 		}
@@ -514,45 +514,45 @@ collapse_unr(struct unrhdr *uh, struct unr *up)
 
 	/* If nothing left in runlength, delete it */
 	if (up->len == 0) {
-		upp = TAILQ_PREV(up, unrhd, list);
+		upp = BSD_TAILQ_PREV(up, unrhd, list);
 		if (upp == NULL)
-			upp = TAILQ_NEXT(up, list);
-		TAILQ_REMOVE(&uh->head, up, list);
+			upp = BSD_TAILQ_NEXT(up, list);
+		BSD_TAILQ_REMOVE(&uh->head, up, list);
 		delete_unr(uh, up);
 		up = upp;
 	}
 
 	/* If we have "hot-spot" still, merge with neighbor if possible */
 	if (up != NULL) {
-		upp = TAILQ_PREV(up, unrhd, list);
+		upp = BSD_TAILQ_PREV(up, unrhd, list);
 		if (upp != NULL && up->ptr == upp->ptr) {
 			up->len += upp->len;
-			TAILQ_REMOVE(&uh->head, upp, list);
+			BSD_TAILQ_REMOVE(&uh->head, upp, list);
 			delete_unr(uh, upp);
 			}
-		upp = TAILQ_NEXT(up, list);
+		upp = BSD_TAILQ_NEXT(up, list);
 		if (upp != NULL && up->ptr == upp->ptr) {
 			up->len += upp->len;
-			TAILQ_REMOVE(&uh->head, upp, list);
+			BSD_TAILQ_REMOVE(&uh->head, upp, list);
 			delete_unr(uh, upp);
 		}
 	}
 
 	/* Merge into ->first if possible */
-	upp = TAILQ_FIRST(&uh->head);
+	upp = BSD_TAILQ_FIRST(&uh->head);
 	if (upp != NULL && upp->ptr == uh) {
 		uh->first += upp->len;
-		TAILQ_REMOVE(&uh->head, upp, list);
+		BSD_TAILQ_REMOVE(&uh->head, upp, list);
 		delete_unr(uh, upp);
 		if (up == upp)
 			up = NULL;
 	}
 
 	/* Merge into ->last if possible */
-	upp = TAILQ_LAST(&uh->head, unrhd);
+	upp = BSD_TAILQ_LAST(&uh->head, unrhd);
 	if (upp != NULL && upp->ptr == NULL) {
 		uh->last += upp->len;
-		TAILQ_REMOVE(&uh->head, upp, list);
+		BSD_TAILQ_REMOVE(&uh->head, upp, list);
 		delete_unr(uh, upp);
 		if (up == upp)
 			up = NULL;
@@ -578,7 +578,7 @@ alloc_unrl(struct unrhdr *uh)
 	check_unrhdr(uh, __LINE__);
 	x = uh->low + uh->first;
 
-	up = TAILQ_FIRST(&uh->head);
+	up = BSD_TAILQ_FIRST(&uh->head);
 
 	/*
 	 * If we have an ideal split, just adjust the first+last
@@ -640,7 +640,7 @@ alloc_unr_specificl(struct unrhdr *uh, u_int item, void **p1, void **p2)
 	if (item < uh->low + uh->first || item > uh->high)
 		return (-1);
 
-	up = TAILQ_FIRST(&uh->head);
+	up = BSD_TAILQ_FIRST(&uh->head);
 	/* Ideal split. */
 	if (up == NULL && item - uh->low == uh->first) {
 		uh->first++;
@@ -656,18 +656,18 @@ alloc_unr_specificl(struct unrhdr *uh, u_int item, void **p1, void **p2)
 		up = new_unr(uh, p1, p2);
 		up->ptr = NULL;
 		up->len = i;
-		TAILQ_INSERT_TAIL(&uh->head, up, list);
+		BSD_TAILQ_INSERT_TAIL(&uh->head, up, list);
 		up = new_unr(uh, p1, p2);
 		up->ptr = uh;
 		up->len = 1;
-		TAILQ_INSERT_TAIL(&uh->head, up, list);
+		BSD_TAILQ_INSERT_TAIL(&uh->head, up, list);
 		uh->last = uh->high - uh->low - i;
 		uh->busy++;
 		check_unrhdr(uh, __LINE__);
 		return (item);
 	} else {
 		/* Find the item which contains the unit we want to allocate. */
-		TAILQ_FOREACH(up, &uh->head, list) {
+		BSD_TAILQ_FOREACH(up, &uh->head, list) {
 			if (up->len > i)
 				break;
 			i -= up->len;
@@ -679,12 +679,12 @@ alloc_unr_specificl(struct unrhdr *uh, u_int item, void **p1, void **p2)
 			up = new_unr(uh, p1, p2);
 			up->ptr = NULL;
 			up->len = i;
-			TAILQ_INSERT_TAIL(&uh->head, up, list);
+			BSD_TAILQ_INSERT_TAIL(&uh->head, up, list);
 		}
 		up = new_unr(uh, p1, p2);
 		up->ptr = uh;
 		up->len = 1;
-		TAILQ_INSERT_TAIL(&uh->head, up, list);
+		BSD_TAILQ_INSERT_TAIL(&uh->head, up, list);
 		goto done;
 	}
 
@@ -708,7 +708,7 @@ alloc_unr_specificl(struct unrhdr *uh, u_int item, void **p1, void **p2)
 		upn = new_unr(uh, p1, p2);
 		upn->ptr = NULL;
 		upn->len = tl;
-		TAILQ_INSERT_AFTER(&uh->head, up, upn, list);
+		BSD_TAILQ_INSERT_AFTER(&uh->head, up, upn, list);
 	}
 
 	/* Split off head end, if any */
@@ -716,7 +716,7 @@ alloc_unr_specificl(struct unrhdr *uh, u_int item, void **p1, void **p2)
 		upn = new_unr(uh, p1, p2);
 		upn->len = i;
 		upn->ptr = NULL;
-		TAILQ_INSERT_BEFORE(up, upn, list);
+		BSD_TAILQ_INSERT_BEFORE(up, upn, list);
 	}
 	up->len = 1;
 	up->ptr = uh;
@@ -771,7 +771,7 @@ free_unrl(struct unrhdr *uh, u_int item, void **p1, void **p2)
 	     item, uh->low, uh->high));
 	check_unrhdr(uh, __LINE__);
 	item -= uh->low;
-	upp = TAILQ_FIRST(&uh->head);
+	upp = BSD_TAILQ_FIRST(&uh->head);
 	/*
 	 * Freeing in the ideal split case
 	 */
@@ -790,14 +790,14 @@ free_unrl(struct unrhdr *uh, u_int item, void **p1, void **p2)
 		up = new_unr(uh, p1, p2);
 		up->ptr = uh;
 		up->len = uh->first - item;
-		TAILQ_INSERT_HEAD(&uh->head, up, list);
+		BSD_TAILQ_INSERT_HEAD(&uh->head, up, list);
 		uh->first -= up->len;
 	}
 
 	item -= uh->first;
 
 	/* Find the item which contains the unit we want to free */
-	TAILQ_FOREACH(up, &uh->head, list) {
+	BSD_TAILQ_FOREACH(up, &uh->head, list) {
 		if (up->len > item)
 			break;
 		item -= up->len;
@@ -827,7 +827,7 @@ free_unrl(struct unrhdr *uh, u_int item, void **p1, void **p2)
 	}
 
 	/* Check if we can shift the item into the previous 'free' run */
-	upp = TAILQ_PREV(up, unrhd, list);
+	upp = BSD_TAILQ_PREV(up, unrhd, list);
 	if (item == 0 && upp != NULL && upp->ptr == NULL) {
 		upp->len++;
 		up->len--;
@@ -837,7 +837,7 @@ free_unrl(struct unrhdr *uh, u_int item, void **p1, void **p2)
 	}
 
 	/* Check if we can shift the item to the next 'free' run */
-	upn = TAILQ_NEXT(up, list);
+	upn = BSD_TAILQ_NEXT(up, list);
 	if (item == up->len - 1 && upn != NULL && upn->ptr == NULL) {
 		upn->len++;
 		up->len--;
@@ -852,7 +852,7 @@ free_unrl(struct unrhdr *uh, u_int item, void **p1, void **p2)
 		upp = new_unr(uh, p1, p2);
 		upp->ptr = uh;
 		upp->len = pl;
-		TAILQ_INSERT_AFTER(&uh->head, up, upp, list);
+		BSD_TAILQ_INSERT_AFTER(&uh->head, up, upp, list);
 	}
 
 	/* Split off head end, if any */
@@ -860,7 +860,7 @@ free_unrl(struct unrhdr *uh, u_int item, void **p1, void **p2)
 		upp = new_unr(uh, p1, p2);
 		upp->len = item;
 		upp->ptr = uh;
-		TAILQ_INSERT_BEFORE(up, upp, list);
+		BSD_TAILQ_INSERT_BEFORE(up, upp, list);
 	}
 	up->len = 1;
 	up->ptr = NULL;
@@ -926,7 +926,7 @@ print_unrhdr(struct unrhdr *uh)
 	    "%p low = %u high = %u first = %u last = %u busy %u chunks = %u\n",
 	    uh, uh->low, uh->high, uh->first, uh->last, uh->busy, uh->alloc);
 	x = uh->low + uh->first;
-	TAILQ_FOREACH(up, &uh->head, list) {
+	BSD_TAILQ_FOREACH(up, &uh->head, list) {
 		printf("  from = %5u", x);
 		print_unr(uh, up);
 		if (up->ptr == NULL || up->ptr == uh)

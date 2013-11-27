@@ -71,7 +71,7 @@ SDT_PROBE_DEFINE(proc, , , lwp_exit, lwp-exit);
  */
 static uma_zone_t thread_zone;
 
-TAILQ_HEAD(, thread) zombie_threads = TAILQ_HEAD_INITIALIZER(zombie_threads);
+BSD_TAILQ_HEAD(, thread) zombie_threads = BSD_TAILQ_HEAD_INITIALIZER(zombie_threads);
 static struct mtx zombie_lock;
 MTX_SYSINIT(zombie_lock, &zombie_lock, "zombie lock", MTX_SPIN);
 
@@ -243,7 +243,7 @@ thread_fini(void *mem, int size)
 void
 proc_linkup0(struct proc *p, struct thread *td)
 {
-	TAILQ_INIT(&p->p_threads);	     /* all threads in proc */
+	BSD_TAILQ_INIT(&p->p_threads);	     /* all threads in proc */
 	proc_linkup(p, td);
 }
 
@@ -257,7 +257,7 @@ proc_linkup(struct proc *p, struct thread *td)
 		/* XXX p_ksi may be null if ksiginfo zone is not ready */
 		p->p_ksi->ksi_flags = KSI_EXT | KSI_INS;
 	}
-	LIST_INIT(&p->p_mqnotifier);
+	BSD_LIST_INIT(&p->p_mqnotifier);
 	p->p_numthreads = 0;
 	thread_link(td, p);
 }
@@ -292,7 +292,7 @@ void
 thread_zombie(struct thread *td)
 {
 	mtx_lock_spin(&zombie_lock);
-	TAILQ_INSERT_HEAD(&zombie_threads, td, td_slpq);
+	BSD_TAILQ_INSERT_HEAD(&zombie_threads, td, td_slpq);
 	mtx_unlock_spin(&zombie_lock);
 }
 
@@ -318,14 +318,14 @@ thread_reap(void)
 	 * Don't even bother to lock if none at this instant,
 	 * we really don't care about the next instant..
 	 */
-	if (!TAILQ_EMPTY(&zombie_threads)) {
+	if (!BSD_TAILQ_EMPTY(&zombie_threads)) {
 		mtx_lock_spin(&zombie_lock);
-		td_first = TAILQ_FIRST(&zombie_threads);
+		td_first = BSD_TAILQ_FIRST(&zombie_threads);
 		if (td_first)
-			TAILQ_INIT(&zombie_threads);
+			BSD_TAILQ_INIT(&zombie_threads);
 		mtx_unlock_spin(&zombie_lock);
 		while (td_first) {
-			td_next = TAILQ_NEXT(td_first, td_slpq);
+			td_next = BSD_TAILQ_NEXT(td_first, td_slpq);
 			if (td_first->td_ucred)
 				crfree(td_first->td_ucred);
 			thread_free(td_first);
@@ -411,7 +411,7 @@ thread_exit(void)
 	KASSERT(p != NULL, ("thread exiting without a process"));
 	CTR3(KTR_PROC, "thread_exit: thread %p (pid %ld, %s)", td,
 	    (long)p->p_pid, td->td_name);
-	KASSERT(TAILQ_EMPTY(&td->td_sigqueue.sq_list), ("signal pending"));
+	KASSERT(BSD_TAILQ_EMPTY(&td->td_sigqueue.sq_list), ("signal pending"));
 
 #ifdef AUDIT
 	AUDIT_SYSCALL_EXIT(0, td);
@@ -543,12 +543,12 @@ thread_link(struct thread *td, struct proc *p)
 	td->td_proc     = p;
 	td->td_flags    = TDF_INMEM;
 
-	LIST_INIT(&td->td_contested);
-	LIST_INIT(&td->td_lprof[0]);
-	LIST_INIT(&td->td_lprof[1]);
+	BSD_LIST_INIT(&td->td_contested);
+	BSD_LIST_INIT(&td->td_lprof[0]);
+	BSD_LIST_INIT(&td->td_lprof[1]);
 	sigqueue_init(&td->td_sigqueue, p);
 	callout_init(&td->td_slpcallout, CALLOUT_MPSAFE);
-	TAILQ_INSERT_HEAD(&p->p_threads, td, td_plist);
+	BSD_TAILQ_INSERT_HEAD(&p->p_threads, td, td_plist);
 	p->p_numthreads++;
 }
 
@@ -574,7 +574,7 @@ thread_unlink(struct thread *td)
 	struct proc *p = td->td_proc;
 
 	PROC_LOCK_ASSERT(p, MA_OWNED);
-	TAILQ_REMOVE(&p->p_threads, td, td_plist);
+	BSD_TAILQ_REMOVE(&p->p_threads, td, td_plist);
 	p->p_numthreads--;
 	/* could clear a few other things here */
 	/* Must  NOT clear links to proc! */
@@ -1009,7 +1009,7 @@ tdfind(lwpid_t tid, pid_t pid)
 	int run = 0;
 
 	rw_rlock(&tidhash_lock);
-	LIST_FOREACH(td, TIDHASH(tid), td_hash) {
+	BSD_LIST_FOREACH(td, TIDHASH(tid), td_hash) {
 		if (td->td_tid == tid) {
 			if (pid != -1 && td->td_proc->p_pid != pid) {
 				td = NULL;
@@ -1023,8 +1023,8 @@ tdfind(lwpid_t tid, pid_t pid)
 			}
 			if (run > RUN_THRESH) {
 				if (rw_try_upgrade(&tidhash_lock)) {
-					LIST_REMOVE(td, td_hash);
-					LIST_INSERT_HEAD(TIDHASH(td->td_tid),
+					BSD_LIST_REMOVE(td, td_hash);
+					BSD_LIST_INSERT_HEAD(TIDHASH(td->td_tid),
 						td, td_hash);
 					rw_wunlock(&tidhash_lock);
 					return (td);
@@ -1042,7 +1042,7 @@ void
 tidhash_add(struct thread *td)
 {
 	rw_wlock(&tidhash_lock);
-	LIST_INSERT_HEAD(TIDHASH(td->td_tid), td, td_hash);
+	BSD_LIST_INSERT_HEAD(TIDHASH(td->td_tid), td, td_hash);
 	rw_wunlock(&tidhash_lock);
 }
 
@@ -1050,6 +1050,6 @@ void
 tidhash_remove(struct thread *td)
 {
 	rw_wlock(&tidhash_lock);
-	LIST_REMOVE(td, td_hash);
+	BSD_LIST_REMOVE(td, td_hash);
 	rw_wunlock(&tidhash_lock);
 }

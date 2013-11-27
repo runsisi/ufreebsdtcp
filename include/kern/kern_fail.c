@@ -116,7 +116,7 @@ struct fail_point_entry {
 	int		fe_prob;	/**< likelihood of firing in millionths */
 	int		fe_count;	/**< number of times to fire, 0 means always */
 	pid_t		fe_pid;		/**< only fail for this process */
-	TAILQ_ENTRY(fail_point_entry) fe_entries; /**< next entry in fail point */
+	BSD_TAILQ_ENTRY(fail_point_entry) fe_entries; /**< next entry in fail point */
 };
 
 static inline void
@@ -167,7 +167,7 @@ fail_point_init(struct fail_point *fp, const char *fmt, ...)
 	char *name;
 	int n;
 
-	TAILQ_INIT(&fp->fp_entries);
+	BSD_TAILQ_INIT(&fp->fp_entries);
 	fp->fp_flags = 0;
 
 	/* Figure out the size of the name. */
@@ -222,7 +222,7 @@ fail_point_eval_nontrivial(struct fail_point *fp, int *return_value)
 
 	FP_LOCK();
 
-	TAILQ_FOREACH_SAFE(ent, &fp->fp_entries, fe_entries, next) {
+	BSD_TAILQ_FOREACH_SAFE(ent, &fp->fp_entries, fe_entries, next) {
 		int cont = 0; /* don't continue by default */
 
 		if (ent->fe_prob < PROB_MAX &&
@@ -279,7 +279,7 @@ fail_point_eval_nontrivial(struct fail_point *fp, int *return_value)
 	}
 
 	/* Get rid of "off"s at the end. */
-	while ((ent = TAILQ_LAST(&fp->fp_entries, fail_point_entries)) &&
+	while ((ent = BSD_TAILQ_LAST(&fp->fp_entries, fail_point_entries)) &&
 	       ent->fe_type == FAIL_POINT_OFF)
 		free_entry(&fp->fp_entries, ent);
 
@@ -298,7 +298,7 @@ fail_point_get(struct fail_point *fp, struct sbuf *sb)
 
 	FP_LOCK();
 
-	TAILQ_FOREACH(ent, &fp->fp_entries, fe_entries) {
+	BSD_TAILQ_FOREACH(ent, &fp->fp_entries, fe_entries) {
 		if (ent->fe_prob < PROB_MAX) {
 			int decimal = ent->fe_prob % (PROB_MAX / 100);
 			int units = ent->fe_prob / (PROB_MAX / 100);
@@ -320,10 +320,10 @@ fail_point_get(struct fail_point *fp, struct sbuf *sb)
 			sbuf_printf(sb, "(%d)", ent->fe_arg);
 		if (ent->fe_pid != NO_PID)
 			sbuf_printf(sb, "[pid %d]", ent->fe_pid);
-		if (TAILQ_NEXT(ent, fe_entries))
+		if (BSD_TAILQ_NEXT(ent, fe_entries))
 			sbuf_printf(sb, "->");
 	}
-	if (TAILQ_EMPTY(&fp->fp_entries))
+	if (BSD_TAILQ_EMPTY(&fp->fp_entries))
 		sbuf_printf(sb, "off");
 
 	FP_UNLOCK();
@@ -341,7 +341,7 @@ fail_point_set(struct fail_point *fp, char *buf)
 	struct fail_point_entries new_entries;
 
 	/* Parse new entries. */
-	TAILQ_INIT(&new_entries);
+	BSD_TAILQ_INIT(&new_entries);
 	if (!parse_fail_point(&new_entries, buf)) {
 	        clear_entries(&new_entries);
 		error = EINVAL;
@@ -351,17 +351,17 @@ fail_point_set(struct fail_point *fp, char *buf)
 	FP_LOCK();
 
 	/* Move new entries in. */
-	TAILQ_SWAP(&fp->fp_entries, &new_entries, fail_point_entry, fe_entries);
+	BSD_TAILQ_SWAP(&fp->fp_entries, &new_entries, fail_point_entry, fe_entries);
 	clear_entries(&new_entries);
 
 	/* Get rid of useless zero probability entries. */
-	TAILQ_FOREACH_SAFE(ent, &fp->fp_entries, fe_entries, ent_next) {
+	BSD_TAILQ_FOREACH_SAFE(ent, &fp->fp_entries, fe_entries, ent_next) {
 		if (ent->fe_prob == 0)
 			free_entry(&fp->fp_entries, ent);
 	}
 
 	/* Get rid of "off"s at the end. */
-	while ((ent = TAILQ_LAST(&fp->fp_entries, fail_point_entries)) &&
+	while ((ent = BSD_TAILQ_LAST(&fp->fp_entries, fail_point_entries)) &&
 		ent->fe_type == FAIL_POINT_OFF)
 		free_entry(&fp->fp_entries, ent);
 
@@ -457,7 +457,7 @@ parse_term(struct fail_point_entries *ents, char *p)
 	ent = fp_malloc(sizeof *ent, M_WAITOK | M_ZERO);
 	ent->fe_prob = PROB_MAX;
 	ent->fe_pid = NO_PID;
-	TAILQ_INSERT_TAIL(ents, ent, fe_entries);
+	BSD_TAILQ_INSERT_TAIL(ents, ent, fe_entries);
 
 	/*
 	 * <term> ::
@@ -589,7 +589,7 @@ parse_type(struct fail_point_entry *ent, char *beg)
 static void
 free_entry(struct fail_point_entries *ents, struct fail_point_entry *ent)
 {
-	TAILQ_REMOVE(ents, ent, fe_entries);
+	BSD_TAILQ_REMOVE(ents, ent, fe_entries);
 	fp_free(ent);
 }
 
@@ -602,9 +602,9 @@ clear_entries(struct fail_point_entries *ents)
 {
 	struct fail_point_entry *ent, *ent_next;
 
-	TAILQ_FOREACH_SAFE(ent, ents, fe_entries, ent_next)
+	BSD_TAILQ_FOREACH_SAFE(ent, ents, fe_entries, ent_next)
 		fp_free(ent);
-	TAILQ_INIT(ents);
+	BSD_TAILQ_INIT(ents);
 }
 
 /* The fail point sysctl tree. */

@@ -63,7 +63,7 @@ struct swdevt {
 	swblk_t	sw_first;
 	swblk_t	sw_end;
 	struct blist *sw_blist;
-	TAILQ_ENTRY(swdevt)	sw_list;
+	BSD_TAILQ_ENTRY(swdevt)	sw_list;
 	sw_strategy_t		*sw_strategy;
 	sw_close_t		*sw_close;
 };

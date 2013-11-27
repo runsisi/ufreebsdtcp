@@ -336,7 +336,7 @@ racct_getpcpu(struct proc *p, u_int pcpu)
 			continue;
 #ifdef SMP
 		found = 0;
-		STAILQ_FOREACH(pc, &cpuhead, pc_allcpu) {
+		BSD_STAILQ_FOREACH(pc, &cpuhead, pc_allcpu) {
 			if (td == pc->pc_idlethread) {
 				found = 1;
 				break;
@@ -1115,7 +1115,7 @@ racctd(void)
 
 		sx_slock(&allproc_lock);
 
-		LIST_FOREACH(p, &zombproc, p_list) {
+		BSD_LIST_FOREACH(p, &zombproc, p_list) {
 			PROC_LOCK(p);
 			racct_set(p, RACCT_PCTCPU, 0);
 			PROC_UNLOCK(p);

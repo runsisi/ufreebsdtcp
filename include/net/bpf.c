@@ -141,7 +141,7 @@ struct bpf_dltlist32 {
  * structures registered by different layers in the stack (i.e., 802.11
  * frames, ethernet frames, etc).
  */
-static LIST_HEAD(, bpf_if)	bpf_iflist;
+static BSD_LIST_HEAD(, bpf_if)	bpf_iflist;
 static struct mtx	bpf_mtx;		/* bpf global lock */
 static int		bpf_bpfd_cnt;
 
@@ -636,7 +636,7 @@ bpf_attachd(struct bpf_d *d, struct bpf_if *bp)
 
 	if (op_w != 0) {
 		/* Add to writers-only list */
-		LIST_INSERT_HEAD(&bp->bif_wlist, d, bd_next);
+		BSD_LIST_INSERT_HEAD(&bp->bif_wlist, d, bd_next);
 		/*
 		 * We decrement bd_writer on every filter set operation.
 		 * First BIOCSETF is done by pcap_open_live() to set up
@@ -644,7 +644,7 @@ bpf_attachd(struct bpf_d *d, struct bpf_if *bp)
 		 */
 		d->bd_writer = 2;
 	} else
-		LIST_INSERT_HEAD(&bp->bif_dlist, d, bd_next);
+		BSD_LIST_INSERT_HEAD(&bp->bif_dlist, d, bd_next);
 
 	BPFD_UNLOCK(d);
 	BPFIF_WUNLOCK(bp);
@@ -686,8 +686,8 @@ bpf_upgraded(struct bpf_d *d)
 	BPFD_LOCK(d);
 
 	/* Remove from writers-only list */
-	LIST_REMOVE(d, bd_next);
-	LIST_INSERT_HEAD(&bp->bif_dlist, d, bd_next);
+	BSD_LIST_REMOVE(d, bd_next);
+	BSD_LIST_INSERT_HEAD(&bp->bif_dlist, d, bd_next);
 	/* Mark d as reader */
 	d->bd_writer = 0;
 
@@ -734,7 +734,7 @@ bpf_detachd_locked(struct bpf_d *d)
 	/*
 	 * Remove d from the interface's descriptor list.
 	 */
-	LIST_REMOVE(d, bd_next);
+	BSD_LIST_REMOVE(d, bd_next);
 
 	ifp = bp->bif_ifp;
 	d->bd_bif = NULL;
@@ -2059,7 +2059,7 @@ bpf_tap(struct bpf_if *bp, u_char *pkt, u_int pktlen)
 
 	BPFIF_RLOCK(bp);
 
-	LIST_FOREACH(d, &bp->bif_dlist, bd_next) {
+	BSD_LIST_FOREACH(d, &bp->bif_dlist, bd_next) {
 		/*
 		 * We are not using any locks for d here because:
 		 * 1) any filter change is protected by interface
@@ -2133,7 +2133,7 @@ bpf_mtap(struct bpf_if *bp, struct mbuf *m)
 
 	BPFIF_RLOCK(bp);
 
-	LIST_FOREACH(d, &bp->bif_dlist, bd_next) {
+	BSD_LIST_FOREACH(d, &bp->bif_dlist, bd_next) {
 		if (BPF_CHECK_DIRECTION(d, m->m_pkthdr.rcvif, bp->bif_ifp))
 			continue;
 		++d->bd_rcount;
@@ -2196,7 +2196,7 @@ bpf_mtap2(struct bpf_if *bp, void *data, u_int dlen, struct mbuf *m)
 
 	BPFIF_RLOCK(bp);
 
-	LIST_FOREACH(d, &bp->bif_dlist, bd_next) {
+	BSD_LIST_FOREACH(d, &bp->bif_dlist, bd_next) {
 		if (BPF_CHECK_DIRECTION(d, m->m_pkthdr.rcvif, bp->bif_ifp))
 			continue;
 		++d->bd_rcount;
@@ -2489,8 +2489,8 @@ bpfattach2(struct ifnet *ifp, u_int dlt, u_int hdrlen, struct bpf_if **driverp)
 	if (bp == NULL)
 		panic("bpfattach");
 
-	LIST_INIT(&bp->bif_dlist);
-	LIST_INIT(&bp->bif_wlist);
+	BSD_LIST_INIT(&bp->bif_dlist);
+	BSD_LIST_INIT(&bp->bif_wlist);
 	bp->bif_ifp = ifp;
 	bp->bif_dlt = dlt;
 	rw_init(&bp->bif_lock, "bpf interface lock");
@@ -2498,7 +2498,7 @@ bpfattach2(struct ifnet *ifp, u_int dlt, u_int hdrlen, struct bpf_if **driverp)
 	*driverp = bp;
 
 	BPF_LOCK();
-	LIST_INSERT_HEAD(&bpf_iflist, bp, bif_next);
+	BSD_LIST_INSERT_HEAD(&bpf_iflist, bp, bif_next);
 	BPF_UNLOCK();
 
 	bp->bif_hdrlen = hdrlen;
@@ -2526,25 +2526,25 @@ bpfdetach(struct ifnet *ifp)
 	BPF_LOCK();
 	/* Find all bpf_if struct's which reference ifp and detach them. */
 	do {
-		LIST_FOREACH(bp, &bpf_iflist, bif_next) {
+		BSD_LIST_FOREACH(bp, &bpf_iflist, bif_next) {
 			if (ifp == bp->bif_ifp)
 				break;
 		}
 		if (bp != NULL)
-			LIST_REMOVE(bp, bif_next);
+			BSD_LIST_REMOVE(bp, bif_next);
 
 		if (bp != NULL) {
 #ifdef INVARIANTS
 			ndetached++;
 #endif
-			while ((d = LIST_FIRST(&bp->bif_dlist)) != NULL) {
+			while ((d = BSD_LIST_FIRST(&bp->bif_dlist)) != NULL) {
 				bpf_detachd_locked(d);
 				BPFD_LOCK(d);
 				bpf_wakeup(d);
 				BPFD_UNLOCK(d);
 			}
 			/* Free writer-only descriptors */
-			while ((d = LIST_FIRST(&bp->bif_wlist)) != NULL) {
+			while ((d = BSD_LIST_FIRST(&bp->bif_wlist)) != NULL) {
 				bpf_detachd_locked(d);
 				BPFD_LOCK(d);
 				bpf_wakeup(d);
@@ -2615,7 +2615,7 @@ bpf_getdltlist(struct bpf_d *d, struct bpf_dltlist *bfl)
 	ifp = d->bd_bif->bif_ifp;
 	n = 0;
 	error = 0;
-	LIST_FOREACH(bp, &bpf_iflist, bif_next) {
+	BSD_LIST_FOREACH(bp, &bpf_iflist, bif_next) {
 		if (bp->bif_ifp != ifp)
 			continue;
 		if (bfl->bfl_list != NULL) {
@@ -2646,7 +2646,7 @@ bpf_setdlt(struct bpf_d *d, u_int dlt)
 		return (0);
 	ifp = d->bd_bif->bif_ifp;
 
-	LIST_FOREACH(bp, &bpf_iflist, bif_next) {
+	BSD_LIST_FOREACH(bp, &bpf_iflist, bif_next) {
 		if (bp->bif_ifp == ifp && bp->bif_dlt == dlt)
 			break;
 	}
@@ -2676,7 +2676,7 @@ bpf_drvinit(void *unused)
 	struct cdev *dev;
 
 	mtx_init(&bpf_mtx, "bpf global lock", NULL, MTX_DEF);
-	LIST_INIT(&bpf_iflist);
+	BSD_LIST_INIT(&bpf_iflist);
 
 	dev = make_dev(&bpf_cdevsw, 0, UID_ROOT, GID_WHEEL, 0600, "bpf");
 	/* For compatibility */
@@ -2700,9 +2700,9 @@ bpf_zero_counters(void)
 	struct bpf_d *bd;
 
 	BPF_LOCK();
-	LIST_FOREACH(bp, &bpf_iflist, bif_next) {
+	BSD_LIST_FOREACH(bp, &bpf_iflist, bif_next) {
 		BPFIF_RLOCK(bp);
-		LIST_FOREACH(bd, &bp->bif_dlist, bd_next) {
+		BSD_LIST_FOREACH(bd, &bp->bif_dlist, bd_next) {
 			BPFD_LOCK(bd);
 			bd->bd_rcount = 0;
 			bd->bd_dcount = 0;
@@ -2799,16 +2799,16 @@ bpf_stats_sysctl(SYSCTL_HANDLER_ARGS)
 		return (ENOMEM);
 	}
 	index = 0;
-	LIST_FOREACH(bp, &bpf_iflist, bif_next) {
+	BSD_LIST_FOREACH(bp, &bpf_iflist, bif_next) {
 		BPFIF_RLOCK(bp);
 		/* Send writers-only first */
-		LIST_FOREACH(bd, &bp->bif_wlist, bd_next) {
+		BSD_LIST_FOREACH(bd, &bp->bif_wlist, bd_next) {
 			xbd = &xbdbuf[index++];
 			BPFD_LOCK(bd);
 			bpfstats_fill_xbpf(xbd, bd);
 			BPFD_UNLOCK(bd);
 		}
-		LIST_FOREACH(bd, &bp->bif_dlist, bd_next) {
+		BSD_LIST_FOREACH(bd, &bp->bif_dlist, bd_next) {
 			xbd = &xbdbuf[index++];
 			BPFD_LOCK(bd);
 			bpfstats_fill_xbpf(xbd, bd);

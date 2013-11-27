@@ -100,8 +100,8 @@ static int	semtot = 0;
 static struct semid_kernel *sema;	/* semaphore id pool */
 static struct mtx *sema_mtx;	/* semaphore id pool mutexes*/
 static struct sem *sem;		/* semaphore pool */
-LIST_HEAD(, sem_undo) semu_list;	/* list of active undo structures */
-LIST_HEAD(, sem_undo) semu_free_list;	/* list of free undo structures */
+BSD_LIST_HEAD(, sem_undo) semu_list;	/* list of active undo structures */
+BSD_LIST_HEAD(, sem_undo) semu_free_list;	/* list of free undo structures */
 static int	*semu;		/* undo structure pool */
 static eventhandler_tag semexit_tag;
 
@@ -121,7 +121,7 @@ struct sem {
  * Undo structure (one per process)
  */
 struct sem_undo {
-	LIST_ENTRY(sem_undo) un_next;	/* ptr to next active undo structure */
+	BSD_LIST_ENTRY(sem_undo) un_next;	/* ptr to next active undo structure */
 	struct	proc *un_proc;		/* owner of this structure */
 	short	un_cnt;			/* # of active entries */
 	struct undo {
@@ -276,13 +276,13 @@ seminit(void)
 	}
 	for (i = 0; i < seminfo.semmni; i++)
 		mtx_init(&sema_mtx[i], "semid", NULL, MTX_DEF);
-	LIST_INIT(&semu_free_list);
+	BSD_LIST_INIT(&semu_free_list);
 	for (i = 0; i < seminfo.semmnu; i++) {
 		struct sem_undo *suptr = SEMU(i);
 		suptr->un_proc = NULL;
-		LIST_INSERT_HEAD(&semu_free_list, suptr, un_next);
+		BSD_LIST_INSERT_HEAD(&semu_free_list, suptr, un_next);
 	}
-	LIST_INIT(&semu_list);
+	BSD_LIST_INIT(&semu_list);
 	mtx_init(&sem_mtx, "sem", NULL, MTX_DEF);
 	mtx_init(&sem_undo_mtx, "semu", NULL, MTX_DEF);
 	semexit_tag = EVENTHANDLER_REGISTER(process_exit, semexit_myhook, NULL,
@@ -371,10 +371,10 @@ semu_alloc(struct thread *td)
 	struct sem_undo *suptr;
 
 	SEMUNDO_LOCKASSERT(MA_OWNED);
-	if ((suptr = LIST_FIRST(&semu_free_list)) == NULL)
+	if ((suptr = BSD_LIST_FIRST(&semu_free_list)) == NULL)
 		return (NULL);
-	LIST_REMOVE(suptr, un_next);
-	LIST_INSERT_HEAD(&semu_list, suptr, un_next);
+	BSD_LIST_REMOVE(suptr, un_next);
+	BSD_LIST_INSERT_HEAD(&semu_list, suptr, un_next);
 	suptr->un_cnt = 0;
 	suptr->un_proc = td->td_proc;
 	return (suptr);
@@ -388,8 +388,8 @@ semu_try_free(struct sem_undo *suptr)
 
 	if (suptr->un_cnt != 0)
 		return (0);
-	LIST_REMOVE(suptr, un_next);
-	LIST_INSERT_HEAD(&semu_free_list, suptr, un_next);
+	BSD_LIST_REMOVE(suptr, un_next);
+	BSD_LIST_INSERT_HEAD(&semu_free_list, suptr, un_next);
 	return (1);
 }
 
@@ -412,7 +412,7 @@ semundo_adjust(struct thread *td, struct sem_undo **supptr, int semid,
 
 	suptr = *supptr;
 	if (suptr == NULL) {
-		LIST_FOREACH(suptr, &semu_list, un_next) {
+		BSD_LIST_FOREACH(suptr, &semu_list, un_next) {
 			if (suptr->un_proc == p) {
 				*supptr = suptr;
 				break;
@@ -478,7 +478,7 @@ semundo_clear(int semid, int semnum)
 	int i;
 
 	SEMUNDO_LOCKASSERT(MA_OWNED);
-	LIST_FOREACH_SAFE(suptr, &semu_list, un_next, suptr1) {
+	BSD_LIST_FOREACH_SAFE(suptr, &semu_list, un_next, suptr1) {
 		sunptr = &suptr->un_ent[0];
 		for (i = 0; i < suptr->un_cnt; i++, sunptr++) {
 			if (sunptr->un_id != semid)
@@ -1304,7 +1304,7 @@ semexit_myhook(void *arg, struct proc *p)
 	 * associated with this process.
 	 */
 	SEMUNDO_LOCK();
-	LIST_FOREACH(suptr, &semu_list, un_next) {
+	BSD_LIST_FOREACH(suptr, &semu_list, un_next) {
 		if (suptr->un_proc == p)
 			break;
 	}
@@ -1312,7 +1312,7 @@ semexit_myhook(void *arg, struct proc *p)
 		SEMUNDO_UNLOCK();
 		return;
 	}
-	LIST_REMOVE(suptr, un_next);
+	BSD_LIST_REMOVE(suptr, un_next);
 
 	DPRINTF(("proc @%p has undo structure with %d entries\n", p,
 	    suptr->un_cnt));
@@ -1365,7 +1365,7 @@ semexit_myhook(void *arg, struct proc *p)
 	DPRINTF(("removing vector\n"));
 	suptr->un_proc = NULL;
 	suptr->un_cnt = 0;
-	LIST_INSERT_HEAD(&semu_free_list, suptr, un_next);
+	BSD_LIST_INSERT_HEAD(&semu_free_list, suptr, un_next);
 	SEMUNDO_UNLOCK();
 }
 

@@ -73,10 +73,10 @@ struct cdev {
 	struct ucred	*si_cred;	/* cached clone-time credential */
 	int		si_drv0;
 	int		si_refcount;
-	LIST_ENTRY(cdev)	si_list;
-	LIST_ENTRY(cdev)	si_clone;
-	LIST_HEAD(, cdev)	si_children;
-	LIST_ENTRY(cdev)	si_siblings;
+	BSD_LIST_ENTRY(cdev)	si_list;
+	BSD_LIST_ENTRY(cdev)	si_clone;
+	BSD_LIST_HEAD(, cdev)	si_children;
+	BSD_LIST_ENTRY(cdev)	si_siblings;
 	struct cdev *si_parent;
 	char		*si_name;
 	void		*si_drv1, *si_drv2;
@@ -212,11 +212,11 @@ struct cdevsw {
 	void			*d_spare1[3];
 
 	/* These fields should not be messed with by drivers */
-	LIST_HEAD(, cdev)	d_devs;
+	BSD_LIST_HEAD(, cdev)	d_devs;
 	int			d_spare2;
 	union {
 		struct cdevsw		*gianttrick;
-		SLIST_ENTRY(cdevsw)	postfree_list;
+		BSD_SLIST_ENTRY(cdevsw)	postfree_list;
 	} __d_giant;
 };
 #define	d_gianttrick		__d_giant.gianttrick

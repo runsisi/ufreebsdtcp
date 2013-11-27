@@ -90,9 +90,9 @@ struct socket {
  * and limit on number of queued connections for this socket.
  */
 	struct	socket *so_head;	/* (e) back pointer to listen socket */
-	TAILQ_HEAD(, socket) so_incomp;	/* (e) queue of partial unaccepted connections */
-	TAILQ_HEAD(, socket) so_comp;	/* (e) queue of complete unaccepted connections */
-	TAILQ_ENTRY(socket) so_list;	/* (e) list of unaccepted connections */
+	BSD_TAILQ_HEAD(, socket) so_incomp;	/* (e) queue of partial unaccepted connections */
+	BSD_TAILQ_HEAD(, socket) so_comp;	/* (e) queue of complete unaccepted connections */
+	BSD_TAILQ_ENTRY(socket) so_list;	/* (e) list of unaccepted connections */
 	u_short	so_qlen;		/* (e) number of unaccepted connections */
 	u_short	so_incqlen;		/* (e) number of unaccepted incomplete
 					   connections */
@@ -102,7 +102,7 @@ struct socket {
 	struct	sigio *so_sigio;	/* [sg] information for async I/O or
 					   out of band data (SIGURG) */
 	u_long	so_oobmark;		/* (c) chars to oob mark */
-	TAILQ_HEAD(, aiocblist) so_aiojobq; /* AIO ops waiting on socket */
+	BSD_TAILQ_HEAD(, aiocblist) so_aiojobq; /* AIO ops waiting on socket */
 
 	struct sockbuf so_rcv, so_snd;
 
@@ -206,7 +206,7 @@ struct xsocket {
 /* can we read something from so? */
 #define	soreadabledata(so) \
     ((so)->so_rcv.sb_cc >= (so)->so_rcv.sb_lowat || \
-	!TAILQ_EMPTY(&(so)->so_comp) || (so)->so_error)
+	!BSD_TAILQ_EMPTY(&(so)->so_comp) || (so)->so_error)
 #define	soreadable(so) \
 	(soreadabledata(so) || ((so)->so_rcv.sb_state & SBS_CANTRCVMORE))
 
@@ -283,7 +283,7 @@ struct accept_filter {
 		(struct socket *so, char *arg);
 	void	(*accf_destroy)
 		(struct socket *so);
-	SLIST_ENTRY(accept_filter) accf_next;
+	BSD_SLIST_ENTRY(accept_filter) accf_next;
 };
 
 #ifdef MALLOC_DECLARE

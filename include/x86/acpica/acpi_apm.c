@@ -258,7 +258,7 @@ apm_create_clone(struct cdev *dev, struct acpi_softc *acpi_sc)
 		clone->flags = ACPI_EVF_NONE;
 
 	ACPI_LOCK(acpi);
-	STAILQ_INSERT_TAIL(&acpi_sc->apm_cdevs, clone, entries);
+	BSD_STAILQ_INSERT_TAIL(&acpi_sc->apm_cdevs, clone, entries);
 	ACPI_UNLOCK(acpi);
 	return (clone);
 }
@@ -296,7 +296,7 @@ apmclose(struct cdev *dev, int flag, int fmt, struct thread *td)
 
 	/* Remove this clone's data from the list and free it. */
 	ACPI_LOCK(acpi);
-	STAILQ_REMOVE(&acpi_sc->apm_cdevs, clone, apm_clone_data, entries);
+	BSD_STAILQ_REMOVE(&acpi_sc->apm_cdevs, clone, apm_clone_data, entries);
 	seldrain(&clone->sel_read);
 	knlist_destroy(&clone->sel_read.si_note);
 	ACPI_UNLOCK(acpi);
@@ -483,7 +483,7 @@ acpi_apm_init(struct acpi_softc *sc)
 {
 
 	/* Create a clone for /dev/acpi also. */
-	STAILQ_INIT(&sc->apm_cdevs);
+	BSD_STAILQ_INIT(&sc->apm_cdevs);
 	sc->acpi_clone = apm_create_clone(sc->acpi_dev_t, sc);
 	clone_setup(&apm_clones);
 	EVENTHANDLER_REGISTER(dev_clone, apm_clone, 0, 1000);

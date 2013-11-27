@@ -213,7 +213,7 @@ struct osigevent {
 };
 
 typedef struct ksiginfo {
-	TAILQ_ENTRY(ksiginfo)	ksi_link;
+	BSD_TAILQ_ENTRY(ksiginfo)	ksi_link;
 	siginfo_t		ksi_info;
 	int			ksi_flags;
 	struct sigqueue		*ksi_sigq;
@@ -246,7 +246,7 @@ typedef struct ksiginfo {
 typedef struct sigqueue {
 	sigset_t	sq_signals;	/* All pending signals. */
 	sigset_t	sq_kill;	/* Legacy depth 1 queue. */
-	TAILQ_HEAD(, ksiginfo)	sq_list;/* Queued signal info. */
+	BSD_TAILQ_HEAD(, ksiginfo)	sq_list;/* Queued signal info. */
 	struct proc	*sq_proc;
 	int		sq_flags;
 } sigqueue_t;

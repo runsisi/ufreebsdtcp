@@ -171,7 +171,7 @@ greattach(void)
 {
 
 	mtx_init(&gre_mtx, "gre_mtx", NULL, MTX_DEF);
-	LIST_INIT(&gre_softc_list);
+	BSD_LIST_INIT(&gre_softc_list);
 	if_clone_attach(&gre_cloner);
 }
 
@@ -211,7 +211,7 @@ gre_clone_create(ifc, unit, params)
 	if_attach(GRE2IFP(sc));
 	bpfattach(GRE2IFP(sc), DLT_NULL, sizeof(u_int32_t));
 	mtx_lock(&gre_mtx);
-	LIST_INSERT_HEAD(&gre_softc_list, sc, sc_list);
+	BSD_LIST_INSERT_HEAD(&gre_softc_list, sc, sc_list);
 	mtx_unlock(&gre_mtx);
 	return (0);
 }
@@ -223,7 +223,7 @@ gre_clone_destroy(ifp)
 	struct gre_softc *sc = ifp->if_softc;
 
 	mtx_lock(&gre_mtx);
-	LIST_REMOVE(sc, sc_list);
+	BSD_LIST_REMOVE(sc, sc_list);
 	mtx_unlock(&gre_mtx);
 
 #ifdef INET

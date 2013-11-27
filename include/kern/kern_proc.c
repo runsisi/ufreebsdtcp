@@ -172,8 +172,8 @@ procinit()
 	sx_init(&allproc_lock, "allproc");
 	sx_init(&proctree_lock, "proctree");
 	mtx_init(&ppeers_lock, "p_peers", NULL, MTX_DEF);
-	LIST_INIT(&allproc);
-	LIST_INIT(&zombproc);
+	BSD_LIST_INIT(&allproc);
+	BSD_LIST_INIT(&zombproc);
 	pidhashtbl = hashinit(maxproc / 4, M_PROC, &pidhash);
 	pgrphashtbl = hashinit(maxproc / 4, M_PROC, &pgrphash);
 	proc_zone = uma_zcreate("PROC", sched_sizeof_proc(),
@@ -214,7 +214,7 @@ proc_dtor(void *mem, int size, void *arg)
 #ifdef INVARIANTS
 		KASSERT((p->p_numthreads == 1),
 		    ("bad number of threads in exiting process"));
-		KASSERT(STAILQ_EMPTY(&p->p_ktr), ("proc_dtor: non-empty p_ktr"));
+		KASSERT(BSD_STAILQ_EMPTY(&p->p_ktr), ("proc_dtor: non-empty p_ktr"));
 #endif
 		/* Free all OSD associated to this thread. */
 		osd_thread_exit(td);
@@ -241,7 +241,7 @@ proc_init(void *mem, int size, int flags)
 	mtx_init(&p->p_slock, "process slock", NULL, MTX_SPIN | MTX_RECURSE);
 	cv_init(&p->p_pwait, "ppwait");
 	cv_init(&p->p_dbgwait, "dbgwait");
-	TAILQ_INIT(&p->p_threads);	     /* all threads in proc */
+	BSD_TAILQ_INIT(&p->p_threads);	     /* all threads in proc */
 	EVENTHANDLER_INVOKE(process_init, p);
 	p->p_stats = pstats_alloc();
 	SDT_PROBE(proc, kernel, init, return, p, size, flags, 0, 0);
@@ -291,7 +291,7 @@ pfind_locked(pid_t pid)
 	struct proc *p;
 
 	sx_assert(&allproc_lock, SX_LOCKED);
-	LIST_FOREACH(p, PIDHASH(pid), p_hash) {
+	BSD_LIST_FOREACH(p, PIDHASH(pid), p_hash) {
 		if (p->p_pid == pid) {
 			PROC_LOCK(p);
 			if (p->p_state == PRS_NEW) {
@@ -356,7 +356,7 @@ pgfind(pgid)
 
 	sx_assert(&proctree_lock, SX_LOCKED);
 
-	LIST_FOREACH(pgrp, PGRPHASH(pgid), pg_hash) {
+	BSD_LIST_FOREACH(pgrp, PGRPHASH(pgid), pg_hash) {
 		if (pgrp->pg_id == pgid) {
 			PGRP_LOCK(pgrp);
 			return (pgrp);
@@ -475,15 +475,15 @@ enterpgrp(p, pgid, pgrp, sess)
 		PGRP_LOCK(pgrp);
 	}
 	pgrp->pg_id = pgid;
-	LIST_INIT(&pgrp->pg_members);
+	BSD_LIST_INIT(&pgrp->pg_members);
 
 	/*
 	 * As we have an exclusive lock of proctree_lock,
 	 * this should not deadlock.
 	 */
-	LIST_INSERT_HEAD(PGRPHASH(pgid), pgrp, pg_hash);
+	BSD_LIST_INSERT_HEAD(PGRPHASH(pgid), pgrp, pg_hash);
 	pgrp->pg_jobc = 0;
-	SLIST_INIT(&pgrp->pg_sigiolst);
+	BSD_SLIST_INIT(&pgrp->pg_sigiolst);
 	PGRP_UNLOCK(pgrp);
 
 	doenterpgrp(p, pgrp);
@@ -547,13 +547,13 @@ doenterpgrp(p, pgrp)
 	PGRP_LOCK(pgrp);
 	PGRP_LOCK(savepgrp);
 	PROC_LOCK(p);
-	LIST_REMOVE(p, p_pglist);
+	BSD_LIST_REMOVE(p, p_pglist);
 	p->p_pgrp = pgrp;
 	PROC_UNLOCK(p);
-	LIST_INSERT_HEAD(&pgrp->pg_members, p, p_pglist);
+	BSD_LIST_INSERT_HEAD(&pgrp->pg_members, p, p_pglist);
 	PGRP_UNLOCK(savepgrp);
 	PGRP_UNLOCK(pgrp);
-	if (LIST_EMPTY(&savepgrp->pg_members))
+	if (BSD_LIST_EMPTY(&savepgrp->pg_members))
 		pgdelete(savepgrp);
 }
 
@@ -570,11 +570,11 @@ leavepgrp(p)
 	savepgrp = p->p_pgrp;
 	PGRP_LOCK(savepgrp);
 	PROC_LOCK(p);
-	LIST_REMOVE(p, p_pglist);
+	BSD_LIST_REMOVE(p, p_pglist);
 	p->p_pgrp = NULL;
 	PROC_UNLOCK(p);
 	PGRP_UNLOCK(savepgrp);
-	if (LIST_EMPTY(&savepgrp->pg_members))
+	if (BSD_LIST_EMPTY(&savepgrp->pg_members))
 		pgdelete(savepgrp);
 	return (0);
 }
@@ -601,7 +601,7 @@ pgdelete(pgrp)
 
 	PGRP_LOCK(pgrp);
 	tp = pgrp->pg_session->s_ttyp;
-	LIST_REMOVE(pgrp, pg_hash);
+	BSD_LIST_REMOVE(pgrp, pg_hash);
 	savesess = pgrp->pg_session;
 	PGRP_UNLOCK(pgrp);
 
@@ -671,7 +671,7 @@ fixjobc(p, pgrp, entering)
 	 * their process groups; if so, adjust counts for children's
 	 * process groups.
 	 */
-	LIST_FOREACH(p, &p->p_children, p_sibling) {
+	BSD_LIST_FOREACH(p, &p->p_children, p_sibling) {
 		hispgrp = p->p_pgrp;
 		if (hispgrp == pgrp ||
 		    hispgrp->pg_session != mysession)
@@ -699,11 +699,11 @@ orphanpg(pg)
 
 	PGRP_LOCK_ASSERT(pg, MA_OWNED);
 
-	LIST_FOREACH(p, &pg->pg_members, p_pglist) {
+	BSD_LIST_FOREACH(p, &pg->pg_members, p_pglist) {
 		PROC_LOCK(p);
 		if (P_SHOULDSTOP(p)) {
 			PROC_UNLOCK(p);
-			LIST_FOREACH(p, &pg->pg_members, p_pglist) {
+			BSD_LIST_FOREACH(p, &pg->pg_members, p_pglist) {
 				PROC_LOCK(p);
 				kern_psignal(p, SIGHUP);
 				kern_psignal(p, SIGCONT);
@@ -747,16 +747,16 @@ DB_SHOW_COMMAND(pgrpdump, pgrpdump)
 	register int i;
 
 	for (i = 0; i <= pgrphash; i++) {
-		if (!LIST_EMPTY(&pgrphashtbl[i])) {
+		if (!BSD_LIST_EMPTY(&pgrphashtbl[i])) {
 			printf("\tindx %d\n", i);
-			LIST_FOREACH(pgrp, &pgrphashtbl[i], pg_hash) {
+			BSD_LIST_FOREACH(pgrp, &pgrphashtbl[i], pg_hash) {
 				printf(
 			"\tpgrp %p, pgid %ld, sess %p, sesscnt %d, mem %p\n",
 				    (void *)pgrp, (long)pgrp->pg_id,
 				    (void *)pgrp->pg_session,
 				    pgrp->pg_session->s_count,
-				    (void *)LIST_FIRST(&pgrp->pg_members));
-				LIST_FOREACH(p, &pgrp->pg_members, p_pglist) {
+				    (void *)BSD_LIST_FIRST(&pgrp->pg_members));
+				BSD_LIST_FOREACH(p, &pgrp->pg_members, p_pglist) {
 					printf("\t\tpid %ld addr %p pgrp %p\n", 
 					    (long)p->p_pid, (void *)p,
 					    (void *)p->p_pgrp);
@@ -1067,7 +1067,7 @@ zpfind_locked(pid_t pid)
 	struct proc *p;
 
 	sx_assert(&allproc_lock, SX_LOCKED);
-	LIST_FOREACH(p, &zombproc, p_list) {
+	BSD_LIST_FOREACH(p, &zombproc, p_list) {
 		if (p->p_pid == pid) {
 			PROC_LOCK(p);
 			break;
@@ -1329,10 +1329,10 @@ sysctl_kern_proc(SYSCTL_HANDLER_ARGS)
 	sx_slock(&allproc_lock);
 	for (doingzomb=0 ; doingzomb < 2 ; doingzomb++) {
 		if (!doingzomb)
-			p = LIST_FIRST(&allproc);
+			p = BSD_LIST_FIRST(&allproc);
 		else
-			p = LIST_FIRST(&zombproc);
-		for (; p != 0; p = LIST_NEXT(p, p_list)) {
+			p = BSD_LIST_FIRST(&zombproc);
+		for (; p != 0; p = BSD_LIST_NEXT(p, p_list)) {
 			/*
 			 * Skip embryonic processes.
 			 */

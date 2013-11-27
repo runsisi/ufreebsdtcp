@@ -127,12 +127,12 @@ struct ostatfs {
 	long	f_spare[2];		/* unused spare */
 };
 
-TAILQ_HEAD(vnodelst, vnode);
+BSD_TAILQ_HEAD(vnodelst, vnode);
 
 /* Mount options list */
-TAILQ_HEAD(vfsoptlist, vfsopt);
+BSD_TAILQ_HEAD(vfsoptlist, vfsopt);
 struct vfsopt {
-	TAILQ_ENTRY(vfsopt) link;
+	BSD_TAILQ_ENTRY(vfsopt) link;
 	char	*name;
 	void	*value;
 	int	len;
@@ -157,7 +157,7 @@ struct mount {
 	struct mtx	mnt_mtx;		/* mount structure interlock */
 	int		mnt_gen;		/* struct mount generation */
 #define	mnt_startzero	mnt_list
-	TAILQ_ENTRY(mount) mnt_list;		/* (m) mount list */
+	BSD_TAILQ_ENTRY(mount) mnt_list;		/* (m) mount list */
 	struct vfsops	*mnt_op;		/* operations on fs */
 	struct vfsconf	*mnt_vfc;		/* configuration info */
 	struct vnode	*mnt_vnodecovered;	/* vnode we mounted on */
@@ -189,8 +189,8 @@ struct mount {
 #define	mnt_endzero	mnt_gjprovider
 	char		*mnt_gjprovider;	/* gjournal provider name */
 	struct lock	mnt_explock;		/* vfs_export walkers lock */
-	TAILQ_ENTRY(mount) mnt_upper_link;	/* (m) we in the all uppers */
-	TAILQ_HEAD(, mount) mnt_uppers;		/* (m) upper mounts over us*/
+	BSD_TAILQ_ENTRY(mount) mnt_upper_link;	/* (m) we in the all uppers */
+	BSD_TAILQ_HEAD(, mount) mnt_uppers;		/* (m) upper mounts over us*/
 };
 
 /*
@@ -483,7 +483,7 @@ struct vfsconf {
 	int	vfc_refcount;		/* number mounted of this type */
 	int	vfc_flags;		/* permanent flags */
 	struct	vfsoptdecl *vfc_opts;	/* mount options */
-	TAILQ_ENTRY(vfsconf) vfc_list;	/* list of vfscons */
+	BSD_TAILQ_ENTRY(vfsconf) vfc_list;	/* list of vfscons */
 };
 
 /* Userland version of the struct vfsconf. */
@@ -599,7 +599,7 @@ MALLOC_DECLARE(M_MOUNT);
 extern int maxvfsconf;		/* highest defined filesystem type */
 extern int nfs_mount_type;	/* vfc_typenum for nfs, or -1 */
 
-TAILQ_HEAD(vfsconfhead, vfsconf);
+BSD_TAILQ_HEAD(vfsconfhead, vfsconf);
 extern struct vfsconfhead vfsconf;
 
 /*
@@ -918,7 +918,7 @@ struct mount *vfs_mount_alloc(struct vnode *, struct vfsconf *, const char *,
 int	vfs_suser(struct mount *, struct thread *);
 void	vfs_unbusy(struct mount *);
 void	vfs_unmountall(void);
-extern	TAILQ_HEAD(mntlist, mount) mountlist;	/* mounted filesystem list */
+extern	BSD_TAILQ_HEAD(mntlist, mount) mountlist;	/* mounted filesystem list */
 extern	struct mtx mountlist_mtx;
 extern	struct nfs_public nfs_pub;
 

@@ -79,7 +79,7 @@ struct cmc_state {
 struct mca_internal {
 	struct mca_record rec;
 	int		logged;
-	STAILQ_ENTRY(mca_internal) link;
+	BSD_STAILQ_ENTRY(mca_internal) link;
 };
 
 static MALLOC_DEFINE(M_MCA, "MCA", "Machine Check Architecture");
@@ -104,9 +104,9 @@ int workaround_erratum383;
 SYSCTL_INT(_hw_mca, OID_AUTO, erratum383, CTLFLAG_RD, &workaround_erratum383, 0,
     "Is the workaround for Erratum 383 on AMD Family 10h processors enabled?");
 
-static STAILQ_HEAD(, mca_internal) mca_freelist;
+static BSD_STAILQ_HEAD(, mca_internal) mca_freelist;
 static int mca_freecount;
-static STAILQ_HEAD(, mca_internal) mca_records;
+static BSD_STAILQ_HEAD(, mca_internal) mca_records;
 static struct callout mca_timer;
 static int mca_ticks = 3600;	/* Check hourly by default. */
 static struct taskqueue *mca_tq;
@@ -154,7 +154,7 @@ sysctl_mca_records(SYSCTL_HANDLER_ARGS)
 		return (EINVAL);
 	}
 	i = 0;
-	STAILQ_FOREACH(rec, &mca_records, link) {
+	BSD_STAILQ_FOREACH(rec, &mca_records, link) {
 		if (i == name[0]) {
 			record = rec->rec;
 			break;
@@ -434,7 +434,7 @@ mca_fill_freelist(void)
 		mtx_unlock_spin(&mca_lock);
 		rec = bsd_malloc(sizeof(*rec), M_MCA, M_WAITOK);
 		mtx_lock_spin(&mca_lock);
-		STAILQ_INSERT_TAIL(&mca_freelist, rec, link);
+		BSD_STAILQ_INSERT_TAIL(&mca_freelist, rec, link);
 		mca_freecount++;
 	}
 	mtx_unlock_spin(&mca_lock);
@@ -457,20 +457,20 @@ mca_record_entry(enum scan_mode mode, const struct mca_record *record)
 		mtx_lock_spin(&mca_lock);
 	} else {
 		mtx_lock_spin(&mca_lock);
-		rec = STAILQ_FIRST(&mca_freelist);
+		rec = BSD_STAILQ_FIRST(&mca_freelist);
 		if (rec == NULL) {
 			printf("MCA: Unable to allocate space for an event.\n");
 			mca_log(record);
 			mtx_unlock_spin(&mca_lock);
 			return;
 		}
-		STAILQ_REMOVE_HEAD(&mca_freelist, link);
+		BSD_STAILQ_REMOVE_HEAD(&mca_freelist, link);
 		mca_freecount--;
 	}
 
 	rec->rec = *record;
 	rec->logged = 0;
-	STAILQ_INSERT_TAIL(&mca_records, rec, link);
+	BSD_STAILQ_INSERT_TAIL(&mca_records, rec, link);
 	mca_count++;
 	mtx_unlock_spin(&mca_lock);
 	if (mode == CMCI)
@@ -638,7 +638,7 @@ mca_scan_cpus(void *context, int pending)
 	thread_unlock(td);
 	if (count != 0) {
 		mtx_lock_spin(&mca_lock);
-		STAILQ_FOREACH(mca, &mca_records, link) {
+		BSD_STAILQ_FOREACH(mca, &mca_records, link) {
 			if (!mca->logged) {
 				mca->logged = 1;
 				mca_log(&mca->rec);
@@ -726,10 +726,10 @@ mca_setup(uint64_t mcg_cap)
 
 	mca_banks = mcg_cap & MCG_CAP_COUNT;
 	mtx_init(&mca_lock, "mca", NULL, MTX_SPIN);
-	STAILQ_INIT(&mca_records);
+	BSD_STAILQ_INIT(&mca_records);
 	TASK_INIT(&mca_scan_task, 0, mca_scan_cpus, NULL);
 	callout_init(&mca_timer, CALLOUT_MPSAFE);
-	STAILQ_INIT(&mca_freelist);
+	BSD_STAILQ_INIT(&mca_freelist);
 	TASK_INIT(&mca_refill_task, 0, mca_refill, NULL);
 	mca_fill_freelist();
 	SYSCTL_ADD_INT(NULL, SYSCTL_STATIC_CHILDREN(_hw_mca), OID_AUTO,
@@ -981,7 +981,7 @@ cmc_intr(void)
 	/* If we found anything, log them to the console. */
 	if (count != 0) {
 		mtx_lock_spin(&mca_lock);
-		STAILQ_FOREACH(mca, &mca_records, link) {
+		BSD_STAILQ_FOREACH(mca, &mca_records, link) {
 			if (!mca->logged) {
 				mca->logged = 1;
 				mca_log(&mca->rec);

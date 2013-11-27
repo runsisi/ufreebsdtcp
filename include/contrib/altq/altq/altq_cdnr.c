@@ -72,7 +72,7 @@ int altq_cdnr_enabled = 0;
 #ifdef ALTQ_CDNR
 
 /* cdnr_list keeps all cdnr's allocated. */
-static LIST_HEAD(, top_cdnr) tcb_list;
+static BSD_LIST_HEAD(, top_cdnr) tcb_list;
 
 static int altq_cdnr_input(struct mbuf *, int);
 static struct top_cdnr *tcb_lookup(char *ifname);
@@ -214,7 +214,7 @@ tcb_lookup(ifname)
 	struct ifnet *ifp;
 
 	if ((ifp = ifunit(ifname)) != NULL)
-		LIST_FOREACH(top, &tcb_list, tc_next)
+		BSD_LIST_FOREACH(top, &tcb_list, tc_next)
 			if (top->tc_ifq->altq_ifp == ifp)
 				return (top);
 	return (NULL);
@@ -299,7 +299,7 @@ cdnr_cballoc(top, type, input_func)
 
 	/* if this isn't top, register the element to the top level cdnr */
 	if (top != NULL)
-		LIST_INSERT_HEAD(&top->tc_elements, cb, cb_next);
+		BSD_LIST_INSERT_HEAD(&top->tc_elements, cb, cb_next);
 
 	return ((void *)cb);
 }
@@ -315,7 +315,7 @@ cdnr_cbdestroy(cblock)
 
 	/* remove from the top level cdnr */
 	if (cb->cb_top != cblock)
-		LIST_REMOVE(cb, cb_next);
+		BSD_LIST_REMOVE(cb, cb_next);
 
 	free(cb, M_DEVBUF);
 }
@@ -431,7 +431,7 @@ top_create(ifq)
 	/* set default action for the top level conditioner */
 	top->tc_block.cb_action.tca_code = TCACODE_PASS;
 
-	LIST_INSERT_HEAD(&tcb_list, top, tc_next);
+	BSD_LIST_INSERT_HEAD(&tcb_list, top, tc_next);
 
 	ifq->altq_cdnr = top;
 
@@ -451,20 +451,20 @@ top_destroy(top)
 	/*
 	 * destroy all the conditioner elements belonging to this interface
 	 */
-	while ((cb = LIST_FIRST(&top->tc_elements)) != NULL) {
+	while ((cb = BSD_LIST_FIRST(&top->tc_elements)) != NULL) {
 		while (cb != NULL && cb->cb_ref > 0)
-			cb = LIST_NEXT(cb, cb_next);
+			cb = BSD_LIST_NEXT(cb, cb_next);
 		if (cb != NULL)
 			generic_element_destroy(cb);
 	}
 
-	LIST_REMOVE(top, tc_next);
+	BSD_LIST_REMOVE(top, tc_next);
 
 	cdnr_cbdestroy(top);
 
 	/* if there is no active conditioner, remove the input hook */
 	if (altq_input != NULL) {
-		LIST_FOREACH(top, &tcb_list, tc_next)
+		BSD_LIST_FOREACH(top, &tcb_list, tc_next)
 			if (ALTQ_IS_CNDTNING(top->tc_ifq))
 				break;
 		if (top == NULL)
@@ -1147,7 +1147,7 @@ cdnrcmd_get_stats(ap)
 
 	nskip = ap->nskip;
 	n = 0;
-	LIST_FOREACH(cb, &top->tc_elements, cb_next) {
+	BSD_LIST_FOREACH(cb, &top->tc_elements, cb_next) {
 		if (nskip > 0) {
 			nskip--;
 			continue;
@@ -1228,7 +1228,7 @@ cdnrclose(dev, flag, fmt, p)
 	struct top_cdnr *top;
 	int err, error = 0;
 
-	while ((top = LIST_FIRST(&tcb_list)) != NULL) {
+	while ((top = BSD_LIST_FIRST(&tcb_list)) != NULL) {
 		/* destroy all */
 		err = top_destroy(top);
 		if (err != 0 && error == 0)
@@ -1306,7 +1306,7 @@ cdnrioctl(dev, cmd, addr, flag, p)
 
 		case CDNR_DISABLE:
 			ALTQ_CLEAR_CNDTNING(top->tc_ifq);
-			LIST_FOREACH(top, &tcb_list, tc_next)
+			BSD_LIST_FOREACH(top, &tcb_list, tc_next)
 				if (ALTQ_IS_CNDTNING(top->tc_ifq))
 					break;
 			if (top == NULL)

@@ -349,10 +349,10 @@ m_tag_delete_chain(struct mbuf *m, struct m_tag *t)
 	if (t != NULL)
 		p = t;
 	else
-		p = SLIST_FIRST(&m->m_pkthdr.tags);
+		p = BSD_SLIST_FIRST(&m->m_pkthdr.tags);
 	if (p == NULL)
 		return;
-	while ((q = SLIST_NEXT(p, m_tag_link)) != NULL)
+	while ((q = BSD_SLIST_NEXT(p, m_tag_link)) != NULL)
 		m_tag_delete(m, q);
 	m_tag_delete(m, p);
 }
@@ -369,7 +369,7 @@ m_tag_delete_nonpersistent(struct mbuf *m)
 {
 	struct m_tag *p, *q;
 
-	SLIST_FOREACH_SAFE(p, &m->m_pkthdr.tags, m_tag_link, q)
+	BSD_SLIST_FOREACH_SAFE(p, &m->m_pkthdr.tags, m_tag_link, q)
 		if ((p->m_tag_id & MTAG_PERSISTENT) == 0)
 			m_tag_delete(m, p);
 }
@@ -382,13 +382,13 @@ m_tag_locate(struct mbuf *m, uint32_t cookie, int type, struct m_tag *t)
 
 	KASSERT(m, ("m_tag_locate: null mbuf"));
 	if (t == NULL)
-		p = SLIST_FIRST(&m->m_pkthdr.tags);
+		p = BSD_SLIST_FIRST(&m->m_pkthdr.tags);
 	else
-		p = SLIST_NEXT(t, m_tag_link);
+		p = BSD_SLIST_NEXT(t, m_tag_link);
 	while (p != NULL) {
 		if (p->m_tag_cookie == cookie && p->m_tag_id == type)
 			return p;
-		p = SLIST_NEXT(p, m_tag_link);
+		p = BSD_SLIST_NEXT(p, m_tag_link);
 	}
 	return NULL;
 }
@@ -437,16 +437,16 @@ m_tag_copy_chain(struct mbuf *to, struct mbuf *from, int how)
 	KASSERT(to && from,
 		("m_tag_copy_chain: null argument, to %p from %p", to, from));
 	m_tag_delete_chain(to, NULL);
-	SLIST_FOREACH(p, &from->m_pkthdr.tags, m_tag_link) {
+	BSD_SLIST_FOREACH(p, &from->m_pkthdr.tags, m_tag_link) {
 		t = m_tag_copy(p, how);
 		if (t == NULL) {
 			m_tag_delete_chain(to, NULL);
 			return 0;
 		}
 		if (tprev == NULL)
-			SLIST_INSERT_HEAD(&to->m_pkthdr.tags, t, m_tag_link);
+			BSD_SLIST_INSERT_HEAD(&to->m_pkthdr.tags, t, m_tag_link);
 		else
-			SLIST_INSERT_AFTER(tprev, t, m_tag_link);
+			BSD_SLIST_INSERT_AFTER(tprev, t, m_tag_link);
 		tprev = t;
 	}
 	return 1;

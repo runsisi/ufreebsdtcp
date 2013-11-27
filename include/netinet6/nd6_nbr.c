@@ -1172,7 +1172,7 @@ nd6_ifptomac(struct ifnet *ifp)
 }
 
 struct dadq {
-	TAILQ_ENTRY(dadq) dad_list;
+	BSD_TAILQ_ENTRY(dadq) dad_list;
 	struct ifaddr *dad_ifa;
 	int dad_count;		/* max NS to send */
 	int dad_ns_tcount;	/* # of trials to send NS */
@@ -1183,7 +1183,7 @@ struct dadq {
 	struct vnet *dad_vnet;
 };
 
-static VNET_DEFINE(TAILQ_HEAD(, dadq), dadq);
+static VNET_DEFINE(BSD_TAILQ_HEAD(, dadq), dadq);
 VNET_DEFINE(int, dad_init) = 0;
 #define	V_dadq				VNET(dadq)
 #define	V_dad_init			VNET(dad_init)
@@ -1193,7 +1193,7 @@ nd6_dad_find(struct ifaddr *ifa)
 {
 	struct dadq *dp;
 
-	TAILQ_FOREACH(dp, &V_dadq, dad_list)
+	BSD_TAILQ_FOREACH(dp, &V_dadq, dad_list)
 		if (dp->dad_ifa == ifa)
 			return (dp);
 
@@ -1226,7 +1226,7 @@ nd6_dad_start(struct ifaddr *ifa, int delay)
 	char ip6buf[INET6_ADDRSTRLEN];
 
 	if (!V_dad_init) {
-		TAILQ_INIT(&V_dadq);
+		BSD_TAILQ_INIT(&V_dadq);
 		V_dad_init++;
 	}
 
@@ -1277,7 +1277,7 @@ nd6_dad_start(struct ifaddr *ifa, int delay)
 #ifdef VIMAGE
 	dp->dad_vnet = curvnet;
 #endif
-	TAILQ_INSERT_TAIL(&V_dadq, (struct dadq *)dp, dad_list);
+	BSD_TAILQ_INSERT_TAIL(&V_dadq, (struct dadq *)dp, dad_list);
 
 	nd6log((LOG_DEBUG, "%s: starting DAD for %s\n", if_name(ifa->ifa_ifp),
 	    ip6_sprintf(ip6buf, &ia->ia_addr.sin6_addr)));
@@ -1320,7 +1320,7 @@ nd6_dad_stop(struct ifaddr *ifa)
 
 	nd6_dad_stoptimer(dp);
 
-	TAILQ_REMOVE(&V_dadq, (struct dadq *)dp, dad_list);
+	BSD_TAILQ_REMOVE(&V_dadq, (struct dadq *)dp, dad_list);
 	bsd_free(dp, M_IP6NDP);
 	dp = NULL;
 	ifa_free(ifa);
@@ -1362,7 +1362,7 @@ nd6_dad_timer(struct dadq *dp)
 		nd6log((LOG_INFO, "%s: could not run DAD, driver problem?\n",
 		    if_name(ifa->ifa_ifp)));
 
-		TAILQ_REMOVE(&V_dadq, (struct dadq *)dp, dad_list);
+		BSD_TAILQ_REMOVE(&V_dadq, (struct dadq *)dp, dad_list);
 		bsd_free(dp, M_IP6NDP);
 		dp = NULL;
 		ifa_free(ifa);
@@ -1415,7 +1415,7 @@ nd6_dad_timer(struct dadq *dp)
 			    if_name(ifa->ifa_ifp),
 			    ip6_sprintf(ip6buf, &ia->ia_addr.sin6_addr)));
 
-			TAILQ_REMOVE(&V_dadq, (struct dadq *)dp, dad_list);
+			BSD_TAILQ_REMOVE(&V_dadq, (struct dadq *)dp, dad_list);
 			bsd_free(dp, M_IP6NDP);
 			dp = NULL;
 			ifa_free(ifa);
@@ -1493,7 +1493,7 @@ nd6_dad_duplicated(struct ifaddr *ifa)
 		}
 	}
 
-	TAILQ_REMOVE(&V_dadq, (struct dadq *)dp, dad_list);
+	BSD_TAILQ_REMOVE(&V_dadq, (struct dadq *)dp, dad_list);
 	bsd_free(dp, M_IP6NDP);
 	dp = NULL;
 	ifa_free(ifa);

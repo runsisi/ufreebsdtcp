@@ -139,7 +139,7 @@ int vttoif_tab[10] = {
 /*
  * List of vnodes that are ready for recycling.
  */
-static TAILQ_HEAD(freelst, vnode) vnode_free_list;
+static BSD_TAILQ_HEAD(freelst, vnode) vnode_free_list;
 
 /*
  * Free vnode target.  Free vnodes may simply be files which have been stat'd
@@ -217,7 +217,7 @@ static uma_zone_t vnodepoll_zone;
  */
 static int syncer_delayno;
 static long syncer_mask;
-LIST_HEAD(synclist, bufobj);
+BSD_LIST_HEAD(synclist, bufobj);
 static struct synclist *syncer_workitem_pending[2];
 /*
  * The sync_mtx protects:
@@ -324,7 +324,7 @@ vntblinit(void *dummy __unused)
 	}
 	wantfreevnodes = desiredvnodes / 4;
 	mtx_init(&mntid_mtx, "mntid", NULL, MTX_DEF);
-	TAILQ_INIT(&vnode_free_list);
+	BSD_TAILQ_INIT(&vnode_free_list);
 	mtx_init(&vnode_free_list_mtx, "vnode_free_list", NULL, MTX_DEF);
 	vnode_zone = uma_zcreate("VNODE", sizeof (struct vnode), NULL, NULL,
 	    NULL, NULL, UMA_ALIGN_PTR, 0);
@@ -458,7 +458,7 @@ vfs_getvfs(fsid_t *fsid)
 
 	CTR2(KTR_VFS, "%s: fsid %p", __func__, fsid);
 	mtx_lock(&mountlist_mtx);
-	TAILQ_FOREACH(mp, &mountlist, mnt_list) {
+	BSD_TAILQ_FOREACH(mp, &mountlist, mnt_list) {
 		if (mp->mnt_stat.f_fsid.val[0] == fsid->val[0] &&
 		    mp->mnt_stat.f_fsid.val[1] == fsid->val[1]) {
 			vfs_ref(mp);
@@ -483,7 +483,7 @@ vfs_busyfs(fsid_t *fsid)
 
 	CTR2(KTR_VFS, "%s: fsid %p", __func__, fsid);
 	mtx_lock(&mountlist_mtx);
-	TAILQ_FOREACH(mp, &mountlist, mnt_list) {
+	BSD_TAILQ_FOREACH(mp, &mountlist, mnt_list) {
 		if (mp->mnt_stat.f_fsid.val[0] == fsid->val[0] &&
 		    mp->mnt_stat.f_fsid.val[1] == fsid->val[1]) {
 			error = vfs_busy(mp, MBF_MNTLSTLOCK);
@@ -688,13 +688,13 @@ vlrureclaim(struct mount *mp)
 	MNT_ILOCK(mp);
 	count = mp->mnt_nvnodelistsize / 10 + 1;
 	while (count != 0) {
-		vp = TAILQ_FIRST(&mp->mnt_nvnodelist);
+		vp = BSD_TAILQ_FIRST(&mp->mnt_nvnodelist);
 		while (vp != NULL && vp->v_type == VMARKER)
-			vp = TAILQ_NEXT(vp, v_nmntvnodes);
+			vp = BSD_TAILQ_NEXT(vp, v_nmntvnodes);
 		if (vp == NULL)
 			break;
-		TAILQ_REMOVE(&mp->mnt_nvnodelist, vp, v_nmntvnodes);
-		TAILQ_INSERT_TAIL(&mp->mnt_nvnodelist, vp, v_nmntvnodes);
+		BSD_TAILQ_REMOVE(&mp->mnt_nvnodelist, vp, v_nmntvnodes);
+		BSD_TAILQ_INSERT_TAIL(&mp->mnt_nvnodelist, vp, v_nmntvnodes);
 		--count;
 		if (!VI_TRYLOCK(vp))
 			goto next_iter;
@@ -704,7 +704,7 @@ vlrureclaim(struct mount *mp)
 		 */
 		if (vp->v_usecount ||
 		    (!vlru_allow_cache_src &&
-			!LIST_EMPTY(&(vp)->v_cache_src)) ||
+			!BSD_LIST_EMPTY(&(vp)->v_cache_src)) ||
 		    (vp->v_iflag & VI_DOOMED) != 0 || (vp->v_object != NULL &&
 		    vp->v_object->resident_page_count > trigger)) {
 			VI_UNLOCK(vp);
@@ -731,7 +731,7 @@ vlrureclaim(struct mount *mp)
 		 */
 		if (vp->v_usecount ||
 		    (!vlru_allow_cache_src &&
-			!LIST_EMPTY(&(vp)->v_cache_src)) ||
+			!BSD_LIST_EMPTY(&(vp)->v_cache_src)) ||
 		    (vp->v_object != NULL &&
 		    vp->v_object->resident_page_count > trigger)) {
 			VOP_UNLOCK(vp, LK_INTERLOCK);
@@ -772,7 +772,7 @@ vnlru_free(int count)
 
 	mtx_assert(&vnode_free_list_mtx, MA_OWNED);
 	for (; count > 0; count--) {
-		vp = TAILQ_FIRST(&vnode_free_list);
+		vp = BSD_TAILQ_FIRST(&vnode_free_list);
 		/*
 		 * The list can be modified while the free_list_mtx
 		 * has been dropped and vp could be NULL here.
@@ -785,12 +785,12 @@ vnlru_free(int count)
 		    ("Removing vnode not on freelist"));
 		KASSERT((vp->v_iflag & VI_ACTIVE) == 0,
 		    ("Mangling active vnode"));
-		TAILQ_REMOVE(&vnode_free_list, vp, v_actfreelist);
+		BSD_TAILQ_REMOVE(&vnode_free_list, vp, v_actfreelist);
 		/*
 		 * Don't recycle if we can't get the interlock.
 		 */
 		if (!VI_TRYLOCK(vp)) {
-			TAILQ_INSERT_TAIL(&vnode_free_list, vp, v_actfreelist);
+			BSD_TAILQ_INSERT_TAIL(&vnode_free_list, vp, v_actfreelist);
 			continue;
 		}
 		VNASSERT(VCANRECYCLE(vp), vp,
@@ -845,16 +845,16 @@ vnlru_proc(void)
 		mtx_unlock(&vnode_free_list_mtx);
 		done = 0;
 		mtx_lock(&mountlist_mtx);
-		for (mp = TAILQ_FIRST(&mountlist); mp != NULL; mp = nmp) {
+		for (mp = BSD_TAILQ_FIRST(&mountlist); mp != NULL; mp = nmp) {
 			if (vfs_busy(mp, MBF_NOWAIT | MBF_MNTLSTLOCK)) {
-				nmp = TAILQ_NEXT(mp, mnt_list);
+				nmp = BSD_TAILQ_NEXT(mp, mnt_list);
 				continue;
 			}
 			vfslocked = VFS_LOCK_GIANT(mp);
 			done += vlrureclaim(mp);
 			VFS_UNLOCK_GIANT(vfslocked);
 			mtx_lock(&mountlist_mtx);
-			nmp = TAILQ_NEXT(mp, mnt_list);
+			nmp = BSD_TAILQ_NEXT(mp, mnt_list);
 			vfs_unbusy(mp);
 		}
 		mtx_unlock(&mountlist_mtx);
@@ -1054,13 +1054,13 @@ alloc:
 	mtx_init(BO_MTX(bo), "bufobj interlock", NULL, MTX_DEF);
 	bo->bo_ops = &buf_ops_bio;
 	bo->bo_private = vp;
-	TAILQ_INIT(&bo->bo_clean.bv_hd);
-	TAILQ_INIT(&bo->bo_dirty.bv_hd);
+	BSD_TAILQ_INIT(&bo->bo_clean.bv_hd);
+	BSD_TAILQ_INIT(&bo->bo_dirty.bv_hd);
 	/*
 	 * Initialize namecache.
 	 */
-	LIST_INIT(&vp->v_cache_src);
-	TAILQ_INIT(&vp->v_cache_dst);
+	BSD_LIST_INIT(&vp->v_cache_src);
+	BSD_TAILQ_INIT(&vp->v_cache_dst);
 	/*
 	 * Finalize various vnode identity bits.
 	 */
@@ -1116,7 +1116,7 @@ delmntque(struct vnode *vp)
 	vp->v_iflag &= ~VI_ACTIVE;
 	if (active) {
 		mtx_lock(&vnode_free_list_mtx);
-		TAILQ_REMOVE(&mp->mnt_activevnodelist, vp, v_actfreelist);
+		BSD_TAILQ_REMOVE(&mp->mnt_activevnodelist, vp, v_actfreelist);
 		mp->mnt_activevnodelistsize--;
 		mtx_unlock(&vnode_free_list_mtx);
 	}
@@ -1124,7 +1124,7 @@ delmntque(struct vnode *vp)
 	VI_UNLOCK(vp);
 	VNASSERT(mp->mnt_nvnodelistsize > 0, vp,
 		("bad mount point vnode list size"));
-	TAILQ_REMOVE(&mp->mnt_nvnodelist, vp, v_nmntvnodes);
+	BSD_TAILQ_REMOVE(&mp->mnt_nvnodelist, vp, v_nmntvnodes);
 	mp->mnt_nvnodelistsize--;
 	MNT_REL(mp);
 	MNT_IUNLOCK(mp);
@@ -1187,7 +1187,7 @@ insmntque1(struct vnode *vp, struct mount *mp,
 	}
 	vp->v_mount = mp;
 	MNT_REF(mp);
-	TAILQ_INSERT_TAIL(&mp->mnt_nvnodelist, vp, v_nmntvnodes);
+	BSD_TAILQ_INSERT_TAIL(&mp->mnt_nvnodelist, vp, v_nmntvnodes);
 	VNASSERT(mp->mnt_nvnodelistsize >= 0, vp,
 		("neg mount point vnode list size"));
 	mp->mnt_nvnodelistsize++;
@@ -1195,7 +1195,7 @@ insmntque1(struct vnode *vp, struct mount *mp,
 	    ("Activating already active vnode"));
 	vp->v_iflag |= VI_ACTIVE;
 	mtx_lock(&vnode_free_list_mtx);
-	TAILQ_INSERT_HEAD(&mp->mnt_activevnodelist, vp, v_actfreelist);
+	BSD_TAILQ_INSERT_HEAD(&mp->mnt_activevnodelist, vp, v_actfreelist);
 	mp->mnt_activevnodelistsize++;
 	mtx_unlock(&vnode_free_list_mtx);
 	VI_UNLOCK(vp);
@@ -1323,7 +1323,7 @@ flushbuflist( struct bufv *bufv, int flags, struct bufobj *bo, int slpflag,
 	ASSERT_BO_LOCKED(bo);
 
 	retval = 0;
-	TAILQ_FOREACH_SAFE(bp, &bufv->bv_hd, b_bobufs, nbp) {
+	BSD_TAILQ_FOREACH_SAFE(bp, &bufv->bv_hd, b_bobufs, nbp) {
 		if (((flags & V_NORMAL) && (bp->b_xflags & BX_ALTDATA)) ||
 		    ((flags & V_ALT) && (bp->b_xflags & BX_ALTDATA) == 0)) {
 			continue;
@@ -1413,7 +1413,7 @@ restart:
 	anyfreed = 1;
 	for (;anyfreed;) {
 		anyfreed = 0;
-		TAILQ_FOREACH_SAFE(bp, &bo->bo_clean.bv_hd, b_bobufs, nbp) {
+		BSD_TAILQ_FOREACH_SAFE(bp, &bo->bo_clean.bv_hd, b_bobufs, nbp) {
 			if (bp->b_lblkno < trunclbn)
 				continue;
 			if (BUF_LOCK(bp,
@@ -1439,7 +1439,7 @@ restart:
 			}
 		}
 
-		TAILQ_FOREACH_SAFE(bp, &bo->bo_dirty.bv_hd, b_bobufs, nbp) {
+		BSD_TAILQ_FOREACH_SAFE(bp, &bo->bo_dirty.bv_hd, b_bobufs, nbp) {
 			if (bp->b_lblkno < trunclbn)
 				continue;
 			if (BUF_LOCK(bp,
@@ -1467,7 +1467,7 @@ restart:
 
 	if (length > 0) {
 restartsync:
-		TAILQ_FOREACH_SAFE(bp, &bo->bo_dirty.bv_hd, b_bobufs, nbp) {
+		BSD_TAILQ_FOREACH_SAFE(bp, &bo->bo_dirty.bv_hd, b_bobufs, nbp) {
 			if (bp->b_lblkno > 0)
 				continue;
 			/*
@@ -1593,7 +1593,7 @@ buf_vlist_remove(struct buf *bp)
 		root->b_right = bp->b_right;
 	}
 	bv->bv_root = root;
-	TAILQ_REMOVE(&bv->bv_hd, bp, b_bobufs);
+	BSD_TAILQ_REMOVE(&bv->bv_hd, bp, b_bobufs);
 	bv->bv_cnt--;
 	bp->b_xflags &= ~(BX_VNDIRTY | BX_VNCLEAN);
 }
@@ -1623,19 +1623,19 @@ buf_vlist_add(struct buf *bp, struct bufobj *bo, b_xflags_t xflags)
 	if (root == NULL) {
 		bp->b_left = NULL;
 		bp->b_right = NULL;
-		TAILQ_INSERT_TAIL(&bv->bv_hd, bp, b_bobufs);
+		BSD_TAILQ_INSERT_TAIL(&bv->bv_hd, bp, b_bobufs);
 	} else if (bp->b_lblkno < root->b_lblkno ||
 	    (bp->b_lblkno == root->b_lblkno &&
 	    (bp->b_xflags & BX_BKGRDMARKER) < (root->b_xflags & BX_BKGRDMARKER))) {
 		bp->b_left = root->b_left;
 		bp->b_right = root;
 		root->b_left = NULL;
-		TAILQ_INSERT_BEFORE(root, bp, b_bobufs);
+		BSD_TAILQ_INSERT_BEFORE(root, bp, b_bobufs);
 	} else {
 		bp->b_right = root->b_right;
 		bp->b_left = root;
 		root->b_right = NULL;
-		TAILQ_INSERT_AFTER(&bv->bv_hd, root, bp, b_bobufs);
+		BSD_TAILQ_INSERT_AFTER(&bv->bv_hd, root, bp, b_bobufs);
 	}
 	bv->bv_cnt++;
 	bv->bv_root = bp;
@@ -1730,7 +1730,7 @@ brelvp(struct buf *bp)
 	if ((bo->bo_flag & BO_ONWORKLST) && bo->bo_dirty.bv_cnt == 0) {
 		bo->bo_flag &= ~BO_ONWORKLST;
 		mtx_lock(&sync_mtx);
-		LIST_REMOVE(bo, bo_synclist);
+		BSD_LIST_REMOVE(bo, bo_synclist);
 		syncer_worklist_len--;
 		mtx_unlock(&sync_mtx);
 	}
@@ -1753,7 +1753,7 @@ vn_syncer_add_to_worklist(struct bufobj *bo, int delay)
 
 	mtx_lock(&sync_mtx);
 	if (bo->bo_flag & BO_ONWORKLST)
-		LIST_REMOVE(bo, bo_synclist);
+		BSD_LIST_REMOVE(bo, bo_synclist);
 	else {
 		bo->bo_flag |= BO_ONWORKLST;
 		syncer_worklist_len++;
@@ -1765,7 +1765,7 @@ vn_syncer_add_to_worklist(struct bufobj *bo, int delay)
 
 	queue = VFS_NEEDSGIANT(bo->__bo_vnode->v_mount) ? WI_GIANTQ :
 	    WI_MPSAFEQ;
-	LIST_INSERT_HEAD(&syncer_workitem_pending[queue][slot], bo,
+	BSD_LIST_INSERT_HEAD(&syncer_workitem_pending[queue][slot], bo,
 	    bo_synclist);
 	mtx_unlock(&sync_mtx);
 }
@@ -1800,7 +1800,7 @@ sync_vnode(struct synclist *slp, struct bufobj **bo, struct thread *td)
 	struct vnode *vp;
 	struct mount *mp;
 
-	*bo = LIST_FIRST(slp);
+	*bo = BSD_LIST_FIRST(slp);
 	if (*bo == NULL)
 		return (0);
 	vp = (*bo)->__bo_vnode;	/* XXX */
@@ -1818,7 +1818,7 @@ sync_vnode(struct synclist *slp, struct bufobj **bo, struct thread *td)
 	if (vn_start_write(vp, &mp, V_NOWAIT) != 0) {
 		vdrop(vp);
 		mtx_lock(&sync_mtx);
-		return (*bo == LIST_FIRST(slp));
+		return (*bo == BSD_LIST_FIRST(slp));
 	}
 	vn_lock(vp, LK_EXCLUSIVE | LK_RETRY);
 	(void) VOP_FSYNC(vp, MNT_LAZY, td);
@@ -1912,8 +1912,8 @@ sched_sync(void)
 				syncer_state = SYNCER_FINAL_DELAY;
 				syncer_final_iter = SYNCER_SHUTDOWN_SPEEDUP;
 			}
-		} while (syncer_state != SYNCER_RUNNING && LIST_EMPTY(slp) &&
-		    LIST_EMPTY(gslp) && syncer_worklist_len > 0);
+		} while (syncer_state != SYNCER_RUNNING && BSD_LIST_EMPTY(slp) &&
+		    BSD_LIST_EMPTY(gslp) && syncer_worklist_len > 0);
 
 		/*
 		 * Keep track of the last time there was anything
@@ -1925,11 +1925,11 @@ sched_sync(void)
 			last_work_seen = syncer_delayno;
 		if (net_worklist_len > 0 && syncer_state == SYNCER_FINAL_DELAY)
 			syncer_state = SYNCER_SHUTTING_DOWN;
-		while (!LIST_EMPTY(slp)) {
+		while (!BSD_LIST_EMPTY(slp)) {
 			error = sync_vnode(slp, &bo, td);
 			if (error == 1) {
-				LIST_REMOVE(bo, bo_synclist);
-				LIST_INSERT_HEAD(next, bo, bo_synclist);
+				BSD_LIST_REMOVE(bo, bo_synclist);
+				BSD_LIST_INSERT_HEAD(next, bo, bo_synclist);
 				continue;
 			}
 
@@ -1937,15 +1937,15 @@ sched_sync(void)
 				wdog_kern_pat(WD_LASTVAL);
 
 		}
-		if (!LIST_EMPTY(gslp)) {
+		if (!BSD_LIST_EMPTY(gslp)) {
 			mtx_unlock(&sync_mtx);
 			mtx_lock(&Giant);
 			mtx_lock(&sync_mtx);
-			while (!LIST_EMPTY(gslp)) {
+			while (!BSD_LIST_EMPTY(gslp)) {
 				error = sync_vnode(gslp, &bo, td);
 				if (error == 1) {
-					LIST_REMOVE(bo, bo_synclist);
-					LIST_INSERT_HEAD(gnext, bo,
+					BSD_LIST_REMOVE(bo, bo_synclist);
+					BSD_LIST_INSERT_HEAD(gnext, bo,
 					    bo_synclist);
 					continue;
 				}
@@ -2093,7 +2093,7 @@ reassignbuf(struct buf *bp)
 
 		if ((bo->bo_flag & BO_ONWORKLST) && bo->bo_dirty.bv_cnt == 0) {
 			mtx_lock(&sync_mtx);
-			LIST_REMOVE(bo, bo_synclist);
+			BSD_LIST_REMOVE(bo, bo_synclist);
 			syncer_worklist_len--;
 			mtx_unlock(&sync_mtx);
 			bo->bo_flag &= ~BO_ONWORKLST;
@@ -2101,17 +2101,17 @@ reassignbuf(struct buf *bp)
 	}
 #ifdef INVARIANTS
 	bv = &bo->bo_clean;
-	bp = TAILQ_FIRST(&bv->bv_hd);
+	bp = BSD_TAILQ_FIRST(&bv->bv_hd);
 	KASSERT(bp == NULL || bp->b_bufobj == bo,
 	    ("bp %p wrong b_bufobj %p should be %p", bp, bp->b_bufobj, bo));
-	bp = TAILQ_LAST(&bv->bv_hd, buflists);
+	bp = BSD_TAILQ_LAST(&bv->bv_hd, buflists);
 	KASSERT(bp == NULL || bp->b_bufobj == bo,
 	    ("bp %p wrong b_bufobj %p should be %p", bp, bp->b_bufobj, bo));
 	bv = &bo->bo_dirty;
-	bp = TAILQ_FIRST(&bv->bv_hd);
+	bp = BSD_TAILQ_FIRST(&bv->bv_hd);
 	KASSERT(bp == NULL || bp->b_bufobj == bo,
 	    ("bp %p wrong b_bufobj %p should be %p", bp, bp->b_bufobj, bo));
-	bp = TAILQ_LAST(&bv->bv_hd, buflists);
+	bp = BSD_TAILQ_LAST(&bv->bv_hd, buflists);
 	KASSERT(bp == NULL || bp->b_bufobj == bo,
 	    ("bp %p wrong b_bufobj %p should be %p", bp, bp->b_bufobj, bo));
 #endif
@@ -2423,14 +2423,14 @@ vholdl(struct vnode *vp)
 	 * and put it on the active list.
 	 */
 	mtx_lock(&vnode_free_list_mtx);
-	TAILQ_REMOVE(&vnode_free_list, vp, v_actfreelist);
+	BSD_TAILQ_REMOVE(&vnode_free_list, vp, v_actfreelist);
 	freevnodes--;
 	vp->v_iflag &= ~(VI_FREE|VI_AGE);
 	KASSERT((vp->v_iflag & VI_ACTIVE) == 0,
 	    ("Activating already active vnode"));
 	vp->v_iflag |= VI_ACTIVE;
 	mp = vp->v_mount;
-	TAILQ_INSERT_HEAD(&mp->mnt_activevnodelist, vp, v_actfreelist);
+	BSD_TAILQ_INSERT_HEAD(&mp->mnt_activevnodelist, vp, v_actfreelist);
 	mp->mnt_activevnodelistsize++;
 	mtx_unlock(&vnode_free_list_mtx);
 }
@@ -2484,14 +2484,14 @@ vdropl(struct vnode *vp)
 		mp = vp->v_mount;
 		mtx_lock(&vnode_free_list_mtx);
 		if (active) {
-			TAILQ_REMOVE(&mp->mnt_activevnodelist, vp,
+			BSD_TAILQ_REMOVE(&mp->mnt_activevnodelist, vp,
 			    v_actfreelist);
 			mp->mnt_activevnodelistsize--;
 		}
 		if (vp->v_iflag & VI_AGE) {
-			TAILQ_INSERT_HEAD(&vnode_free_list, vp, v_actfreelist);
+			BSD_TAILQ_INSERT_HEAD(&vnode_free_list, vp, v_actfreelist);
 		} else {
-			TAILQ_INSERT_TAIL(&vnode_free_list, vp, v_actfreelist);
+			BSD_TAILQ_INSERT_TAIL(&vnode_free_list, vp, v_actfreelist);
 		}
 		freevnodes++;
 		vp->v_iflag &= ~VI_AGE;
@@ -2519,8 +2519,8 @@ vdropl(struct vnode *vp)
 	VNASSERT(bo->bo_clean.bv_root == NULL, vp, ("cleanblkroot not NULL"));
 	VNASSERT(bo->bo_dirty.bv_cnt == 0, vp, ("dirtybufcnt not 0"));
 	VNASSERT(bo->bo_dirty.bv_root == NULL, vp, ("dirtyblkroot not NULL"));
-	VNASSERT(TAILQ_EMPTY(&vp->v_cache_dst), vp, ("vp has namecache dst"));
-	VNASSERT(LIST_EMPTY(&vp->v_cache_src), vp, ("vp has namecache src"));
+	VNASSERT(BSD_TAILQ_EMPTY(&vp->v_cache_dst), vp, ("vp has namecache dst"));
+	VNASSERT(BSD_LIST_EMPTY(&vp->v_cache_src), vp, ("vp has namecache src"));
 	VNASSERT(vp->v_cache_dd == NULL, vp, ("vp has namecache for .."));
 	VI_UNLOCK(vp);
 #ifdef MAC
@@ -2778,7 +2778,7 @@ vfs_notify_upper(struct vnode *vp, int event)
 		return;
 
 	MNT_ILOCK(mp);
-	if (TAILQ_EMPTY(&mp->mnt_uppers))
+	if (BSD_TAILQ_EMPTY(&mp->mnt_uppers))
 		goto unlock;
 	MNT_IUNLOCK(mp);
 	mmp = bsd_malloc(sizeof(struct mount), M_TEMP, M_WAITOK | M_ZERO);
@@ -2786,12 +2786,12 @@ vfs_notify_upper(struct vnode *vp, int event)
 	mmp->mnt_kern_flag |= MNTK_MARKER;
 	MNT_ILOCK(mp);
 	mp->mnt_kern_flag |= MNTK_VGONE_UPPER;
-	for (ump = TAILQ_FIRST(&mp->mnt_uppers); ump != NULL;) {
+	for (ump = BSD_TAILQ_FIRST(&mp->mnt_uppers); ump != NULL;) {
 		if ((ump->mnt_kern_flag & MNTK_MARKER) != 0) {
-			ump = TAILQ_NEXT(ump, mnt_upper_link);
+			ump = BSD_TAILQ_NEXT(ump, mnt_upper_link);
 			continue;
 		}
-		TAILQ_INSERT_AFTER(&mp->mnt_uppers, ump, mmp, mnt_upper_link);
+		BSD_TAILQ_INSERT_AFTER(&mp->mnt_uppers, ump, mmp, mnt_upper_link);
 		MNT_IUNLOCK(mp);
 		switch (event) {
 		case VFS_NOTIFY_UPPER_RECLAIM:
@@ -2805,8 +2805,8 @@ vfs_notify_upper(struct vnode *vp, int event)
 			break;
 		}
 		MNT_ILOCK(mp);
-		ump = TAILQ_NEXT(mmp, mnt_upper_link);
-		TAILQ_REMOVE(&mp->mnt_uppers, mmp, mnt_upper_link);
+		ump = BSD_TAILQ_NEXT(mmp, mnt_upper_link);
+		BSD_TAILQ_REMOVE(&mp->mnt_uppers, mmp, mnt_upper_link);
 	}
 	bsd_free(mmp, M_TEMP);
 	mp->mnt_kern_flag &= ~MNTK_VGONE_UPPER;
@@ -2857,7 +2857,7 @@ vgonel(struct vnode *vp)
 	 * If the flush fails, just toss the buffers.
 	 */
 	mp = NULL;
-	if (!TAILQ_EMPTY(&vp->v_bufobj.bo_dirty.bv_hd))
+	if (!BSD_TAILQ_EMPTY(&vp->v_bufobj.bo_dirty.bv_hd))
 		(void) vn_start_secondary_write(vp, &mp, V_WAIT);
 	if (vinvalbuf(vp, V_SAVE, 0, 0) != 0)
 		vinvalbuf(vp, 0, 0, 0);
@@ -3039,14 +3039,14 @@ DB_SHOW_COMMAND(lockedvnods, lockedvnodes)
 	 * about that.
 	 */
 	db_printf("Locked vnodes\n");
-	for (mp = TAILQ_FIRST(&mountlist); mp != NULL; mp = nmp) {
-		nmp = TAILQ_NEXT(mp, mnt_list);
-		TAILQ_FOREACH(vp, &mp->mnt_nvnodelist, v_nmntvnodes) {
+	for (mp = BSD_TAILQ_FIRST(&mountlist); mp != NULL; mp = nmp) {
+		nmp = BSD_TAILQ_NEXT(mp, mnt_list);
+		BSD_TAILQ_FOREACH(vp, &mp->mnt_nvnodelist, v_nmntvnodes) {
 			if (vp->v_type != VMARKER &&
 			    VOP_ISLOCKED(vp))
 				vprint("", vp);
 		}
-		nmp = TAILQ_NEXT(mp, mnt_list);
+		nmp = BSD_TAILQ_NEXT(mp, mnt_list);
 	}
 }
 
@@ -3078,7 +3078,7 @@ DB_SHOW_COMMAND(mount, db_show_mount)
 
 	if (!have_addr) {
 		/* No address given, print short info about all mount points. */
-		TAILQ_FOREACH(mp, &mountlist, mnt_list) {
+		BSD_TAILQ_FOREACH(mp, &mountlist, mnt_list) {
 			db_printf("%p %s on %s (%s)\n", mp,
 			    mp->mnt_stat.f_mntfromname,
 			    mp->mnt_stat.f_mntonname,
@@ -3189,13 +3189,13 @@ DB_SHOW_COMMAND(mount, db_show_mount)
 	db_printf("    mnt_kern_flag = %s\n", buf);
 
 	db_printf("    mnt_opt = ");
-	opt = TAILQ_FIRST(mp->mnt_opt);
+	opt = BSD_TAILQ_FIRST(mp->mnt_opt);
 	if (opt != NULL) {
 		db_printf("%s", opt->name);
-		opt = TAILQ_NEXT(opt, link);
+		opt = BSD_TAILQ_NEXT(opt, link);
 		while (opt != NULL) {
 			db_printf(", %s", opt->name);
-			opt = TAILQ_NEXT(opt, link);
+			opt = BSD_TAILQ_NEXT(opt, link);
 		}
 	}
 	db_printf("\n");
@@ -3235,7 +3235,7 @@ DB_SHOW_COMMAND(mount, db_show_mount)
 	    mp->mnt_gjprovider != NULL ? mp->mnt_gjprovider : "NULL");
 
 	db_printf("\n\nList of active vnodes\n");
-	TAILQ_FOREACH(vp, &mp->mnt_activevnodelist, v_actfreelist) {
+	BSD_TAILQ_FOREACH(vp, &mp->mnt_activevnodelist, v_actfreelist) {
 		if (vp->v_type != VMARKER) {
 			vn_printf(vp, "vnode ");
 			if (db_pager_quit)
@@ -3243,7 +3243,7 @@ DB_SHOW_COMMAND(mount, db_show_mount)
 		}
 	}
 	db_printf("\n\nList of inactive vnodes\n");
-	TAILQ_FOREACH(vp, &mp->mnt_nvnodelist, v_nmntvnodes) {
+	BSD_TAILQ_FOREACH(vp, &mp->mnt_nvnodelist, v_nmntvnodes) {
 		if (vp->v_type != VMARKER && (vp->v_iflag & VI_ACTIVE) == 0) {
 			vn_printf(vp, "vnode ");
 			if (db_pager_quit)
@@ -3310,7 +3310,7 @@ sysctl_vfs_conflist(SYSCTL_HANDLER_ARGS)
 	int error;
 
 	error = 0;
-	TAILQ_FOREACH(vfsp, &vfsconf, vfc_list) {
+	BSD_TAILQ_FOREACH(vfsp, &vfsconf, vfc_list) {
 #ifdef COMPAT_FREEBSD32
 		if (req->flags & SCTL_MASK32)
 			error = vfsconf2x32(req, vfsp);
@@ -3354,7 +3354,7 @@ vfs_sysctl(SYSCTL_HANDLER_ARGS)
 	case VFS_CONF:
 		if (namelen != 3)
 			return (ENOTDIR);	/* overloaded */
-		TAILQ_FOREACH(vfsp, &vfsconf, vfc_list)
+		BSD_TAILQ_FOREACH(vfsp, &vfsconf, vfc_list)
 			if (vfsp->vfc_typenum == name[2])
 				break;
 		if (vfsp == NULL)
@@ -3381,7 +3381,7 @@ sysctl_ovfs_conf(SYSCTL_HANDLER_ARGS)
 	struct vfsconf *vfsp;
 	struct ovfsconf ovfs;
 
-	TAILQ_FOREACH(vfsp, &vfsconf, vfc_list) {
+	BSD_TAILQ_FOREACH(vfsp, &vfsconf, vfc_list) {
 		bzero(&ovfs, sizeof(ovfs));
 		ovfs.vfc_vfsops = vfsp->vfc_vfsops;	/* XXX used as flag */
 		strcpy(ovfs.vfc_name, vfsp->vfc_name);
@@ -3427,11 +3427,11 @@ sysctl_vnode(SYSCTL_HANDLER_ARGS)
 	xvn = bsd_malloc(len, M_TEMP, M_ZERO | M_WAITOK);
 	n = 0;
 	mtx_lock(&mountlist_mtx);
-	TAILQ_FOREACH(mp, &mountlist, mnt_list) {
+	BSD_TAILQ_FOREACH(mp, &mountlist, mnt_list) {
 		if (vfs_busy(mp, MBF_NOWAIT | MBF_MNTLSTLOCK))
 			continue;
 		MNT_ILOCK(mp);
-		TAILQ_FOREACH(vp, &mp->mnt_nvnodelist, v_nmntvnodes) {
+		BSD_TAILQ_FOREACH(vp, &mp->mnt_nvnodelist, v_nmntvnodes) {
 			if (n == len)
 				break;
 			vref(vp);
@@ -3511,11 +3511,11 @@ vfs_unmountall(void)
 	/*
 	 * Since this only runs when rebooting, it is not interlocked.
 	 */
-	while(!TAILQ_EMPTY(&mountlist)) {
-		mp = TAILQ_LAST(&mountlist, mntlist);
+	while(!BSD_TAILQ_EMPTY(&mountlist)) {
+		mp = BSD_TAILQ_LAST(&mountlist, mntlist);
 		error = dounmount(mp, MNT_FORCE, td);
 		if (error) {
-			TAILQ_REMOVE(&mountlist, mp, mnt_list);
+			BSD_TAILQ_REMOVE(&mountlist, mp, mnt_list);
 			/*
 			 * XXX: Due to the way in which we mount the root
 			 * file system off of devfs, devfs will generate a
@@ -3809,7 +3809,7 @@ sync_reclaim(struct vop_reclaim_args *ap)
 	if (vp->v_mount->mnt_syncer == vp)
 		vp->v_mount->mnt_syncer = NULL;
 	if (bo->bo_flag & BO_ONWORKLST) {
-		LIST_REMOVE(bo, bo_synclist);
+		BSD_LIST_REMOVE(bo, bo_synclist);
 		syncer_worklist_len--;
 		sync_vnode_count--;
 		bo->bo_flag &= ~BO_ONWORKLST;
@@ -4713,10 +4713,10 @@ __mnt_vnode_next_all(struct vnode **mvp, struct mount *mp)
 		kern_yield(PRI_UNCHANGED);
 	MNT_ILOCK(mp);
 	KASSERT((*mvp)->v_mount == mp, ("marker vnode mount list mismatch"));
-	vp = TAILQ_NEXT(*mvp, v_nmntvnodes);
+	vp = BSD_TAILQ_NEXT(*mvp, v_nmntvnodes);
 	while (vp != NULL && (vp->v_type == VMARKER ||
 	    (vp->v_iflag & VI_DOOMED) != 0))
-		vp = TAILQ_NEXT(vp, v_nmntvnodes);
+		vp = BSD_TAILQ_NEXT(vp, v_nmntvnodes);
 
 	/* Check if we are done */
 	if (vp == NULL) {
@@ -4725,8 +4725,8 @@ __mnt_vnode_next_all(struct vnode **mvp, struct mount *mp)
 		mtx_assert(MNT_MTX(mp), MA_NOTOWNED);
 		return (NULL);
 	}
-	TAILQ_REMOVE(&mp->mnt_nvnodelist, *mvp, v_nmntvnodes);
-	TAILQ_INSERT_AFTER(&mp->mnt_nvnodelist, vp, *mvp, v_nmntvnodes);
+	BSD_TAILQ_REMOVE(&mp->mnt_nvnodelist, *mvp, v_nmntvnodes);
+	BSD_TAILQ_INSERT_AFTER(&mp->mnt_nvnodelist, vp, *mvp, v_nmntvnodes);
 	VI_LOCK(vp);
 	MNT_IUNLOCK(mp);
 	return (vp);
@@ -4742,10 +4742,10 @@ __mnt_vnode_first_all(struct vnode **mvp, struct mount *mp)
 	MNT_REF(mp);
 	(*mvp)->v_type = VMARKER;
 
-	vp = TAILQ_FIRST(&mp->mnt_nvnodelist);
+	vp = BSD_TAILQ_FIRST(&mp->mnt_nvnodelist);
 	while (vp != NULL && (vp->v_type == VMARKER ||
 	    (vp->v_iflag & VI_DOOMED) != 0))
-		vp = TAILQ_NEXT(vp, v_nmntvnodes);
+		vp = BSD_TAILQ_NEXT(vp, v_nmntvnodes);
 
 	/* Check if we are done */
 	if (vp == NULL) {
@@ -4756,7 +4756,7 @@ __mnt_vnode_first_all(struct vnode **mvp, struct mount *mp)
 		return (NULL);
 	}
 	(*mvp)->v_mount = mp;
-	TAILQ_INSERT_AFTER(&mp->mnt_nvnodelist, vp, *mvp, v_nmntvnodes);
+	BSD_TAILQ_INSERT_AFTER(&mp->mnt_nvnodelist, vp, *mvp, v_nmntvnodes);
 	VI_LOCK(vp);
 	MNT_IUNLOCK(mp);
 	return (vp);
@@ -4775,7 +4775,7 @@ __mnt_vnode_markerfree_all(struct vnode **mvp, struct mount *mp)
 	mtx_assert(MNT_MTX(mp), MA_OWNED);
 
 	KASSERT((*mvp)->v_mount == mp, ("marker vnode mount list mismatch"));
-	TAILQ_REMOVE(&mp->mnt_nvnodelist, *mvp, v_nmntvnodes);
+	BSD_TAILQ_REMOVE(&mp->mnt_nvnodelist, *mvp, v_nmntvnodes);
 	MNT_REL(mp);
 	MNT_IUNLOCK(mp);
 	bsd_free(*mvp, M_VNODE_MARKER);
@@ -4813,16 +4813,16 @@ mnt_vnode_next_active(struct vnode **mvp, struct mount *mp)
 	mtx_assert(&vnode_free_list_mtx, MA_OWNED);
 	KASSERT((*mvp)->v_mount == mp, ("marker vnode mount list mismatch"));
 restart:
-	vp = TAILQ_NEXT(*mvp, v_actfreelist);
-	TAILQ_REMOVE(&mp->mnt_activevnodelist, *mvp, v_actfreelist);
+	vp = BSD_TAILQ_NEXT(*mvp, v_actfreelist);
+	BSD_TAILQ_REMOVE(&mp->mnt_activevnodelist, *mvp, v_actfreelist);
 	while (vp != NULL) {
 		if (vp->v_type == VMARKER) {
-			vp = TAILQ_NEXT(vp, v_actfreelist);
+			vp = BSD_TAILQ_NEXT(vp, v_actfreelist);
 			continue;
 		}
 		if (!VI_TRYLOCK(vp)) {
 			if (ALWAYS_YIELD || should_yield()) {
-				TAILQ_INSERT_BEFORE(vp, *mvp, v_actfreelist);
+				BSD_TAILQ_INSERT_BEFORE(vp, *mvp, v_actfreelist);
 				mtx_unlock(&vnode_free_list_mtx);
 				pause("vnacti", 1);
 				mtx_lock(&vnode_free_list_mtx);
@@ -4835,7 +4835,7 @@ restart:
 		    ("alien vnode on the active list %p %p", vp, mp));
 		if (vp->v_mount == mp && (vp->v_iflag & VI_DOOMED) == 0)
 			break;
-		nvp = TAILQ_NEXT(vp, v_actfreelist);
+		nvp = BSD_TAILQ_NEXT(vp, v_actfreelist);
 		VI_UNLOCK(vp);
 		vp = nvp;
 	}
@@ -4846,7 +4846,7 @@ restart:
 		mnt_vnode_markerfree_active(mvp, mp);
 		return (NULL);
 	}
-	TAILQ_INSERT_AFTER(&mp->mnt_activevnodelist, vp, *mvp, v_actfreelist);
+	BSD_TAILQ_INSERT_AFTER(&mp->mnt_activevnodelist, vp, *mvp, v_actfreelist);
 	mtx_unlock(&vnode_free_list_mtx);
 	ASSERT_VI_LOCKED(vp, "active iter");
 	KASSERT((vp->v_iflag & VI_ACTIVE) != 0, ("Non-active vp %p", vp));
@@ -4877,13 +4877,13 @@ __mnt_vnode_first_active(struct vnode **mvp, struct mount *mp)
 	(*mvp)->v_mount = mp;
 
 	mtx_lock(&vnode_free_list_mtx);
-	vp = TAILQ_FIRST(&mp->mnt_activevnodelist);
+	vp = BSD_TAILQ_FIRST(&mp->mnt_activevnodelist);
 	if (vp == NULL) {
 		mtx_unlock(&vnode_free_list_mtx);
 		mnt_vnode_markerfree_active(mvp, mp);
 		return (NULL);
 	}
-	TAILQ_INSERT_BEFORE(vp, *mvp, v_actfreelist);
+	BSD_TAILQ_INSERT_BEFORE(vp, *mvp, v_actfreelist);
 	return (mnt_vnode_next_active(mvp, mp));
 }
 
@@ -4895,7 +4895,7 @@ __mnt_vnode_markerfree_active(struct vnode **mvp, struct mount *mp)
 		return;
 
 	mtx_lock(&vnode_free_list_mtx);
-	TAILQ_REMOVE(&mp->mnt_activevnodelist, *mvp, v_actfreelist);
+	BSD_TAILQ_REMOVE(&mp->mnt_activevnodelist, *mvp, v_actfreelist);
 	mtx_unlock(&vnode_free_list_mtx);
 	mnt_vnode_markerfree_active(mvp, mp);
 }

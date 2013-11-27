@@ -62,7 +62,7 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/net/if_llatbl.c 248852 2013-03-28 20:48:40
 
 MALLOC_DEFINE(M_LLTABLE, "lltable", "link level address tables");
 
-static VNET_DEFINE(SLIST_HEAD(, lltable), lltables);
+static VNET_DEFINE(BSD_SLIST_HEAD(, lltable), lltables);
 #define	V_lltables	VNET(lltables)
 
 extern void arprequest(struct ifnet *, struct in_addr *, struct in_addr *,
@@ -83,7 +83,7 @@ lltable_sysctl_dumparp(int af, struct sysctl_req *wr)
 	int error = 0;
 
 	LLTABLE_RLOCK();
-	SLIST_FOREACH(llt, &V_lltables, llt_link) {
+	BSD_SLIST_FOREACH(llt, &V_lltables, llt_link) {
 		if (llt->llt_af == af) {
 			error = llt->llt_dump(llt, wr);
 			if (error != 0)
@@ -112,7 +112,7 @@ llentry_free(struct llentry *lle)
 	IF_AFDATA_WLOCK_ASSERT(lle->lle_tbl->llt_ifp);
 	LLE_WLOCK_ASSERT(lle);
 
-	LIST_REMOVE(lle, lle_next);
+	BSD_LIST_REMOVE(lle, lle_next);
 	lle->la_flags &= ~(LLE_VALID | LLE_LINKED);
 
 	pkts_dropped = 0;
@@ -175,12 +175,12 @@ lltable_free(struct lltable *llt)
 	KASSERT(llt != NULL, ("%s: llt is NULL", __func__));
 
 	LLTABLE_WLOCK();
-	SLIST_REMOVE(&V_lltables, llt, lltable, llt_link);
+	BSD_SLIST_REMOVE(&V_lltables, llt, lltable, llt_link);
 	LLTABLE_WUNLOCK();
 
 	IF_AFDATA_WLOCK(llt->llt_ifp);
 	for (i = 0; i < LLTBL_HASHTBL_SIZE; i++) {
-		LIST_FOREACH_SAFE(lle, &llt->lle_head[i], lle_next, next) {
+		BSD_LIST_FOREACH_SAFE(lle, &llt->lle_head[i], lle_next, next) {
 			LLE_WLOCK(lle);
 			if (callout_stop(&lle->la_timer))
 				LLE_REMREF(lle);
@@ -201,12 +201,12 @@ lltable_drain(int af)
 	register int i;
 
 	LLTABLE_RLOCK();
-	SLIST_FOREACH(llt, &V_lltables, llt_link) {
+	BSD_SLIST_FOREACH(llt, &V_lltables, llt_link) {
 		if (llt->llt_af != af)
 			continue;
 
 		for (i=0; i < LLTBL_HASHTBL_SIZE; i++) {
-			LIST_FOREACH(lle, &llt->lle_head[i], lle_next) {
+			BSD_LIST_FOREACH(lle, &llt->lle_head[i], lle_next) {
 				LLE_WLOCK(lle);
 				if (lle->la_hold) {
 					m_freem(lle->la_hold);
@@ -227,7 +227,7 @@ lltable_prefix_free(int af, struct sockaddr *prefix, struct sockaddr *mask,
 	struct lltable *llt;
 
 	LLTABLE_RLOCK();
-	SLIST_FOREACH(llt, &V_lltables, llt_link) {
+	BSD_SLIST_FOREACH(llt, &V_lltables, llt_link) {
 		if (llt->llt_af != af)
 			continue;
 
@@ -252,10 +252,10 @@ lltable_init(struct ifnet *ifp, int af)
 	llt->llt_af = af;
 	llt->llt_ifp = ifp;
 	for (i = 0; i < LLTBL_HASHTBL_SIZE; i++)
-		LIST_INIT(&llt->lle_head[i]);
+		BSD_LIST_INIT(&llt->lle_head[i]);
 
 	LLTABLE_WLOCK();
-	SLIST_INSERT_HEAD(&V_lltables, llt, llt_link);
+	BSD_SLIST_INSERT_HEAD(&V_lltables, llt, llt_link);
 	LLTABLE_WUNLOCK();
 
 	return (llt);
@@ -327,7 +327,7 @@ lla_rt_output(struct rt_msghdr *rtm, struct rt_addrinfo *info)
 
 	/* XXX linked list may be too expensive */
 	LLTABLE_RLOCK();
-	SLIST_FOREACH(llt, &V_lltables, llt_link) {
+	BSD_SLIST_FOREACH(llt, &V_lltables, llt_link) {
 		if (llt->llt_af == dst->sa_family &&
 		    llt->llt_ifp == ifp)
 			break;
@@ -398,7 +398,7 @@ static void
 vnet_lltable_init()
 {
 
-	SLIST_INIT(&V_lltables);
+	BSD_SLIST_INIT(&V_lltables);
 }
 VNET_SYSINIT(vnet_lltable_init, SI_SUB_PSEUDO, SI_ORDER_FIRST,
     vnet_lltable_init, NULL);
@@ -489,7 +489,7 @@ llatbl_llt_show(struct lltable *llt)
 	    llt, llt->llt_af, llt->llt_ifp);
 
 	for (i = 0; i < LLTBL_HASHTBL_SIZE; i++) {
-		LIST_FOREACH(lle, &llt->lle_head[i], lle_next) {
+		BSD_LIST_FOREACH(lle, &llt->lle_head[i], lle_next) {
 
 			llatbl_lle_show((struct llentry_sa *)lle);
 			if (db_pager_quit)
@@ -519,7 +519,7 @@ DB_SHOW_ALL_COMMAND(lltables, db_show_all_lltables)
 #ifdef VIMAGE
 		db_printf("vnet=%p\n", curvnet);
 #endif
-		SLIST_FOREACH(llt, &V_lltables, llt_link) {
+		BSD_SLIST_FOREACH(llt, &V_lltables, llt_link) {
 			db_printf("llt=%p llt_af=%d llt_ifp=%p(%s)\n",
 			    llt, llt->llt_af, llt->llt_ifp,
 			    (llt->llt_ifp != NULL) ?

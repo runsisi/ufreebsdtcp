@@ -1051,10 +1051,10 @@ struct note_info {
 	outfunc_t 	outfunc; 	/* Output function. */
 	void		*outarg;	/* Argument for the output function. */
 	size_t		outsize;	/* Output size. */
-	TAILQ_ENTRY(note_info) link;	/* Link to the next note info. */
+	BSD_TAILQ_ENTRY(note_info) link;	/* Link to the next note info. */
 };
 
-TAILQ_HEAD(note_info_list, note_info);
+BSD_TAILQ_HEAD(note_info_list, note_info);
 
 static void cb_put_phdr(vm_map_entry_t, void *);
 static void cb_size_segment(vm_map_entry_t, void *);
@@ -1194,7 +1194,7 @@ __elfN(coredump)(struct thread *td, struct vnode *vp, off_t limit, int flags)
 #endif
 
 	hdr = NULL;
-	TAILQ_INIT(&notelst);
+	BSD_TAILQ_INIT(&notelst);
 
 #ifdef COMPRESS_USER_CORES
         if (doing_compress) {
@@ -1285,8 +1285,8 @@ done:
 	if (gzfile)
 		gzclose(gzfile);
 #endif
-	while ((ninfo = TAILQ_FIRST(&notelst)) != NULL) {
-		TAILQ_REMOVE(&notelst, ninfo, link);
+	while ((ninfo = BSD_TAILQ_FIRST(&notelst)) != NULL) {
+		BSD_TAILQ_REMOVE(&notelst, ninfo, link);
 		bsd_free(ninfo, M_TEMP);
 	}
 	if (hdr != NULL)
@@ -1432,7 +1432,7 @@ __elfN(corehdr)(struct thread *td, struct vnode *vp, struct ucred *cred,
 	sbuf_set_drain(sb, sbuf_drain_core_output, &params);
 	sbuf_start_section(sb, NULL);
 	sbuf_bcat(sb, hdr, hdrsize);
-	TAILQ_FOREACH(ninfo, notelst, link)
+	BSD_TAILQ_FOREACH(ninfo, notelst, link)
 	    __elfN(putnote)(ninfo, sb);
 	/* Align up to a page boundary for the program segments. */
 	sbuf_end_section(sb, -1, PAGE_SIZE, 0);
@@ -1472,10 +1472,10 @@ __elfN(prepare_notes)(struct thread *td, struct note_info_list *list,
 		size += register_note(list, -1,
 		    __elfN(note_threadmd), thr);
 
-		thr = (thr == td) ? TAILQ_FIRST(&p->p_threads) :
-		    TAILQ_NEXT(thr, td_plist);
+		thr = (thr == td) ? BSD_TAILQ_FIRST(&p->p_threads) :
+		    BSD_TAILQ_NEXT(thr, td_plist);
 		if (thr == td)
-			thr = TAILQ_NEXT(thr, td_plist);
+			thr = BSD_TAILQ_NEXT(thr, td_plist);
 	}
 
 	size += register_note(list, NT_PROCSTAT_PROC,
@@ -1572,7 +1572,7 @@ register_note(struct note_info_list *list, int type, outfunc_t out, void *arg)
 	ninfo->outfunc = out;
 	ninfo->outarg = arg;
 	ninfo->outsize = size;
-	TAILQ_INSERT_TAIL(list, ninfo, link);
+	BSD_TAILQ_INSERT_TAIL(list, ninfo, link);
 
 	if (type == -1)
 		return (size);

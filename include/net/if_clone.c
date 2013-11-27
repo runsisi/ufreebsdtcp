@@ -57,7 +57,7 @@ static int	if_clone_createif(struct if_clone *ifc, char *name, size_t len,
 
 static struct mtx	if_cloners_mtx;
 static VNET_DEFINE(int, if_cloners_count);
-VNET_DEFINE(LIST_HEAD(, if_clone), if_cloners);
+VNET_DEFINE(BSD_LIST_HEAD(, if_clone), if_cloners);
 
 #define	V_if_cloners_count	VNET(if_cloners_count)
 #define	V_if_cloners		VNET(if_cloners)
@@ -108,9 +108,9 @@ VNET_DEFINE(LIST_HEAD(, if_clone), if_cloners);
 	} while (0)
 
 #define IFC_IFLIST_INSERT(_ifc, _ifp)					\
-	LIST_INSERT_HEAD(&_ifc->ifc_iflist, _ifp, if_clones)
+	BSD_LIST_INSERT_HEAD(&_ifc->ifc_iflist, _ifp, if_clones)
 #define IFC_IFLIST_REMOVE(_ifc, _ifp)					\
-	LIST_REMOVE(_ifp, if_clones)
+	BSD_LIST_REMOVE(_ifp, if_clones)
 
 static MALLOC_DEFINE(M_CLONE, "clone", "interface cloning framework");
 
@@ -118,7 +118,7 @@ void
 vnet_if_clone_init(void)
 {
 
-	LIST_INIT(&V_if_cloners);
+	BSD_LIST_INIT(&V_if_cloners);
 }
 
 void
@@ -138,7 +138,7 @@ if_clone_create(char *name, size_t len, caddr_t params)
 
 	/* Try to find an applicable cloner for this request */
 	IF_CLONERS_LOCK();
-	LIST_FOREACH(ifc, &V_if_cloners, ifc_list) {
+	BSD_LIST_FOREACH(ifc, &V_if_cloners, ifc_list) {
 		if (ifc->ifc_match(ifc, name)) {
 			break;
 		}
@@ -146,7 +146,7 @@ if_clone_create(char *name, size_t len, caddr_t params)
 #ifdef VIMAGE
 	if (ifc == NULL && !IS_DEFAULT_VNET(curvnet)) {
 		CURVNET_SET_QUIET(vnet0);
-		LIST_FOREACH(ifc, &V_if_cloners, ifc_list) {
+		BSD_LIST_FOREACH(ifc, &V_if_cloners, ifc_list) {
 			if (ifc->ifc_match(ifc, name))
 				break;
 		}
@@ -206,7 +206,7 @@ if_clone_destroy(const char *name)
 
 	/* Find the cloner for this interface */
 	IF_CLONERS_LOCK();
-	LIST_FOREACH(ifc, &V_if_cloners, ifc_list) {
+	BSD_LIST_FOREACH(ifc, &V_if_cloners, ifc_list) {
 		if (strcmp(ifc->ifc_name, ifp->if_dname) == 0) {
 			break;
 		}
@@ -214,7 +214,7 @@ if_clone_destroy(const char *name)
 #ifdef VIMAGE
 	if (ifc == NULL && !IS_DEFAULT_VNET(curvnet)) {
 		CURVNET_SET_QUIET(vnet0);
-		LIST_FOREACH(ifc, &V_if_cloners, ifc_list) {
+		BSD_LIST_FOREACH(ifc, &V_if_cloners, ifc_list) {
 			if (ifc->ifc_match(ifc, name))
 				break;
 		}
@@ -252,7 +252,7 @@ if_clone_destroyif(struct if_clone *ifc, struct ifnet *ifp)
 	CURVNET_SET_QUIET(ifp->if_vnet);
 
 	IF_CLONE_LOCK(ifc);
-	LIST_FOREACH(ifcifp, &ifc->ifc_iflist, if_clones) {
+	BSD_LIST_FOREACH(ifcifp, &ifc->ifc_iflist, if_clones) {
 		if (ifcifp == ifp) {
 			IFC_IFLIST_REMOVE(ifc, ifp);
 			break;
@@ -300,11 +300,11 @@ if_clone_attach(struct if_clone *ifc)
 	IF_CLONE_ADDREF(ifc);
 
 	IF_CLONERS_LOCK();
-	LIST_INSERT_HEAD(&V_if_cloners, ifc, ifc_list);
+	BSD_LIST_INSERT_HEAD(&V_if_cloners, ifc, ifc_list);
 	V_if_cloners_count++;
 	IF_CLONERS_UNLOCK();
 
-	LIST_INIT(&ifc->ifc_iflist);
+	BSD_LIST_INIT(&ifc->ifc_iflist);
 
 	if (ifc->ifc_attach != NULL)
 		(*ifc->ifc_attach)(ifc);
@@ -320,7 +320,7 @@ if_clone_detach(struct if_clone *ifc)
 	struct ifc_simple_data *ifcs = ifc->ifc_data;
 
 	IF_CLONERS_LOCK();
-	LIST_REMOVE(ifc, ifc_list);
+	BSD_LIST_REMOVE(ifc, ifc_list);
 	V_if_cloners_count--;
 	IF_CLONERS_UNLOCK();
 
@@ -329,8 +329,8 @@ if_clone_detach(struct if_clone *ifc)
 		ifcs->ifcs_minifs = 0;
 
 	/* destroy all interfaces for this cloner */
-	while (!LIST_EMPTY(&ifc->ifc_iflist))
-		if_clone_destroyif(ifc, LIST_FIRST(&ifc->ifc_iflist));
+	while (!BSD_LIST_EMPTY(&ifc->ifc_iflist))
+		if_clone_destroyif(ifc, BSD_LIST_FIRST(&ifc->ifc_iflist));
 	
 	IF_CLONE_REMREF(ifc);
 }
@@ -343,7 +343,7 @@ if_clone_free(struct if_clone *ifc)
 		    ("ifc_units[%d] is not empty", bytoff));
 	}
 
-	KASSERT(LIST_EMPTY(&ifc->ifc_iflist),
+	KASSERT(BSD_LIST_EMPTY(&ifc->ifc_iflist),
 	    ("%s: ifc_iflist not empty", __func__));
 
 	IF_CLONE_LOCK_DESTROY(ifc);
@@ -388,9 +388,9 @@ if_clone_list(struct if_clonereq *ifcr)
 	count = (V_if_cloners_count < buf_count) ?
 	    V_if_cloners_count : buf_count;
 
-	for (ifc = LIST_FIRST(&V_if_cloners), buf = outbuf;
+	for (ifc = BSD_LIST_FIRST(&V_if_cloners), buf = outbuf;
 	    ifc != NULL && count != 0;
-	    ifc = LIST_NEXT(ifc, ifc_list), count--, buf += IFNAMSIZ) {
+	    ifc = BSD_LIST_NEXT(ifc, ifc_list), count--, buf += IFNAMSIZ) {
 		strlcpy(buf, ifc->ifc_name, IFNAMSIZ);
 	}
 

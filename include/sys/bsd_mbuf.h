@@ -100,7 +100,7 @@ struct m_hdr {
  * Packet tag structure (see below for details).
  */
 struct m_tag {
-	SLIST_ENTRY(m_tag)	m_tag_link;	/* List of packet tags */
+	BSD_SLIST_ENTRY(m_tag)	m_tag_link;	/* List of packet tags */
 	u_int16_t		m_tag_id;	/* Tag ID */
 	u_int16_t		m_tag_len;	/* Length of data */
 	u_int32_t		m_tag_cookie;	/* ABI/Module ID */
@@ -126,7 +126,7 @@ struct pkthdr {
 		u_int16_t vt_vtag;	/* Ethernet 802.1p+q vlan tag */
 		u_int16_t vt_nrecs;	/* # of IGMPv3 records in this chain */
 	} PH_vt;
-	SLIST_HEAD(packet_tags, m_tag) tags; /* list of packet tags */
+	BSD_SLIST_HEAD(packet_tags, m_tag) tags; /* list of packet tags */
 };
 #define ether_vtag	PH_vt.vt_vtag
 
@@ -592,7 +592,7 @@ m_free_fast(struct mbuf *m)
 {
 #ifdef INVARIANTS
 	if (m->m_flags & M_PKTHDR)
-		KASSERT(SLIST_EMPTY(&m->m_pkthdr.tags), ("doing fast free of mbuf with tags"));
+		KASSERT(BSD_SLIST_EMPTY(&m->m_pkthdr.tags), ("doing fast free of mbuf with tags"));
 #endif
 
 	uma_zfree_arg(zone_mbuf, m, (void *)MB_NOTAGS);
@@ -979,7 +979,7 @@ static __inline void
 m_tag_init(struct mbuf *m)
 {
 
-	SLIST_INIT(&m->m_pkthdr.tags);
+	BSD_SLIST_INIT(&m->m_pkthdr.tags);
 }
 
 /*
@@ -1014,7 +1014,7 @@ static __inline struct m_tag *
 m_tag_first(struct mbuf *m)
 {
 
-	return (SLIST_FIRST(&m->m_pkthdr.tags));
+	return (BSD_SLIST_FIRST(&m->m_pkthdr.tags));
 }
 
 /*
@@ -1024,7 +1024,7 @@ static __inline struct m_tag *
 m_tag_next(struct mbuf *m, struct m_tag *t)
 {
 
-	return (SLIST_NEXT(t, m_tag_link));
+	return (BSD_SLIST_NEXT(t, m_tag_link));
 }
 
 /*
@@ -1034,7 +1034,7 @@ static __inline void
 m_tag_prepend(struct mbuf *m, struct m_tag *t)
 {
 
-	SLIST_INSERT_HEAD(&m->m_pkthdr.tags, t, m_tag_link);
+	BSD_SLIST_INSERT_HEAD(&m->m_pkthdr.tags, t, m_tag_link);
 }
 
 /*
@@ -1044,7 +1044,7 @@ static __inline void
 m_tag_unlink(struct mbuf *m, struct m_tag *t)
 {
 
-	SLIST_REMOVE(&m->m_pkthdr.tags, t, m_tag, m_tag_link);
+	BSD_SLIST_REMOVE(&m->m_pkthdr.tags, t, m_tag, m_tag_link);
 }
 
 /* These are for OpenBSD compatibility. */
@@ -1059,7 +1059,7 @@ m_tag_get(int type, int length, int wait)
 static __inline struct m_tag *
 m_tag_find(struct mbuf *m, int type, struct m_tag *start)
 {
-	return (SLIST_EMPTY(&m->m_pkthdr.tags) ? (struct m_tag *)NULL :
+	return (BSD_SLIST_EMPTY(&m->m_pkthdr.tags) ? (struct m_tag *)NULL :
 	    m_tag_locate(m, MTAG_ABI_COMPAT, type, start));
 }
 

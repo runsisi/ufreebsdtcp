@@ -632,13 +632,13 @@ void AliasSctpInit(struct libalias *la)
 	la->sctpNatTimer.TimerQ = sn_calloc(SN_TIMER_QUEUE_SIZE, sizeof(struct sctpTimerQ));
 	/* Initialise hash table */
 	for (i = 0; i < la->sctpNatTableSize; i++) {
-		LIST_INIT(&la->sctpTableLocal[i]);
-		LIST_INIT(&la->sctpTableGlobal[i]);
+		BSD_LIST_INIT(&la->sctpTableLocal[i]);
+		BSD_LIST_INIT(&la->sctpTableGlobal[i]);
 	}
 
 	/* Initialise circular timer Q*/
 	for (i = 0; i < SN_TIMER_QUEUE_SIZE; i++)
-		LIST_INIT(&la->sctpNatTimer.TimerQ[i]);
+		BSD_LIST_INIT(&la->sctpNatTimer.TimerQ[i]);
 #ifdef _KERNEL
 	la->sctpNatTimer.loc_time=time_uptime; /* la->timeStamp is not set yet */
 #else
@@ -669,10 +669,10 @@ void AliasSctpTerm(struct libalias *la)
 	SN_LOG(SN_LOG_EVENT,
 	    SctpAliasLog("Removing SCTP NAT Instance\n"));
 	for (i = 0; i < SN_TIMER_QUEUE_SIZE; i++) {
-		assoc1 = LIST_FIRST(&la->sctpNatTimer.TimerQ[i]);
+		assoc1 = BSD_LIST_FIRST(&la->sctpNatTimer.TimerQ[i]);
 		while (assoc1 != NULL) {
 			freeGlobalAddressList(assoc1);
-			assoc2 = LIST_NEXT(assoc1, timer_Q);
+			assoc2 = BSD_LIST_NEXT(assoc1, timer_Q);
 			sn_free(assoc1);
 			assoc1 = assoc2;
 		}
@@ -1103,7 +1103,7 @@ sctp_PktParser(struct libalias *la, int direction, struct ip *pip,
 					}
 					/* Initialise association - malloc initialises memory to zeros */
 					(*passoc)->state = SN_ID;
-					LIST_INIT(&((*passoc)->Gaddr)); /* always initialise to avoid memory problems */
+					BSD_LIST_INIT(&((*passoc)->Gaddr)); /* always initialise to avoid memory problems */
 					(*passoc)->TableRegister = SN_NULL_TBL;
 					return(SN_PARSE_OK);
 				}
@@ -1167,7 +1167,7 @@ sctp_PktParser(struct libalias *la, int direction, struct ip *pip,
 					}
 					/* Initialise association  - malloc initialises memory to zeros */
 					(*passoc)->state = SN_ID;
-					LIST_INIT(&((*passoc)->Gaddr)); /* always initialise to avoid memory problems */
+					BSD_LIST_INIT(&((*passoc)->Gaddr)); /* always initialise to avoid memory problems */
 					(*passoc)->TableRegister = SN_NULL_TBL;
 					return(SN_PARSE_OK);
 				}
@@ -1438,15 +1438,15 @@ AddGlobalIPAddresses(struct sctp_nat_msg *sm, struct sctp_nat_assoc *assoc, int 
 static int  Add_Global_Address_to_List(struct sctp_nat_assoc *assoc,  struct sctp_GlobalAddress *G_addr)
 {
 	struct sctp_GlobalAddress *iter_G_Addr = NULL, *first_G_Addr = NULL;     
-	first_G_Addr = LIST_FIRST(&(assoc->Gaddr));  
+	first_G_Addr = BSD_LIST_FIRST(&(assoc->Gaddr));  
 	if (first_G_Addr == NULL) {
-		LIST_INSERT_HEAD(&(assoc->Gaddr), G_addr, list_Gaddr); /* add new address to beginning of list*/
+		BSD_LIST_INSERT_HEAD(&(assoc->Gaddr), G_addr, list_Gaddr); /* add new address to beginning of list*/
 	} else {
-		LIST_FOREACH(iter_G_Addr, &(assoc->Gaddr), list_Gaddr) {
+		BSD_LIST_FOREACH(iter_G_Addr, &(assoc->Gaddr), list_Gaddr) {
 			if (G_addr->g_addr.s_addr == iter_G_Addr->g_addr.s_addr)
 				return(0); /* already exists, so don't add */
 		}
-		LIST_INSERT_AFTER(first_G_Addr, G_addr, list_Gaddr); /* add address to end of list*/
+		BSD_LIST_INSERT_AFTER(first_G_Addr, G_addr, list_Gaddr); /* add address to end of list*/
 	}
 	assoc->num_Gaddr++;	  
 	return(1); /* success */   
@@ -1498,10 +1498,10 @@ RmGlobalIPAddresses(struct sctp_nat_msg *sm, struct sctp_nat_assoc *assoc, int d
 		if (ntohs(param->param_type) == SCTP_DEL_IP_ADDRESS) {
 			asconf_ipv4_param = (struct sctp_asconf_addrv4_param *) param;
 			if (asconf_ipv4_param->addrp.addr == INADDR_ANY) { /* remove all bar pkt address */
-				LIST_FOREACH_SAFE(G_Addr, &(assoc->Gaddr), list_Gaddr, G_Addr_tmp) {
+				BSD_LIST_FOREACH_SAFE(G_Addr, &(assoc->Gaddr), list_Gaddr, G_Addr_tmp) {
 					if(G_Addr->g_addr.s_addr != sm->ip_hdr->ip_src.s_addr) {
 						if (assoc->num_Gaddr > 1) { /* only delete if more than one */
-							LIST_REMOVE(G_Addr, list_Gaddr);
+							BSD_LIST_REMOVE(G_Addr, list_Gaddr);
 							sn_free(G_Addr);
 							assoc->num_Gaddr--;
 						} else {
@@ -1513,10 +1513,10 @@ RmGlobalIPAddresses(struct sctp_nat_msg *sm, struct sctp_nat_assoc *assoc, int d
 				}
 				return; /*shouldn't be any other addresses if the zero address is given*/
 			} else {
-				LIST_FOREACH_SAFE(G_Addr, &(assoc->Gaddr), list_Gaddr, G_Addr_tmp) {
+				BSD_LIST_FOREACH_SAFE(G_Addr, &(assoc->Gaddr), list_Gaddr, G_Addr_tmp) {
 					if(G_Addr->g_addr.s_addr == asconf_ipv4_param->addrp.addr) {
 						if (assoc->num_Gaddr > 1) { /* only delete if more than one */
-							LIST_REMOVE(G_Addr, list_Gaddr);
+							BSD_LIST_REMOVE(G_Addr, list_Gaddr);
 							sn_free(G_Addr);
 							assoc->num_Gaddr--;
 							break; /* Since add only adds new addresses, there should be no double entries */
@@ -1997,11 +1997,11 @@ FindSctpLocal(struct libalias *la, struct in_addr l_addr, struct in_addr g_addr,
   
 	if (l_vtag != 0) { /* an init packet, vtag==0 */
 		i = SN_TABLE_HASH(l_vtag, l_port, la->sctpNatTableSize);
-		LIST_FOREACH(assoc, &la->sctpTableLocal[i], list_L) {
+		BSD_LIST_FOREACH(assoc, &la->sctpTableLocal[i], list_L) {
 			if ((assoc->l_vtag == l_vtag) && (assoc->l_port == l_port) && (assoc->g_port == g_port)\
 			    && (assoc->l_addr.s_addr == l_addr.s_addr)) {
 				if (assoc->num_Gaddr) {
-					LIST_FOREACH(G_Addr, &(assoc->Gaddr), list_Gaddr) {
+					BSD_LIST_FOREACH(G_Addr, &(assoc->Gaddr), list_Gaddr) {
 						if(G_Addr->g_addr.s_addr == g_addr.s_addr)
 							return(assoc);
 					}
@@ -2035,11 +2035,11 @@ FindSctpGlobalClash(struct libalias *la,  struct sctp_nat_assoc *Cassoc)
   
 	if (Cassoc->g_vtag != 0) { /* an init packet, vtag==0 */
 		i = SN_TABLE_HASH(Cassoc->g_vtag, Cassoc->g_port, la->sctpNatTableSize);
-		LIST_FOREACH(assoc, &la->sctpTableGlobal[i], list_G) {
+		BSD_LIST_FOREACH(assoc, &la->sctpTableGlobal[i], list_G) {
 			if ((assoc->g_vtag == Cassoc->g_vtag) && (assoc->g_port == Cassoc->g_port) && (assoc->l_port == Cassoc->l_port)) {
 				if (assoc->num_Gaddr) {
-					LIST_FOREACH(G_AddrC, &(Cassoc->Gaddr), list_Gaddr) {
-						LIST_FOREACH(G_Addr, &(assoc->Gaddr), list_Gaddr) {
+					BSD_LIST_FOREACH(G_AddrC, &(Cassoc->Gaddr), list_Gaddr) {
+						BSD_LIST_FOREACH(G_Addr, &(assoc->Gaddr), list_Gaddr) {
 							if(G_Addr->g_addr.s_addr == G_AddrC->g_addr.s_addr)
 								return(assoc);
 						}
@@ -2082,11 +2082,11 @@ FindSctpGlobal(struct libalias *la, struct in_addr g_addr, uint32_t g_vtag, uint
 	*partial_match = 0;
 	if (g_vtag != 0) { /* an init packet, vtag==0 */
 		i = SN_TABLE_HASH(g_vtag, g_port, la->sctpNatTableSize);
-		LIST_FOREACH(assoc, &la->sctpTableGlobal[i], list_G) {
+		BSD_LIST_FOREACH(assoc, &la->sctpTableGlobal[i], list_G) {
 			if ((assoc->g_vtag == g_vtag) && (assoc->g_port == g_port) && (assoc->l_port == l_port)) {
 				*partial_match = 1;
 				if (assoc->num_Gaddr) {
-					LIST_FOREACH(G_Addr, &(assoc->Gaddr), list_Gaddr) {
+					BSD_LIST_FOREACH(G_Addr, &(assoc->Gaddr), list_Gaddr) {
 						if(G_Addr->g_addr.s_addr == g_addr.s_addr)
 							return(assoc);
 					}
@@ -2123,10 +2123,10 @@ FindSctpLocalT(struct libalias *la,  struct in_addr g_addr, uint32_t l_vtag, uin
   
 	if (l_vtag != 0) { /* an init packet, vtag==0 */
 		i = SN_TABLE_HASH(l_vtag, g_port, la->sctpNatTableSize);
-		LIST_FOREACH(assoc, &la->sctpTableGlobal[i], list_G) {
+		BSD_LIST_FOREACH(assoc, &la->sctpTableGlobal[i], list_G) {
 			if ((assoc->g_vtag == l_vtag) && (assoc->g_port == g_port) && (assoc->l_port == l_port)) {
 				if (assoc->num_Gaddr) {
-					LIST_FOREACH(G_Addr, &(assoc->Gaddr), list_Gaddr) {
+					BSD_LIST_FOREACH(G_Addr, &(assoc->Gaddr), list_Gaddr) {
 						if(G_Addr->g_addr.s_addr == G_Addr->g_addr.s_addr)
 							return(assoc); /* full match */
 					}
@@ -2164,10 +2164,10 @@ FindSctpGlobalT(struct libalias *la, struct in_addr g_addr, uint32_t g_vtag, uin
  
 	if (g_vtag != 0) { /* an init packet, vtag==0 */
 		i = SN_TABLE_HASH(g_vtag, l_port, la->sctpNatTableSize);
-		LIST_FOREACH(assoc, &la->sctpTableLocal[i], list_L) {
+		BSD_LIST_FOREACH(assoc, &la->sctpTableLocal[i], list_L) {
 			if ((assoc->l_vtag == g_vtag) && (assoc->l_port == l_port) && (assoc->g_port == g_port)) {
 				if (assoc->num_Gaddr) {
-					LIST_FOREACH(G_Addr, &(assoc->Gaddr), list_Gaddr) {
+					BSD_LIST_FOREACH(G_Addr, &(assoc->Gaddr), list_Gaddr) {
 						if(G_Addr->g_addr.s_addr == g_addr.s_addr)
 							return(assoc);
 					}
@@ -2222,7 +2222,7 @@ AddSctpAssocLocal(struct libalias *la, struct sctp_nat_assoc *assoc, struct in_a
 			return(SN_ADD_CLASH);
 	}
   
-	LIST_INSERT_HEAD(&la->sctpTableLocal[SN_TABLE_HASH(assoc->l_vtag, assoc->l_port, la->sctpNatTableSize)],
+	BSD_LIST_INSERT_HEAD(&la->sctpTableLocal[SN_TABLE_HASH(assoc->l_vtag, assoc->l_port, la->sctpNatTableSize)],
 	    assoc, list_L);
 	assoc->TableRegister |= SN_LOCAL_TBL;
 	la->sctpLinkCount++; //increment link count
@@ -2271,7 +2271,7 @@ AddSctpAssocGlobal(struct libalias *la, struct sctp_nat_assoc *assoc)
 			return(SN_ADD_CLASH);
 	}
  
-	LIST_INSERT_HEAD(&la->sctpTableGlobal[SN_TABLE_HASH(assoc->g_vtag, assoc->g_port, la->sctpNatTableSize)],
+	BSD_LIST_INSERT_HEAD(&la->sctpTableGlobal[SN_TABLE_HASH(assoc->g_vtag, assoc->g_port, la->sctpNatTableSize)],
 	    assoc, list_G);
 	assoc->TableRegister |= SN_GLOBAL_TBL;
 	la->sctpLinkCount++; //increment link count
@@ -2319,13 +2319,13 @@ RmSctpAssoc(struct libalias *la, struct sctp_nat_assoc *assoc)
 	if (assoc->TableRegister & SN_LOCAL_TBL) {
 		assoc->TableRegister ^= SN_LOCAL_TBL;
 		la->sctpLinkCount--; //decrement link count
-		LIST_REMOVE(assoc, list_L);
+		BSD_LIST_REMOVE(assoc, list_L);
 	}
   
 	if (assoc->TableRegister & SN_GLOBAL_TBL) {
 		assoc->TableRegister ^= SN_GLOBAL_TBL;
 		la->sctpLinkCount--; //decrement link count
-		LIST_REMOVE(assoc, list_G);
+		BSD_LIST_REMOVE(assoc, list_G);
 	}
 	//  sn_free(assoc); //Don't remove now, remove if needed later
 	/* libalias logging -- controlled by libalias log definition */
@@ -2346,9 +2346,9 @@ static void freeGlobalAddressList(struct sctp_nat_assoc *assoc)
 {
 	struct sctp_GlobalAddress *gaddr1=NULL,*gaddr2=NULL;
 	/*free global address list*/
-	gaddr1 = LIST_FIRST(&(assoc->Gaddr));  
+	gaddr1 = BSD_LIST_FIRST(&(assoc->Gaddr));  
 	while (gaddr1 != NULL) {
-		gaddr2 = LIST_NEXT(gaddr1, list_Gaddr);
+		gaddr2 = BSD_LIST_NEXT(gaddr1, list_Gaddr);
 		sn_free(gaddr1);
 		gaddr1 = gaddr2;
 	}
@@ -2388,7 +2388,7 @@ sctp_AddTimeOut(struct libalias *la, struct sctp_nat_assoc *assoc)
 	add_loc = assoc->exp - la->sctpNatTimer.loc_time + la->sctpNatTimer.cur_loc;
 	if (add_loc >= SN_TIMER_QUEUE_SIZE)
 		add_loc -= SN_TIMER_QUEUE_SIZE;
-	LIST_INSERT_HEAD(&la->sctpNatTimer.TimerQ[add_loc], assoc, timer_Q);
+	BSD_LIST_INSERT_HEAD(&la->sctpNatTimer.TimerQ[add_loc], assoc, timer_Q);
 	assoc->exp_loc = add_loc;
 }
 
@@ -2405,7 +2405,7 @@ static void
 sctp_RmTimeOut(struct libalias *la, struct sctp_nat_assoc *assoc)
 {
 	LIBALIAS_LOCK_ASSERT(la);
-	LIST_REMOVE(assoc, timer_Q);/* Note this is O(1) */
+	BSD_LIST_REMOVE(assoc, timer_Q);/* Note this is O(1) */
 }
 
 
@@ -2455,10 +2455,10 @@ sctp_CheckTimers(struct libalias *la)
   
 	LIBALIAS_LOCK_ASSERT(la);
 	while(la->timeStamp >= la->sctpNatTimer.loc_time) {
-		while (!LIST_EMPTY(&la->sctpNatTimer.TimerQ[la->sctpNatTimer.cur_loc])) {  
-			assoc = LIST_FIRST(&la->sctpNatTimer.TimerQ[la->sctpNatTimer.cur_loc]);
-			//SLIST_REMOVE_HEAD(&la->sctpNatTimer.TimerQ[la->sctpNatTimer.cur_loc], timer_Q);
-			LIST_REMOVE(assoc, timer_Q);
+		while (!BSD_LIST_EMPTY(&la->sctpNatTimer.TimerQ[la->sctpNatTimer.cur_loc])) {  
+			assoc = BSD_LIST_FIRST(&la->sctpNatTimer.TimerQ[la->sctpNatTimer.cur_loc]);
+			//BSD_SLIST_REMOVE_HEAD(&la->sctpNatTimer.TimerQ[la->sctpNatTimer.cur_loc], timer_Q);
+			BSD_LIST_REMOVE(assoc, timer_Q);
 			if (la->timeStamp >= assoc->exp) { /* state expired */
 				SN_LOG(((assoc->state == SN_CL)?(SN_LOG_DEBUG):(SN_LOG_INFO)),
 				    logsctperror("Timer Expired", assoc->g_vtag, assoc->state, SN_TO_NODIR));
@@ -2602,7 +2602,7 @@ static void logsctpassoc(struct sctp_nat_assoc *assoc, char* s)
 	    ntohs(assoc->l_port), ntohl(assoc->g_vtag), ntohs(assoc->g_port),
 	    assoc->TableRegister);
 	/* list global addresses */
-	LIST_FOREACH(G_Addr, &(assoc->Gaddr), list_Gaddr) {
+	BSD_LIST_FOREACH(G_Addr, &(assoc->Gaddr), list_Gaddr) {
 		SctpAliasLog("\t\tga=%s\n",inet_ntoa(G_Addr->g_addr));
 	}
 }
@@ -2619,7 +2619,7 @@ static void logSctpGlobal(struct libalias *la)
   
 	SctpAliasLog("G->\n");
 	for (i=0; i < la->sctpNatTableSize; i++) {
-		LIST_FOREACH(assoc, &la->sctpTableGlobal[i], list_G) {
+		BSD_LIST_FOREACH(assoc, &la->sctpTableGlobal[i], list_G) {
 			logsctpassoc(assoc, " ");
 		}
 	}
@@ -2637,7 +2637,7 @@ static void logSctpLocal(struct libalias *la)
   
 	SctpAliasLog("L->\n");
 	for (i=0; i < la->sctpNatTableSize; i++) {
-		LIST_FOREACH(assoc, &la->sctpTableLocal[i], list_L) {
+		BSD_LIST_FOREACH(assoc, &la->sctpTableLocal[i], list_L) {
 			logsctpassoc(assoc, " ");
 		}
 	}
@@ -2656,7 +2656,7 @@ static void logTimerQ(struct libalias *la)
 
 	SctpAliasLog("t->\n");
 	for (i=0; i < SN_TIMER_QUEUE_SIZE; i++) {
-		LIST_FOREACH(assoc, &la->sctpNatTimer.TimerQ[i], timer_Q) {
+		BSD_LIST_FOREACH(assoc, &la->sctpNatTimer.TimerQ[i], timer_Q) {
 			snprintf(buf, 50, " l=%u ",i);
 			//SctpAliasLog(la->logDesc," l=%d ",i);
 			logsctpassoc(assoc, buf);

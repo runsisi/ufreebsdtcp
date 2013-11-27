@@ -77,7 +77,7 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/netinet/cc/cc.c 220560 2011-04-12 08:13:18
  * List of available cc algorithms on the current system. First element
  * is used as the system default CC algorithm.
  */
-struct cc_head cc_list = STAILQ_HEAD_INITIALIZER(cc_list);
+struct cc_head cc_list = BSD_STAILQ_HEAD_INITIALIZER(cc_list);
 
 /* Protects the cc_list TAILQ. */
 struct rwlock cc_list_lock;
@@ -105,7 +105,7 @@ cc_default_algo(SYSCTL_HANDLER_ARGS)
 	} else {
 		/* Find algo with specified name and set it to default. */
 		CC_LIST_RLOCK();
-		STAILQ_FOREACH(funcs, &cc_list, entries) {
+		BSD_STAILQ_FOREACH(funcs, &cc_list, entries) {
 			if (strncmp((char *)req->newptr, funcs->name,
 			    TCP_CA_NAME_MAX) == 0) {
 				found = 1;
@@ -135,7 +135,7 @@ cc_list_available(SYSCTL_HANDLER_ARGS)
 	first = 1;
 
 	CC_LIST_RLOCK();
-	STAILQ_FOREACH(algo, &cc_list, entries) {
+	BSD_STAILQ_FOREACH(algo, &cc_list, entries) {
 		nalgos++;
 	}
 	CC_LIST_RUNLOCK();
@@ -153,7 +153,7 @@ cc_list_available(SYSCTL_HANDLER_ARGS)
 	 * the sysctl will fail gracefully.
 	 */
 	CC_LIST_RLOCK();
-	STAILQ_FOREACH(algo, &cc_list, entries) {
+	BSD_STAILQ_FOREACH(algo, &cc_list, entries) {
 		err = sbuf_printf(s, first ? "%s" : ", %s", algo->name);
 		if (err) {
 			/* Sbuf overflow condition. */
@@ -202,7 +202,7 @@ static void
 cc_init(void)
 {
 	CC_LIST_LOCK_INIT();
-	STAILQ_INIT(&cc_list);
+	BSD_STAILQ_INIT(&cc_list);
 }
 
 /*
@@ -222,10 +222,10 @@ cc_deregister_algo(struct cc_algo *remove_cc)
 
 	/* Remove algo from cc_list so that new connections can't use it. */
 	CC_LIST_WLOCK();
-	STAILQ_FOREACH_SAFE(funcs, &cc_list, entries, tmpfuncs) {
+	BSD_STAILQ_FOREACH_SAFE(funcs, &cc_list, entries, tmpfuncs) {
 		if (funcs == remove_cc) {
 			cc_checkreset_default(remove_cc);
-			STAILQ_REMOVE(&cc_list, funcs, cc_algo, entries);
+			BSD_STAILQ_REMOVE(&cc_list, funcs, cc_algo, entries);
 			err = 0;
 			break;
 		}
@@ -260,14 +260,14 @@ cc_register_algo(struct cc_algo *add_cc)
 	 * we're not trying to add a duplicate.
 	 */
 	CC_LIST_WLOCK();
-	STAILQ_FOREACH(funcs, &cc_list, entries) {
+	BSD_STAILQ_FOREACH(funcs, &cc_list, entries) {
 		if (funcs == add_cc || strncmp(funcs->name, add_cc->name,
 		    TCP_CA_NAME_MAX) == 0)
 			err = EEXIST;
 	}
 
 	if (!err)
-		STAILQ_INSERT_TAIL(&cc_list, add_cc, entries);
+		BSD_STAILQ_INSERT_TAIL(&cc_list, add_cc, entries);
 
 	CC_LIST_WUNLOCK();
 

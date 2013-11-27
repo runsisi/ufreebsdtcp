@@ -88,7 +88,7 @@ struct bio {
 	void	*bio_driver2;		/* Private use by the provider. */
 	void	*bio_caller1;		/* Private use by the consumer. */
 	void	*bio_caller2;		/* Private use by the consumer. */
-	TAILQ_ENTRY(bio) bio_queue;	/* Disksort queue. */
+	BSD_TAILQ_ENTRY(bio) bio_queue;	/* Disksort queue. */
 	const char *bio_attribute;	/* Attribute for BIO_[GS]ETATTR */
 	struct g_consumer *bio_from;	/* GEOM linkage */
 	struct g_provider *bio_to;	/* GEOM linkage */
@@ -124,7 +124,7 @@ struct uio;
 struct devstat;
 
 struct bio_queue_head {
-	TAILQ_HEAD(bio_queue, bio) queue;
+	BSD_TAILQ_HEAD(bio_queue, bio) queue;
 	off_t last_offset;
 	struct	bio *insert_point;
 };

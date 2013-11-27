@@ -52,11 +52,11 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/netinet/libalias/alias_mod.c 201758 2010-0
 #endif
 
 /* Protocol and userland module handlers chains. */
-LIST_HEAD(handler_chain, proto_handler) handler_chain = LIST_HEAD_INITIALIZER(handler_chain);
+BSD_LIST_HEAD(handler_chain, proto_handler) handler_chain = BSD_LIST_HEAD_INITIALIZER(handler_chain);
 #ifdef _KERNEL
 struct rwlock   handler_rw;
 #endif
-SLIST_HEAD(dll_chain, dll) dll_chain = SLIST_HEAD_INITIALIZER(dll_chain); 
+BSD_SLIST_HEAD(dll_chain, dll) dll_chain = BSD_SLIST_HEAD_INITIALIZER(dll_chain); 
 
 #ifdef _KERNEL
 
@@ -137,21 +137,21 @@ _attach_handler(struct proto_handler *p)
 
 	LIBALIAS_WLOCK_ASSERT();
 	b = NULL;
-	LIST_FOREACH(b, &handler_chain, entries) {
+	BSD_LIST_FOREACH(b, &handler_chain, entries) {
 		if ((b->pri == p->pri) && 
 		    (b->dir == p->dir) &&
 		    (b->proto == p->proto))
 			return (EEXIST); /* Priority conflict. */
 		if (b->pri > p->pri) {
-			LIST_INSERT_BEFORE(b, p, entries);
+			BSD_LIST_INSERT_BEFORE(b, p, entries);
 			return (0);
 		}
 	}
 	/* End of list or found right position, inserts here. */
 	if (b)
-		LIST_INSERT_AFTER(b, p, entries);
+		BSD_LIST_INSERT_AFTER(b, p, entries);
 	else
-		LIST_INSERT_HEAD(&handler_chain, p, entries);
+		BSD_LIST_INSERT_HEAD(&handler_chain, p, entries);
 	return (0);
 }
 
@@ -161,9 +161,9 @@ _detach_handler(struct proto_handler *p)
 	struct proto_handler *b, *b_tmp;
 
 	LIBALIAS_WLOCK_ASSERT();	
-	LIST_FOREACH_SAFE(b, &handler_chain, entries, b_tmp) {
+	BSD_LIST_FOREACH_SAFE(b, &handler_chain, entries, b_tmp) {
 		if (b == p) {
-			LIST_REMOVE(b, entries);
+			BSD_LIST_REMOVE(b, entries);
 			return (0);
 		}
 	}
@@ -227,7 +227,7 @@ find_handler(int8_t dir, int8_t proto, struct libalias *la, __unused struct ip *
 
 	LIBALIAS_RLOCK();
 	error = ENOENT;
-	LIST_FOREACH(p, &handler_chain, entries) {
+	BSD_LIST_FOREACH(p, &handler_chain, entries) {
 		if ((p->dir & dir) && (p->proto & proto))
 			if (p->fingerprint(la, ad) == 0) {
 				error = p->protohandler(la, pip, ad);
@@ -242,7 +242,7 @@ struct proto_handler *
 first_handler(void)
 {
 	
-	return (LIST_FIRST(&handler_chain));	
+	return (BSD_LIST_FIRST(&handler_chain));	
 }
 
 /* Dll manipulation code - this code is not thread safe... */
@@ -252,11 +252,11 @@ attach_dll(struct dll *p)
 {
 	struct dll *b;
 
-	SLIST_FOREACH(b, &dll_chain, next) {
+	BSD_SLIST_FOREACH(b, &dll_chain, next) {
 		if (!strncmp(b->name, p->name, DLL_LEN))
 			return (EEXIST); /* Dll name conflict. */
 	}
-	SLIST_INSERT_HEAD(&dll_chain, p, next);
+	BSD_SLIST_INSERT_HEAD(&dll_chain, p, next);
 	return (0);
 }
 
@@ -268,9 +268,9 @@ detach_dll(char *p)
 
 	b = NULL;
 	error = NULL;
-	SLIST_FOREACH_SAFE(b, &dll_chain, next, b_tmp)
+	BSD_SLIST_FOREACH_SAFE(b, &dll_chain, next, b_tmp)
 		if (!strncmp(b->name, p, DLL_LEN)) {
-			SLIST_REMOVE(&dll_chain, b, dll, next); 
+			BSD_SLIST_REMOVE(&dll_chain, b, dll, next); 
 			error = b;
 			break;
 		}
@@ -282,9 +282,9 @@ walk_dll_chain(void)
 {
 	struct dll *t;
 
-	t = SLIST_FIRST(&dll_chain);
+	t = BSD_SLIST_FIRST(&dll_chain);
 	if (t == NULL)
 		return (NULL);
-	SLIST_REMOVE_HEAD(&dll_chain, next);
+	BSD_SLIST_REMOVE_HEAD(&dll_chain, next);
 	return (t);
 }

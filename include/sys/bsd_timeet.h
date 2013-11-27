@@ -51,7 +51,7 @@ typedef void et_event_cb_t(struct eventtimer *et, void *arg);
 typedef int et_deregister_cb_t(struct eventtimer *et, void *arg);
 
 struct eventtimer {
-	SLIST_ENTRY(eventtimer)	et_all;
+	BSD_SLIST_ENTRY(eventtimer)	et_all;
 		/* Pointer to the next event timer. */
 	char			*et_name;
 		/* Name of the event timer. */

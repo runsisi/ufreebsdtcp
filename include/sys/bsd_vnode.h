@@ -108,7 +108,7 @@ struct vnode {
 	 * Filesystem instance stuff
 	 */
 	struct	mount *v_mount;			/* u ptr to vfs we are in */
-	TAILQ_ENTRY(vnode) v_nmntvnodes;	/* m vnodes for mount point */
+	BSD_TAILQ_ENTRY(vnode) v_nmntvnodes;	/* m vnodes for mount point */
 
 	/*
 	 * Type specific fields, only one applies to any given vnode.
@@ -124,14 +124,14 @@ struct vnode {
 	/*
 	 * vfs_hash:  (mount + inode) -> vnode hash.
 	 */
-	LIST_ENTRY(vnode)	v_hashlist;
+	BSD_LIST_ENTRY(vnode)	v_hashlist;
 	u_int			v_hash;
 
 	/*
 	 * VFS_namecache stuff
 	 */
-	LIST_HEAD(, namecache) v_cache_src;	/* c Cache entries from us */
-	TAILQ_HEAD(, namecache) v_cache_dst;	/* c Cache entries to us */
+	BSD_LIST_HEAD(, namecache) v_cache_src;	/* c Cache entries from us */
+	BSD_TAILQ_HEAD(, namecache) v_cache_dst;	/* c Cache entries to us */
 	struct namecache *v_cache_dd;		/* c Cache entry for .. vnode */
 
 	/*
@@ -157,7 +157,7 @@ struct vnode {
 	/*
 	 * The machinery of being a vnode
 	 */
-	TAILQ_ENTRY(vnode) v_actfreelist;	/* f vnode active/free lists */
+	BSD_TAILQ_ENTRY(vnode) v_actfreelist;	/* f vnode active/free lists */
 	struct bufobj	v_bufobj;		/* * Buffer cache object */
 
 	/*

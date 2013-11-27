@@ -63,8 +63,8 @@ struct in_ifaddr {
 					/* ia_subnet{,mask} in host order */
 	u_long	ia_subnet;		/* subnet address */
 	u_long	ia_subnetmask;		/* mask of subnet */
-	LIST_ENTRY(in_ifaddr) ia_hash;	/* entry in bucket of inet addresses */
-	TAILQ_ENTRY(in_ifaddr) ia_link;	/* list of internet addresses */
+	BSD_LIST_ENTRY(in_ifaddr) ia_hash;	/* entry in bucket of inet addresses */
+	BSD_TAILQ_ENTRY(in_ifaddr) ia_link;	/* list of internet addresses */
 	struct	sockaddr_in ia_addr;	/* reserve space for interface name */
 	struct	sockaddr_in ia_dstaddr; /* reserve space for broadcast addr */
 #define	ia_broadaddr	ia_dstaddr
@@ -97,8 +97,8 @@ extern	u_char	inetctlerrmap[];
 /*
  * Hash table for IP addresses.
  */
-TAILQ_HEAD(in_ifaddrhead, in_ifaddr);
-LIST_HEAD(in_ifaddrhashhead, in_ifaddr);
+BSD_TAILQ_HEAD(in_ifaddrhead, in_ifaddr);
+BSD_LIST_HEAD(in_ifaddrhashhead, in_ifaddr);
 
 VNET_DECLARE(struct in_ifaddrhashhead *, in_ifaddrhashtbl);
 VNET_DECLARE(struct in_ifaddrhead, in_ifaddrhead);
@@ -133,7 +133,7 @@ extern	struct rwlock in_ifaddr_lock;
 	/* struct in_ifaddr *ia; */ \
 do { \
 \
-	LIST_FOREACH(ia, INADDR_HASH((addr).s_addr), ia_hash) \
+	BSD_LIST_FOREACH(ia, INADDR_HASH((addr).s_addr), ia_hash) \
 		if (IA_SIN(ia)->sin_addr.s_addr == (addr).s_addr) \
 			break; \
 } while (0)
@@ -161,9 +161,9 @@ do { \
 	/* struct in_ifaddr *ia; */					\
 do {									\
 	IN_IFADDR_RLOCK();						\
-	for ((ia) = TAILQ_FIRST(&V_in_ifaddrhead);			\
+	for ((ia) = BSD_TAILQ_FIRST(&V_in_ifaddrhead);			\
 	    (ia) != NULL && (ia)->ia_ifp != (ifp);			\
-	    (ia) = TAILQ_NEXT((ia), ia_link))				\
+	    (ia) = BSD_TAILQ_NEXT((ia), ia_link))				\
 		continue;						\
 	if ((ia) != NULL)						\
 		ifa_ref(&(ia)->ia_ifa);					\
@@ -187,14 +187,14 @@ struct router_info {
 	struct ifnet *rti_ifp;
 	int    rti_type; /* type of router which is querier on this interface */
 	int    rti_time; /* # of slow timeouts since last old query */
-	SLIST_ENTRY(router_info) rti_list;
+	BSD_SLIST_ENTRY(router_info) rti_list;
 };
 
 /*
  * Per-interface IGMP router version information.
  */
 struct igmp_ifinfo {
-	LIST_ENTRY(igmp_ifinfo) igi_link;
+	BSD_LIST_ENTRY(igmp_ifinfo) igi_link;
 	struct ifnet *igi_ifp;	/* interface this instance belongs to */
 	uint32_t igi_version;	/* IGMPv3 Host Compatibility Mode */
 	uint32_t igi_v1_timer;	/* IGMPv1 Querier Present timer (s) */
@@ -205,7 +205,7 @@ struct igmp_ifinfo {
 	uint32_t igi_qi;	/* IGMPv3 Query Interval (s) */
 	uint32_t igi_qri;	/* IGMPv3 Query Response Interval (s) */
 	uint32_t igi_uri;	/* IGMPv3 Unsolicited Report Interval (s) */
-	SLIST_HEAD(,in_multi)	igi_relinmhead; /* released groups */
+	BSD_SLIST_HEAD(,in_multi)	igi_relinmhead; /* released groups */
 	struct ifqueue	 igi_gq;	/* queue of general query responses */
 };
 
@@ -275,12 +275,12 @@ struct in_mfilter {
  * and kept if retransmissions are necessary.
  *
  * FUTURE: inm_link is now only used when groups are being purged
- * on a detaching ifnet. It could be demoted to a SLIST_ENTRY, but
+ * on a detaching ifnet. It could be demoted to a BSD_SLIST_ENTRY, but
  * because it is at the very start of the struct, we can't do this
  * w/o breaking the ABI for ifmcstat.
  */
 struct in_multi {
-	LIST_ENTRY(in_multi) inm_link;	/* to-be-released by in_ifdetach */
+	BSD_LIST_ENTRY(in_multi) inm_link;	/* to-be-released by in_ifdetach */
 	struct	in_addr inm_addr;	/* IP multicast address, convenience */
 	struct	ifnet *inm_ifp;		/* back pointer to ifnet */
 	struct	ifmultiaddr *inm_ifma;	/* back pointer to ifmultiaddr */
@@ -291,7 +291,7 @@ struct in_multi {
 
 	/* New fields for IGMPv3 follow. */
 	struct igmp_ifinfo	*inm_igi;	/* IGMP info */
-	SLIST_ENTRY(in_multi)	 inm_nrele;	/* to-be-released by IGMP */
+	BSD_SLIST_ENTRY(in_multi)	 inm_nrele;	/* to-be-released by IGMP */
 	struct ip_msource_tree	 inm_srcs;	/* tree of sources */
 	u_long			 inm_nsrc;	/* # of tree entries */
 
@@ -374,7 +374,7 @@ inm_lookup_locked(struct ifnet *ifp, const struct in_addr ina)
 	IF_ADDR_LOCK_ASSERT(ifp);
 
 	inm = NULL;
-	TAILQ_FOREACH(ifma, &((ifp)->if_multiaddrs), ifma_link) {
+	BSD_TAILQ_FOREACH(ifma, &((ifp)->if_multiaddrs), ifma_link) {
 		if (ifma->ifma_addr->sa_family == AF_INET) {
 			inm = (struct in_multi *)ifma->ifma_protospec;
 			if (inm->inm_addr.s_addr == ina.s_addr)

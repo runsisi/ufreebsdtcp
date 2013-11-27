@@ -166,7 +166,7 @@ sctp_allocate_vrf(int vrf_id)
 	/* setup the VRF */
 	memset(vrf, 0, sizeof(struct sctp_vrf));
 	vrf->vrf_id = vrf_id;
-	LIST_INIT(&vrf->ifnlist);
+	BSD_LIST_INIT(&vrf->ifnlist);
 	vrf->total_ifa_count = 0;
 	vrf->refcount = 0;
 	/* now also setup table ids */
@@ -184,7 +184,7 @@ sctp_allocate_vrf(int vrf_id)
 	}
 	/* Add it to the hash table */
 	bucket = &SCTP_BASE_INFO(sctp_vrfhash)[(vrf_id & SCTP_BASE_INFO(hashvrfmark))];
-	LIST_INSERT_HEAD(bucket, vrf, next_vrf);
+	BSD_LIST_INSERT_HEAD(bucket, vrf, next_vrf);
 	atomic_add_int(&SCTP_BASE_INFO(ipi_count_vrfs), 1);
 	return (vrf);
 }
@@ -201,7 +201,7 @@ sctp_find_ifn(void *ifn, uint32_t ifn_index)
 	 * problems could occur :-)
 	 */
 	hash_ifn_head = &SCTP_BASE_INFO(vrf_ifn_hash)[(ifn_index & SCTP_BASE_INFO(vrf_ifn_hashmark))];
-	LIST_FOREACH(sctp_ifnp, hash_ifn_head, next_bucket) {
+	BSD_LIST_FOREACH(sctp_ifnp, hash_ifn_head, next_bucket) {
 		if (sctp_ifnp->ifn_index == ifn_index) {
 			return (sctp_ifnp);
 		}
@@ -220,7 +220,7 @@ sctp_find_vrf(uint32_t vrf_id)
 	struct sctp_vrf *liste;
 
 	bucket = &SCTP_BASE_INFO(sctp_vrfhash)[(vrf_id & SCTP_BASE_INFO(hashvrfmark))];
-	LIST_FOREACH(liste, bucket, next_vrf) {
+	BSD_LIST_FOREACH(liste, bucket, next_vrf) {
 		if (vrf_id == liste->vrf_id) {
 			return (liste);
 		}
@@ -238,7 +238,7 @@ sctp_free_vrf(struct sctp_vrf *vrf)
 			vrf->vrf_addr_hash = NULL;
 		}
 		/* We zero'd the count */
-		LIST_REMOVE(vrf, next_vrf);
+		BSD_LIST_REMOVE(vrf, next_vrf);
 		SCTP_FREE(vrf, SCTP_M_VRF);
 		atomic_subtract_int(&SCTP_BASE_INFO(ipi_count_vrfs), 1);
 	}
@@ -297,8 +297,8 @@ sctp_delete_ifn(struct sctp_ifn *sctp_ifnp, int hold_addr_lock)
 	}
 	if (hold_addr_lock == 0)
 		SCTP_IPI_ADDR_WLOCK();
-	LIST_REMOVE(sctp_ifnp, next_bucket);
-	LIST_REMOVE(sctp_ifnp, next_ifn);
+	BSD_LIST_REMOVE(sctp_ifnp, next_bucket);
+	BSD_LIST_REMOVE(sctp_ifnp, next_ifn);
 	SCTP_DEREGISTER_INTERFACE(sctp_ifnp->ifn_index,
 	    sctp_ifnp->registered_af);
 	if (hold_addr_lock == 0)
@@ -406,7 +406,7 @@ sctp_add_ifa_to_ifn(struct sctp_ifn *sctp_ifnp, struct sctp_ifa *sctp_ifap)
 {
 	int ifa_af;
 
-	LIST_INSERT_HEAD(&sctp_ifnp->ifalist, sctp_ifap, next_ifa);
+	BSD_LIST_INSERT_HEAD(&sctp_ifnp->ifalist, sctp_ifap, next_ifa);
 	sctp_ifap->ifn_p = sctp_ifnp;
 	atomic_add_int(&sctp_ifap->ifn_p->refcount, 1);
 	/* update address counts */
@@ -443,7 +443,7 @@ sctp_add_ifa_to_ifn(struct sctp_ifn *sctp_ifnp, struct sctp_ifa *sctp_ifap)
 static void
 sctp_remove_ifa_from_ifn(struct sctp_ifa *sctp_ifap)
 {
-	LIST_REMOVE(sctp_ifap, next_ifa);
+	BSD_LIST_REMOVE(sctp_ifap, next_ifa);
 	if (sctp_ifap->ifn_p) {
 		/* update address counts */
 		sctp_ifap->ifn_p->ifa_count--;
@@ -462,7 +462,7 @@ sctp_remove_ifa_from_ifn(struct sctp_ifa *sctp_ifap)
 			break;
 		}
 
-		if (LIST_EMPTY(&sctp_ifap->ifn_p->ifalist)) {
+		if (BSD_LIST_EMPTY(&sctp_ifap->ifn_p->ifalist)) {
 			/* remove the ifn, possibly freeing it */
 			sctp_delete_ifn(sctp_ifap->ifn_p, SCTP_ADDR_LOCKED);
 		} else {
@@ -546,10 +546,10 @@ sctp_add_addr_to_vrf(uint32_t vrf_id, void *ifn, uint32_t ifn_index,
 			snprintf(sctp_ifnp->ifn_name, SCTP_IFNAMSIZ, "%s", "unknown");
 		}
 		hash_ifn_head = &SCTP_BASE_INFO(vrf_ifn_hash)[(ifn_index & SCTP_BASE_INFO(vrf_ifn_hashmark))];
-		LIST_INIT(&sctp_ifnp->ifalist);
+		BSD_LIST_INIT(&sctp_ifnp->ifalist);
 		SCTP_IPI_ADDR_WLOCK();
-		LIST_INSERT_HEAD(hash_ifn_head, sctp_ifnp, next_bucket);
-		LIST_INSERT_HEAD(&vrf->ifnlist, sctp_ifnp, next_ifn);
+		BSD_LIST_INSERT_HEAD(hash_ifn_head, sctp_ifnp, next_bucket);
+		BSD_LIST_INSERT_HEAD(&vrf->ifnlist, sctp_ifnp, next_ifn);
 		atomic_add_int(&SCTP_BASE_INFO(ipi_count_ifns), 1);
 		new_ifn_af = 1;
 	}
@@ -669,9 +669,9 @@ sctp_add_addr_to_vrf(uint32_t vrf_id, void *ifn, uint32_t ifn_index,
 	}
 	SCTP_IPI_ADDR_WLOCK();
 	hash_addr_head = &vrf->vrf_addr_hash[(hash_of_addr & vrf->vrf_addr_hashmark)];
-	LIST_INSERT_HEAD(hash_addr_head, sctp_ifap, next_bucket);
+	BSD_LIST_INSERT_HEAD(hash_addr_head, sctp_ifap, next_bucket);
 	sctp_ifap->refcount = 1;
-	LIST_INSERT_HEAD(&sctp_ifnp->ifalist, sctp_ifap, next_ifa);
+	BSD_LIST_INSERT_HEAD(&sctp_ifnp->ifalist, sctp_ifap, next_ifa);
 	sctp_ifnp->ifa_count++;
 	vrf->total_ifa_count++;
 	atomic_add_int(&SCTP_BASE_INFO(ipi_count_ifas), 1);
@@ -707,7 +707,7 @@ sctp_add_addr_to_vrf(uint32_t vrf_id, void *ifn, uint32_t ifn_index,
 		wi->action = SCTP_ADD_IP_ADDRESS;
 
 		SCTP_WQ_ADDR_LOCK();
-		LIST_INSERT_HEAD(&SCTP_BASE_INFO(addr_wq), wi, sctp_nxt_addr);
+		BSD_LIST_INSERT_HEAD(&SCTP_BASE_INFO(addr_wq), wi, sctp_nxt_addr);
 		SCTP_WQ_ADDR_UNLOCK();
 
 		sctp_timer_start(SCTP_TIMER_TYPE_ADDR_WQ,
@@ -774,7 +774,7 @@ sctp_del_addr_from_vrf(uint32_t vrf_id, struct sockaddr *addr,
 		sctp_ifap->localifa_flags &= SCTP_ADDR_VALID;
 		sctp_ifap->localifa_flags |= SCTP_BEING_DELETED;
 		vrf->total_ifa_count--;
-		LIST_REMOVE(sctp_ifap, next_bucket);
+		BSD_LIST_REMOVE(sctp_ifap, next_bucket);
 		sctp_remove_ifa_from_ifn(sctp_ifap);
 	}
 #ifdef SCTP_DEBUG
@@ -812,7 +812,7 @@ out_now:
 		 * Should this really be a tailq? As it is we will process
 		 * the newest first :-0
 		 */
-		LIST_INSERT_HEAD(&SCTP_BASE_INFO(addr_wq), wi, sctp_nxt_addr);
+		BSD_LIST_INSERT_HEAD(&SCTP_BASE_INFO(addr_wq), wi, sctp_nxt_addr);
 		SCTP_WQ_ADDR_UNLOCK();
 
 		sctp_timer_start(SCTP_TIMER_TYPE_ADDR_WQ,
@@ -848,12 +848,12 @@ sctp_does_stcb_own_this_addr(struct sctp_tcb *stcb, struct sockaddr *to)
 		return (0);
 	}
 	if (stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_BOUNDALL) {
-		LIST_FOREACH(sctp_ifn, &vrf->ifnlist, next_ifn) {
+		BSD_LIST_FOREACH(sctp_ifn, &vrf->ifnlist, next_ifn) {
 			if ((loopback_scope == 0) &&
 			    SCTP_IFN_IS_IFT_LOOP(sctp_ifn)) {
 				continue;
 			}
-			LIST_FOREACH(sctp_ifa, &sctp_ifn->ifalist, next_ifa) {
+			BSD_LIST_FOREACH(sctp_ifa, &sctp_ifn->ifalist, next_ifa) {
 				if (sctp_is_addr_restricted(stcb, sctp_ifa) &&
 				    (!sctp_is_addr_pending(stcb, sctp_ifa))) {
 					/*
@@ -919,7 +919,7 @@ sctp_does_stcb_own_this_addr(struct sctp_tcb *stcb, struct sockaddr *to)
 	} else {
 		struct sctp_laddr *laddr;
 
-		LIST_FOREACH(laddr, &stcb->sctp_ep->sctp_addr_list, sctp_nxt_addr) {
+		BSD_LIST_FOREACH(laddr, &stcb->sctp_ep->sctp_addr_list, sctp_nxt_addr) {
 			if (laddr->ifa->localifa_flags & SCTP_BEING_DELETED) {
 				SCTPDBG(SCTP_DEBUG_PCB1, "ifa being deleted\n");
 				continue;
@@ -1028,7 +1028,7 @@ sctp_tcb_special_locate(struct sctp_inpcb **inp_p, struct sockaddr *from,
 	 * addresses match this address (to). If so we update p_ep to point
 	 * to this ep and return the tcb from it.
 	 */
-	LIST_FOREACH(inp, ephead, sctp_hash) {
+	BSD_LIST_FOREACH(inp, ephead, sctp_hash) {
 		SCTP_INP_RLOCK(inp);
 		if (inp->sctp_flags & SCTP_PCB_FLAGS_SOCKET_ALLGONE) {
 			SCTP_INP_RUNLOCK(inp);
@@ -1047,7 +1047,7 @@ sctp_tcb_special_locate(struct sctp_inpcb **inp_p, struct sockaddr *from,
 			/* We are NOT bound all, so look further */
 			int match = 0;
 
-			LIST_FOREACH(laddr, &inp->sctp_addr_list, sctp_nxt_addr) {
+			BSD_LIST_FOREACH(laddr, &inp->sctp_addr_list, sctp_nxt_addr) {
 
 				if (laddr->ifa == NULL) {
 					SCTPDBG(SCTP_DEBUG_PCB1, "%s: NULL ifa\n", __FUNCTION__);
@@ -1102,8 +1102,8 @@ sctp_tcb_special_locate(struct sctp_inpcb **inp_p, struct sockaddr *from,
 		 * Ok if we hit here the ep has the address, does it hold
 		 * the tcb?
 		 */
-		/* XXX: Why don't we TAILQ_FOREACH through sctp_asoc_list? */
-		stcb = LIST_FIRST(&inp->sctp_asoc_list);
+		/* XXX: Why don't we BSD_TAILQ_FOREACH through sctp_asoc_list? */
+		stcb = BSD_LIST_FIRST(&inp->sctp_asoc_list);
 		if (stcb == NULL) {
 			SCTP_INP_RUNLOCK(inp);
 			continue;
@@ -1131,7 +1131,7 @@ sctp_tcb_special_locate(struct sctp_inpcb **inp_p, struct sockaddr *from,
 			continue;
 		}
 		/* Does this TCB have a matching address? */
-		TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
+		BSD_TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
 
 			if (net->ro._l_addr.sa.sa_family != from->sa_family) {
 				/* not the same family, can't be a match */
@@ -1271,7 +1271,7 @@ sctp_findassociation_ep_addr(struct sctp_inpcb **inp_p, struct sockaddr *remote,
 			if (inp->sctp_flags & SCTP_PCB_FLAGS_SOCKET_ALLGONE) {
 				goto null_return;
 			}
-			stcb = LIST_FIRST(&inp->sctp_asoc_list);
+			stcb = BSD_LIST_FIRST(&inp->sctp_asoc_list);
 			if (stcb == NULL) {
 				goto null_return;
 			}
@@ -1291,9 +1291,9 @@ sctp_findassociation_ep_addr(struct sctp_inpcb **inp_p, struct sockaddr *remote,
 				goto null_return;
 			}
 			/* now look at the list of remote addresses */
-			TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
+			BSD_TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
 #ifdef INVARIANTS
-				if (net == (TAILQ_NEXT(net, sctp_next))) {
+				if (net == (BSD_TAILQ_NEXT(net, sctp_next))) {
 					panic("Corrupt net list");
 				}
 #endif
@@ -1379,7 +1379,7 @@ sctp_findassociation_ep_addr(struct sctp_inpcb **inp_p, struct sockaddr *remote,
 		if (head == NULL) {
 			goto null_return;
 		}
-		LIST_FOREACH(stcb, head, sctp_tcbhash) {
+		BSD_LIST_FOREACH(stcb, head, sctp_tcbhash) {
 			if (stcb->rport != rport) {
 				/* remote port does not match */
 				continue;
@@ -1394,9 +1394,9 @@ sctp_findassociation_ep_addr(struct sctp_inpcb **inp_p, struct sockaddr *remote,
 				continue;
 			}
 			/* now look at the list of remote addresses */
-			TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
+			BSD_TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
 #ifdef INVARIANTS
-				if (net == (TAILQ_NEXT(net, sctp_next))) {
+				if (net == (BSD_TAILQ_NEXT(net, sctp_next))) {
 					panic("Corrupt net list");
 				}
 #endif
@@ -1516,7 +1516,7 @@ sctp_findasoc_ep_asocid_locked(struct sctp_inpcb *inp, sctp_assoc_t asoc_id, int
 		SCTP_PRINTF("TSNH ep_associd1\n");
 		return (NULL);
 	}
-	LIST_FOREACH(stcb, head, sctp_tcbasocidhash) {
+	BSD_LIST_FOREACH(stcb, head, sctp_tcbasocidhash) {
 		if (stcb->asoc.assoc_id == id) {
 			if (inp != stcb->sctp_ep) {
 				/*
@@ -1597,7 +1597,7 @@ sctp_endpoint_probe(struct sockaddr *nam, struct sctppcbhead *head,
 	if (head == NULL)
 		return (NULL);
 
-	LIST_FOREACH(inp, head, sctp_hash) {
+	BSD_LIST_FOREACH(inp, head, sctp_hash) {
 		SCTP_INP_RLOCK(inp);
 		if (inp->sctp_flags & SCTP_PCB_FLAGS_SOCKET_ALLGONE) {
 			SCTP_INP_RUNLOCK(inp);
@@ -1659,7 +1659,7 @@ sctp_endpoint_probe(struct sockaddr *nam, struct sctppcbhead *head,
 	 * ok, not bound to all so see if we can find a EP bound to this
 	 * address.
 	 */
-	LIST_FOREACH(inp, head, sctp_hash) {
+	BSD_LIST_FOREACH(inp, head, sctp_hash) {
 		SCTP_INP_RLOCK(inp);
 		if (inp->sctp_flags & SCTP_PCB_FLAGS_SOCKET_ALLGONE) {
 			SCTP_INP_RUNLOCK(inp);
@@ -1686,7 +1686,7 @@ sctp_endpoint_probe(struct sockaddr *nam, struct sctppcbhead *head,
 			SCTP_INP_RUNLOCK(inp);
 			continue;
 		}
-		LIST_FOREACH(laddr, &inp->sctp_addr_list, sctp_nxt_addr) {
+		BSD_LIST_FOREACH(laddr, &inp->sctp_addr_list, sctp_nxt_addr) {
 			if (laddr->ifa == NULL) {
 				SCTPDBG(SCTP_DEBUG_PCB1, "%s: NULL ifa\n",
 				    __FUNCTION__);
@@ -1738,7 +1738,7 @@ sctp_isport_inuse(struct sctp_inpcb *inp, uint16_t lport, uint32_t vrf_id)
 
 	head = &SCTP_BASE_INFO(sctp_ephash)[SCTP_PCBHASH_ALLADDR(lport,
 	    SCTP_BASE_INFO(hashmark))];
-	LIST_FOREACH(t_inp, head, sctp_hash) {
+	BSD_LIST_FOREACH(t_inp, head, sctp_hash) {
 		if (t_inp->sctp_lport != lport) {
 			continue;
 		}
@@ -1796,7 +1796,7 @@ sctp_swap_inpcb_for_listen(struct sctp_inpcb *inp)
 	head = &SCTP_BASE_INFO(sctp_ephash)[SCTP_PCBHASH_ALLADDR(inp->sctp_lport,
 	    SCTP_BASE_INFO(hashmark))];
 	/* Kick out all non-listeners to the TCP hash */
-	LIST_FOREACH(tinp, head, sctp_hash) {
+	BSD_LIST_FOREACH(tinp, head, sctp_hash) {
 		if (tinp->sctp_lport != inp->sctp_lport) {
 			continue;
 		}
@@ -1810,18 +1810,18 @@ sctp_swap_inpcb_for_listen(struct sctp_inpcb *inp)
 			continue;
 		}
 		SCTP_INP_WLOCK(tinp);
-		LIST_REMOVE(tinp, sctp_hash);
+		BSD_LIST_REMOVE(tinp, sctp_hash);
 		head = &SCTP_BASE_INFO(sctp_tcpephash)[SCTP_PCBHASH_ALLADDR(tinp->sctp_lport, SCTP_BASE_INFO(hashtcpmark))];
 		tinp->sctp_flags |= SCTP_PCB_FLAGS_IN_TCPPOOL;
-		LIST_INSERT_HEAD(head, tinp, sctp_hash);
+		BSD_LIST_INSERT_HEAD(head, tinp, sctp_hash);
 		SCTP_INP_WUNLOCK(tinp);
 	}
 	SCTP_INP_WLOCK(inp);
 	/* Pull from where he was */
-	LIST_REMOVE(inp, sctp_hash);
+	BSD_LIST_REMOVE(inp, sctp_hash);
 	inp->sctp_flags &= ~SCTP_PCB_FLAGS_IN_TCPPOOL;
 	head = &SCTP_BASE_INFO(sctp_ephash)[SCTP_PCBHASH_ALLADDR(inp->sctp_lport, SCTP_BASE_INFO(hashmark))];
-	LIST_INSERT_HEAD(head, inp, sctp_hash);
+	BSD_LIST_INSERT_HEAD(head, inp, sctp_hash);
 	SCTP_INP_WUNLOCK(inp);
 	SCTP_INP_RLOCK(inp);
 	return (0);
@@ -2078,7 +2078,7 @@ sctp_findassoc_by_vtag(struct sockaddr *from, struct sockaddr *to, uint32_t vtag
 		SCTP_INP_INFO_RUNLOCK();
 		return (NULL);
 	}
-	LIST_FOREACH(stcb, head, sctp_asocs) {
+	BSD_LIST_FOREACH(stcb, head, sctp_asocs) {
 		SCTP_INP_RLOCK(stcb->sctp_ep);
 		if (stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_SOCKET_ALLGONE) {
 			SCTP_INP_RUNLOCK(stcb->sctp_ep);
@@ -2470,17 +2470,17 @@ sctp_inpcb_alloc(struct socket *so, uint32_t vrf_id)
 	SCTP_INP_WLOCK(inp);
 
 	/* add it to the info area */
-	LIST_INSERT_HEAD(&SCTP_BASE_INFO(listhead), inp, sctp_list);
+	BSD_LIST_INSERT_HEAD(&SCTP_BASE_INFO(listhead), inp, sctp_list);
 	SCTP_INP_INFO_WUNLOCK();
 
-	TAILQ_INIT(&inp->read_queue);
-	LIST_INIT(&inp->sctp_addr_list);
+	BSD_TAILQ_INIT(&inp->read_queue);
+	BSD_LIST_INIT(&inp->sctp_addr_list);
 
-	LIST_INIT(&inp->sctp_asoc_list);
+	BSD_LIST_INIT(&inp->sctp_asoc_list);
 
 #ifdef SCTP_TRACK_FREED_ASOCS
 	/* TEMP CODE */
-	LIST_INIT(&inp->sctp_asoc_free_list);
+	BSD_LIST_INIT(&inp->sctp_asoc_free_list);
 #endif
 	/* Init the timer structure for signature change */
 	SCTP_OS_TIMER_INIT(&inp->sctp_ep.signature_change.timer);
@@ -2555,7 +2555,7 @@ sctp_inpcb_alloc(struct socket *so, uint32_t vrf_id)
 #endif
 	m->port = 0;		/* encapsulation disabled by default */
 	sctp_auth_set_default_chunks(m->local_auth_chunks);
-	LIST_INIT(&m->shared_keys);
+	BSD_LIST_INIT(&m->shared_keys);
 	/* add default NULL key as key id 0 */
 	null_key = sctp_alloc_sharedkey();
 	sctp_insert_sharedkey(&m->shared_keys, null_key);
@@ -2602,20 +2602,20 @@ sctp_move_pcb_and_assoc(struct sctp_inpcb *old_inp, struct sctp_inpcb *new_inp,
 	lport = new_inp->sctp_lport = old_inp->sctp_lport;
 	rport = stcb->rport;
 	/* Pull the tcb from the old association */
-	LIST_REMOVE(stcb, sctp_tcbhash);
-	LIST_REMOVE(stcb, sctp_tcblist);
+	BSD_LIST_REMOVE(stcb, sctp_tcbhash);
+	BSD_LIST_REMOVE(stcb, sctp_tcblist);
 	if (stcb->asoc.in_asocid_hash) {
-		LIST_REMOVE(stcb, sctp_tcbasocidhash);
+		BSD_LIST_REMOVE(stcb, sctp_tcbasocidhash);
 	}
 	/* Now insert the new_inp into the TCP connected hash */
 	head = &SCTP_BASE_INFO(sctp_tcpephash)[SCTP_PCBHASH_ALLADDR((lport | rport), SCTP_BASE_INFO(hashtcpmark))];
 
-	LIST_INSERT_HEAD(head, new_inp, sctp_hash);
+	BSD_LIST_INSERT_HEAD(head, new_inp, sctp_hash);
 	/* Its safe to access */
 	new_inp->sctp_flags &= ~SCTP_PCB_FLAGS_UNBOUND;
 
 	/* Now move the tcb into the endpoint list */
-	LIST_INSERT_HEAD(&new_inp->sctp_asoc_list, stcb, sctp_tcblist);
+	BSD_LIST_INSERT_HEAD(&new_inp->sctp_asoc_list, stcb, sctp_tcblist);
 	/*
 	 * Question, do we even need to worry about the ep-hash since we
 	 * only have one connection? Probably not :> so lets get rid of it
@@ -2626,10 +2626,10 @@ sctp_move_pcb_and_assoc(struct sctp_inpcb *old_inp, struct sctp_inpcb *new_inp,
 
 		lhd = &new_inp->sctp_asocidhash[SCTP_PCBHASH_ASOC(stcb->asoc.assoc_id,
 		    new_inp->hashasocidmark)];
-		LIST_INSERT_HEAD(lhd, stcb, sctp_tcbasocidhash);
+		BSD_LIST_INSERT_HEAD(lhd, stcb, sctp_tcbasocidhash);
 	}
 	/* Ok. Let's restart timer. */
-	TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
+	BSD_TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
 		sctp_timer_start(SCTP_TIMER_TYPE_PATHMTURAISE, new_inp,
 		    stcb, net);
 	}
@@ -2641,7 +2641,7 @@ sctp_move_pcb_and_assoc(struct sctp_inpcb *old_inp, struct sctp_inpcb *new_inp,
 	}
 	if ((new_inp->sctp_flags & SCTP_PCB_FLAGS_BOUNDALL) == 0) {
 		/* Subset bound, so copy in the laddr list from the old_inp */
-		LIST_FOREACH(oladdr, &old_inp->sctp_addr_list, sctp_nxt_addr) {
+		BSD_LIST_FOREACH(oladdr, &old_inp->sctp_addr_list, sctp_nxt_addr) {
 			laddr = SCTP_ZONE_GET(SCTP_BASE_INFO(ipi_zone_laddr), struct sctp_laddr);
 			if (laddr == NULL) {
 				/*
@@ -2657,7 +2657,7 @@ sctp_move_pcb_and_assoc(struct sctp_inpcb *old_inp, struct sctp_inpcb *new_inp,
 			(void)SCTP_GETTIME_TIMEVAL(&laddr->start_time);
 			laddr->ifa = oladdr->ifa;
 			atomic_add_int(&laddr->ifa->refcount, 1);
-			LIST_INSERT_HEAD(&new_inp->sctp_addr_list, laddr,
+			BSD_LIST_INSERT_HEAD(&new_inp->sctp_addr_list, laddr,
 			    sctp_nxt_addr);
 			new_inp->laddr_count++;
 			if (oladdr == stcb->asoc.last_used_address) {
@@ -2679,7 +2679,7 @@ sctp_move_pcb_and_assoc(struct sctp_inpcb *old_inp, struct sctp_inpcb *new_inp,
 	stcb->asoc.delayed_event_timer.ep = (void *)new_inp;
 	stcb->asoc.delete_prim_timer.ep = (void *)new_inp;
 	/* now what about the nets? */
-	TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
+	BSD_TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
 		net->pmtu_timer.ep = (void *)new_inp;
 		net->hb_timer.ep = (void *)new_inp;
 		net->rxt_timer.ep = (void *)new_inp;
@@ -3116,7 +3116,7 @@ continue_anyway:
 		head = &SCTP_BASE_INFO(sctp_ephash)[SCTP_PCBHASH_ALLADDR(lport, SCTP_BASE_INFO(hashmark))];
 	}
 	/* put it in the bucket */
-	LIST_INSERT_HEAD(head, inp, sctp_hash);
+	BSD_LIST_INSERT_HEAD(head, inp, sctp_hash);
 	SCTPDBG(SCTP_DEBUG_PCB1, "Main hash to bind at head:%p, bound port:%d - in tcp_pool=%d\n",
 	    (void *)head, ntohs(lport), port_reuse_active);
 	/* set in the port */
@@ -3169,7 +3169,7 @@ sctp_iterator_inp_being_freed(struct sctp_inpcb *inp)
 	 * may be still pending on the list
 	 */
 	SCTP_IPI_ITERATOR_WQ_LOCK();
-	TAILQ_FOREACH_SAFE(it, &sctp_it_ctl.iteratorhead, sctp_nxt_itr, nit) {
+	BSD_TAILQ_FOREACH_SAFE(it, &sctp_it_ctl.iteratorhead, sctp_nxt_itr, nit) {
 		if (it->vn != curvnet) {
 			continue;
 		}
@@ -3177,14 +3177,14 @@ sctp_iterator_inp_being_freed(struct sctp_inpcb *inp)
 			/* This one points to me is it inp specific? */
 			if (it->iterator_flags & SCTP_ITERATOR_DO_SINGLE_INP) {
 				/* Remove and free this one */
-				TAILQ_REMOVE(&sctp_it_ctl.iteratorhead,
+				BSD_TAILQ_REMOVE(&sctp_it_ctl.iteratorhead,
 				    it, sctp_nxt_itr);
 				if (it->function_atend != NULL) {
 					(*it->function_atend) (it->pointer, it->val);
 				}
 				SCTP_FREE(it, SCTP_M_ITER);
 			} else {
-				it->inp = LIST_NEXT(it->inp, sctp_list);
+				it->inp = BSD_LIST_NEXT(it->inp, sctp_list);
 				if (it->inp) {
 					SCTP_INP_INCR_REF(it->inp);
 				}
@@ -3268,7 +3268,7 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 		int cnt_in_sd;
 
 		cnt_in_sd = 0;
-		LIST_FOREACH_SAFE(asoc, &inp->sctp_asoc_list, sctp_tcblist, nasoc) {
+		BSD_LIST_FOREACH_SAFE(asoc, &inp->sctp_asoc_list, sctp_tcblist, nasoc) {
 			SCTP_TCB_LOCK(asoc);
 			if (asoc->asoc.state & SCTP_STATE_ABOUT_TO_BE_FREED) {
 				/* Skip guys being freed */
@@ -3335,8 +3335,8 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 					cnt_in_sd++;
 				}
 				continue;
-			} else if (TAILQ_EMPTY(&asoc->asoc.send_queue) &&
-				    TAILQ_EMPTY(&asoc->asoc.sent_queue) &&
+			} else if (BSD_TAILQ_EMPTY(&asoc->asoc.send_queue) &&
+				    BSD_TAILQ_EMPTY(&asoc->asoc.sent_queue) &&
 			    (asoc->asoc.stream_queue_cnt == 0)) {
 				if (asoc->asoc.locked_on_sending) {
 					goto abort_anyway;
@@ -3376,7 +3376,7 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 				sctp_timer_start(SCTP_TIMER_TYPE_SHUTDOWNGUARD, asoc->sctp_ep, asoc,
 				    asoc->asoc.primary_destination);
 				if (asoc->asoc.locked_on_sending) {
-					sp = TAILQ_LAST(&((asoc->asoc.locked_on_sending)->outqueue),
+					sp = BSD_TAILQ_LAST(&((asoc->asoc.locked_on_sending)->outqueue),
 					    sctp_streamhead);
 					if (sp == NULL) {
 						SCTP_PRINTF("Error, sp is NULL, locked on sending is %p strm:%d\n",
@@ -3387,8 +3387,8 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 							asoc->asoc.state |= SCTP_STATE_PARTIAL_MSG_LEFT;
 					}
 				}
-				if (TAILQ_EMPTY(&asoc->asoc.send_queue) &&
-				    TAILQ_EMPTY(&asoc->asoc.sent_queue) &&
+				if (BSD_TAILQ_EMPTY(&asoc->asoc.send_queue) &&
+				    BSD_TAILQ_EMPTY(&asoc->asoc.sent_queue) &&
 				    (asoc->asoc.state & SCTP_STATE_PARTIAL_MSG_LEFT)) {
 					struct mbuf *op_err;
 
@@ -3446,7 +3446,7 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 		 * ok, this guy has been bound. It's port is somewhere in
 		 * the SCTP_BASE_INFO(hash table). Remove it!
 		 */
-		LIST_REMOVE(inp, sctp_hash);
+		BSD_LIST_REMOVE(inp, sctp_hash);
 		inp->sctp_flags |= SCTP_PCB_FLAGS_UNBOUND;
 	}
 	/*
@@ -3454,7 +3454,7 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 	 * have a contest on the INP lock.. which would cause us to die ...
 	 */
 	cnt = 0;
-	LIST_FOREACH_SAFE(asoc, &inp->sctp_asoc_list, sctp_tcblist, nasoc) {
+	BSD_LIST_FOREACH_SAFE(asoc, &inp->sctp_asoc_list, sctp_tcblist, nasoc) {
 		SCTP_TCB_LOCK(asoc);
 		if (asoc->asoc.state & SCTP_STATE_ABOUT_TO_BE_FREED) {
 			if (asoc->asoc.state & SCTP_STATE_IN_ACCEPT_QUEUE) {
@@ -3533,7 +3533,7 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 	/*
 	 * Remove it from the list .. last thing we need a lock for.
 	 */
-	LIST_REMOVE(inp, sctp_list);
+	BSD_LIST_REMOVE(inp, sctp_list);
 	SCTP_INP_WUNLOCK(inp);
 	SCTP_ASOC_CREATE_UNLOCK(inp);
 	SCTP_INP_INFO_WUNLOCK();
@@ -3561,12 +3561,12 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 		inp->sctp_asocidhash = NULL;
 	}
 	/* sa_ignore FREED_MEMORY */
-	TAILQ_FOREACH_SAFE(sq, &inp->read_queue, next, nsq) {
+	BSD_TAILQ_FOREACH_SAFE(sq, &inp->read_queue, next, nsq) {
 		/* Its only abandoned if it had data left */
 		if (sq->length)
 			SCTP_STAT_INCR(sctps_left_abandon);
 
-		TAILQ_REMOVE(&inp->read_queue, sq, next);
+		BSD_TAILQ_REMOVE(&inp->read_queue, sq, next);
 		sctp_free_remote_addr(sq->whoFrom);
 		if (so)
 			so->so_rcv.sb_cc -= sq->length;
@@ -3613,8 +3613,8 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 	if (inp->sctp_ep.local_hmacs != NULL)
 		sctp_free_hmaclist(inp->sctp_ep.local_hmacs);
 
-	LIST_FOREACH_SAFE(shared_key, &inp->sctp_ep.shared_keys, next, nshared_key) {
-		LIST_REMOVE(shared_key, next);
+	BSD_LIST_FOREACH_SAFE(shared_key, &inp->sctp_ep.shared_keys, next, nshared_key) {
+		BSD_LIST_REMOVE(shared_key, next);
 		sctp_free_sharedkey(shared_key);
 		/* sa_ignore FREED_MEMORY */
 	}
@@ -3622,16 +3622,16 @@ sctp_inpcb_free(struct sctp_inpcb *inp, int immediate, int from)
 	/*
 	 * if we have an address list the following will free the list of
 	 * ifaddr's that are set into this ep. Again macro limitations here,
-	 * since the LIST_FOREACH could be a bad idea.
+	 * since the BSD_LIST_FOREACH could be a bad idea.
 	 */
-	LIST_FOREACH_SAFE(laddr, &inp->sctp_addr_list, sctp_nxt_addr, nladdr) {
+	BSD_LIST_FOREACH_SAFE(laddr, &inp->sctp_addr_list, sctp_nxt_addr, nladdr) {
 		sctp_remove_laddr(laddr);
 	}
 
 #ifdef SCTP_TRACK_FREED_ASOCS
 	/* TEMP CODE */
-	LIST_FOREACH_SAFE(asoc, &inp->sctp_asoc_free_list, sctp_tcblist, nasoc) {
-		LIST_REMOVE(asoc, sctp_tcblist);
+	BSD_LIST_FOREACH_SAFE(asoc, &inp->sctp_asoc_free_list, sctp_tcblist, nasoc) {
+		BSD_LIST_REMOVE(asoc, sctp_tcblist);
 		SCTP_ZONE_FREE(SCTP_BASE_INFO(ipi_zone_asoc), asoc);
 		SCTP_DECR_ASOC_COUNT();
 	}
@@ -3658,7 +3658,7 @@ sctp_findnet(struct sctp_tcb *stcb, struct sockaddr *addr)
 	struct sctp_nets *net;
 
 	/* locate the address */
-	TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
+	BSD_TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
 		if (sctp_cmpaddr(addr, (struct sockaddr *)&net->ro._l_addr))
 			return (net);
 	}
@@ -3990,25 +3990,25 @@ sctp_add_remote_addr(struct sctp_tcb *stcb, struct sockaddr *newaddr,
 	if (netp) {
 		*netp = net;
 	}
-	netfirst = TAILQ_FIRST(&stcb->asoc.nets);
+	netfirst = BSD_TAILQ_FIRST(&stcb->asoc.nets);
 	if (net->ro.ro_rt == NULL) {
 		/* Since we have no route put it at the back */
-		TAILQ_INSERT_TAIL(&stcb->asoc.nets, net, sctp_next);
+		BSD_TAILQ_INSERT_TAIL(&stcb->asoc.nets, net, sctp_next);
 	} else if (netfirst == NULL) {
 		/* We are the first one in the pool. */
-		TAILQ_INSERT_HEAD(&stcb->asoc.nets, net, sctp_next);
+		BSD_TAILQ_INSERT_HEAD(&stcb->asoc.nets, net, sctp_next);
 	} else if (netfirst->ro.ro_rt == NULL) {
 		/*
 		 * First one has NO route. Place this one ahead of the first
 		 * one.
 		 */
-		TAILQ_INSERT_HEAD(&stcb->asoc.nets, net, sctp_next);
+		BSD_TAILQ_INSERT_HEAD(&stcb->asoc.nets, net, sctp_next);
 	} else if (net->ro.ro_rt->rt_ifp != netfirst->ro.ro_rt->rt_ifp) {
 		/*
 		 * This one has a different interface than the one at the
 		 * top of the list. Place it ahead.
 		 */
-		TAILQ_INSERT_HEAD(&stcb->asoc.nets, net, sctp_next);
+		BSD_TAILQ_INSERT_HEAD(&stcb->asoc.nets, net, sctp_next);
 	} else {
 		/*
 		 * Ok we have the same interface as the first one. Move
@@ -4019,17 +4019,17 @@ sctp_add_remote_addr(struct sctp_tcb *stcb, struct sockaddr *newaddr,
 		struct sctp_nets *netlook;
 
 		do {
-			netlook = TAILQ_NEXT(netfirst, sctp_next);
+			netlook = BSD_TAILQ_NEXT(netfirst, sctp_next);
 			if (netlook == NULL) {
 				/* End of the list */
-				TAILQ_INSERT_TAIL(&stcb->asoc.nets, net, sctp_next);
+				BSD_TAILQ_INSERT_TAIL(&stcb->asoc.nets, net, sctp_next);
 				break;
 			} else if (netlook->ro.ro_rt == NULL) {
 				/* next one has NO route */
-				TAILQ_INSERT_BEFORE(netfirst, net, sctp_next);
+				BSD_TAILQ_INSERT_BEFORE(netfirst, net, sctp_next);
 				break;
 			} else if (netlook->ro.ro_rt->rt_ifp != net->ro.ro_rt->rt_ifp) {
-				TAILQ_INSERT_AFTER(&stcb->asoc.nets, netlook,
+				BSD_TAILQ_INSERT_AFTER(&stcb->asoc.nets, netlook,
 				    net, sctp_next);
 				break;
 			}
@@ -4048,7 +4048,7 @@ sctp_add_remote_addr(struct sctp_tcb *stcb, struct sockaddr *newaddr,
 		stcb->asoc.primary_destination = net;
 	}
 	/* Validate primary is first */
-	net = TAILQ_FIRST(&stcb->asoc.nets);
+	net = BSD_TAILQ_FIRST(&stcb->asoc.nets);
 	if ((net != stcb->asoc.primary_destination) &&
 	    (stcb->asoc.primary_destination)) {
 		/*
@@ -4056,9 +4056,9 @@ sctp_add_remote_addr(struct sctp_tcb *stcb, struct sockaddr *newaddr,
 		 * is much more efficient if the primary is the first on the
 		 * list, make it so.
 		 */
-		TAILQ_REMOVE(&stcb->asoc.nets,
+		BSD_TAILQ_REMOVE(&stcb->asoc.nets,
 		    stcb->asoc.primary_destination, sctp_next);
-		TAILQ_INSERT_HEAD(&stcb->asoc.nets,
+		BSD_TAILQ_INSERT_HEAD(&stcb->asoc.nets,
 		    stcb->asoc.primary_destination, sctp_next);
 	}
 	return (0);
@@ -4093,7 +4093,7 @@ try_again:
 		goto try_again;
 	}
 	head = &inp->sctp_asocidhash[SCTP_PCBHASH_ASOC(id, inp->hashasocidmark)];
-	LIST_INSERT_HEAD(head, stcb, sctp_tcbasocidhash);
+	BSD_LIST_INSERT_HEAD(head, stcb, sctp_tcbasocidhash);
 	stcb->asoc.in_asocid_hash = 1;
 	SCTP_INP_WUNLOCK(inp);
 	return id;
@@ -4269,7 +4269,7 @@ sctp_aloc_assoc(struct sctp_inpcb *inp, struct sockaddr *firstaddr,
 		/* failed */
 		SCTP_TCB_LOCK_DESTROY(stcb);
 		SCTP_TCB_SEND_LOCK_DESTROY(stcb);
-		LIST_REMOVE(stcb, sctp_tcbasocidhash);
+		BSD_LIST_REMOVE(stcb, sctp_tcbasocidhash);
 		SCTP_ZONE_FREE(SCTP_BASE_INFO(ipi_zone_asoc), stcb);
 		SCTP_DECR_ASOC_COUNT();
 		*error = err;
@@ -4282,7 +4282,7 @@ sctp_aloc_assoc(struct sctp_inpcb *inp, struct sockaddr *firstaddr,
 		/* inpcb freed while alloc going on */
 		SCTP_TCB_LOCK_DESTROY(stcb);
 		SCTP_TCB_SEND_LOCK_DESTROY(stcb);
-		LIST_REMOVE(stcb, sctp_tcbasocidhash);
+		BSD_LIST_REMOVE(stcb, sctp_tcbasocidhash);
 		SCTP_ZONE_FREE(SCTP_BASE_INFO(ipi_zone_asoc), stcb);
 		SCTP_INP_WUNLOCK(inp);
 		SCTP_INP_INFO_WUNLOCK();
@@ -4296,7 +4296,7 @@ sctp_aloc_assoc(struct sctp_inpcb *inp, struct sockaddr *firstaddr,
 	/* now that my_vtag is set, add it to the hash */
 	head = &SCTP_BASE_INFO(sctp_asochash)[SCTP_PCBHASH_ASOC(stcb->asoc.my_vtag, SCTP_BASE_INFO(hashasocmark))];
 	/* put it in the bucket in the vtag hash of assoc's for the system */
-	LIST_INSERT_HEAD(head, stcb, sctp_asocs);
+	BSD_LIST_INSERT_HEAD(head, stcb, sctp_asocs);
 	SCTP_INP_INFO_WUNLOCK();
 
 	if ((err = sctp_add_remote_addr(stcb, firstaddr, NULL, SCTP_DO_SETSCOPE, SCTP_ALLOC_ASOC))) {
@@ -4316,7 +4316,7 @@ sctp_aloc_assoc(struct sctp_inpcb *inp, struct sockaddr *firstaddr,
 		SCTP_DECR_ASOC_COUNT();
 		SCTP_TCB_LOCK_DESTROY(stcb);
 		SCTP_TCB_SEND_LOCK_DESTROY(stcb);
-		LIST_REMOVE(stcb, sctp_tcbasocidhash);
+		BSD_LIST_REMOVE(stcb, sctp_tcbasocidhash);
 		SCTP_ZONE_FREE(SCTP_BASE_INFO(ipi_zone_asoc), stcb);
 		SCTP_INP_WUNLOCK(inp);
 		SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_PCB, ENOBUFS);
@@ -4332,12 +4332,12 @@ sctp_aloc_assoc(struct sctp_inpcb *inp, struct sockaddr *firstaddr,
 	SCTP_OS_TIMER_INIT(&asoc->delayed_event_timer.timer);
 	SCTP_OS_TIMER_INIT(&asoc->delete_prim_timer.timer);
 
-	LIST_INSERT_HEAD(&inp->sctp_asoc_list, stcb, sctp_tcblist);
+	BSD_LIST_INSERT_HEAD(&inp->sctp_asoc_list, stcb, sctp_tcblist);
 	/* now file the port under the hash as well */
 	if (inp->sctp_tcbhash != NULL) {
 		head = &inp->sctp_tcbhash[SCTP_PCBHASH_ALLADDR(stcb->rport,
 		    inp->sctp_hashmark)];
-		LIST_INSERT_HEAD(head, stcb, sctp_tcbhash);
+		BSD_LIST_INSERT_HEAD(head, stcb, sctp_tcbhash);
 	}
 	SCTP_INP_WUNLOCK(inp);
 	SCTPDBG(SCTP_DEBUG_PCB1, "Association %p now allocated\n", (void *)stcb);
@@ -4352,12 +4352,12 @@ sctp_remove_net(struct sctp_tcb *stcb, struct sctp_nets *net)
 
 	asoc = &stcb->asoc;
 	asoc->numnets--;
-	TAILQ_REMOVE(&asoc->nets, net, sctp_next);
+	BSD_TAILQ_REMOVE(&asoc->nets, net, sctp_next);
 	if (net == asoc->primary_destination) {
 		/* Reset primary */
 		struct sctp_nets *lnet;
 
-		lnet = TAILQ_FIRST(&asoc->nets);
+		lnet = BSD_TAILQ_FIRST(&asoc->nets);
 		/*
 		 * Mobility adaptation Ideally, if deleted destination is
 		 * the primary, it becomes a fast retransmission trigger by
@@ -4387,7 +4387,7 @@ out:
 	}
 	if (net == asoc->last_data_chunk_from) {
 		/* Reset primary */
-		asoc->last_data_chunk_from = TAILQ_FIRST(&asoc->nets);
+		asoc->last_data_chunk_from = BSD_TAILQ_FIRST(&asoc->nets);
 	}
 	if (net == asoc->last_control_chunk_from) {
 		/* Clear net */
@@ -4410,7 +4410,7 @@ sctp_del_remote_addr(struct sctp_tcb *stcb, struct sockaddr *remaddr)
 	/*
 	 * Here we need to remove a remote address. This is quite simple, we
 	 * first find it in the list of address for the association
-	 * (tasoc->asoc.nets) and then if it is there, we do a LIST_REMOVE
+	 * (tasoc->asoc.nets) and then if it is there, we do a BSD_LIST_REMOVE
 	 * on that item. Note we do not allow it to be removed if there are
 	 * no other addresses.
 	 */
@@ -4420,7 +4420,7 @@ sctp_del_remote_addr(struct sctp_tcb *stcb, struct sockaddr *remaddr)
 	asoc = &stcb->asoc;
 
 	/* locate the address */
-	TAILQ_FOREACH_SAFE(net, &asoc->nets, sctp_next, nnet) {
+	BSD_TAILQ_FOREACH_SAFE(net, &asoc->nets, sctp_next, nnet) {
 		if (net->ro._l_addr.sa.sa_family != remaddr->sa_family) {
 			continue;
 		}
@@ -4449,7 +4449,7 @@ sctp_delete_from_timewait(uint32_t tag, uint16_t lport, uint16_t rport)
 	int i;
 
 	chain = &SCTP_BASE_INFO(vtag_timewait)[(tag % SCTP_STACK_VTAG_HASH_SIZE)];
-	LIST_FOREACH(twait_block, chain, sctp_nxt_tagblock) {
+	BSD_LIST_FOREACH(twait_block, chain, sctp_nxt_tagblock) {
 		for (i = 0; i < SCTP_NUMBER_IN_VTAG_BLOCK; i++) {
 			if ((twait_block->vtag_block[i].v_tag == tag) &&
 			    (twait_block->vtag_block[i].lport == lport) &&
@@ -4477,7 +4477,7 @@ sctp_is_in_timewait(uint32_t tag, uint16_t lport, uint16_t rport)
 
 	SCTP_INP_INFO_WLOCK();
 	chain = &SCTP_BASE_INFO(vtag_timewait)[(tag % SCTP_STACK_VTAG_HASH_SIZE)];
-	LIST_FOREACH(twait_block, chain, sctp_nxt_tagblock) {
+	BSD_LIST_FOREACH(twait_block, chain, sctp_nxt_tagblock) {
 		for (i = 0; i < SCTP_NUMBER_IN_VTAG_BLOCK; i++) {
 			if ((twait_block->vtag_block[i].v_tag == tag) &&
 			    (twait_block->vtag_block[i].lport == lport) &&
@@ -4509,7 +4509,7 @@ sctp_add_vtag_to_timewait(uint32_t tag, uint32_t time, uint16_t lport, uint16_t 
 	(void)SCTP_GETTIME_TIMEVAL(&now);
 	chain = &SCTP_BASE_INFO(vtag_timewait)[(tag % SCTP_STACK_VTAG_HASH_SIZE)];
 	set = 0;
-	LIST_FOREACH(twait_block, chain, sctp_nxt_tagblock) {
+	BSD_LIST_FOREACH(twait_block, chain, sctp_nxt_tagblock) {
 		/* Block(s) present, lets find space, and expire on the fly */
 		for (i = 0; i < SCTP_NUMBER_IN_VTAG_BLOCK; i++) {
 			if ((twait_block->vtag_block[i].v_tag == 0) &&
@@ -4556,7 +4556,7 @@ sctp_add_vtag_to_timewait(uint32_t tag, uint32_t time, uint16_t lport, uint16_t 
 			return;
 		}
 		memset(twait_block, 0, sizeof(struct sctp_tagblock));
-		LIST_INSERT_HEAD(chain, twait_block, sctp_nxt_tagblock);
+		BSD_LIST_INSERT_HEAD(chain, twait_block, sctp_nxt_tagblock);
 		twait_block->vtag_block[0].tv_sec_at_expire = now.tv_sec + time;
 		twait_block->vtag_block[0].v_tag = tag;
 		twait_block->vtag_block[0].lport = lport;
@@ -4666,7 +4666,7 @@ sctp_free_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int from_inpcbfre
 	/* Mobility adaptation */
 	(void)SCTP_OS_TIMER_STOP(&asoc->delete_prim_timer.timer);
 	asoc->delete_prim_timer.self = NULL;
-	TAILQ_FOREACH(net, &asoc->nets, sctp_next) {
+	BSD_TAILQ_FOREACH(net, &asoc->nets, sctp_next) {
 		(void)SCTP_OS_TIMER_STOP(&net->rxt_timer.timer);
 		net->rxt_timer.self = NULL;
 		(void)SCTP_OS_TIMER_STOP(&net->pmtu_timer.timer);
@@ -4678,7 +4678,7 @@ sctp_free_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int from_inpcbfre
 	if ((stcb->asoc.state & SCTP_STATE_ABOUT_TO_BE_FREED) == 0) {
 		stcb->asoc.state |= SCTP_STATE_ABOUT_TO_BE_FREED;
 		SCTP_INP_READ_LOCK(inp);
-		TAILQ_FOREACH(sq, &inp->read_queue, next) {
+		BSD_TAILQ_FOREACH(sq, &inp->read_queue, next) {
 			if (sq->stcb == stcb) {
 				sq->do_not_ref_stcb = 1;
 				sq->sinfo_cumtsn = stcb->asoc.cumulative_tsn;
@@ -4820,19 +4820,19 @@ sctp_free_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int from_inpcbfre
 	}
 	asoc->state = 0;
 	if (inp->sctp_tcbhash) {
-		LIST_REMOVE(stcb, sctp_tcbhash);
+		BSD_LIST_REMOVE(stcb, sctp_tcbhash);
 	}
 	if (stcb->asoc.in_asocid_hash) {
-		LIST_REMOVE(stcb, sctp_tcbasocidhash);
+		BSD_LIST_REMOVE(stcb, sctp_tcbasocidhash);
 	}
 	/* Now lets remove it from the list of ALL associations in the EP */
-	LIST_REMOVE(stcb, sctp_tcblist);
+	BSD_LIST_REMOVE(stcb, sctp_tcblist);
 	if (from_inpcbfree == SCTP_NORMAL_PROC) {
 		SCTP_INP_INCR_REF(inp);
 		SCTP_INP_WUNLOCK(inp);
 	}
 	/* pull from vtag hash */
-	LIST_REMOVE(stcb, sctp_asocs);
+	BSD_LIST_REMOVE(stcb, sctp_asocs);
 	sctp_add_vtag_to_timewait(asoc->my_vtag, SCTP_BASE_SYSCTL(sctp_vtag_time_wait),
 	    inp->sctp_lport, stcb->rport);
 
@@ -4846,7 +4846,7 @@ sctp_free_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int from_inpcbfre
 	(void)SCTP_OS_TIMER_STOP(&asoc->shut_guard_timer.timer);
 	(void)SCTP_OS_TIMER_STOP(&asoc->autoclose_timer.timer);
 	(void)SCTP_OS_TIMER_STOP(&asoc->delayed_event_timer.timer);
-	TAILQ_FOREACH(net, &asoc->nets, sctp_next) {
+	BSD_TAILQ_FOREACH(net, &asoc->nets, sctp_next) {
 		(void)SCTP_OS_TIMER_STOP(&net->rxt_timer.timer);
 		(void)SCTP_OS_TIMER_STOP(&net->pmtu_timer.timer);
 		(void)SCTP_OS_TIMER_STOP(&net->hb_timer.timer);
@@ -4863,8 +4863,8 @@ sctp_free_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int from_inpcbfre
 
 		outs = &asoc->strmout[i];
 		/* now clean up any chunks here */
-		TAILQ_FOREACH_SAFE(sp, &outs->outqueue, next, nsp) {
-			TAILQ_REMOVE(&outs->outqueue, sp, next);
+		BSD_TAILQ_FOREACH_SAFE(sp, &outs->outqueue, next, nsp) {
+			BSD_TAILQ_REMOVE(&outs->outqueue, sp, next);
 			sctp_free_spbufspace(stcb, asoc, sp);
 			if (sp->data) {
 				if (so) {
@@ -4887,12 +4887,12 @@ sctp_free_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int from_inpcbfre
 		}
 	}
 	/* sa_ignore FREED_MEMORY */
-	TAILQ_FOREACH_SAFE(strrst, &asoc->resetHead, next_resp, nstrrst) {
-		TAILQ_REMOVE(&asoc->resetHead, strrst, next_resp);
+	BSD_TAILQ_FOREACH_SAFE(strrst, &asoc->resetHead, next_resp, nstrrst) {
+		BSD_TAILQ_REMOVE(&asoc->resetHead, strrst, next_resp);
 		SCTP_FREE(strrst, SCTP_M_STRESET);
 	}
-	TAILQ_FOREACH_SAFE(sq, &asoc->pending_reply_queue, next, nsq) {
-		TAILQ_REMOVE(&asoc->pending_reply_queue, sq, next);
+	BSD_TAILQ_FOREACH_SAFE(sq, &asoc->pending_reply_queue, next, nsq) {
+		BSD_TAILQ_REMOVE(&asoc->pending_reply_queue, sq, next);
 		if (sq->data) {
 			sctp_m_freem(sq->data);
 			sq->data = NULL;
@@ -4905,8 +4905,8 @@ sctp_free_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int from_inpcbfre
 		SCTP_DECR_READQ_COUNT();
 		/* sa_ignore FREED_MEMORY */
 	}
-	TAILQ_FOREACH_SAFE(chk, &asoc->free_chunks, sctp_next, nchk) {
-		TAILQ_REMOVE(&asoc->free_chunks, chk, sctp_next);
+	BSD_TAILQ_FOREACH_SAFE(chk, &asoc->free_chunks, sctp_next, nchk) {
+		BSD_TAILQ_REMOVE(&asoc->free_chunks, chk, sctp_next);
 		if (chk->data) {
 			sctp_m_freem(chk->data);
 			chk->data = NULL;
@@ -4920,7 +4920,7 @@ sctp_free_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int from_inpcbfre
 		/* sa_ignore FREED_MEMORY */
 	}
 	/* pending send queue SHOULD be empty */
-	TAILQ_FOREACH_SAFE(chk, &asoc->send_queue, sctp_next, nchk) {
+	BSD_TAILQ_FOREACH_SAFE(chk, &asoc->send_queue, sctp_next, nchk) {
 		if (asoc->strmout[chk->rec.data.stream_number].chunks_on_queues > 0) {
 			asoc->strmout[chk->rec.data.stream_number].chunks_on_queues--;
 #ifdef INVARIANTS
@@ -4928,7 +4928,7 @@ sctp_free_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int from_inpcbfre
 			panic("No chunks on the queues for sid %u.", chk->rec.data.stream_number);
 #endif
 		}
-		TAILQ_REMOVE(&asoc->send_queue, chk, sctp_next);
+		BSD_TAILQ_REMOVE(&asoc->send_queue, chk, sctp_next);
 		if (chk->data) {
 			if (so) {
 				/* Still a socket? */
@@ -4951,7 +4951,7 @@ sctp_free_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int from_inpcbfre
 		/* sa_ignore FREED_MEMORY */
 	}
 	/* sent queue SHOULD be empty */
-	TAILQ_FOREACH_SAFE(chk, &asoc->sent_queue, sctp_next, nchk) {
+	BSD_TAILQ_FOREACH_SAFE(chk, &asoc->sent_queue, sctp_next, nchk) {
 		if (chk->sent != SCTP_DATAGRAM_NR_ACKED) {
 			if (asoc->strmout[chk->rec.data.stream_number].chunks_on_queues > 0) {
 				asoc->strmout[chk->rec.data.stream_number].chunks_on_queues--;
@@ -4961,7 +4961,7 @@ sctp_free_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int from_inpcbfre
 #endif
 			}
 		}
-		TAILQ_REMOVE(&asoc->sent_queue, chk, sctp_next);
+		BSD_TAILQ_REMOVE(&asoc->sent_queue, chk, sctp_next);
 		if (chk->data) {
 			if (so) {
 				/* Still a socket? */
@@ -4988,8 +4988,8 @@ sctp_free_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int from_inpcbfre
 	}
 #endif
 	/* control queue MAY not be empty */
-	TAILQ_FOREACH_SAFE(chk, &asoc->control_send_queue, sctp_next, nchk) {
-		TAILQ_REMOVE(&asoc->control_send_queue, chk, sctp_next);
+	BSD_TAILQ_FOREACH_SAFE(chk, &asoc->control_send_queue, sctp_next, nchk) {
+		BSD_TAILQ_REMOVE(&asoc->control_send_queue, chk, sctp_next);
 		if (chk->data) {
 			sctp_m_freem(chk->data);
 			chk->data = NULL;
@@ -5002,8 +5002,8 @@ sctp_free_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int from_inpcbfre
 		/* sa_ignore FREED_MEMORY */
 	}
 	/* ASCONF queue MAY not be empty */
-	TAILQ_FOREACH_SAFE(chk, &asoc->asconf_send_queue, sctp_next, nchk) {
-		TAILQ_REMOVE(&asoc->asconf_send_queue, chk, sctp_next);
+	BSD_TAILQ_FOREACH_SAFE(chk, &asoc->asconf_send_queue, sctp_next, nchk) {
+		BSD_TAILQ_REMOVE(&asoc->asconf_send_queue, chk, sctp_next);
 		if (chk->data) {
 			sctp_m_freem(chk->data);
 			chk->data = NULL;
@@ -5015,8 +5015,8 @@ sctp_free_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int from_inpcbfre
 		SCTP_DECR_CHK_COUNT();
 		/* sa_ignore FREED_MEMORY */
 	}
-	TAILQ_FOREACH_SAFE(chk, &asoc->reasmqueue, sctp_next, nchk) {
-		TAILQ_REMOVE(&asoc->reasmqueue, chk, sctp_next);
+	BSD_TAILQ_FOREACH_SAFE(chk, &asoc->reasmqueue, sctp_next, nchk) {
+		BSD_TAILQ_REMOVE(&asoc->reasmqueue, chk, sctp_next);
 		if (chk->data) {
 			sctp_m_freem(chk->data);
 			chk->data = NULL;
@@ -5047,8 +5047,8 @@ sctp_free_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int from_inpcbfre
 		struct sctp_queued_to_read *ctl, *nctl;
 
 		for (i = 0; i < asoc->streamincnt; i++) {
-			TAILQ_FOREACH_SAFE(ctl, &asoc->strmin[i].inqueue, next, nctl) {
-				TAILQ_REMOVE(&asoc->strmin[i].inqueue, ctl, next);
+			BSD_TAILQ_FOREACH_SAFE(ctl, &asoc->strmin[i].inqueue, next, nctl) {
+				BSD_TAILQ_REMOVE(&asoc->strmin[i].inqueue, ctl, next);
 				sctp_free_remote_addr(ctl->whoFrom);
 				if (ctl->data) {
 					sctp_m_freem(ctl->data);
@@ -5066,29 +5066,29 @@ sctp_free_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int from_inpcbfre
 		asoc->strmin = NULL;
 	}
 	asoc->streamincnt = 0;
-	TAILQ_FOREACH_SAFE(net, &asoc->nets, sctp_next, nnet) {
+	BSD_TAILQ_FOREACH_SAFE(net, &asoc->nets, sctp_next, nnet) {
 #ifdef INVARIANTS
 		if (SCTP_BASE_INFO(ipi_count_raddr) == 0) {
 			panic("no net's left alloc'ed, or list points to itself");
 		}
 #endif
-		TAILQ_REMOVE(&asoc->nets, net, sctp_next);
+		BSD_TAILQ_REMOVE(&asoc->nets, net, sctp_next);
 		sctp_free_remote_addr(net);
 	}
-	LIST_FOREACH_SAFE(laddr, &asoc->sctp_restricted_addrs, sctp_nxt_addr, naddr) {
+	BSD_LIST_FOREACH_SAFE(laddr, &asoc->sctp_restricted_addrs, sctp_nxt_addr, naddr) {
 		/* sa_ignore FREED_MEMORY */
 		sctp_remove_laddr(laddr);
 	}
 
 	/* pending asconf (address) parameters */
-	TAILQ_FOREACH_SAFE(aparam, &asoc->asconf_queue, next, naparam) {
+	BSD_TAILQ_FOREACH_SAFE(aparam, &asoc->asconf_queue, next, naparam) {
 		/* sa_ignore FREED_MEMORY */
-		TAILQ_REMOVE(&asoc->asconf_queue, aparam, next);
+		BSD_TAILQ_REMOVE(&asoc->asconf_queue, aparam, next);
 		SCTP_FREE(aparam, SCTP_M_ASC_ADDR);
 	}
-	TAILQ_FOREACH_SAFE(aack, &asoc->asconf_ack_sent, next, naack) {
+	BSD_TAILQ_FOREACH_SAFE(aack, &asoc->asconf_ack_sent, next, naack) {
 		/* sa_ignore FREED_MEMORY */
-		TAILQ_REMOVE(&asoc->asconf_ack_sent, aack, next);
+		BSD_TAILQ_REMOVE(&asoc->asconf_ack_sent, aack, next);
 		if (aack->data != NULL) {
 			sctp_m_freem(aack->data);
 		}
@@ -5107,8 +5107,8 @@ sctp_free_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int from_inpcbfre
 
 	sctp_free_authinfo(&asoc->authinfo);
 
-	LIST_FOREACH_SAFE(shared_key, &asoc->shared_keys, next, nshared_key) {
-		LIST_REMOVE(shared_key, next);
+	BSD_LIST_FOREACH_SAFE(shared_key, &asoc->shared_keys, next, nshared_key) {
+		BSD_LIST_REMOVE(shared_key, next);
 		sctp_free_sharedkey(shared_key);
 		/* sa_ignore FREED_MEMORY */
 	}
@@ -5128,7 +5128,7 @@ sctp_free_assoc(struct sctp_inpcb *inp, struct sctp_tcb *stcb, int from_inpcbfre
 		SCTP_ZONE_FREE(SCTP_BASE_INFO(ipi_zone_asoc), stcb);
 		SCTP_DECR_ASOC_COUNT();
 	} else {
-		LIST_INSERT_HEAD(&inp->sctp_asoc_free_list, stcb, sctp_tcblist);
+		BSD_LIST_INSERT_HEAD(&inp->sctp_asoc_free_list, stcb, sctp_tcblist);
 	}
 #else
 	SCTP_ZONE_FREE(SCTP_BASE_INFO(ipi_zone_asoc), stcb);
@@ -5237,7 +5237,7 @@ sctp_update_ep_vflag(struct sctp_inpcb *inp)
 	/* first clear the flag */
 	inp->ip_inp.inp.inp_vflag = 0;
 	/* set the flag based on addresses on the ep list */
-	LIST_FOREACH(laddr, &inp->sctp_addr_list, sctp_nxt_addr) {
+	BSD_LIST_FOREACH(laddr, &inp->sctp_addr_list, sctp_nxt_addr) {
 		if (laddr->ifa == NULL) {
 			SCTPDBG(SCTP_DEBUG_PCB1, "%s: NULL ifa\n",
 			    __FUNCTION__);
@@ -5288,7 +5288,7 @@ sctp_add_local_addr_ep(struct sctp_inpcb *inp, struct sctp_ifa *ifa, uint32_t ac
 	}
 #endif
 	/* first, is it already present? */
-	LIST_FOREACH(laddr, &inp->sctp_addr_list, sctp_nxt_addr) {
+	BSD_LIST_FOREACH(laddr, &inp->sctp_addr_list, sctp_nxt_addr) {
 		if (laddr->ifa == ifa) {
 			fnd = 1;
 			break;
@@ -5331,7 +5331,7 @@ sctp_select_primary_destination(struct sctp_tcb *stcb)
 {
 	struct sctp_nets *net;
 
-	TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
+	BSD_TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
 		/* for now, we'll just pick the first reachable one we find */
 		if (net->dest_state & SCTP_ADDR_UNCONFIRMED)
 			continue;
@@ -5360,7 +5360,7 @@ sctp_del_local_addr_ep(struct sctp_inpcb *inp, struct sctp_ifa *ifa)
 		/* You are already bound to all. You have it already */
 		return;
 	}
-	LIST_FOREACH(laddr, &inp->sctp_addr_list, sctp_nxt_addr) {
+	BSD_LIST_FOREACH(laddr, &inp->sctp_addr_list, sctp_nxt_addr) {
 		if (laddr->ifa == ifa) {
 			fnd = 1;
 			break;
@@ -5385,7 +5385,7 @@ sctp_del_local_addr_ep(struct sctp_inpcb *inp, struct sctp_ifa *ifa)
 			inp->next_addr_touse = NULL;
 
 		/* clean up "last_used_address" */
-		LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
+		BSD_LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
 			struct sctp_nets *net;
 
 			SCTP_TCB_LOCK(stcb);
@@ -5396,7 +5396,7 @@ sctp_del_local_addr_ep(struct sctp_inpcb *inp, struct sctp_ifa *ifa)
 			 * Now spin through all the nets and purge any ref
 			 * to laddr
 			 */
-			TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
+			BSD_TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
 				if (net->ro._s_addr &&
 				    (net->ro._s_addr->ifa == laddr->ifa)) {
 					/* Yep, purge src address selected */
@@ -5450,7 +5450,7 @@ sctp_add_local_addr_restricted(struct sctp_tcb *stcb, struct sctp_ifa *ifa)
 	}
 #endif
 	/* does the address already exist? */
-	LIST_FOREACH(laddr, list, sctp_nxt_addr) {
+	BSD_LIST_FOREACH(laddr, list, sctp_nxt_addr) {
 		if (laddr->ifa == ifa) {
 			return;
 		}
@@ -5482,7 +5482,7 @@ sctp_insert_laddr(struct sctpladdr *list, struct sctp_ifa *ifa, uint32_t act)
 	laddr->action = act;
 	atomic_add_int(&ifa->refcount, 1);
 	/* insert it */
-	LIST_INSERT_HEAD(list, laddr, sctp_nxt_addr);
+	BSD_LIST_INSERT_HEAD(list, laddr, sctp_nxt_addr);
 
 	return (0);
 }
@@ -5495,7 +5495,7 @@ sctp_remove_laddr(struct sctp_laddr *laddr)
 {
 
 	/* remove from the list */
-	LIST_REMOVE(laddr, sctp_nxt_addr);
+	BSD_LIST_REMOVE(laddr, sctp_nxt_addr);
 	sctp_free_ifa(laddr->ifa);
 	SCTP_ZONE_FREE(SCTP_BASE_INFO(ipi_zone_laddr), laddr);
 	SCTP_DECR_LADDR_COUNT();
@@ -5529,7 +5529,7 @@ sctp_del_local_addr_restricted(struct sctp_tcb *stcb, struct sctp_ifa *ifa)
 			return;
 		}
 	}
-	LIST_FOREACH(laddr, &stcb->asoc.sctp_restricted_addrs, sctp_nxt_addr) {
+	BSD_LIST_FOREACH(laddr, &stcb->asoc.sctp_restricted_addrs, sctp_nxt_addr) {
 		/* remove the address if it exists */
 		if (laddr->ifa == NULL)
 			continue;
@@ -5583,7 +5583,7 @@ sctp_queue_to_mcore(struct mbuf *m, int off, int cpu_to_use)
 	wkq = &sctp_mcore_workers[cpu_to_use];
 	SCTP_MCORE_QLOCK(wkq);
 
-	TAILQ_INSERT_TAIL(&wkq->que, qent, next);
+	BSD_TAILQ_INSERT_TAIL(&wkq->que, qent, next);
 	if (wkq->running == 0) {
 		need_wake = 1;
 	}
@@ -5624,9 +5624,9 @@ sctp_mcore_thread(void *arg)
 		SCTP_MCORE_QLOCK(wkq);
 skip_sleep:
 		wkq->running = 1;
-		qent = TAILQ_FIRST(&wkq->que);
+		qent = BSD_TAILQ_FIRST(&wkq->que);
 		if (qent) {
-			TAILQ_REMOVE(&wkq->que, qent, next);
+			BSD_TAILQ_REMOVE(&wkq->que, qent, next);
 			SCTP_MCORE_QUNLOCK(wkq);
 			CURVNET_SET(qent->vn);
 			m = qent->m;
@@ -5643,7 +5643,7 @@ skip_sleep:
 			SCTP_MCORE_QLOCK(wkq);
 		}
 		wkq->running = 0;
-		if (!TAILQ_EMPTY(&wkq->que)) {
+		if (!BSD_TAILQ_EMPTY(&wkq->que)) {
 			goto skip_sleep;
 		}
 		SCTP_MCORE_QUNLOCK(wkq);
@@ -5678,7 +5678,7 @@ sctp_startup_mcore_threads(void)
 	    sizeof(struct sctp_mcore_ctrl)));
 	/* Init the structures */
 	for (i = 0; i <= mp_maxid; i++) {
-		TAILQ_INIT(&sctp_mcore_workers[i].que);
+		BSD_TAILQ_INIT(&sctp_mcore_workers[i].que);
 		SCTP_MCORE_LOCK_INIT(&sctp_mcore_workers[i]);
 		SCTP_MCORE_QLOCK_INIT(&sctp_mcore_workers[i]);
 		sctp_mcore_workers[i].cpuid = i;
@@ -5742,7 +5742,7 @@ sctp_pcb_init()
 	SCTP_BASE_STAT(sctps_discontinuitytime).tv_usec = (uint32_t) tv.tv_usec;
 #endif
 	/* init the empty list of (All) Endpoints */
-	LIST_INIT(&SCTP_BASE_INFO(listhead));
+	BSD_LIST_INIT(&SCTP_BASE_INFO(listhead));
 
 
 	/* init the hash table of endpoints */
@@ -5812,7 +5812,7 @@ sctp_pcb_init()
 #ifdef SCTP_PACKET_LOGGING
 	SCTP_IP_PKTLOG_INIT();
 #endif
-	LIST_INIT(&SCTP_BASE_INFO(addr_wq));
+	BSD_LIST_INIT(&SCTP_BASE_INFO(addr_wq));
 
 	SCTP_WQ_ADDR_INIT();
 	/* not sure if we need all the counts */
@@ -5839,7 +5839,7 @@ sctp_pcb_init()
 
 	/* Init the TIMEWAIT list */
 	for (i = 0; i < SCTP_STACK_VTAG_HASH_SIZE; i++) {
-		LIST_INIT(&SCTP_BASE_INFO(vtag_timewait)[i]);
+		BSD_LIST_INIT(&SCTP_BASE_INFO(vtag_timewait)[i]);
 	}
 
 	sctp_startup_iterator();
@@ -5880,11 +5880,11 @@ sctp_pcb_finish(void)
 		struct sctp_iterator *it, *nit;
 
 		SCTP_IPI_ITERATOR_WQ_LOCK();
-		TAILQ_FOREACH_SAFE(it, &sctp_it_ctl.iteratorhead, sctp_nxt_itr, nit) {
+		BSD_TAILQ_FOREACH_SAFE(it, &sctp_it_ctl.iteratorhead, sctp_nxt_itr, nit) {
 			if (it->vn != curvnet) {
 				continue;
 			}
-			TAILQ_REMOVE(&sctp_it_ctl.iteratorhead, it, sctp_nxt_itr);
+			BSD_TAILQ_REMOVE(&sctp_it_ctl.iteratorhead, it, sctp_nxt_itr);
 			if (it->function_atend != NULL) {
 				(*it->function_atend) (it->pointer, it->val);
 			}
@@ -5901,8 +5901,8 @@ sctp_pcb_finish(void)
 
 	SCTP_OS_TIMER_STOP(&SCTP_BASE_INFO(addr_wq_timer.timer));
 	SCTP_WQ_ADDR_LOCK();
-	LIST_FOREACH_SAFE(wi, &SCTP_BASE_INFO(addr_wq), sctp_nxt_addr, nwi) {
-		LIST_REMOVE(wi, sctp_nxt_addr);
+	BSD_LIST_FOREACH_SAFE(wi, &SCTP_BASE_INFO(addr_wq), sctp_nxt_addr, nwi) {
+		BSD_LIST_REMOVE(wi, sctp_nxt_addr);
 		SCTP_DECR_LADDR_COUNT();
 		SCTP_ZONE_FREE(SCTP_BASE_INFO(ipi_zone_laddr), wi);
 	}
@@ -5913,22 +5913,22 @@ sctp_pcb_finish(void)
 	 * destroyed first).
 	 */
 	vrf_bucket = &SCTP_BASE_INFO(sctp_vrfhash)[(SCTP_DEFAULT_VRFID & SCTP_BASE_INFO(hashvrfmark))];
-	LIST_FOREACH_SAFE(vrf, vrf_bucket, next_vrf, nvrf) {
-		LIST_FOREACH_SAFE(ifn, &vrf->ifnlist, next_ifn, nifn) {
-			LIST_FOREACH_SAFE(ifa, &ifn->ifalist, next_ifa, nifa) {
+	BSD_LIST_FOREACH_SAFE(vrf, vrf_bucket, next_vrf, nvrf) {
+		BSD_LIST_FOREACH_SAFE(ifn, &vrf->ifnlist, next_ifn, nifn) {
+			BSD_LIST_FOREACH_SAFE(ifa, &ifn->ifalist, next_ifa, nifa) {
 				/* free the ifa */
-				LIST_REMOVE(ifa, next_bucket);
-				LIST_REMOVE(ifa, next_ifa);
+				BSD_LIST_REMOVE(ifa, next_bucket);
+				BSD_LIST_REMOVE(ifa, next_ifa);
 				SCTP_FREE(ifa, SCTP_M_IFA);
 			}
 			/* free the ifn */
-			LIST_REMOVE(ifn, next_bucket);
-			LIST_REMOVE(ifn, next_ifn);
+			BSD_LIST_REMOVE(ifn, next_bucket);
+			BSD_LIST_REMOVE(ifn, next_ifn);
 			SCTP_FREE(ifn, SCTP_M_IFN);
 		}
 		SCTP_HASH_FREE(vrf->vrf_addr_hash, vrf->vrf_addr_hashmark);
 		/* free the vrf */
-		LIST_REMOVE(vrf, next_vrf);
+		BSD_LIST_REMOVE(vrf, next_vrf);
 		SCTP_FREE(vrf, SCTP_M_VRF);
 	}
 	/* free the vrf hashes */
@@ -5941,9 +5941,9 @@ sctp_pcb_finish(void)
 	 */
 	for (i = 0; i < SCTP_STACK_VTAG_HASH_SIZE; i++) {
 		chain = &SCTP_BASE_INFO(vtag_timewait)[i];
-		if (!LIST_EMPTY(chain)) {
+		if (!BSD_LIST_EMPTY(chain)) {
 			prev_twait_block = NULL;
-			LIST_FOREACH(twait_block, chain, sctp_nxt_tagblock) {
+			BSD_LIST_FOREACH(twait_block, chain, sctp_nxt_tagblock) {
 				if (prev_twait_block) {
 					SCTP_FREE(prev_twait_block, SCTP_M_TIMW);
 				}
@@ -6049,7 +6049,7 @@ sctp_load_addresses_from_init(struct sctp_tcb *stcb, struct mbuf *m,
 	}
 	/* Turn off ECN until we get through all params */
 	ecn_allowed = 0;
-	TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
+	BSD_TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
 		/* mark all addresses that we have currently on the list */
 		net->dest_state |= SCTP_ADDR_NOT_IN_ASSOC;
 	}
@@ -6535,13 +6535,13 @@ next_param:
 		    sizeof(parm_buf));
 	}
 	/* Now check to see if we need to purge any addresses */
-	TAILQ_FOREACH_SAFE(net, &stcb->asoc.nets, sctp_next, nnet) {
+	BSD_TAILQ_FOREACH_SAFE(net, &stcb->asoc.nets, sctp_next, nnet) {
 		if ((net->dest_state & SCTP_ADDR_NOT_IN_ASSOC) ==
 		    SCTP_ADDR_NOT_IN_ASSOC) {
 			/* This address has been removed from the asoc */
 			/* remove and free it */
 			stcb->asoc.numnets--;
-			TAILQ_REMOVE(&stcb->asoc.nets, net, sctp_next);
+			BSD_TAILQ_REMOVE(&stcb->asoc.nets, net, sctp_next);
 			sctp_free_remote_addr(net);
 			if (net == stcb->asoc.primary_destination) {
 				stcb->asoc.primary_destination = NULL;
@@ -6629,15 +6629,15 @@ sctp_set_primary_addr(struct sctp_tcb *stcb, struct sockaddr *sa,
 			sctp_free_remote_addr(stcb->asoc.alternate);
 			stcb->asoc.alternate = NULL;
 		}
-		net = TAILQ_FIRST(&stcb->asoc.nets);
+		net = BSD_TAILQ_FIRST(&stcb->asoc.nets);
 		if (net != stcb->asoc.primary_destination) {
 			/*
 			 * first one on the list is NOT the primary
 			 * sctp_cmpaddr() is much more efficient if the
 			 * primary is the first on the list, make it so.
 			 */
-			TAILQ_REMOVE(&stcb->asoc.nets, stcb->asoc.primary_destination, sctp_next);
-			TAILQ_INSERT_HEAD(&stcb->asoc.nets, stcb->asoc.primary_destination, sctp_next);
+			BSD_TAILQ_REMOVE(&stcb->asoc.nets, stcb->asoc.primary_destination, sctp_next);
+			BSD_TAILQ_INSERT_HEAD(&stcb->asoc.nets, stcb->asoc.primary_destination, sctp_next);
 		}
 		return (0);
 	}
@@ -6665,7 +6665,7 @@ sctp_is_vtag_good(uint32_t tag, uint16_t lport, uint16_t rport, struct timeval *
 		/* invalid vtag */
 		goto skip_vtag_check;
 	}
-	LIST_FOREACH(stcb, head, sctp_asocs) {
+	BSD_LIST_FOREACH(stcb, head, sctp_asocs) {
 		/*
 		 * We choose not to lock anything here. TCB's can't be
 		 * removed since we have the read lock, so they can't be
@@ -6692,7 +6692,7 @@ skip_vtag_check:
 
 	chain = &SCTP_BASE_INFO(vtag_timewait)[(tag % SCTP_STACK_VTAG_HASH_SIZE)];
 	/* Now what about timed wait ? */
-	LIST_FOREACH(twait_block, chain, sctp_nxt_tagblock) {
+	BSD_LIST_FOREACH(twait_block, chain, sctp_nxt_tagblock) {
 		/*
 		 * Block(s) are present, lets see if we have this tag in the
 		 * list
@@ -6747,7 +6747,7 @@ sctp_drain_mbufs(struct sctp_tcb *stcb)
 	cumulative_tsn_p1 = asoc->cumulative_tsn + 1;
 	cnt = 0;
 	/* First look in the re-assembly queue */
-	TAILQ_FOREACH_SAFE(chk, &asoc->reasmqueue, sctp_next, nchk) {
+	BSD_TAILQ_FOREACH_SAFE(chk, &asoc->reasmqueue, sctp_next, nchk) {
 		if (SCTP_TSN_GT(chk->rec.data.TSN_seq, cumulative_tsn_p1)) {
 			/* Yep it is above cum-ack */
 			cnt++;
@@ -6755,7 +6755,7 @@ sctp_drain_mbufs(struct sctp_tcb *stcb)
 			asoc->size_on_reasm_queue = sctp_sbspace_sub(asoc->size_on_reasm_queue, chk->send_size);
 			sctp_ucount_decr(asoc->cnt_on_reasm_queue);
 			SCTP_UNSET_TSN_PRESENT(asoc->mapping_array, gap);
-			TAILQ_REMOVE(&asoc->reasmqueue, chk, sctp_next);
+			BSD_TAILQ_REMOVE(&asoc->reasmqueue, chk, sctp_next);
 			if (chk->data) {
 				sctp_m_freem(chk->data);
 				chk->data = NULL;
@@ -6765,7 +6765,7 @@ sctp_drain_mbufs(struct sctp_tcb *stcb)
 	}
 	/* Ok that was fun, now we will drain all the inbound streams? */
 	for (strmat = 0; strmat < asoc->streamincnt; strmat++) {
-		TAILQ_FOREACH_SAFE(ctl, &asoc->strmin[strmat].inqueue, next, nctl) {
+		BSD_TAILQ_FOREACH_SAFE(ctl, &asoc->strmin[strmat].inqueue, next, nctl) {
 			if (SCTP_TSN_GT(ctl->sinfo_tsn, cumulative_tsn_p1)) {
 				/* Yep it is above cum-ack */
 				cnt++;
@@ -6773,7 +6773,7 @@ sctp_drain_mbufs(struct sctp_tcb *stcb)
 				asoc->size_on_all_streams = sctp_sbspace_sub(asoc->size_on_all_streams, ctl->length);
 				sctp_ucount_decr(asoc->cnt_on_all_streams);
 				SCTP_UNSET_TSN_PRESENT(asoc->mapping_array, gap);
-				TAILQ_REMOVE(&asoc->strmin[strmat].inqueue, ctl, next);
+				BSD_TAILQ_REMOVE(&asoc->strmin[strmat].inqueue, ctl, next);
 				if (ctl->data) {
 					sctp_m_freem(ctl->data);
 					ctl->data = NULL;
@@ -6861,10 +6861,10 @@ sctp_drain()
 #endif
 		}
 		SCTP_INP_INFO_RLOCK();
-		LIST_FOREACH(inp, &SCTP_BASE_INFO(listhead), sctp_list) {
+		BSD_LIST_FOREACH(inp, &SCTP_BASE_INFO(listhead), sctp_list) {
 			/* For each endpoint */
 			SCTP_INP_RLOCK(inp);
-			LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
+			BSD_LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
 				/* For each association */
 				SCTP_TCB_LOCK(stcb);
 				sctp_drain_mbufs(stcb);
@@ -6934,7 +6934,7 @@ sctp_initiate_iterator(inp_func inpf,
 		it->iterator_flags = SCTP_ITERATOR_DO_SINGLE_INP;
 	} else {
 		SCTP_INP_INFO_RLOCK();
-		it->inp = LIST_FIRST(&SCTP_BASE_INFO(listhead));
+		it->inp = BSD_LIST_FIRST(&SCTP_BASE_INFO(listhead));
 		if (it->inp) {
 			SCTP_INP_INCR_REF(it->inp);
 		}
@@ -6944,7 +6944,7 @@ sctp_initiate_iterator(inp_func inpf,
 	}
 	SCTP_IPI_ITERATOR_WQ_LOCK();
 
-	TAILQ_INSERT_TAIL(&sctp_it_ctl.iteratorhead, it, sctp_nxt_itr);
+	BSD_TAILQ_INSERT_TAIL(&sctp_it_ctl.iteratorhead, it, sctp_nxt_itr);
 	if (sctp_it_ctl.iterator_running == 0) {
 		sctp_wakeup_iterator();
 	}

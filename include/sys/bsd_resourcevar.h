@@ -93,7 +93,7 @@ struct racct;
  * (d) Locked by the ui_vmsize_mtx
  */
 struct uidinfo {
-	LIST_ENTRY(uidinfo) ui_hash;	/* (c) hash chain of uidinfos */
+	BSD_LIST_ENTRY(uidinfo) ui_hash;	/* (c) hash chain of uidinfos */
 	struct mtx ui_vmsize_mtx;
 	vm_ooffset_t ui_vmsize;		/* (d) swap reservation by uid */
 	long	ui_sbsize;		/* (b) socket buffer space consumed */

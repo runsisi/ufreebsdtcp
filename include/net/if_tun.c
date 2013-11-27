@@ -67,7 +67,7 @@
  * static for the duration of a tunnel interface.
  */
 struct tun_softc {
-	TAILQ_ENTRY(tun_softc)	tun_list;
+	BSD_TAILQ_ENTRY(tun_softc)	tun_list;
 	struct cdev *tun_dev;
 	u_short	tun_flags;		/* misc flags */
 #define	TUN_OPEN	0x0001
@@ -111,7 +111,7 @@ static MALLOC_DEFINE(M_TUN, TUNNAME, "Tunnel Interface");
 static int tundebug = 0;
 static int tundclone = 1;
 static struct clonedevs *tunclones;
-static TAILQ_HEAD(,tun_softc)	tunhead = TAILQ_HEAD_INITIALIZER(tunhead);
+static BSD_TAILQ_HEAD(,tun_softc)	tunhead = BSD_TAILQ_HEAD_INITIALIZER(tunhead);
 SYSCTL_INT(_debug, OID_AUTO, if_tun_debug, CTLFLAG_RW, &tundebug, 0, "");
 
 SYSCTL_DECL(_net_link);
@@ -273,7 +273,7 @@ tun_clone_destroy(struct ifnet *ifp)
 	struct tun_softc *tp = ifp->if_softc;
 
 	mtx_lock(&tunmtx);
-	TAILQ_REMOVE(&tunhead, tp, tun_list);
+	BSD_TAILQ_REMOVE(&tunhead, tp, tun_list);
 	mtx_unlock(&tunmtx);
 	tun_destroy(tp);
 }
@@ -299,8 +299,8 @@ tunmodevent(module_t mod, int type, void *data)
 		drain_dev_clone_events();
 
 		mtx_lock(&tunmtx);
-		while ((tp = TAILQ_FIRST(&tunhead)) != NULL) {
-			TAILQ_REMOVE(&tunhead, tp, tun_list);
+		while ((tp = BSD_TAILQ_FIRST(&tunhead)) != NULL) {
+			BSD_TAILQ_REMOVE(&tunhead, tp, tun_list);
 			mtx_unlock(&tunmtx);
 			tun_destroy(tp);
 			mtx_lock(&tunmtx);
@@ -369,7 +369,7 @@ tuncreate(const char *name, struct cdev *dev)
 	sc->tun_flags = TUN_INITED;
 	sc->tun_dev = dev;
 	mtx_lock(&tunmtx);
-	TAILQ_INSERT_TAIL(&tunhead, sc, tun_list);
+	BSD_TAILQ_INSERT_TAIL(&tunhead, sc, tun_list);
 	mtx_unlock(&tunmtx);
 
 	ifp = sc->tun_ifp = if_alloc(IFT_PPP);
@@ -470,7 +470,7 @@ tunclose(struct cdev *dev, int foo, int bar, struct thread *td)
 
 		ifp->if_drv_flags &= ~IFF_DRV_RUNNING;
 		mtx_unlock(&tp->tun_mtx);
-		TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
+		BSD_TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
 			/* deal w/IPv4 PtP destination; unlocked read */
 			if (ifa->ifa_addr->sa_family == AF_INET) {
 				rtinit(ifa, (int)RTM_DELETE,
@@ -512,7 +512,7 @@ tuninit(struct ifnet *ifp)
 
 #ifdef INET
 	if_addr_rlock(ifp);
-	TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
+	BSD_TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
 		if (ifa->ifa_addr->sa_family == AF_INET) {
 			struct sockaddr_in *si;
 

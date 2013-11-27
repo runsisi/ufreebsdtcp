@@ -72,7 +72,7 @@ struct gif_softc {
 	const struct encaptab *encap_cookie6;
 	void		*gif_netgraph;	/* ng_gif(4) netgraph node info */
 	u_int		gif_options;
-	LIST_ENTRY(gif_softc) gif_list; /* all gif's are linked */
+	BSD_LIST_ENTRY(gif_softc) gif_list; /* all gif's are linked */
 };
 #define	GIF2IFP(sc)	((sc)->gif_ifp)
 #define	GIF_LOCK_INIT(sc)	mtx_init(&(sc)->gif_mtx, "gif softc",	\

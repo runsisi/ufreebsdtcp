@@ -338,7 +338,7 @@ firewire_input_fragment(struct fw_com *fc, struct mbuf *m, int src)
 	 */
 	enc = mtod(m, union fw_encap *);
 	id = enc->firstfrag.dgl | (src << 16);
-	STAILQ_FOREACH(r, &fc->fc_frags, fr_link)
+	BSD_STAILQ_FOREACH(r, &fc->fc_frags, fr_link)
 		if (r->fr_id == id)
 			break;
 	if (!r) {
@@ -349,7 +349,7 @@ firewire_input_fragment(struct fw_com *fc, struct mbuf *m, int src)
 		}
 		r->fr_id = id;
 		r->fr_frags = 0;
-		STAILQ_INSERT_HEAD(&fc->fc_frags, r, fr_link);
+		BSD_STAILQ_INSERT_HEAD(&fc->fc_frags, r, fr_link);
 	}
 
 	/*
@@ -439,7 +439,7 @@ firewire_input_fragment(struct fw_com *fc, struct mbuf *m, int src)
 				 * we must be finished. Make sure we have
 				 * merged the whole chain.
 				 */
-				STAILQ_REMOVE(&fc->fc_frags, r, fw_reass, fr_link);
+				BSD_STAILQ_REMOVE(&fc->fc_frags, r, fw_reass, fr_link);
 				bsd_free(r, M_TEMP);
 				m = mprev->m_nextpkt;
 				while (m) {
@@ -749,7 +749,7 @@ firewire_ifattach(struct ifnet *ifp, struct fw_hwaddr *llc)
 	};
 
 	fc->fc_speed = llc->sspd;
-	STAILQ_INIT(&fc->fc_frags);
+	BSD_STAILQ_INIT(&fc->fc_frags);
 
 	ifp->if_addrlen = sizeof(struct fw_hwaddr);
 	ifp->if_hdrlen = 0;
@@ -794,8 +794,8 @@ firewire_busreset(struct ifnet *ifp)
 	/*
 	 * Discard any partial datagrams since the host ids may have changed.
 	 */
-	while ((r = STAILQ_FIRST(&fc->fc_frags))) {
-		STAILQ_REMOVE_HEAD(&fc->fc_frags, fr_link);
+	while ((r = BSD_STAILQ_FIRST(&fc->fc_frags))) {
+		BSD_STAILQ_REMOVE_HEAD(&fc->fc_frags, fr_link);
 		while (r->fr_frags) {
 			m = r->fr_frags;
 			r->fr_frags = m->m_nextpkt;

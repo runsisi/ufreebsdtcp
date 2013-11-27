@@ -107,7 +107,7 @@ clear_orphan(struct proc *p)
 	PROC_LOCK_ASSERT(p, MA_OWNED);
 
 	if (p->p_flag & P_ORPHAN) {
-		LIST_REMOVE(p, p_orphan);
+		BSD_LIST_REMOVE(p, p_orphan);
 		p->p_flag &= ~P_ORPHAN;
 	}
 }
@@ -404,9 +404,9 @@ exit1(struct thread *td, int rv)
 	 * Place onto zombproc.  Unlink from parent's child list.
 	 */
 	sx_xlock(&allproc_lock);
-	LIST_REMOVE(p, p_list);
-	LIST_INSERT_HEAD(&zombproc, p, p_list);
-	LIST_REMOVE(p, p_hash);
+	BSD_LIST_REMOVE(p, p_list);
+	BSD_LIST_INSERT_HEAD(&zombproc, p, p_list);
+	BSD_LIST_REMOVE(p, p_hash);
 	sx_xunlock(&allproc_lock);
 
 	/*
@@ -423,11 +423,11 @@ exit1(struct thread *td, int rv)
 	 * Reparent all of our children to init.
 	 */
 	sx_xlock(&proctree_lock);
-	q = LIST_FIRST(&p->p_children);
+	q = BSD_LIST_FIRST(&p->p_children);
 	if (q != NULL)		/* only need this if any child is S_ZOMB */
 		wakeup(initproc);
 	for (; q != NULL; q = nq) {
-		nq = LIST_NEXT(q, p_sibling);
+		nq = BSD_LIST_NEXT(q, p_sibling);
 		PROC_LOCK(q);
 		proc_reparent(q, initproc);
 		q->p_sigparent = SIGCHLD;
@@ -456,7 +456,7 @@ exit1(struct thread *td, int rv)
 	/*
 	 * Also get rid of our orphans.
 	 */
-	while ((q = LIST_FIRST(&p->p_orphans)) != NULL) {
+	while ((q = BSD_LIST_FIRST(&p->p_orphans)) != NULL) {
 		PROC_LOCK(q);
 		clear_orphan(q);
 		PROC_UNLOCK(q);
@@ -805,9 +805,9 @@ proc_reap(struct thread *td, struct proc *p, int *status, int options)
 	 * exclusive reference.
 	 */
 	sx_xlock(&allproc_lock);
-	LIST_REMOVE(p, p_list);	/* off zombproc */
+	BSD_LIST_REMOVE(p, p_list);	/* off zombproc */
 	sx_xunlock(&allproc_lock);
-	LIST_REMOVE(p, p_sibling);
+	BSD_LIST_REMOVE(p, p_sibling);
 	PROC_LOCK(p);
 	clear_orphan(p);
 	PROC_UNLOCK(p);
@@ -1105,7 +1105,7 @@ loop:
 	}
 	nfound = 0;
 	sx_xlock(&proctree_lock);
-	LIST_FOREACH(p, &q->p_children, p_sibling) {
+	BSD_LIST_FOREACH(p, &q->p_children, p_sibling) {
 		ret = proc_to_reap(td, p, idtype, id, status, options,
 		    wrusage, siginfo);
 		if (ret == 0)
@@ -1205,7 +1205,7 @@ loop:
 	 * for.  By maintaining a list of orphans we allow the parent
 	 * to successfully wait until the child becomes a zombie.
 	 */
-	LIST_FOREACH(p, &q->p_orphans, p_orphan) {
+	BSD_LIST_FOREACH(p, &q->p_orphans, p_orphan) {
 		ret = proc_to_reap(td, p, idtype, id, status, options,
 		    wrusage, siginfo);
 		if (ret == 0)
@@ -1253,12 +1253,12 @@ proc_reparent(struct proc *child, struct proc *parent)
 	PROC_LOCK(child->p_pptr);
 	sigqueue_take(child->p_ksi);
 	PROC_UNLOCK(child->p_pptr);
-	LIST_REMOVE(child, p_sibling);
-	LIST_INSERT_HEAD(&parent->p_children, child, p_sibling);
+	BSD_LIST_REMOVE(child, p_sibling);
+	BSD_LIST_INSERT_HEAD(&parent->p_children, child, p_sibling);
 
 	clear_orphan(child);
 	if (child->p_flag & P_TRACED) {
-		LIST_INSERT_HEAD(&child->p_pptr->p_orphans, child, p_orphan);
+		BSD_LIST_INSERT_HEAD(&child->p_pptr->p_orphans, child, p_orphan);
 		child->p_flag |= P_ORPHAN;
 	}
 

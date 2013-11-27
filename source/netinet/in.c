@@ -99,7 +99,7 @@ in_localaddr(struct in_addr in)
 	register struct in_ifaddr *ia;
 
 	IN_IFADDR_RLOCK();
-	TAILQ_FOREACH(ia, &V_in_ifaddrhead, ia_link) {
+	BSD_TAILQ_FOREACH(ia, &V_in_ifaddrhead, ia_link) {
 		if ((i & ia->ia_subnetmask) == ia->ia_subnet) {
 			IN_IFADDR_RUNLOCK();
 			return (1);
@@ -119,7 +119,7 @@ in_localip(struct in_addr in)
 	struct in_ifaddr *ia;
 
 	IN_IFADDR_RLOCK();
-	LIST_FOREACH(ia, INADDR_HASH(in.s_addr), ia_hash) {
+	BSD_LIST_FOREACH(ia, INADDR_HASH(in.s_addr), ia_hash) {
 		if (IA_SIN(ia)->sin_addr.s_addr == in.s_addr) {
 			IN_IFADDR_RUNLOCK();
 			return (1);
@@ -313,7 +313,7 @@ in_control(struct socket *so, u_long cmd, caddr_t data, struct ifnet *ifp,
 	 */
 	dst = ((struct sockaddr_in *)&ifr->ifr_addr)->sin_addr;
 	IN_IFADDR_RLOCK();
-	LIST_FOREACH(iap, INADDR_HASH(dst.s_addr), ia_hash) {
+	BSD_LIST_FOREACH(iap, INADDR_HASH(dst.s_addr), ia_hash) {
 		if (iap->ia_ifp == ifp &&
 		    iap->ia_addr.sin_addr.s_addr == dst.s_addr) {
 			if (td == NULL || prison_check_ip4(td->td_ucred,
@@ -327,7 +327,7 @@ in_control(struct socket *so, u_long cmd, caddr_t data, struct ifnet *ifp,
 	IN_IFADDR_RUNLOCK();
 	if (ia == NULL) {
 		IF_ADDR_RLOCK(ifp);
-		TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
+		BSD_TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
 			iap = ifatoia(ifa);
 			if (iap->ia_addr.sin_family == AF_INET) {
 				if (td != NULL &&
@@ -353,7 +353,7 @@ in_control(struct socket *so, u_long cmd, caddr_t data, struct ifnet *ifp,
 			struct in_ifaddr *oia;
 
 			IN_IFADDR_RLOCK();
-			for (oia = ia; ia; ia = TAILQ_NEXT(ia, ia_link)) {
+			for (oia = ia; ia; ia = BSD_TAILQ_NEXT(ia, ia_link)) {
 				if (ia->ia_ifp == ifp  &&
 				    ia->ia_addr.sin_addr.s_addr ==
 				    ifra->ifra_addr.sin_addr.s_addr)
@@ -405,11 +405,11 @@ in_control(struct socket *so, u_long cmd, caddr_t data, struct ifnet *ifp,
 
 			ifa_ref(ifa);			/* if_addrhead */
 			IF_ADDR_WLOCK(ifp);
-			TAILQ_INSERT_TAIL(&ifp->if_addrhead, ifa, ifa_link);
+			BSD_TAILQ_INSERT_TAIL(&ifp->if_addrhead, ifa, ifa_link);
 			IF_ADDR_WUNLOCK(ifp);
 			ifa_ref(ifa);			/* in_ifaddrhead */
 			IN_IFADDR_WLOCK();
-			TAILQ_INSERT_TAIL(&V_in_ifaddrhead, ia, ia_link);
+			BSD_TAILQ_INSERT_TAIL(&V_in_ifaddrhead, ia, ia_link);
 			IN_IFADDR_WUNLOCK();
 			iaIsNew = 1;
 		}
@@ -588,7 +588,7 @@ in_control(struct socket *so, u_long cmd, caddr_t data, struct ifnet *ifp,
 
 	IF_ADDR_WLOCK(ifp);
 	/* Re-check that ia is still part of the list. */
-	TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
+	BSD_TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
 		if (ifa == &ia->ia_ifa)
 			break;
 	}
@@ -602,16 +602,16 @@ in_control(struct socket *so, u_long cmd, caddr_t data, struct ifnet *ifp,
 		error = EADDRNOTAVAIL;
 		goto out;
 	}
-	TAILQ_REMOVE(&ifp->if_addrhead, &ia->ia_ifa, ifa_link);
+	BSD_TAILQ_REMOVE(&ifp->if_addrhead, &ia->ia_ifa, ifa_link);
 	IF_ADDR_WUNLOCK(ifp);
 	ifa_free(&ia->ia_ifa);				/* if_addrhead */
 
 	IN_IFADDR_WLOCK();
-	TAILQ_REMOVE(&V_in_ifaddrhead, ia, ia_link);
+	BSD_TAILQ_REMOVE(&V_in_ifaddrhead, ia, ia_link);
 	if (ia->ia_addr.sin_family == AF_INET) {
 		struct in_ifaddr *if_ia;
 
-		LIST_REMOVE(ia, ia_hash);
+		BSD_LIST_REMOVE(ia, ia_hash);
 		IN_IFADDR_WUNLOCK();
 		/*
 		 * If this is the last IPv4 address configured on this
@@ -754,7 +754,7 @@ in_lifaddr_ioctl(struct socket *so, u_long cmd, caddr_t data,
 		}
 
 		IF_ADDR_RLOCK(ifp);
-		TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link)	{
+		BSD_TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link)	{
 			if (ifa->ifa_addr->sa_family != AF_INET)
 				continue;
 			if (match.s_addr == 0)
@@ -839,11 +839,11 @@ in_ifinit(struct ifnet *ifp, struct in_ifaddr *ia, struct sockaddr_in *sin,
 
 	oldaddr = ia->ia_addr;
 	if (oldaddr.sin_family == AF_INET)
-		LIST_REMOVE(ia, ia_hash);
+		BSD_LIST_REMOVE(ia, ia_hash);
 	ia->ia_addr = *sin;
 	if (ia->ia_addr.sin_family == AF_INET) {
 		IN_IFADDR_WLOCK();
-		LIST_INSERT_HEAD(INADDR_HASH(ia->ia_addr.sin_addr.s_addr),
+		BSD_LIST_INSERT_HEAD(INADDR_HASH(ia->ia_addr.sin_addr.s_addr),
 		    ia, ia_hash);
 		IN_IFADDR_WUNLOCK();
 	}
@@ -856,20 +856,20 @@ in_ifinit(struct ifnet *ifp, struct in_ifaddr *ia, struct sockaddr_in *sin,
 		error = (*ifp->if_ioctl)(ifp, SIOCSIFADDR, (caddr_t)ia);
 		if (error) {
 			splx(s);
-			/* LIST_REMOVE(ia, ia_hash) is done in in_control */
+			/* BSD_LIST_REMOVE(ia, ia_hash) is done in in_control */
 			ia->ia_addr = oldaddr;
 			IN_IFADDR_WLOCK();
 			if (ia->ia_addr.sin_family == AF_INET)
-				LIST_INSERT_HEAD(INADDR_HASH(
+				BSD_LIST_INSERT_HEAD(INADDR_HASH(
 				    ia->ia_addr.sin_addr.s_addr), ia, ia_hash);
 			else 
 				/* 
 				 * If oldaddr family is not AF_INET (e.g. 
 				 * interface has been just created) in_control 
-				 * does not call LIST_REMOVE, and we end up 
+				 * does not call BSD_LIST_REMOVE, and we end up 
 				 * with bogus ia entries in hash
 				 */
-				LIST_REMOVE(ia, ia_hash);
+				BSD_LIST_REMOVE(ia, ia_hash);
 			IN_IFADDR_WUNLOCK();
 			return (error);
 		}
@@ -1019,7 +1019,7 @@ in_addprefix(struct in_ifaddr *target, int flags)
 	}
 
 	IN_IFADDR_RLOCK();
-	TAILQ_FOREACH(ia, &V_in_ifaddrhead, ia_link) {
+	BSD_TAILQ_FOREACH(ia, &V_in_ifaddrhead, ia_link) {
 		if (rtinitflags(ia)) {
 			p = ia->ia_dstaddr.sin_addr;
 
@@ -1142,7 +1142,7 @@ in_scrubprefix(struct in_ifaddr *target, u_int flags)
 	}
 
 	IN_IFADDR_RLOCK();
-	TAILQ_FOREACH(ia, &V_in_ifaddrhead, ia_link) {
+	BSD_TAILQ_FOREACH(ia, &V_in_ifaddrhead, ia_link) {
 		if (rtinitflags(ia))
 			p = ia->ia_dstaddr.sin_addr;
 		else {
@@ -1234,7 +1234,7 @@ in_broadcast(struct in_addr in, struct ifnet *ifp)
 	 * with a broadcast address.
 	 */
 #define ia ((struct in_ifaddr *)ifa)
-	TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link)
+	BSD_TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link)
 		if (ifa->ifa_addr->sa_family == AF_INET &&
 		    (in.s_addr == ia->ia_broadaddr.sin_addr.s_addr ||
 		     /*
@@ -1276,11 +1276,11 @@ in_ifdetach(struct ifnet *ifp)
 static void
 in_purgemaddrs(struct ifnet *ifp)
 {
-	LIST_HEAD(,in_multi) purgeinms;
+	BSD_LIST_HEAD(,in_multi) purgeinms;
 	struct in_multi		*inm, *tinm;
 	struct ifmultiaddr	*ifma;
 
-	LIST_INIT(&purgeinms);
+	BSD_LIST_INIT(&purgeinms);
 	IN_MULTI_LOCK();
 
 	/*
@@ -1290,7 +1290,7 @@ in_purgemaddrs(struct ifnet *ifp)
 	 * by code further down.
 	 */
 	IF_ADDR_RLOCK(ifp);
-	TAILQ_FOREACH(ifma, &ifp->if_multiaddrs, ifma_link) {
+	BSD_TAILQ_FOREACH(ifma, &ifp->if_multiaddrs, ifma_link) {
 		if (ifma->ifma_addr->sa_family != AF_INET ||
 		    ifma->ifma_protospec == NULL)
 			continue;
@@ -1299,12 +1299,12 @@ in_purgemaddrs(struct ifnet *ifp)
 		    ("%s: ifma_protospec is NULL", __func__));
 #endif
 		inm = (struct in_multi *)ifma->ifma_protospec;
-		LIST_INSERT_HEAD(&purgeinms, inm, inm_link);
+		BSD_LIST_INSERT_HEAD(&purgeinms, inm, inm_link);
 	}
 	IF_ADDR_RUNLOCK(ifp);
 
-	LIST_FOREACH_SAFE(inm, &purgeinms, inm_link, tinm) {
-		LIST_REMOVE(inm, inm_link);
+	BSD_LIST_FOREACH_SAFE(inm, &purgeinms, inm_link, tinm) {
+		BSD_LIST_REMOVE(inm, inm_link);
 		inm_release_locked(inm);
 	}
 	igmp_ifdetach(ifp);
@@ -1373,7 +1373,7 @@ in_lltable_prefix_free(struct lltable *llt, const struct sockaddr *prefix,
 
 	IF_AFDATA_WLOCK(llt->llt_ifp);
 	for (i = 0; i < LLTBL_HASHTBL_SIZE; i++) {
-		LIST_FOREACH_SAFE(lle, &llt->lle_head[i], lle_next, next) {
+		BSD_LIST_FOREACH_SAFE(lle, &llt->lle_head[i], lle_next, next) {
 			/*
 			 * (flags & LLE_STATIC) means deleting all entries
 			 * including static ARP entries.
@@ -1485,7 +1485,7 @@ in_lltable_lookup(struct lltable *llt, u_int flags, const struct sockaddr *l3add
 
 	hashkey = sin->sin_addr.s_addr;
 	lleh = &llt->lle_head[LLATBL_HASH(hashkey, LLTBL_HASHMASK)];
-	LIST_FOREACH(lle, lleh, lle_next) {
+	BSD_LIST_FOREACH(lle, lleh, lle_next) {
 		struct sockaddr_in *sa2 = satosin(L3_ADDR(lle));
 		if (lle->la_flags & LLE_DELETED)
 			continue;
@@ -1522,7 +1522,7 @@ in_lltable_lookup(struct lltable *llt, u_int flags, const struct sockaddr *l3add
 		lle->lle_tbl  = llt;
 		lle->lle_head = lleh;
 		lle->la_flags |= LLE_LINKED;
-		LIST_INSERT_HEAD(lleh, lle, lle_next);
+		BSD_LIST_INSERT_HEAD(lleh, lle, lle_next);
 	} else if (flags & LLE_DELETE) {
 		if (!(lle->la_flags & LLE_IFADDR) || (flags & LLE_IFADDR)) {
 			LLE_WLOCK(lle);
@@ -1568,7 +1568,7 @@ in_lltable_dump(struct lltable *llt, struct sysctl_req *wr)
 
 	error = 0;
 	for (i = 0; i < LLTBL_HASHTBL_SIZE; i++) {
-		LIST_FOREACH(lle, &llt->lle_head[i], lle_next) {
+		BSD_LIST_FOREACH(lle, &llt->lle_head[i], lle_next) {
 			struct sockaddr_dl *sdl;
 
 			/* skip deleted entries */

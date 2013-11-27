@@ -64,14 +64,14 @@ struct sysctl_oid *iconv_oid_hook = &sysctl___kern_iconv;
 /*
  * List of loaded converters
  */
-static TAILQ_HEAD(iconv_converter_list, iconv_converter_class)
-    iconv_converters = TAILQ_HEAD_INITIALIZER(iconv_converters);
+static BSD_TAILQ_HEAD(iconv_converter_list, iconv_converter_class)
+    iconv_converters = BSD_TAILQ_HEAD_INITIALIZER(iconv_converters);
 
 /*
  * List of supported/loaded charsets pairs
  */
-static TAILQ_HEAD(, iconv_cspair)
-    iconv_cslist = TAILQ_HEAD_INITIALIZER(iconv_cslist);
+static BSD_TAILQ_HEAD(, iconv_cspair)
+    iconv_cslist = BSD_TAILQ_HEAD_INITIALIZER(iconv_cslist);
 static int iconv_csid = 1;
 
 static char iconv_unicode_string[] = "unicode";	/* save eight bytes when possible */
@@ -84,14 +84,14 @@ iconv_mod_unload(void)
 	struct iconv_cspair *csp;
 
 	sx_xlock(&iconv_lock);
-	TAILQ_FOREACH(csp, &iconv_cslist, cp_link) {
+	BSD_TAILQ_FOREACH(csp, &iconv_cslist, cp_link) {
 		if (csp->cp_refcount) {
 			sx_xunlock(&iconv_lock);
 			return EBUSY;
 		}
 	}
 
-	while ((csp = TAILQ_FIRST(&iconv_cslist)) != NULL)
+	while ((csp = BSD_TAILQ_FIRST(&iconv_cslist)) != NULL)
 		iconv_unregister_cspair(csp);
 	sx_xunlock(&iconv_lock);
 	sx_destroy(&iconv_lock);
@@ -128,7 +128,7 @@ iconv_register_converter(struct iconv_converter_class *dcp)
 {
 	kobj_class_compile((struct kobj_class*)dcp);
 	dcp->refs++;
-	TAILQ_INSERT_TAIL(&iconv_converters, dcp, cc_link);
+	BSD_TAILQ_INSERT_TAIL(&iconv_converters, dcp, cc_link);
 	return 0;
 }
 
@@ -139,7 +139,7 @@ iconv_unregister_converter(struct iconv_converter_class *dcp)
 		ICDEBUG("converter have %d referenses left\n", dcp->refs);
 		return EBUSY;
 	}
-	TAILQ_REMOVE(&iconv_converters, dcp, cc_link);
+	BSD_TAILQ_REMOVE(&iconv_converters, dcp, cc_link);
 	kobj_class_free((struct kobj_class*)dcp);
 	return 0;
 }
@@ -149,7 +149,7 @@ iconv_lookupconv(const char *name, struct iconv_converter_class **dcpp)
 {
 	struct iconv_converter_class *dcp;
 
-	TAILQ_FOREACH(dcp, &iconv_converters, cc_link) {
+	BSD_TAILQ_FOREACH(dcp, &iconv_converters, cc_link) {
 		if (name == NULL)
 			continue;
 		if (strcmp(name, ICONV_CONVERTER_NAME(dcp)) == 0) {
@@ -166,7 +166,7 @@ iconv_lookupcs(const char *to, const char *from, struct iconv_cspair **cspp)
 {
 	struct iconv_cspair *csp;
 
-	TAILQ_FOREACH(csp, &iconv_cslist, cp_link) {
+	BSD_TAILQ_FOREACH(csp, &iconv_cslist, cp_link) {
 		if (strcmp(csp->cp_to, to) == 0 &&
 		    strcmp(csp->cp_from, from) == 0) {
 			if (cspp)
@@ -213,7 +213,7 @@ iconv_register_cspair(const char *to, const char *from,
 		csp->cp_from = iconv_unicode_string;
 	csp->cp_data = data;
 
-	TAILQ_INSERT_TAIL(&iconv_cslist, csp, cp_link);
+	BSD_TAILQ_INSERT_TAIL(&iconv_cslist, csp, cp_link);
 	*cspp = csp;
 	return 0;
 }
@@ -221,7 +221,7 @@ iconv_register_cspair(const char *to, const char *from,
 static void
 iconv_unregister_cspair(struct iconv_cspair *csp)
 {
-	TAILQ_REMOVE(&iconv_cslist, csp, cp_link);
+	BSD_TAILQ_REMOVE(&iconv_cslist, csp, cp_link);
 	if (csp->cp_data)
 		bsd_free(csp->cp_data, M_ICONVDATA);
 	bsd_free(csp, M_ICONV);
@@ -251,7 +251,7 @@ iconv_open(const char *to, const char *from, void **handle)
 	 * Well, nothing found. Now try to construct a composite conversion
 	 * ToDo: add a 'capability' field to converter
 	 */
-	TAILQ_FOREACH(dcp, &iconv_converters, cc_link) {
+	BSD_TAILQ_FOREACH(dcp, &iconv_converters, cc_link) {
 		cnvname = ICONV_CONVERTER_NAME(dcp);
 		if (cnvname == NULL)
 			continue;
@@ -329,7 +329,7 @@ iconv_sysctl_drvlist(SYSCTL_HANDLER_ARGS)
 
 	error = 0;
 	sx_slock(&iconv_lock);
-	TAILQ_FOREACH(dcp, &iconv_converters, cc_link) {
+	BSD_TAILQ_FOREACH(dcp, &iconv_converters, cc_link) {
 		name = ICONV_CONVERTER_NAME(dcp);
 		if (name == NULL)
 			continue;
@@ -362,7 +362,7 @@ iconv_sysctl_cslist(SYSCTL_HANDLER_ARGS)
 	bzero(&csi, sizeof(csi));
 	csi.cs_version = ICONV_CSPAIR_INFO_VER;
 	sx_slock(&iconv_lock);
-	TAILQ_FOREACH(csp, &iconv_cslist, cp_link) {
+	BSD_TAILQ_FOREACH(csp, &iconv_cslist, cp_link) {
 		csi.cs_id = csp->cp_id;
 		csi.cs_refcount = csp->cp_refcount;
 		csi.cs_base = csp->cp_base ? csp->cp_base->cp_id : 0;

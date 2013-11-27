@@ -396,7 +396,7 @@ kern_reboot(int howto)
 #if 0
 /* XXX: This is bogus.  We should probably have a BO_REMOTE flag instead */
 				if (bp->b_dev == NULL) {
-					TAILQ_REMOVE(&mountlist,
+					BSD_TAILQ_REMOVE(&mountlist,
 					    bp->b_vp->v_mount, mnt_list);
 					continue;
 				}

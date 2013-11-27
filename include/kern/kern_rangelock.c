@@ -38,7 +38,7 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/kern/kern_rangelock.c 239835 2012-08-29 15
 #include <vm/uma.h>
 
 struct rl_q_entry {
-	TAILQ_ENTRY(rl_q_entry) rl_q_link;
+	BSD_TAILQ_ENTRY(rl_q_entry) rl_q_link;
 	off_t		rl_q_start, rl_q_end;
 	int		rl_q_flags;
 };
@@ -72,7 +72,7 @@ void
 rangelock_init(struct rangelock *lock)
 {
 
-	TAILQ_INIT(&lock->rl_waiters);
+	BSD_TAILQ_INIT(&lock->rl_waiters);
 	lock->rl_currdep = NULL;
 }
 
@@ -80,7 +80,7 @@ void
 rangelock_destroy(struct rangelock *lock)
 {
 
-	KASSERT(TAILQ_EMPTY(&lock->rl_waiters), ("Dangling waiters"));
+	KASSERT(BSD_TAILQ_EMPTY(&lock->rl_waiters), ("Dangling waiters"));
 }
 
 /*
@@ -111,12 +111,12 @@ rangelock_calc_block(struct rangelock *lock)
 {
 	struct rl_q_entry *entry, *entry1, *whead;
 
-	if (lock->rl_currdep == TAILQ_FIRST(&lock->rl_waiters) &&
+	if (lock->rl_currdep == BSD_TAILQ_FIRST(&lock->rl_waiters) &&
 	    lock->rl_currdep != NULL)
-		lock->rl_currdep = TAILQ_NEXT(lock->rl_currdep, rl_q_link);
+		lock->rl_currdep = BSD_TAILQ_NEXT(lock->rl_currdep, rl_q_link);
 	for (entry = lock->rl_currdep; entry != NULL;
-	     entry = TAILQ_NEXT(entry, rl_q_link)) {
-		TAILQ_FOREACH(entry1, &lock->rl_waiters, rl_q_link) {
+	     entry = BSD_TAILQ_NEXT(entry, rl_q_link)) {
+		BSD_TAILQ_FOREACH(entry1, &lock->rl_waiters, rl_q_link) {
 			if (rangelock_incompatible(entry, entry1))
 				goto out;
 			if (entry1 == entry)
@@ -125,7 +125,7 @@ rangelock_calc_block(struct rangelock *lock)
 	}
 out:
 	lock->rl_currdep = entry;
-	TAILQ_FOREACH(whead, &lock->rl_waiters, rl_q_link) {
+	BSD_TAILQ_FOREACH(whead, &lock->rl_waiters, rl_q_link) {
 		if (whead == lock->rl_currdep)
 			break;
 		if (!(whead->rl_q_flags & RL_LOCK_GRANTED)) {
@@ -144,7 +144,7 @@ rangelock_unlock_locked(struct rangelock *lock, struct rl_q_entry *entry,
 	mtx_assert(ilk, MA_OWNED);
 	KASSERT(entry != lock->rl_currdep, ("stuck currdep"));
 
-	TAILQ_REMOVE(&lock->rl_waiters, entry, rl_q_link);
+	BSD_TAILQ_REMOVE(&lock->rl_waiters, entry, rl_q_link);
 	rangelock_calc_block(lock);
 	mtx_unlock(ilk);
 	if (curthread->td_rlqe == NULL)
@@ -221,7 +221,7 @@ rangelock_enqueue(struct rangelock *lock, off_t start, off_t end, int mode,
 	 * thread.
 	 */
 
-	TAILQ_INSERT_TAIL(&lock->rl_waiters, entry, rl_q_link);
+	BSD_TAILQ_INSERT_TAIL(&lock->rl_waiters, entry, rl_q_link);
 	if (lock->rl_currdep == NULL)
 		lock->rl_currdep = entry;
 	rangelock_calc_block(lock);

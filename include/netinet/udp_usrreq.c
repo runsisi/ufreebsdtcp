@@ -446,7 +446,7 @@ udp_input(struct mbuf *m, int off)
 
 		INP_INFO_RLOCK(&V_udbinfo);
 		last = NULL;
-		LIST_FOREACH(inp, &V_udb, inp_list) {
+		BSD_LIST_FOREACH(inp, &V_udb, inp_list) {
 			if (inp->inp_lport != uh->uh_dport)
 				continue;
 #ifdef INET6
@@ -738,8 +738,8 @@ udp_pcblist(SYSCTL_HANDLER_ARGS)
 		return (ENOMEM);
 
 	INP_INFO_RLOCK(&V_udbinfo);
-	for (inp = LIST_FIRST(V_udbinfo.ipi_listhead), i = 0; inp && i < n;
-	     inp = LIST_NEXT(inp, inp_list)) {
+	for (inp = BSD_LIST_FIRST(V_udbinfo.ipi_listhead), i = 0; inp && i < n;
+	     inp = BSD_LIST_NEXT(inp, inp_list)) {
 		INP_WLOCK(inp);
 		if (inp->inp_gencnt <= gencnt &&
 		    cr_canseeinpcb(req->td->td_ucred, inp) == 0) {

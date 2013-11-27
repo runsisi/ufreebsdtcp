@@ -242,7 +242,7 @@ divert_packet(struct mbuf *m, int incoming)
 		/* Find IP address for receive interface */
 		ifp = m->m_pkthdr.rcvif;
 		if_addr_rlock(ifp);
-		TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
+		BSD_TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
 			if (ifa->ifa_addr->sa_family != AF_INET)
 				continue;
 			divsrc.sin_addr =
@@ -281,7 +281,7 @@ divert_packet(struct mbuf *m, int incoming)
 	sa = NULL;
 	nport = htons((u_int16_t)(((struct ipfw_rule_ref *)(mtag+1))->info));
 	INP_INFO_RLOCK(&V_divcbinfo);
-	LIST_FOREACH(inp, &V_divcb, inp_list) {
+	BSD_LIST_FOREACH(inp, &V_divcb, inp_list) {
 		/* XXX why does only one socket match? */
 		if (inp->inp_lport == nport) {
 			INP_RLOCK(inp);
@@ -679,8 +679,8 @@ div_pcblist(SYSCTL_HANDLER_ARGS)
 		return ENOMEM;
 	
 	INP_INFO_RLOCK(&V_divcbinfo);
-	for (inp = LIST_FIRST(V_divcbinfo.ipi_listhead), i = 0; inp && i < n;
-	     inp = LIST_NEXT(inp, inp_list)) {
+	for (inp = BSD_LIST_FIRST(V_divcbinfo.ipi_listhead), i = 0; inp && i < n;
+	     inp = BSD_LIST_NEXT(inp, inp_list)) {
 		INP_WLOCK(inp);
 		if (inp->inp_gencnt <= gencnt &&
 		    cr_canseeinpcb(req->td->td_ucred, inp) == 0) {

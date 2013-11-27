@@ -63,7 +63,7 @@ sctp_stop_all_cookie_timers(struct sctp_tcb *stcb)
 	 * in all collision cases.
 	 */
 	SCTP_TCB_LOCK_ASSERT(stcb);
-	TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
+	BSD_TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
 		if (net->rxt_timer.type == SCTP_TIMER_TYPE_COOKIE) {
 			sctp_timer_stop(SCTP_TIMER_TYPE_COOKIE,
 			    stcb->sctp_ep,
@@ -232,7 +232,7 @@ sctp_is_there_unsent_data(struct sctp_tcb *stcb, int so_locked
 		/* Check to see if some data queued */
 		for (i = 0; i < stcb->asoc.streamoutcnt; i++) {
 			/* sa_ignore FREED_MEMORY */
-			sp = TAILQ_FIRST(&stcb->asoc.strmout[i].outqueue);
+			sp = BSD_TAILQ_FIRST(&stcb->asoc.strmout[i].outqueue);
 			if (sp == NULL) {
 				continue;
 			}
@@ -253,7 +253,7 @@ sctp_is_there_unsent_data(struct sctp_tcb *stcb, int so_locked
 					    sp->put_last_out);
 				}
 				atomic_subtract_int(&stcb->asoc.stream_queue_cnt, 1);
-				TAILQ_REMOVE(&stcb->asoc.strmout[i].outqueue, sp, next);
+				BSD_TAILQ_REMOVE(&stcb->asoc.strmout[i].outqueue, sp, next);
 				if (sp->net) {
 					sctp_free_remote_addr(sp->net);
 					sp->net = NULL;
@@ -289,9 +289,9 @@ sctp_process_init(struct sctp_init_chunk *cp, struct sctp_tcb *stcb)
 	/* init tsn's */
 	asoc->highest_tsn_inside_map = asoc->asconf_seq_in = ntohl(init->initial_tsn) - 1;
 
-	if (!TAILQ_EMPTY(&asoc->nets)) {
+	if (!BSD_TAILQ_EMPTY(&asoc->nets)) {
 		/* update any ssthresh's that may have a default */
-		TAILQ_FOREACH(lnet, &asoc->nets, sctp_next) {
+		BSD_TAILQ_FOREACH(lnet, &asoc->nets, sctp_next) {
 			lnet->ssthresh = asoc->peers_rwnd;
 			if (SCTP_BASE_SYSCTL(sctp_logging_level) & (SCTP_CWND_MONITOR_ENABLE | SCTP_CWND_LOGGING_ENABLE)) {
 				sctp_log_cwnd(stcb, lnet, 0, SCTP_CWND_INITIALIZATION);
@@ -307,9 +307,9 @@ sctp_process_init(struct sctp_init_chunk *cp, struct sctp_tcb *stcb)
 
 		/* abandon the upper streams */
 		newcnt = ntohs(init->num_inbound_streams);
-		TAILQ_FOREACH_SAFE(chk, &asoc->send_queue, sctp_next, nchk) {
+		BSD_TAILQ_FOREACH_SAFE(chk, &asoc->send_queue, sctp_next, nchk) {
 			if (chk->rec.data.stream_number >= newcnt) {
-				TAILQ_REMOVE(&asoc->send_queue, chk, sctp_next);
+				BSD_TAILQ_REMOVE(&asoc->send_queue, chk, sctp_next);
 				asoc->send_queue_cnt--;
 				if (asoc->strmout[chk->rec.data.stream_number].chunks_on_queues > 0) {
 					asoc->strmout[chk->rec.data.stream_number].chunks_on_queues--;
@@ -334,8 +334,8 @@ sctp_process_init(struct sctp_init_chunk *cp, struct sctp_tcb *stcb)
 		if (asoc->strmout) {
 			for (i = newcnt; i < asoc->pre_open_streams; i++) {
 				outs = &asoc->strmout[i];
-				TAILQ_FOREACH_SAFE(sp, &outs->outqueue, next, nsp) {
-					TAILQ_REMOVE(&outs->outqueue, sp, next);
+				BSD_TAILQ_FOREACH_SAFE(sp, &outs->outqueue, next, nsp) {
+					BSD_TAILQ_REMOVE(&outs->outqueue, sp, next);
 					asoc->stream_queue_cnt--;
 					sctp_ulp_notify(SCTP_NOTIFY_SPECIAL_SP_FAIL,
 					    stcb, 0, sp, SCTP_SO_NOT_LOCKED);
@@ -378,8 +378,8 @@ sctp_process_init(struct sctp_init_chunk *cp, struct sctp_tcb *stcb)
 		struct sctp_queued_to_read *ctl, *nctl;
 
 		for (i = 0; i < asoc->streamincnt; i++) {
-			TAILQ_FOREACH_SAFE(ctl, &asoc->strmin[i].inqueue, next, nctl) {
-				TAILQ_REMOVE(&asoc->strmin[i].inqueue, ctl, next);
+			BSD_TAILQ_FOREACH_SAFE(ctl, &asoc->strmin[i].inqueue, next, nctl) {
+				BSD_TAILQ_REMOVE(&asoc->strmin[i].inqueue, ctl, next);
 				sctp_free_remote_addr(ctl->whoFrom);
 				ctl->whoFrom = NULL;
 				sctp_m_freem(ctl->data);
@@ -404,7 +404,7 @@ sctp_process_init(struct sctp_init_chunk *cp, struct sctp_tcb *stcb)
 	for (i = 0; i < asoc->streamincnt; i++) {
 		asoc->strmin[i].stream_no = i;
 		asoc->strmin[i].last_sequence_delivered = 0xffff;
-		TAILQ_INIT(&asoc->strmin[i].inqueue);
+		BSD_TAILQ_INIT(&asoc->strmin[i].inqueue);
 		asoc->strmin[i].delivery_started = 0;
 	}
 	/*
@@ -477,8 +477,8 @@ sctp_process_init_ack(struct mbuf *m, int iphlen, int offset,
 	if (asoc->peer_supports_asconf == 0) {
 		struct sctp_asconf_addr *param, *nparam;
 
-		TAILQ_FOREACH_SAFE(param, &asoc->asconf_queue, next, nparam) {
-			TAILQ_REMOVE(&asoc->asconf_queue, param, next);
+		BSD_TAILQ_FOREACH_SAFE(param, &asoc->asconf_queue, next, nparam) {
+			BSD_TAILQ_REMOVE(&asoc->asconf_queue, param, next);
 			SCTP_FREE(param, SCTP_M_ASC_ADDR);
 		}
 	}
@@ -625,7 +625,7 @@ sctp_handle_heartbeat_ack(struct sctp_heartbeat_chunk *cp,
 		if (r_net->dest_state & SCTP_ADDR_REQ_PRIMARY) {
 			stcb->asoc.primary_destination = r_net;
 			r_net->dest_state &= ~SCTP_ADDR_REQ_PRIMARY;
-			f_net = TAILQ_FIRST(&stcb->asoc.nets);
+			f_net = BSD_TAILQ_FIRST(&stcb->asoc.nets);
 			if (f_net != r_net) {
 				/*
 				 * first one on the list is NOT the primary
@@ -633,8 +633,8 @@ sctp_handle_heartbeat_ack(struct sctp_heartbeat_chunk *cp,
 				 * the primary is the first on the list,
 				 * make it so.
 				 */
-				TAILQ_REMOVE(&stcb->asoc.nets, r_net, sctp_next);
-				TAILQ_INSERT_HEAD(&stcb->asoc.nets, r_net, sctp_next);
+				BSD_TAILQ_REMOVE(&stcb->asoc.nets, r_net, sctp_next);
+				BSD_TAILQ_INSERT_HEAD(&stcb->asoc.nets, r_net, sctp_next);
 			}
 			req_prim = 1;
 		}
@@ -708,14 +708,14 @@ sctp_handle_nat_colliding_state(struct sctp_tcb *stcb)
 
 	if (SCTP_GET_STATE(&stcb->asoc) == SCTP_STATE_COOKIE_WAIT) {
 		/* generate a new vtag and send init */
-		LIST_REMOVE(stcb, sctp_asocs);
+		BSD_LIST_REMOVE(stcb, sctp_asocs);
 		stcb->asoc.my_vtag = sctp_select_a_tag(stcb->sctp_ep, stcb->sctp_ep->sctp_lport, stcb->rport, 1);
 		head = &SCTP_BASE_INFO(sctp_asochash)[SCTP_PCBHASH_ASOC(stcb->asoc.my_vtag, SCTP_BASE_INFO(hashasocmark))];
 		/*
 		 * put it in the bucket in the vtag hash of assoc's for the
 		 * system
 		 */
-		LIST_INSERT_HEAD(head, stcb, sctp_asocs);
+		BSD_LIST_INSERT_HEAD(head, stcb, sctp_asocs);
 		sctp_send_initiate(stcb->sctp_ep, stcb, SCTP_SO_NOT_LOCKED);
 		return (1);
 	}
@@ -725,7 +725,7 @@ sctp_handle_nat_colliding_state(struct sctp_tcb *stcb)
 		 * current cookie. - generate a new vtag. - resend init.
 		 */
 		/* generate a new vtag and send init */
-		LIST_REMOVE(stcb, sctp_asocs);
+		BSD_LIST_REMOVE(stcb, sctp_asocs);
 		stcb->asoc.state &= ~SCTP_STATE_COOKIE_ECHOED;
 		stcb->asoc.state |= SCTP_STATE_COOKIE_WAIT;
 		sctp_stop_all_cookie_timers(stcb);
@@ -736,7 +736,7 @@ sctp_handle_nat_colliding_state(struct sctp_tcb *stcb)
 		 * put it in the bucket in the vtag hash of assoc's for the
 		 * system
 		 */
-		LIST_INSERT_HEAD(head, stcb, sctp_asocs);
+		BSD_LIST_INSERT_HEAD(head, stcb, sctp_asocs);
 		sctp_send_initiate(stcb->sctp_ep, stcb, SCTP_SO_NOT_LOCKED);
 		return (1);
 	}
@@ -838,7 +838,7 @@ sctp_start_net_timers(struct sctp_tcb *stcb)
 	struct sctp_nets *net;
 
 	cnt_hb_sent = 0;
-	TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
+	BSD_TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
 		/*
 		 * For each network start: 1) A pmtu timer. 2) A HB timer 3)
 		 * If the dest in unconfirmed send a hb as well if under
@@ -944,8 +944,8 @@ sctp_handle_shutdown(struct sctp_shutdown_chunk *cp,
 	/* Now is there unsent data on a stream somewhere? */
 	some_on_streamwheel = sctp_is_there_unsent_data(stcb, SCTP_SO_NOT_LOCKED);
 
-	if (!TAILQ_EMPTY(&asoc->send_queue) ||
-	    !TAILQ_EMPTY(&asoc->sent_queue) ||
+	if (!BSD_TAILQ_EMPTY(&asoc->send_queue) ||
+	    !BSD_TAILQ_EMPTY(&asoc->sent_queue) ||
 	    some_on_streamwheel) {
 		/* By returning we will push more data out */
 		return;
@@ -1025,8 +1025,8 @@ sctp_handle_shutdown_ack(struct sctp_shutdown_ack_chunk *cp SCTP_UNUSED,
 #endif
 	}
 #ifdef INVARIANTS
-	if (!TAILQ_EMPTY(&asoc->send_queue) ||
-	    !TAILQ_EMPTY(&asoc->sent_queue) ||
+	if (!BSD_TAILQ_EMPTY(&asoc->send_queue) ||
+	    !BSD_TAILQ_EMPTY(&asoc->sent_queue) ||
 	    !stcb->asoc.ss_functions.sctp_ss_is_empty(stcb, asoc)) {
 		panic("Queues are not empty when handling SHUTDOWN-ACK");
 	}
@@ -1777,7 +1777,7 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 			 */
 			struct sctp_tmit_chunk *chk;
 
-			TAILQ_FOREACH(chk, &stcb->asoc.sent_queue, sctp_next) {
+			BSD_TAILQ_FOREACH(chk, &stcb->asoc.sent_queue, sctp_next) {
 				if (chk->sent < SCTP_DATAGRAM_RESEND) {
 					chk->sent = SCTP_DATAGRAM_RESEND;
 					sctp_flight_size_decrease(chk);
@@ -1964,7 +1964,7 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 		asoc->my_rwnd = ntohl(initack_cp->init.a_rwnd);
 
 		/* pull from vtag hash */
-		LIST_REMOVE(stcb, sctp_asocs);
+		BSD_LIST_REMOVE(stcb, sctp_asocs);
 		/* re-insert to new vtag position */
 		head = &SCTP_BASE_INFO(sctp_asochash)[SCTP_PCBHASH_ASOC(stcb->asoc.my_vtag,
 		    SCTP_BASE_INFO(hashasocmark))];
@@ -1972,7 +1972,7 @@ sctp_process_cookie_existing(struct mbuf *m, int iphlen, int offset,
 		 * put it in the bucket in the vtag hash of assoc's for the
 		 * system
 		 */
-		LIST_INSERT_HEAD(head, stcb, sctp_asocs);
+		BSD_LIST_INSERT_HEAD(head, stcb, sctp_asocs);
 
 		SCTP_TCB_SEND_UNLOCK(stcb);
 		SCTP_INP_WUNLOCK(stcb->sctp_ep);
@@ -2390,7 +2390,7 @@ sctp_process_cookie_new(struct mbuf *m, int iphlen, int offset,
  * need to send back an ABORT-TRY-AGAIN-WITH-NEW-TAG No middle box bit!
 	head = &SCTP_BASE_INFO(sctp_asochash)[SCTP_PCBHASH_ASOC(tag,
 							    SCTP_BASE_INFO(hashasocmark))];
-	LIST_FOREACH(stcb, head, sctp_asocs) {
+	BSD_LIST_FOREACH(stcb, head, sctp_asocs) {
 	        if ((stcb->asoc.my_vtag == tag) && (stcb->rport == rport) && (inp == stcb->sctp_ep))  {
 		       -- SEND ABORT - TRY AGAIN --
 		}
@@ -2989,7 +2989,7 @@ sctp_handle_cookie_ack(struct sctp_cookie_ack_chunk *cp SCTP_UNUSED,
 		 */
 		if ((sctp_is_feature_on(stcb->sctp_ep, SCTP_PCB_FLAGS_DO_ASCONF)) &&
 		    (stcb->asoc.peer_supports_asconf) &&
-		    (!TAILQ_EMPTY(&stcb->asoc.asconf_queue))) {
+		    (!BSD_TAILQ_EMPTY(&stcb->asoc.asconf_queue))) {
 #ifdef SCTP_TIMER_BASED_ASCONF
 			sctp_timer_start(SCTP_TIMER_TYPE_ASCONF,
 			    stcb->sctp_ep, stcb,
@@ -3003,11 +3003,11 @@ sctp_handle_cookie_ack(struct sctp_cookie_ack_chunk *cp SCTP_UNUSED,
 closed_socket:
 	/* Toss the cookie if I can */
 	sctp_toss_old_cookies(stcb, asoc);
-	if (!TAILQ_EMPTY(&asoc->sent_queue)) {
+	if (!BSD_TAILQ_EMPTY(&asoc->sent_queue)) {
 		/* Restart the timer if we have pending data */
 		struct sctp_tmit_chunk *chk;
 
-		chk = TAILQ_FIRST(&asoc->sent_queue);
+		chk = BSD_TAILQ_FIRST(&asoc->sent_queue);
 		sctp_timer_start(SCTP_TIMER_TYPE_SEND, stcb->sctp_ep, stcb, chk->whoTo);
 	}
 }
@@ -3038,7 +3038,7 @@ sctp_handle_ecn_echo(struct sctp_ecne_chunk *cp,
 	SCTP_STAT_INCR(sctps_recvecne);
 	tsn = ntohl(cp->tsn);
 	pkt_cnt = ntohl(cp->num_pkts_since_cwr);
-	lchk = TAILQ_LAST(&stcb->asoc.send_queue, sctpchunk_listhead);
+	lchk = BSD_TAILQ_LAST(&stcb->asoc.send_queue, sctpchunk_listhead);
 	if (lchk == NULL) {
 		window_data_tsn = stcb->asoc.sending_seq - 1;
 	} else {
@@ -3047,7 +3047,7 @@ sctp_handle_ecn_echo(struct sctp_ecne_chunk *cp,
 
 	/* Find where it was sent to if possible. */
 	net = NULL;
-	TAILQ_FOREACH(lchk, &stcb->asoc.sent_queue, sctp_next) {
+	BSD_TAILQ_FOREACH(lchk, &stcb->asoc.sent_queue, sctp_next) {
 		if (lchk->rec.data.TSN_seq == tsn) {
 			net = lchk->whoTo;
 			net->ecn_prev_cwnd = lchk->rec.data.cwnd_at_send;
@@ -3063,7 +3063,7 @@ sctp_handle_ecn_echo(struct sctp_ecne_chunk *cp,
 		 * See how old it is, we may have it marked on the actual
 		 * net.
 		 */
-		TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
+		BSD_TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
 			if (tsn == net->last_cwr_tsn) {
 				/* Found him, send it off */
 				break;
@@ -3075,7 +3075,7 @@ sctp_handle_ecn_echo(struct sctp_ecne_chunk *cp,
 			 * that says hey, we did this a long time ago and
 			 * you lost the response.
 			 */
-			net = TAILQ_FIRST(&stcb->asoc.nets);
+			net = BSD_TAILQ_FIRST(&stcb->asoc.nets);
 			if (net == NULL) {
 				/* TSNH */
 				return;
@@ -3151,7 +3151,7 @@ sctp_handle_ecn_cwr(struct sctp_cwr_chunk *cp, struct sctp_tcb *stcb, struct sct
 	cwr_tsn = ntohl(cp->tsn);
 
 	override = cp->ch.chunk_flags & SCTP_CWR_REDUCE_OVERRIDE;
-	TAILQ_FOREACH(chk, &stcb->asoc.control_send_queue, sctp_next) {
+	BSD_TAILQ_FOREACH(chk, &stcb->asoc.control_send_queue, sctp_next) {
 		if (chk->rec.chunk_id.id != SCTP_ECN_ECHO) {
 			continue;
 		}
@@ -3163,7 +3163,7 @@ sctp_handle_ecn_cwr(struct sctp_cwr_chunk *cp, struct sctp_tcb *stcb, struct sct
 		if (SCTP_TSN_GE(cwr_tsn, ntohl(ecne->tsn))) {
 			/* this covers this ECNE, we can remove it */
 			stcb->asoc.ecn_echo_cnt_onq--;
-			TAILQ_REMOVE(&stcb->asoc.control_send_queue, chk,
+			BSD_TAILQ_REMOVE(&stcb->asoc.control_send_queue, chk,
 			    sctp_next);
 			if (chk->data) {
 				sctp_m_freem(chk->data);
@@ -3208,8 +3208,8 @@ sctp_handle_shutdown_complete(struct sctp_shutdown_complete_chunk *cp SCTP_UNUSE
 		sctp_ulp_notify(SCTP_NOTIFY_ASSOC_DOWN, stcb, 0, NULL, SCTP_SO_NOT_LOCKED);
 	}
 #ifdef INVARIANTS
-	if (!TAILQ_EMPTY(&asoc->send_queue) ||
-	    !TAILQ_EMPTY(&asoc->sent_queue) ||
+	if (!BSD_TAILQ_EMPTY(&asoc->send_queue) ||
+	    !BSD_TAILQ_EMPTY(&asoc->sent_queue) ||
 	    !stcb->asoc.ss_functions.sctp_ss_is_empty(stcb, asoc)) {
 		panic("Queues are not empty when handling SHUTDOWN-COMPLETE");
 	}
@@ -3247,7 +3247,7 @@ process_chunk_drop(struct sctp_tcb *stcb, struct sctp_chunk_desc *desc,
 			struct sctp_tmit_chunk *tp1;
 
 			tsn = ntohl(desc->tsn_ifany);
-			TAILQ_FOREACH(tp1, &stcb->asoc.sent_queue, sctp_next) {
+			BSD_TAILQ_FOREACH(tp1, &stcb->asoc.sent_queue, sctp_next) {
 				if (tp1->rec.data.TSN_seq == tsn) {
 					/* found it */
 					break;
@@ -3264,7 +3264,7 @@ process_chunk_drop(struct sctp_tcb *stcb, struct sctp_chunk_desc *desc,
 				 * attention to queue seq order.
 				 */
 				SCTP_STAT_INCR(sctps_pdrpdnfnd);
-				TAILQ_FOREACH(tp1, &stcb->asoc.sent_queue, sctp_next) {
+				BSD_TAILQ_FOREACH(tp1, &stcb->asoc.sent_queue, sctp_next) {
 					if (tp1->rec.data.TSN_seq == tsn) {
 						/* found it */
 						break;
@@ -3328,10 +3328,10 @@ process_chunk_drop(struct sctp_tcb *stcb, struct sctp_chunk_desc *desc,
 				 * mark the tsn with what sequences can
 				 * cause a new FR.
 				 */
-				if (TAILQ_EMPTY(&stcb->asoc.send_queue)) {
+				if (BSD_TAILQ_EMPTY(&stcb->asoc.send_queue)) {
 					tp1->rec.data.fast_retran_tsn = stcb->asoc.sending_seq;
 				} else {
-					tp1->rec.data.fast_retran_tsn = (TAILQ_FIRST(&stcb->asoc.send_queue))->rec.data.TSN_seq;
+					tp1->rec.data.fast_retran_tsn = (BSD_TAILQ_FIRST(&stcb->asoc.send_queue))->rec.data.TSN_seq;
 				}
 
 				/* restart the timer */
@@ -3358,11 +3358,11 @@ process_chunk_drop(struct sctp_tcb *stcb, struct sctp_chunk_desc *desc,
 				unsigned int audit;
 
 				audit = 0;
-				TAILQ_FOREACH(tp1, &stcb->asoc.sent_queue, sctp_next) {
+				BSD_TAILQ_FOREACH(tp1, &stcb->asoc.sent_queue, sctp_next) {
 					if (tp1->sent == SCTP_DATAGRAM_RESEND)
 						audit++;
 				}
-				TAILQ_FOREACH(tp1, &stcb->asoc.control_send_queue,
+				BSD_TAILQ_FOREACH(tp1, &stcb->asoc.control_send_queue,
 				    sctp_next) {
 					if (tp1->sent == SCTP_DATAGRAM_RESEND)
 						audit++;
@@ -3381,7 +3381,7 @@ process_chunk_drop(struct sctp_tcb *stcb, struct sctp_chunk_desc *desc,
 		{
 			struct sctp_tmit_chunk *asconf;
 
-			TAILQ_FOREACH(asconf, &stcb->asoc.control_send_queue,
+			BSD_TAILQ_FOREACH(asconf, &stcb->asoc.control_send_queue,
 			    sctp_next) {
 				if (asconf->rec.chunk_id.id == SCTP_ASCONF) {
 					break;
@@ -3434,7 +3434,7 @@ process_chunk_drop(struct sctp_tcb *stcb, struct sctp_chunk_desc *desc,
 			struct sctp_tmit_chunk *cookie;
 
 			cookie = NULL;
-			TAILQ_FOREACH(cookie, &stcb->asoc.control_send_queue,
+			BSD_TAILQ_FOREACH(cookie, &stcb->asoc.control_send_queue,
 			    sctp_next) {
 				if (cookie->rec.chunk_id.id == SCTP_COOKIE_ECHO) {
 					break;
@@ -3535,7 +3535,7 @@ sctp_find_stream_reset(struct sctp_tcb *stcb, uint32_t seq, struct sctp_tmit_chu
 	int len, clen;
 
 	asoc = &stcb->asoc;
-	if (TAILQ_EMPTY(&stcb->asoc.control_send_queue)) {
+	if (BSD_TAILQ_EMPTY(&stcb->asoc.control_send_queue)) {
 		asoc->stream_reset_outstanding = 0;
 		return (NULL);
 	}
@@ -3582,7 +3582,7 @@ sctp_clean_up_stream_reset(struct sctp_tcb *stcb)
 	asoc = &stcb->asoc;
 
 	sctp_timer_stop(SCTP_TIMER_TYPE_STRRESET, stcb->sctp_ep, stcb, chk->whoTo, SCTP_FROM_SCTP_INPUT + SCTP_LOC_26);
-	TAILQ_REMOVE(&asoc->control_send_queue,
+	BSD_TAILQ_REMOVE(&asoc->control_send_queue,
 	    chk,
 	    sctp_next);
 	if (chk->data) {
@@ -3907,7 +3907,7 @@ sctp_handle_str_reset_request_out(struct sctp_tcb *stcb,
 			liste->tsn = tsn;
 			liste->number_entries = number_entries;
 			memcpy(&liste->list_of_streams, req->list_of_streams, number_entries * sizeof(uint16_t));
-			TAILQ_INSERT_TAIL(&asoc->resetHead, liste, next_resp);
+			BSD_TAILQ_INSERT_TAIL(&asoc->resetHead, liste, next_resp);
 			asoc->last_reset_action[0] = SCTP_STREAM_RESET_RESULT_PERFORMED;
 		}
 		sctp_add_stream_reset_result(chk, seq, asoc->last_reset_action[0]);
@@ -3971,19 +3971,19 @@ sctp_handle_str_reset_add_strm(struct sctp_tcb *stcb, struct sctp_tmit_chunk *ch
 			}
 			/* copy off the old data */
 			for (i = 0; i < stcb->asoc.streamincnt; i++) {
-				TAILQ_INIT(&stcb->asoc.strmin[i].inqueue);
+				BSD_TAILQ_INIT(&stcb->asoc.strmin[i].inqueue);
 				stcb->asoc.strmin[i].stream_no = i;
 				stcb->asoc.strmin[i].last_sequence_delivered = oldstrm[i].last_sequence_delivered;
 				stcb->asoc.strmin[i].delivery_started = oldstrm[i].delivery_started;
 				/* now anything on those queues? */
-				TAILQ_FOREACH_SAFE(ctl, &oldstrm[i].inqueue, next, nctl) {
-					TAILQ_REMOVE(&oldstrm[i].inqueue, ctl, next);
-					TAILQ_INSERT_TAIL(&stcb->asoc.strmin[i].inqueue, ctl, next);
+				BSD_TAILQ_FOREACH_SAFE(ctl, &oldstrm[i].inqueue, next, nctl) {
+					BSD_TAILQ_REMOVE(&oldstrm[i].inqueue, ctl, next);
+					BSD_TAILQ_INSERT_TAIL(&stcb->asoc.strmin[i].inqueue, ctl, next);
 				}
 			}
 			/* Init the new streams */
 			for (i = stcb->asoc.streamincnt; i < num_stream; i++) {
-				TAILQ_INIT(&stcb->asoc.strmin[i].inqueue);
+				BSD_TAILQ_INIT(&stcb->asoc.strmin[i].inqueue);
 				stcb->asoc.strmin[i].stream_no = i;
 				stcb->asoc.strmin[i].last_sequence_delivered = 0xffff;
 				stcb->asoc.strmin[i].delivery_started = 0;
@@ -4213,7 +4213,7 @@ strres_nochunk:
 		goto strres_nochunk;
 	}
 	/* ok we have a chunk to link in */
-	TAILQ_INSERT_TAIL(&stcb->asoc.control_send_queue,
+	BSD_TAILQ_INSERT_TAIL(&stcb->asoc.control_send_queue,
 	    chk,
 	    sctp_next);
 	stcb->asoc.ctrl_queue_cnt++;
@@ -4879,7 +4879,7 @@ process_control_chunks:
 				    SCTP_TSN_GE(cum_ack, stcb->asoc.last_acked_seq) &&
 				    (stcb->asoc.saw_sack_with_frags == 0) &&
 				    (stcb->asoc.saw_sack_with_nr_frags == 0) &&
-				    (!TAILQ_EMPTY(&stcb->asoc.sent_queue))
+				    (!BSD_TAILQ_EMPTY(&stcb->asoc.sent_queue))
 				    ) {
 					/*
 					 * We have a SIMPLE sack having no
@@ -4902,8 +4902,8 @@ process_control_chunks:
 					*offset = length;
 					return (NULL);
 				}
-				if (TAILQ_EMPTY(&stcb->asoc.send_queue) &&
-				    TAILQ_EMPTY(&stcb->asoc.sent_queue) &&
+				if (BSD_TAILQ_EMPTY(&stcb->asoc.send_queue) &&
+				    BSD_TAILQ_EMPTY(&stcb->asoc.sent_queue) &&
 				    (stcb->asoc.stream_queue_cnt == 0)) {
 					sctp_ulp_notify(SCTP_NOTIFY_SENDER_DRY, stcb, 0, NULL, SCTP_SO_NOT_LOCKED);
 				}
@@ -4967,7 +4967,7 @@ process_control_chunks:
 				    SCTP_TSN_GE(cum_ack, stcb->asoc.last_acked_seq) &&
 				    (stcb->asoc.saw_sack_with_frags == 0) &&
 				    (stcb->asoc.saw_sack_with_nr_frags == 0) &&
-				    (!TAILQ_EMPTY(&stcb->asoc.sent_queue))) {
+				    (!BSD_TAILQ_EMPTY(&stcb->asoc.sent_queue))) {
 					/*
 					 * We have a SIMPLE sack having no
 					 * prior segments and data on sent
@@ -4990,8 +4990,8 @@ process_control_chunks:
 					*offset = length;
 					return (NULL);
 				}
-				if (TAILQ_EMPTY(&stcb->asoc.send_queue) &&
-				    TAILQ_EMPTY(&stcb->asoc.sent_queue) &&
+				if (BSD_TAILQ_EMPTY(&stcb->asoc.send_queue) &&
+				    BSD_TAILQ_EMPTY(&stcb->asoc.sent_queue) &&
 				    (stcb->asoc.stream_queue_cnt == 0)) {
 					sctp_ulp_notify(SCTP_NOTIFY_SENDER_DRY, stcb, 0, NULL, SCTP_SO_NOT_LOCKED);
 				}
@@ -5176,14 +5176,14 @@ process_control_chunks:
 					got_auth = 1;
 					auth_skipped = 0;
 				}
-				if (!TAILQ_EMPTY(&stcb->asoc.sent_queue)) {
+				if (!BSD_TAILQ_EMPTY(&stcb->asoc.sent_queue)) {
 					/*
 					 * Restart the timer if we have
 					 * pending data
 					 */
 					struct sctp_tmit_chunk *chk;
 
-					chk = TAILQ_FIRST(&stcb->asoc.sent_queue);
+					chk = BSD_TAILQ_FIRST(&stcb->asoc.sent_queue);
 					sctp_timer_start(SCTP_TIMER_TYPE_SEND, stcb->sctp_ep, stcb, chk->whoTo);
 				}
 			}
@@ -5568,7 +5568,7 @@ __attribute__((noinline))
 {
 	struct sctp_tcb *lstcb;
 
-	LIST_FOREACH(lstcb, &inp->sctp_asoc_list, sctp_tcblist) {
+	BSD_LIST_FOREACH(lstcb, &inp->sctp_asoc_list, sctp_tcblist) {
 		if (mtx_owned(&lstcb->tcb_mtx)) {
 			panic("Own lock on stcb at return from input");
 		}
@@ -5929,10 +5929,10 @@ trigger_send:
 	SCTPDBG(SCTP_DEBUG_INPUT1,
 	    "Check for chunk output prw:%d tqe:%d tf=%d\n",
 	    stcb->asoc.peers_rwnd,
-	    TAILQ_EMPTY(&stcb->asoc.control_send_queue),
+	    BSD_TAILQ_EMPTY(&stcb->asoc.control_send_queue),
 	    stcb->asoc.total_flight);
 	un_sent = (stcb->asoc.total_output_queue_size - stcb->asoc.total_flight);
-	if (!TAILQ_EMPTY(&stcb->asoc.control_send_queue)) {
+	if (!BSD_TAILQ_EMPTY(&stcb->asoc.control_send_queue)) {
 		cnt_ctrl_ready = stcb->asoc.ctrl_queue_cnt - stcb->asoc.ecn_echo_cnt_onq;
 	}
 	if (cnt_ctrl_ready ||

@@ -137,9 +137,9 @@ sys_sync(td, uap)
 	int save, vfslocked;
 
 	mtx_lock(&mountlist_mtx);
-	for (mp = TAILQ_FIRST(&mountlist); mp != NULL; mp = nmp) {
+	for (mp = BSD_TAILQ_FIRST(&mountlist); mp != NULL; mp = nmp) {
 		if (vfs_busy(mp, MBF_NOWAIT | MBF_MNTLSTLOCK)) {
-			nmp = TAILQ_NEXT(mp, mnt_list);
+			nmp = BSD_TAILQ_NEXT(mp, mnt_list);
 			continue;
 		}
 		vfslocked = VFS_LOCK_GIANT(mp);
@@ -153,7 +153,7 @@ sys_sync(td, uap)
 		}
 		VFS_UNLOCK_GIANT(vfslocked);
 		mtx_lock(&mountlist_mtx);
-		nmp = TAILQ_NEXT(mp, mnt_list);
+		nmp = BSD_TAILQ_NEXT(mp, mnt_list);
 		vfs_unbusy(mp);
 	}
 	mtx_unlock(&mountlist_mtx);
@@ -482,7 +482,7 @@ kern_getfsstat(struct thread *td, struct statfs **buf, size_t bufsize,
 	else /* if (bufseg == UIO_SYSSPACE) */ {
 		count = 0;
 		mtx_lock(&mountlist_mtx);
-		TAILQ_FOREACH(mp, &mountlist, mnt_list) {
+		BSD_TAILQ_FOREACH(mp, &mountlist, mnt_list) {
 			count++;
 		}
 		mtx_unlock(&mountlist_mtx);
@@ -493,19 +493,19 @@ kern_getfsstat(struct thread *td, struct statfs **buf, size_t bufsize,
 	}
 	count = 0;
 	mtx_lock(&mountlist_mtx);
-	for (mp = TAILQ_FIRST(&mountlist); mp != NULL; mp = nmp) {
+	for (mp = BSD_TAILQ_FIRST(&mountlist); mp != NULL; mp = nmp) {
 		if (prison_canseemount(td->td_ucred, mp) != 0) {
-			nmp = TAILQ_NEXT(mp, mnt_list);
+			nmp = BSD_TAILQ_NEXT(mp, mnt_list);
 			continue;
 		}
 #ifdef MAC
 		if (mac_mount_check_stat(td->td_ucred, mp) != 0) {
-			nmp = TAILQ_NEXT(mp, mnt_list);
+			nmp = BSD_TAILQ_NEXT(mp, mnt_list);
 			continue;
 		}
 #endif
 		if (vfs_busy(mp, MBF_NOWAIT | MBF_MNTLSTLOCK)) {
-			nmp = TAILQ_NEXT(mp, mnt_list);
+			nmp = BSD_TAILQ_NEXT(mp, mnt_list);
 			continue;
 		}
 		vfslocked = VFS_LOCK_GIANT(mp);
@@ -528,7 +528,7 @@ kern_getfsstat(struct thread *td, struct statfs **buf, size_t bufsize,
 			    (error = VFS_STATFS(mp, sp))) {
 				VFS_UNLOCK_GIANT(vfslocked);
 				mtx_lock(&mountlist_mtx);
-				nmp = TAILQ_NEXT(mp, mnt_list);
+				nmp = BSD_TAILQ_NEXT(mp, mnt_list);
 				vfs_unbusy(mp);
 				continue;
 			}
@@ -553,7 +553,7 @@ kern_getfsstat(struct thread *td, struct statfs **buf, size_t bufsize,
 		VFS_UNLOCK_GIANT(vfslocked);
 		count++;
 		mtx_lock(&mountlist_mtx);
-		nmp = TAILQ_NEXT(mp, mnt_list);
+		nmp = BSD_TAILQ_NEXT(mp, mnt_list);
 		vfs_unbusy(mp);
 	}
 	mtx_unlock(&mountlist_mtx);

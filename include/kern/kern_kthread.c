@@ -341,7 +341,7 @@ kthread_exit(void)
 		rw_wunlock(&tidhash_lock);
 		kproc_exit(0);
 	}
-	LIST_REMOVE(curthread, td_hash);
+	BSD_LIST_REMOVE(curthread, td_hash);
 	rw_wunlock(&tidhash_lock);
 	PROC_SLOCK(p);
 	thread_exit();

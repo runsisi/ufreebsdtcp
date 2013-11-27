@@ -114,11 +114,11 @@ struct fw_bpfhdr {
  * datagram.
  */
 struct fw_reass {
-	STAILQ_ENTRY(fw_reass)	fr_link;
+	BSD_STAILQ_ENTRY(fw_reass)	fr_link;
 	uint32_t		fr_id;		/* host+dgl */
 	struct mbuf		*fr_frags;	/* chain of frags */
 };
-STAILQ_HEAD(fw_reass_list, fw_reass);
+BSD_STAILQ_HEAD(fw_reass_list, fw_reass);
 
 struct fw_com {
 	struct ifnet		*fc_ifp;

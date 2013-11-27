@@ -259,7 +259,7 @@ vm_pageout_fallback_object_lock(vm_page_t m, vm_page_t *next)
 	vm_pageout_init_marker(&marker, queue);
 	object = m->object;
 	
-	TAILQ_INSERT_AFTER(&vm_page_queues[queue].pl,
+	BSD_TAILQ_INSERT_AFTER(&vm_page_queues[queue].pl,
 			   m, &marker, pageq);
 	vm_page_unlock_queues();
 	vm_page_unlock(m);
@@ -268,11 +268,11 @@ vm_pageout_fallback_object_lock(vm_page_t m, vm_page_t *next)
 	vm_page_lock_queues();
 
 	/* Page queue might have changed. */
-	*next = TAILQ_NEXT(&marker, pageq);
+	*next = BSD_TAILQ_NEXT(&marker, pageq);
 	unchanged = (m->queue == queue &&
 		     m->object == object &&
-		     &marker == TAILQ_NEXT(m, pageq));
-	TAILQ_REMOVE(&vm_page_queues[queue].pl,
+		     &marker == BSD_TAILQ_NEXT(m, pageq));
+	BSD_TAILQ_REMOVE(&vm_page_queues[queue].pl,
 		     &marker, pageq);
 	return (unchanged);
 }
@@ -302,15 +302,15 @@ vm_pageout_page_lock(vm_page_t m, vm_page_t *next)
 	queue = m->queue;
 	vm_pageout_init_marker(&marker, queue);
 
-	TAILQ_INSERT_AFTER(&vm_page_queues[queue].pl, m, &marker, pageq);
+	BSD_TAILQ_INSERT_AFTER(&vm_page_queues[queue].pl, m, &marker, pageq);
 	vm_page_unlock_queues();
 	vm_page_lock(m);
 	vm_page_lock_queues();
 
 	/* Page queue might have changed. */
-	*next = TAILQ_NEXT(&marker, pageq);
-	unchanged = (m->queue == queue && &marker == TAILQ_NEXT(m, pageq));
-	TAILQ_REMOVE(&vm_page_queues[queue].pl, &marker, pageq);
+	*next = BSD_TAILQ_NEXT(&marker, pageq);
+	unchanged = (m->queue == queue && &marker == BSD_TAILQ_NEXT(m, pageq));
+	BSD_TAILQ_REMOVE(&vm_page_queues[queue].pl, &marker, pageq);
 	return (unchanged);
 }
 
@@ -592,7 +592,7 @@ vm_pageout_object_deactivate_pages(pmap_t pmap, vm_object_t first_object,
 		/*
 		 * Scan the object's entire memory queue.
 		 */
-		TAILQ_FOREACH(p, &object->memq, listq) {
+		BSD_TAILQ_FOREACH(p, &object->memq, listq) {
 			if (pmap_resident_count(pmap) <= desired)
 				goto unlock_return;
 			if ((p->oflags & VPO_BUSY) != 0 || p->busy != 0)
@@ -794,7 +794,7 @@ vm_pageout_scan(int pass)
 	queues_locked = TRUE;
 	maxscan = cnt.v_inactive_count;
 
-	for (m = TAILQ_FIRST(&vm_page_queues[PQ_INACTIVE].pl);
+	for (m = BSD_TAILQ_FIRST(&vm_page_queues[PQ_INACTIVE].pl);
 	     m != NULL && maxscan-- > 0 && page_shortage > 0;
 	     m = next) {
 		KASSERT(queues_locked, ("unlocked queues"));
@@ -802,7 +802,7 @@ vm_pageout_scan(int pass)
 		KASSERT(m->queue == PQ_INACTIVE, ("Inactive queue %p", m));
 
 		cnt.v_pdpages++;
-		next = TAILQ_NEXT(m, pageq);
+		next = BSD_TAILQ_NEXT(m, pageq);
 
 		/*
 		 * skip marker pages
@@ -852,7 +852,7 @@ vm_pageout_scan(int pass)
 		 * 'next' pointer.  Use our marker to remember our
 		 * place.
 		 */
-		TAILQ_INSERT_AFTER(&vm_page_queues[PQ_INACTIVE].pl,
+		BSD_TAILQ_INSERT_AFTER(&vm_page_queues[PQ_INACTIVE].pl,
 		    m, &marker, pageq);
 		vm_page_unlock_queues();
 		queues_locked = FALSE;
@@ -1067,7 +1067,7 @@ vm_pageout_scan(int pass)
 				 */
 				if (m->queue != PQ_INACTIVE ||
 				    m->object != object ||
-				    TAILQ_NEXT(m, pageq) != &marker) {
+				    BSD_TAILQ_NEXT(m, pageq) != &marker) {
 					vm_page_unlock(m);
 					if (object->flags & OBJ_MIGHTBEDIRTY)
 						vnodes_skipped++;
@@ -1138,8 +1138,8 @@ relock_queues:
 			vm_page_lock_queues();
 			queues_locked = TRUE;
 		}
-		next = TAILQ_NEXT(&marker, pageq);
-		TAILQ_REMOVE(&vm_page_queues[PQ_INACTIVE].pl,
+		next = BSD_TAILQ_NEXT(&marker, pageq);
+		BSD_TAILQ_REMOVE(&vm_page_queues[PQ_INACTIVE].pl,
 		    &marker, pageq);
 	}
 
@@ -1157,7 +1157,7 @@ relock_queues:
 	 * deactivation candidates.
 	 */
 	pcount = cnt.v_active_count;
-	m = TAILQ_FIRST(&vm_page_queues[PQ_ACTIVE].pl);
+	m = BSD_TAILQ_FIRST(&vm_page_queues[PQ_ACTIVE].pl);
 	mtx_assert(&vm_page_queue_mtx, MA_OWNED);
 
 	while ((m != NULL) && (pcount-- > 0) && (page_shortage > 0)) {
@@ -1165,7 +1165,7 @@ relock_queues:
 		KASSERT(m->queue == PQ_ACTIVE,
 		    ("vm_pageout_scan: page %p isn't active", m));
 
-		next = TAILQ_NEXT(m, pageq);
+		next = BSD_TAILQ_NEXT(m, pageq);
 		if ((m->flags & PG_MARKER) != 0) {
 			m = next;
 			continue;
@@ -1428,14 +1428,14 @@ vm_pageout_page_stats()
 		fullintervalcount = 0;
 	}
 
-	m = TAILQ_FIRST(&vm_page_queues[PQ_ACTIVE].pl);
+	m = BSD_TAILQ_FIRST(&vm_page_queues[PQ_ACTIVE].pl);
 	while ((m != NULL) && (pcount-- > 0)) {
 		int actcount;
 
 		KASSERT(m->queue == PQ_ACTIVE,
 		    ("vm_pageout_page_stats: page %p isn't active", m));
 
-		next = TAILQ_NEXT(m, pageq);
+		next = BSD_TAILQ_NEXT(m, pageq);
 		if ((m->flags & PG_MARKER) != 0) {
 			m = next;
 			continue;

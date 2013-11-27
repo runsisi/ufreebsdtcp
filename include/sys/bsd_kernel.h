@@ -364,7 +364,7 @@ struct tunable_str {
 	getenv_string((path), (var), (size))
 
 struct intr_config_hook {
-	TAILQ_ENTRY(intr_config_hook) ich_links;
+	BSD_TAILQ_ENTRY(intr_config_hook) ich_links;
 	void	(*ich_func)(void *arg);
 	void	*ich_arg;
 };

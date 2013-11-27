@@ -384,7 +384,7 @@ typedef struct  _ipfw_insn_log {
 #ifdef IPFW_INTERNAL
 /* Server pool support (LSNAT). */
 struct cfg_spool {
-	LIST_ENTRY(cfg_spool)   _next;          /* chain of spool instances */
+	BSD_LIST_ENTRY(cfg_spool)   _next;          /* chain of spool instances */
 	struct in_addr          addr;
 	u_short                 port;
 };
@@ -398,7 +398,7 @@ struct cfg_spool {
 #ifdef IPFW_INTERNAL
 /* Nat redirect configuration. */
 struct cfg_redir {
-	LIST_ENTRY(cfg_redir)   _next;          /* chain of redir instances */
+	BSD_LIST_ENTRY(cfg_redir)   _next;          /* chain of redir instances */
 	u_int16_t               mode;           /* type of redirect mode */
 	struct in_addr	        laddr;          /* local ip address */
 	struct in_addr	        paddr;          /* public ip address */
@@ -413,7 +413,7 @@ struct cfg_redir {
 	/* num of entry in spool chain */
 	u_int16_t               spool_cnt;      
 	/* chain of spool instances */
-	LIST_HEAD(spool_chain, cfg_spool) spool_chain;
+	BSD_LIST_HEAD(spool_chain, cfg_spool) spool_chain;
 };
 #endif
 
@@ -421,7 +421,7 @@ struct cfg_redir {
 /* Nat configuration data struct. */
 struct cfg_nat {
 	/* chain of nat instances */
-	LIST_ENTRY(cfg_nat)     _next;
+	BSD_LIST_ENTRY(cfg_nat)     _next;
 	int                     id;                     /* nat id */
 	struct in_addr          ip;                     /* nat ip address */
 	char                    if_name[IF_NAMESIZE];   /* interface name */
@@ -430,7 +430,7 @@ struct cfg_nat {
 	/* number of entry in spool chain */
 	int                     redir_cnt;              
 	/* chain of redir instances */
-	LIST_HEAD(redir_chain, cfg_redir) redir_chain;  
+	BSD_LIST_HEAD(redir_chain, cfg_redir) redir_chain;  
 };
 #endif
 

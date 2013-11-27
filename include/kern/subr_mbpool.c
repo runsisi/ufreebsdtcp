@@ -67,7 +67,7 @@ struct mbtrail {
 #define	MBP_CMSK	0x01ff		/* chunk number mask */
 
 struct mbfree {
-	SLIST_ENTRY(mbfree) link;	/* link on free list */
+	BSD_SLIST_ENTRY(mbfree) link;	/* link on free list */
 };
 
 struct mbpage {
@@ -84,7 +84,7 @@ struct mbpool {
 	size_t		chunk_size;	/* size of each external mbuf */
 
 	struct mtx	free_lock;	/* lock of free list */
-	SLIST_HEAD(, mbfree) free_list;	/* free list */
+	BSD_SLIST_HEAD(, mbfree) free_list;	/* free list */
 	u_int		npages;		/* current number of pages */
 	u_int		nchunks;	/* chunks per page */
 	struct mbpage	pages[];	/* pages */
@@ -137,7 +137,7 @@ mbp_create(struct mbpool **pp, const char *name, bus_dma_tag_t dmat,
 	(*pp)->chunk_size = chunk_size;
 	(*pp)->nchunks = nchunks;
 
-	SLIST_INIT(&(*pp)->free_list);
+	BSD_SLIST_INIT(&(*pp)->free_list);
 	mtx_init(&(*pp)->free_lock, name, NULL, MTX_DEF);
 
 	return (0);
@@ -227,7 +227,7 @@ mbp_alloc_page(struct mbpool *p)
 		t = C2T(p, f);
 		t->page = p->npages;
 		t->chunk = i;
-		SLIST_INSERT_HEAD(&p->free_list, f, link);
+		BSD_SLIST_INSERT_HEAD(&p->free_list, f, link);
 	}
 
 	p->npages++;
@@ -243,15 +243,15 @@ mbp_alloc(struct mbpool *p, bus_addr_t *pap, uint32_t *hp)
 	struct mbtrail *t;
 
 	mtx_lock(&p->free_lock);
-	if ((cf = SLIST_FIRST(&p->free_list)) == NULL) {
+	if ((cf = BSD_SLIST_FIRST(&p->free_list)) == NULL) {
 		mbp_alloc_page(p);
-		cf = SLIST_FIRST(&p->free_list);
+		cf = BSD_SLIST_FIRST(&p->free_list);
 	}
 	if (cf == NULL) {
 		mtx_unlock(&p->free_lock);
 		return (NULL);
 	}
-	SLIST_REMOVE_HEAD(&p->free_list, link);
+	BSD_SLIST_REMOVE_HEAD(&p->free_list, link);
 	mtx_unlock(&p->free_lock);
 
 	t = C2T(p, cf);
@@ -275,7 +275,7 @@ mbp_free(struct mbpool *p, void *ptr)
 	mtx_lock(&p->free_lock);
 	t = C2T(p, ptr);
 	t->page &= ~(MBP_USED | MBP_CARD);
-	SLIST_INSERT_HEAD(&p->free_list, (struct mbfree *)ptr, link);
+	BSD_SLIST_INSERT_HEAD(&p->free_list, (struct mbfree *)ptr, link);
 	mtx_unlock(&p->free_lock);
 }
 
@@ -307,7 +307,7 @@ mbp_card_free(struct mbpool *p)
 			tr = C2T(p, cf);
 			if (tr->page & MBP_CARD) {
 				tr->page &= MBP_PMSK;
-				SLIST_INSERT_HEAD(&p->free_list, cf, link);
+				BSD_SLIST_INSERT_HEAD(&p->free_list, cf, link);
 			}
 		}
 	}
@@ -337,7 +337,7 @@ mbp_count(struct mbpool *p, u_int *used, u_int *card, u_int *free)
 		}
 	}
 	mtx_lock(&p->free_lock);
-	SLIST_FOREACH(cf, &p->free_list, link)
+	BSD_SLIST_FOREACH(cf, &p->free_list, link)
 		(*free)++;
 	mtx_unlock(&p->free_lock);
 }

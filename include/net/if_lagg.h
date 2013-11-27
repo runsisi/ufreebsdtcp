@@ -174,14 +174,14 @@ struct lagg_lb {
 
 struct lagg_mc {
 	struct ifmultiaddr      *mc_ifma;
-	SLIST_ENTRY(lagg_mc)	mc_entries;
+	BSD_SLIST_ENTRY(lagg_mc)	mc_entries;
 };
 
 /* List of interfaces to have the MAC address modified */
 struct lagg_llq {
 	struct ifnet		*llq_ifp;
 	uint8_t			llq_lladdr[ETHER_ADDR_LEN];
-	SLIST_ENTRY(lagg_llq)	llq_entries;
+	BSD_SLIST_ENTRY(lagg_llq)	llq_entries;
 };
 
 struct lagg_softc {
@@ -195,11 +195,11 @@ struct lagg_softc {
 	uint32_t			sc_seq;		/* sequence counter */
 	uint32_t			sc_flags;
 
-	SLIST_HEAD(__tplhd, lagg_port)	sc_ports;	/* list of interfaces */
-	SLIST_ENTRY(lagg_softc)	sc_entries;
+	BSD_SLIST_HEAD(__tplhd, lagg_port)	sc_ports;	/* list of interfaces */
+	BSD_SLIST_ENTRY(lagg_softc)	sc_entries;
 
 	struct task			sc_lladdr_task;
-	SLIST_HEAD(__llqhd, lagg_llq)	sc_llq_head;	/* interfaces to program
+	BSD_SLIST_HEAD(__llqhd, lagg_llq)	sc_llq_head;	/* interfaces to program
 							   the lladdr on */
 
 	/* lagg protocol callbacks */
@@ -236,14 +236,14 @@ struct lagg_port {
 	caddr_t				lp_psc;		/* protocol data */
 	int				lp_detaching;	/* ifnet is detaching */
 
-	SLIST_HEAD(__mclhd, lagg_mc)	lp_mc_head;	/* multicast addresses */
+	BSD_SLIST_HEAD(__mclhd, lagg_mc)	lp_mc_head;	/* multicast addresses */
 
 	/* Redirected callbacks */
 	int	(*lp_ioctl)(struct ifnet *, u_long, caddr_t);
 	int	(*lp_output)(struct ifnet *, struct mbuf *, struct sockaddr *,
 		     struct route *);
 
-	SLIST_ENTRY(lagg_port)		lp_entries;
+	BSD_SLIST_ENTRY(lagg_port)		lp_entries;
 };
 
 #define	LAGG_LOCK_INIT(_sc)	rw_init(&(_sc)->sc_mtx, "if_lagg rwlock")

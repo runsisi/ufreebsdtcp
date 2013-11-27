@@ -55,12 +55,12 @@ struct hhook {
 	hhook_func_t		hhk_func;
 	struct helper		*hhk_helper;
 	void			*hhk_udata;
-	STAILQ_ENTRY(hhook)	hhk_next;
+	BSD_STAILQ_ENTRY(hhook)	hhk_next;
 };
 
 static MALLOC_DEFINE(M_HHOOK, "hhook", "Helper hooks are linked off hhook_head lists");
 
-LIST_HEAD(hhookheadhead, hhook_head);
+BSD_LIST_HEAD(hhookheadhead, hhook_head);
 struct hhookheadhead hhook_head_list;
 VNET_DEFINE(struct hhookheadhead, hhook_vhead_list);
 #define	V_hhook_vhead_list VNET(hhook_vhead_list)
@@ -100,7 +100,7 @@ hhook_run_hooks(struct hhook_head *hhh, void *ctx_data, struct osd *hosd)
 	KASSERT(hhh->hhh_refcount > 0, ("hhook_head %p refcount is 0", hhh));
 
 	HHH_RLOCK(hhh, &rmpt);
-	STAILQ_FOREACH(hhk, &hhh->hhh_hooks, hhk_next) {
+	BSD_STAILQ_FOREACH(hhk, &hhh->hhh_hooks, hhk_next) {
 		if (hhk->hhk_helper->h_flags & HELPER_NEEDS_OSD) {
 			hdata = osd_get(OSD_KHELP, hosd, hhk->hhk_helper->h_id);
 			if (hdata == NULL)
@@ -148,7 +148,7 @@ hhook_add_hook(struct hhook_head *hhh, struct hookinfo *hki, uint32_t flags)
 	hhk->hhk_udata = hki->hook_udata;
 
 	HHH_WLOCK(hhh);
-	STAILQ_FOREACH(tmp, &hhh->hhh_hooks, hhk_next) {
+	BSD_STAILQ_FOREACH(tmp, &hhh->hhh_hooks, hhk_next) {
 		if (tmp->hhk_func == hki->hook_func &&
 		    tmp->hhk_udata == hki->hook_udata) {
 			/* The helper hook function is already registered. */
@@ -158,7 +158,7 @@ hhook_add_hook(struct hhook_head *hhh, struct hookinfo *hki, uint32_t flags)
 	}
 
 	if (!error) {
-		STAILQ_INSERT_TAIL(&hhh->hhh_hooks, hhk, hhk_next);
+		BSD_STAILQ_INSERT_TAIL(&hhh->hhh_hooks, hhk, hhk_next);
 		hhh->hhh_nhooks++;
 	} else
 		bsd_free(hhk, M_HHOOK);
@@ -203,7 +203,7 @@ tryagain:
 		return (ENOMEM);
 
 	HHHLIST_LOCK();
-	LIST_FOREACH(hhh, &hhook_head_list, hhh_next) {
+	BSD_LIST_FOREACH(hhh, &hhook_head_list, hhh_next) {
 		if (hhh->hhh_type == hki->hook_type &&
 		    hhh->hhh_id == hki->hook_id) {
 			if (i < n_heads_to_hook) {
@@ -250,10 +250,10 @@ hhook_remove_hook(struct hhook_head *hhh, struct hookinfo *hki)
 		return (ENOENT);
 
 	HHH_WLOCK(hhh);
-	STAILQ_FOREACH(tmp, &hhh->hhh_hooks, hhk_next) {
+	BSD_STAILQ_FOREACH(tmp, &hhh->hhh_hooks, hhk_next) {
 		if (tmp->hhk_func == hki->hook_func &&
 		    tmp->hhk_udata == hki->hook_udata) {
-			STAILQ_REMOVE(&hhh->hhh_hooks, tmp, hhook, hhk_next);
+			BSD_STAILQ_REMOVE(&hhh->hhh_hooks, tmp, hhook, hhk_next);
 			bsd_free(tmp, M_HHOOK);
 			hhh->hhh_nhooks--;
 			break;
@@ -274,7 +274,7 @@ hhook_remove_hook_lookup(struct hookinfo *hki)
 	struct hhook_head *hhh;
 
 	HHHLIST_LOCK();
-	LIST_FOREACH(hhh, &hhook_head_list, hhh_next) {
+	BSD_LIST_FOREACH(hhh, &hhook_head_list, hhh_next) {
 		if (hhh->hhh_type == hki->hook_type &&
 		    hhh->hhh_id == hki->hook_id)
 			hhook_remove_hook(hhh, hki);
@@ -310,7 +310,7 @@ hhook_head_register(int32_t hhook_type, int32_t hhook_id, struct hhook_head **hh
 	tmphhh->hhh_type = hhook_type;
 	tmphhh->hhh_id = hhook_id;
 	tmphhh->hhh_nhooks = 0;
-	STAILQ_INIT(&tmphhh->hhh_hooks);
+	BSD_STAILQ_INIT(&tmphhh->hhh_hooks);
 	HHH_LOCK_INIT(tmphhh);
 	refcount_init(&tmphhh->hhh_refcount, 1);
 
@@ -320,10 +320,10 @@ hhook_head_register(int32_t hhook_type, int32_t hhook_id, struct hhook_head **hh
 #ifdef VIMAGE
 		KASSERT(curvnet != NULL, ("curvnet is NULL"));
 		tmphhh->hhh_vid = (uintptr_t)curvnet;
-		LIST_INSERT_HEAD(&V_hhook_vhead_list, tmphhh, hhh_vnext);
+		BSD_LIST_INSERT_HEAD(&V_hhook_vhead_list, tmphhh, hhh_vnext);
 #endif
 	}
-	LIST_INSERT_HEAD(&hhook_head_list, tmphhh, hhh_next);
+	BSD_LIST_INSERT_HEAD(&hhook_head_list, tmphhh, hhh_next);
 	n_hhookheads++;
 	HHHLIST_UNLOCK();
 
@@ -345,13 +345,13 @@ hhook_head_destroy(struct hhook_head *hhh)
 	HHHLIST_LOCK_ASSERT();
 	KASSERT(n_hhookheads > 0, ("n_hhookheads should be > 0"));
 
-	LIST_REMOVE(hhh, hhh_next);
+	BSD_LIST_REMOVE(hhh, hhh_next);
 #ifdef VIMAGE
 	if (hhook_head_is_virtualised(hhh) == HHOOK_HEADISINVNET)
-		LIST_REMOVE(hhh, hhh_vnext);
+		BSD_LIST_REMOVE(hhh, hhh_vnext);
 #endif
 	HHH_WLOCK(hhh);
-	STAILQ_FOREACH_SAFE(tmp, &hhh->hhh_hooks, hhk_next, tmp2)
+	BSD_STAILQ_FOREACH_SAFE(tmp, &hhh->hhh_hooks, hhk_next, tmp2)
 		bsd_free(tmp, M_HHOOK);
 	HHH_WUNLOCK(hhh);
 	HHH_LOCK_DESTROY(hhh);
@@ -409,7 +409,7 @@ hhook_head_get(int32_t hhook_type, int32_t hhook_id)
 	struct hhook_head *hhh;
 
 	HHHLIST_LOCK();
-	LIST_FOREACH(hhh, &hhook_head_list, hhh_next) {
+	BSD_LIST_FOREACH(hhh, &hhook_head_list, hhh_next) {
 		if (hhh->hhh_type == hhook_type && hhh->hhh_id == hhook_id) {
 #ifdef VIMAGE
 			if (hhook_head_is_virtualised(hhh) ==
@@ -480,7 +480,7 @@ static void
 hhook_vnet_init(const void *unused __unused)
 {
 
-	LIST_INIT(&V_hhook_vhead_list);
+	BSD_LIST_INIT(&V_hhook_vhead_list);
 }
 
 /*
@@ -497,7 +497,7 @@ hhook_vnet_uninit(const void *unused __unused)
 	 * subsystem should have already called hhook_head_deregister().
 	 */
 	HHHLIST_LOCK();
-	LIST_FOREACH_SAFE(hhh, &V_hhook_vhead_list, hhh_vnext, tmphhh) {
+	BSD_LIST_FOREACH_SAFE(hhh, &V_hhook_vhead_list, hhh_vnext, tmphhh) {
 		printf("%s: hhook_head type=%d, id=%d cleanup required\n",
 		    __func__, hhh->hhh_type, hhh->hhh_id);
 		hhook_head_destroy(hhh);

@@ -63,7 +63,7 @@ int maxvfsconf = VFS_GENERIC + 1;
  * Single-linked list of configured VFSes.
  * New entries are added/deleted by vfs_register()/vfs_unregister()
  */
-struct vfsconfhead vfsconf = TAILQ_HEAD_INITIALIZER(vfsconf);
+struct vfsconfhead vfsconf = BSD_TAILQ_HEAD_INITIALIZER(vfsconf);
 
 /*
  * Loader.conf variable vfs.typenumhash enables setting vfc_typenum using a hash
@@ -112,7 +112,7 @@ vfs_byname(const char *name)
 
 	if (!strcmp(name, "ffs"))
 		name = "ufs";
-	TAILQ_FOREACH(vfsp, &vfsconf, vfc_list)
+	BSD_TAILQ_FOREACH(vfsp, &vfsconf, vfc_list)
 		if (!strcmp(name, vfsp->vfc_name))
 			return (vfsp);
 	return (NULL);
@@ -184,7 +184,7 @@ vfs_register(struct vfsconf *vfc)
 		secondpass = 0;
 		do {
 			/* Look for and fix any collision. */
-			TAILQ_FOREACH(tvfc, &vfsconf, vfc_list) {
+			BSD_TAILQ_FOREACH(tvfc, &vfsconf, vfc_list) {
 				if (hashval == tvfc->vfc_typenum) {
 					if (hashval == 255 && secondpass == 0) {
 						hashval = 1;
@@ -200,7 +200,7 @@ vfs_register(struct vfsconf *vfc)
 			maxvfsconf = vfc->vfc_typenum + 1;
 	} else
 		vfc->vfc_typenum = maxvfsconf++;
-	TAILQ_INSERT_TAIL(&vfsconf, vfc, vfc_list);
+	BSD_TAILQ_INSERT_TAIL(&vfsconf, vfc, vfc_list);
 
 	/*
 	 * If this filesystem has a sysctl node under vfs
@@ -213,7 +213,7 @@ vfs_register(struct vfsconf *vfc)
 	 * number.
 	 */
 	sysctl_lock();
-	SLIST_FOREACH(oidp, &sysctl__vfs_children, oid_link)
+	BSD_SLIST_FOREACH(oidp, &sysctl__vfs_children, oid_link)
 		if (strcmp(oidp->oid_name, vfc->vfc_name) == 0) {
 			sysctl_unregister_oid(oidp);
 			oidp->oid_number = vfc->vfc_typenum;
@@ -305,9 +305,9 @@ vfs_unregister(struct vfsconf *vfc)
 		if (error)
 			return (error);
 	}
-	TAILQ_REMOVE(&vfsconf, vfsp, vfc_list);
+	BSD_TAILQ_REMOVE(&vfsconf, vfsp, vfc_list);
 	maxtypenum = VFS_GENERIC;
-	TAILQ_FOREACH(vfsp, &vfsconf, vfc_list)
+	BSD_TAILQ_FOREACH(vfsp, &vfsconf, vfc_list)
 		if (maxtypenum < vfsp->vfc_typenum)
 			maxtypenum = vfsp->vfc_typenum;
 	maxvfsconf = maxtypenum + 1;

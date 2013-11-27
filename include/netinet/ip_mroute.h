@@ -269,7 +269,7 @@ struct vif {
  * The kernel's multicast forwarding cache entry structure
  */
 struct mfc {
-	LIST_ENTRY(mfc)	mfc_hash;
+	BSD_LIST_ENTRY(mfc)	mfc_hash;
 	struct in_addr	mfc_origin;		/* IP origin of mcasts	     */
 	struct in_addr  mfc_mcastgrp;		/* multicast group associated*/
 	vifi_t		mfc_parent;		/* incoming vif              */
@@ -283,7 +283,7 @@ struct mfc {
 	struct in_addr	mfc_rp;			/* the RP address	     */
 	struct bw_meter	*mfc_bw_meter;		/* list of bandwidth meters  */
 	u_long		mfc_nstall;		/* # of packets awaiting mfc */
-	TAILQ_HEAD(, rtdetq) mfc_stall;		/* q of packets awaiting mfc */
+	BSD_TAILQ_HEAD(, rtdetq) mfc_stall;		/* q of packets awaiting mfc */
 };
 #endif /* _KERNEL */
 
@@ -310,7 +310,7 @@ struct igmpmsg {
  * Argument structure used for pkt info. while upcall is made
  */
 struct rtdetq {
-    TAILQ_ENTRY(rtdetq)	rte_link;
+    BSD_TAILQ_ENTRY(rtdetq)	rte_link;
     struct mbuf		*m;		/* A copy of the packet		    */
     struct ifnet	*ifp;		/* Interface pkt came in on	    */
     vifi_t		xmt_vif;	/* Saved copy of imo_multicast_vif  */

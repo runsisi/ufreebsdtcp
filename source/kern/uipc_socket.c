@@ -346,7 +346,7 @@ soalloc(struct vnet *vnet)
 	SOCKBUF_LOCK_INIT(&so->so_rcv, "so_rcv");
 	sx_init(&so->so_snd.sb_sx, "so_snd_sx");
 	sx_init(&so->so_rcv.sb_sx, "so_rcv_sx");
-	TAILQ_INIT(&so->so_aiojobq);
+	BSD_TAILQ_INIT(&so->so_aiojobq);
 	mtx_lock(&so_global_mtx);
 	so->so_gencnt = ++so_gencnt;
 	++numopensockets;
@@ -433,8 +433,8 @@ socreate(int dom, struct socket **aso, int type, int proto,
 	if (so == NULL)
 		return (ENOBUFS);
 
-	TAILQ_INIT(&so->so_incomp);
-	TAILQ_INIT(&so->so_comp);
+	BSD_TAILQ_INIT(&so->so_incomp);
+	BSD_TAILQ_INIT(&so->so_comp);
 	so->so_type = type;
 	so->so_cred = crhold(cred);
 	if ((prp->pr_domain->dom_family == PF_INET) ||
@@ -562,7 +562,7 @@ sonewconn(struct socket *head, int connstatus)
 		return (NULL);
 	}
 	if (connstatus) {
-		TAILQ_INSERT_TAIL(&head->so_comp, so, so_list);
+		BSD_TAILQ_INSERT_TAIL(&head->so_comp, so, so_list);
 		so->so_qstate |= SQ_COMP;
 		head->so_qlen++;
 	} else {
@@ -575,8 +575,8 @@ sonewconn(struct socket *head, int connstatus)
 		 */
 		while (head->so_incqlen > head->so_qlimit) {
 			struct socket *sp;
-			sp = TAILQ_FIRST(&head->so_incomp);
-			TAILQ_REMOVE(&head->so_incomp, sp, so_list);
+			sp = BSD_TAILQ_FIRST(&head->so_incomp);
+			BSD_TAILQ_REMOVE(&head->so_incomp, sp, so_list);
 			head->so_incqlen--;
 			sp->so_qstate &= ~SQ_INCOMP;
 			sp->so_head = NULL;
@@ -584,7 +584,7 @@ sonewconn(struct socket *head, int connstatus)
 			soabort(sp);
 			ACCEPT_LOCK();
 		}
-		TAILQ_INSERT_TAIL(&head->so_incomp, so, so_list);
+		BSD_TAILQ_INSERT_TAIL(&head->so_incomp, so, so_list);
 		so->so_qstate |= SQ_INCOMP;
 		head->so_incqlen++;
 	}
@@ -699,7 +699,7 @@ sofree(struct socket *so)
 		KASSERT((so->so_qstate & SQ_COMP) == 0 ||
 		    (so->so_qstate & SQ_INCOMP) == 0,
 		    ("sofree: so->so_qstate is SQ_COMP and also SQ_INCOMP"));
-		TAILQ_REMOVE(&head->so_incomp, so, so_list);
+		BSD_TAILQ_REMOVE(&head->so_incomp, so, so_list);
 		head->so_incqlen--;
 		so->so_qstate &= ~SQ_INCOMP;
 		so->so_head = NULL;
@@ -709,8 +709,8 @@ sofree(struct socket *so)
 	    ("sofree: so_head == NULL, but still SQ_COMP(%d) or SQ_INCOMP(%d)",
 	    so->so_qstate & SQ_COMP, so->so_qstate & SQ_INCOMP));
 	if (so->so_options & SO_ACCEPTCONN) {
-		KASSERT((TAILQ_EMPTY(&so->so_comp)), ("sofree: so_comp populated"));
-		KASSERT((TAILQ_EMPTY(&so->so_incomp)), ("sofree: so_incomp populated"));
+		KASSERT((BSD_TAILQ_EMPTY(&so->so_comp)), ("sofree: so_comp populated"));
+		KASSERT((BSD_TAILQ_EMPTY(&so->so_incomp)), ("sofree: so_incomp populated"));
 	}
 	SOCK_UNLOCK(so);
 	ACCEPT_UNLOCK();
@@ -794,8 +794,8 @@ drop:
 		 * to ACCEPT_LOCK races while we are draining them.
 		 */
 		so->so_options &= ~SO_ACCEPTCONN;
-		while ((sp = TAILQ_FIRST(&so->so_incomp)) != NULL) {
-			TAILQ_REMOVE(&so->so_incomp, sp, so_list);
+		while ((sp = BSD_TAILQ_FIRST(&so->so_incomp)) != NULL) {
+			BSD_TAILQ_REMOVE(&so->so_incomp, sp, so_list);
 			so->so_incqlen--;
 			sp->so_qstate &= ~SQ_INCOMP;
 			sp->so_head = NULL;
@@ -803,8 +803,8 @@ drop:
 			soabort(sp);
 			ACCEPT_LOCK();
 		}
-		while ((sp = TAILQ_FIRST(&so->so_comp)) != NULL) {
-			TAILQ_REMOVE(&so->so_comp, sp, so_list);
+		while ((sp = BSD_TAILQ_FIRST(&so->so_comp)) != NULL) {
+			BSD_TAILQ_REMOVE(&so->so_comp, sp, so_list);
 			so->so_qlen--;
 			sp->so_qstate &= ~SQ_COMP;
 			sp->so_head = NULL;
@@ -812,9 +812,9 @@ drop:
 			soabort(sp);
 			ACCEPT_LOCK();
 		}
-		KASSERT((TAILQ_EMPTY(&so->so_comp)),
+		KASSERT((BSD_TAILQ_EMPTY(&so->so_comp)),
 		    ("%s: so_comp populated", __func__));
-		KASSERT((TAILQ_EMPTY(&so->so_incomp)),
+		KASSERT((BSD_TAILQ_EMPTY(&so->so_incomp)),
 		    ("%s: so_incomp populated", __func__));
 	}
 	SOCK_LOCK(so);
@@ -3326,7 +3326,7 @@ filt_solisten(struct knote *kn, long hint)
 	struct socket *so = kn->kn_fp->f_data;
 
 	kn->kn_data = so->so_qlen;
-	return (! TAILQ_EMPTY(&so->so_comp));
+	return (! BSD_TAILQ_EMPTY(&so->so_comp));
 }
 
 int
@@ -3397,10 +3397,10 @@ restart:
 	if (head != NULL && (so->so_qstate & SQ_INCOMP)) {
 		if ((so->so_options & SO_ACCEPTFILTER) == 0) {
 			SOCK_UNLOCK(so);
-			TAILQ_REMOVE(&head->so_incomp, so, so_list);
+			BSD_TAILQ_REMOVE(&head->so_incomp, so, so_list);
 			head->so_incqlen--;
 			so->so_qstate &= ~SQ_INCOMP;
-			TAILQ_INSERT_TAIL(&head->so_comp, so, so_list);
+			BSD_TAILQ_INSERT_TAIL(&head->so_comp, so, so_list);
 			head->so_qlen++;
 			so->so_qstate |= SQ_COMP;
 			ACCEPT_UNLOCK();
@@ -3577,7 +3577,7 @@ void
 so_listeners_apply_all(struct socket *so, void (*func)(struct socket *, void *), void *arg)
 {
 	
-	TAILQ_FOREACH(so, &so->so_comp, so_list)
+	BSD_TAILQ_FOREACH(so, &so->so_comp, so_list)
 		func(so, arg);
 }
 

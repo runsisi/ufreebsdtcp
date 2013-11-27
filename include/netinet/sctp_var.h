@@ -144,7 +144,7 @@ extern struct pr_usrreqs sctp_usrreqs;
 	 	SCTP_ZONE_FREE(SCTP_BASE_INFO(ipi_zone_chunk), (_chk)); \
 	 	SCTP_DECR_CHK_COUNT(); \
 	  } else { \
-	 	TAILQ_INSERT_TAIL(&(_stcb)->asoc.free_chunks, (_chk), sctp_next); \
+	 	BSD_TAILQ_INSERT_TAIL(&(_stcb)->asoc.free_chunks, (_chk), sctp_next); \
 	 	(_stcb)->asoc.free_chunk_cnt++; \
 	 	atomic_add_int(&SCTP_BASE_INFO(ipi_free_chunks), 1); \
           } \
@@ -155,7 +155,7 @@ extern struct pr_usrreqs sctp_usrreqs;
 }
 
 #define sctp_alloc_a_chunk(_stcb, _chk) { \
-	if (TAILQ_EMPTY(&(_stcb)->asoc.free_chunks)) { \
+	if (BSD_TAILQ_EMPTY(&(_stcb)->asoc.free_chunks)) { \
 		(_chk) = SCTP_ZONE_GET(SCTP_BASE_INFO(ipi_zone_chunk), struct sctp_tmit_chunk); \
 		if ((_chk)) { \
 			SCTP_INCR_CHK_COUNT(); \
@@ -163,8 +163,8 @@ extern struct pr_usrreqs sctp_usrreqs;
 			(_chk)->holds_key_ref = 0; \
 		} \
 	} else { \
-		(_chk) = TAILQ_FIRST(&(_stcb)->asoc.free_chunks); \
-		TAILQ_REMOVE(&(_stcb)->asoc.free_chunks, (_chk), sctp_next); \
+		(_chk) = BSD_TAILQ_FIRST(&(_stcb)->asoc.free_chunks); \
+		BSD_TAILQ_REMOVE(&(_stcb)->asoc.free_chunks, (_chk), sctp_next); \
 		atomic_subtract_int(&SCTP_BASE_INFO(ipi_free_chunks), 1); \
 		(_chk)->holds_key_ref = 0; \
                 SCTP_STAT_INCR(sctps_cached_chk); \

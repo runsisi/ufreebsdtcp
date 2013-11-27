@@ -41,15 +41,15 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/netinet/sctp_pcb.h 252966 2013-07-07 16:13
 #include <netinet/sctp_constants.h>
 #include <netinet/sctp_sysctl.h>
 
-LIST_HEAD(sctppcbhead, sctp_inpcb);
-LIST_HEAD(sctpasochead, sctp_tcb);
-LIST_HEAD(sctpladdr, sctp_laddr);
-LIST_HEAD(sctpvtaghead, sctp_tagblock);
-LIST_HEAD(sctp_vrflist, sctp_vrf);
-LIST_HEAD(sctp_ifnlist, sctp_ifn);
-LIST_HEAD(sctp_ifalist, sctp_ifa);
-TAILQ_HEAD(sctp_readhead, sctp_queued_to_read);
-TAILQ_HEAD(sctp_streamhead, sctp_stream_queue_pending);
+BSD_LIST_HEAD(sctppcbhead, sctp_inpcb);
+BSD_LIST_HEAD(sctpasochead, sctp_tcb);
+BSD_LIST_HEAD(sctpladdr, sctp_laddr);
+BSD_LIST_HEAD(sctpvtaghead, sctp_tagblock);
+BSD_LIST_HEAD(sctp_vrflist, sctp_vrf);
+BSD_LIST_HEAD(sctp_ifnlist, sctp_ifn);
+BSD_LIST_HEAD(sctp_ifalist, sctp_ifa);
+BSD_TAILQ_HEAD(sctp_readhead, sctp_queued_to_read);
+BSD_TAILQ_HEAD(sctp_streamhead, sctp_stream_queue_pending);
 
 #include <netinet/sctp_structs.h>
 #include <netinet/sctp_auth.h>
@@ -58,7 +58,7 @@ TAILQ_HEAD(sctp_streamhead, sctp_stream_queue_pending);
 #define SCTP_PCBHASH_ASOC(tag, mask) (tag & mask)
 
 struct sctp_vrf {
-	LIST_ENTRY(sctp_vrf) next_vrf;
+	BSD_LIST_ENTRY(sctp_vrf) next_vrf;
 	struct sctp_ifalist *vrf_addr_hash;
 	struct sctp_ifnlist ifnlist;
 	uint32_t vrf_id;
@@ -72,8 +72,8 @@ struct sctp_vrf {
 struct sctp_ifn {
 	struct sctp_ifalist ifalist;
 	struct sctp_vrf *vrf;
-	         LIST_ENTRY(sctp_ifn) next_ifn;
-	         LIST_ENTRY(sctp_ifn) next_bucket;
+	         BSD_LIST_ENTRY(sctp_ifn) next_ifn;
+	         BSD_LIST_ENTRY(sctp_ifn) next_bucket;
 	void *ifn_p;		/* never access without appropriate lock */
 	uint32_t ifn_mtu;
 	uint32_t ifn_type;
@@ -100,8 +100,8 @@ struct sctp_ifn {
 #define SCTP_ADDR_IFA_UNUSEABLE 0x00000008
 
 struct sctp_ifa {
-	LIST_ENTRY(sctp_ifa) next_ifa;
-	LIST_ENTRY(sctp_ifa) next_bucket;
+	BSD_LIST_ENTRY(sctp_ifa) next_ifa;
+	BSD_LIST_ENTRY(sctp_ifa) next_bucket;
 	struct sctp_ifn *ifn_p;	/* back pointer to parent ifn */
 	void *ifa;		/* pointer to ifa, needed for flag update for
 				 * that we MUST lock appropriate locks. This
@@ -118,7 +118,7 @@ struct sctp_ifa {
 };
 
 struct sctp_laddr {
-	LIST_ENTRY(sctp_laddr) sctp_nxt_addr;	/* next in list */
+	BSD_LIST_ENTRY(sctp_laddr) sctp_nxt_addr;	/* next in list */
 	struct sctp_ifa *ifa;
 	uint32_t action;	/* Used during asconf and adding if no-zero
 				 * src-addr selection will not consider this
@@ -138,7 +138,7 @@ struct sctp_timewait {
 };
 
 struct sctp_tagblock {
-	LIST_ENTRY(sctp_tagblock) sctp_nxt_tagblock;
+	BSD_LIST_ENTRY(sctp_tagblock) sctp_nxt_tagblock;
 	struct sctp_timewait vtag_block[SCTP_NUMBER_IN_VTAG_BLOCK];
 };
 
@@ -372,9 +372,9 @@ struct sctp_inpcb {
 	/* Socket buffer lock protects read_queue and of course sb_cc */
 	struct sctp_readhead read_queue;
 
-	              LIST_ENTRY(sctp_inpcb) sctp_list;	/* lists all endpoints */
+	              BSD_LIST_ENTRY(sctp_inpcb) sctp_list;	/* lists all endpoints */
 	/* hash of all endpoints for model */
-	              LIST_ENTRY(sctp_inpcb) sctp_hash;
+	              BSD_LIST_ENTRY(sctp_inpcb) sctp_hash;
 	/* count of local addresses bound, 0 if bound all */
 	int laddr_count;
 
@@ -440,13 +440,13 @@ struct sctp_inpcb {
 struct sctp_tcb {
 	struct socket *sctp_socket;	/* back pointer to socket */
 	struct sctp_inpcb *sctp_ep;	/* back pointer to ep */
-	           LIST_ENTRY(sctp_tcb) sctp_tcbhash;	/* next link in hash
+	           BSD_LIST_ENTRY(sctp_tcb) sctp_tcbhash;	/* next link in hash
 							 * table */
-	           LIST_ENTRY(sctp_tcb) sctp_tcblist;	/* list of all of the
+	           BSD_LIST_ENTRY(sctp_tcb) sctp_tcblist;	/* list of all of the
 							 * TCB's */
-	           LIST_ENTRY(sctp_tcb) sctp_tcbasocidhash;	/* next link in asocid
+	           BSD_LIST_ENTRY(sctp_tcb) sctp_tcbasocidhash;	/* next link in asocid
 								 * hash table */
-	           LIST_ENTRY(sctp_tcb) sctp_asocs;	/* vtag hash list */
+	           BSD_LIST_ENTRY(sctp_tcb) sctp_asocs;	/* vtag hash list */
 	struct sctp_block_entry *block_entry;	/* pointer locked by  socket
 						 * send buffer */
 	struct sctp_association asoc;

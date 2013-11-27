@@ -102,7 +102,7 @@ struct ioapic {
 	u_int io_numintr:8;
 	volatile ioapic_t *io_addr;	/* XXX: should use bus_space */
 	vm_paddr_t io_paddr;
-	STAILQ_ENTRY(ioapic) io_next;
+	BSD_STAILQ_ENTRY(ioapic) io_next;
 	struct ioapic_intsrc io_pins[0];
 };
 
@@ -123,7 +123,7 @@ static void	ioapic_resume(struct pic *pic);
 static int	ioapic_assign_cpu(struct intsrc *isrc, u_int apic_id);
 static void	ioapic_program_intpin(struct ioapic_intsrc *intpin);
 
-static STAILQ_HEAD(,ioapic) ioapic_list = STAILQ_HEAD_INITIALIZER(ioapic_list);
+static BSD_STAILQ_HEAD(,ioapic) ioapic_list = BSD_STAILQ_HEAD_INITIALIZER(ioapic_list);
 struct pic ioapic_template = { ioapic_enable_source, ioapic_disable_source,
 			       ioapic_eoi_source, ioapic_enable_intr,
 			       ioapic_disable_intr, ioapic_vector,
@@ -789,7 +789,7 @@ ioapic_register(void *cookie)
 	apic = io->io_addr;
 	mtx_lock_spin(&icu_lock);
 	flags = ioapic_read(apic, IOAPIC_VER) & IOART_VER_VERSION;
-	STAILQ_INSERT_TAIL(&ioapic_list, io, io_next);
+	BSD_STAILQ_INSERT_TAIL(&ioapic_list, io, io_next);
 	mtx_unlock_spin(&icu_lock);
 	printf("ioapic%u <Version %u.%u> irqs %u-%u on motherboard\n",
 	    io->io_id, flags >> 4, flags & 0xf, io->io_intbase,
@@ -902,7 +902,7 @@ apic_attach(device_t dev)
 	/* Reserve the local APIC. */
 	apic_add_resource(dev, 0, lapic_paddr, sizeof(lapic_t));
 	i = 1;
-	STAILQ_FOREACH(io, &ioapic_list, io_next) {
+	BSD_STAILQ_FOREACH(io, &ioapic_list, io_next) {
 		apic_add_resource(dev, i, io->io_paddr, IOAPIC_MEM_REGION);
 		i++;
 	}

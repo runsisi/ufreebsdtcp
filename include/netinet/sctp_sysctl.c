@@ -148,8 +148,8 @@ number_of_addresses(struct sctp_inpcb *inp)
 		return (0);
 	}
 	if (inp->sctp_flags & SCTP_PCB_FLAGS_BOUNDALL) {
-		LIST_FOREACH(sctp_ifn, &vrf->ifnlist, next_ifn) {
-			LIST_FOREACH(sctp_ifa, &sctp_ifn->ifalist, next_ifa) {
+		BSD_LIST_FOREACH(sctp_ifn, &vrf->ifnlist, next_ifn) {
+			BSD_LIST_FOREACH(sctp_ifa, &sctp_ifn->ifalist, next_ifa) {
 				switch (sctp_ifa->address.sa.sa_family) {
 #ifdef INET
 				case AF_INET:
@@ -165,7 +165,7 @@ number_of_addresses(struct sctp_inpcb *inp)
 			}
 		}
 	} else {
-		LIST_FOREACH(laddr, &inp->sctp_addr_list, sctp_nxt_addr) {
+		BSD_LIST_FOREACH(laddr, &inp->sctp_addr_list, sctp_nxt_addr) {
 			switch (laddr->ifa->address.sa.sa_family) {
 #ifdef INET
 			case AF_INET:
@@ -230,11 +230,11 @@ copy_out_local_addresses(struct sctp_inpcb *inp, struct sctp_tcb *stcb, struct s
 		return (-1);
 	}
 	if (inp->sctp_flags & SCTP_PCB_FLAGS_BOUNDALL) {
-		LIST_FOREACH(sctp_ifn, &vrf->ifnlist, next_ifn) {
+		BSD_LIST_FOREACH(sctp_ifn, &vrf->ifnlist, next_ifn) {
 			if ((loopback_scope == 0) && SCTP_IFN_IS_IFT_LOOP(sctp_ifn))
 				/* Skip loopback if loopback_scope not set */
 				continue;
-			LIST_FOREACH(sctp_ifa, &sctp_ifn->ifalist, next_ifa) {
+			BSD_LIST_FOREACH(sctp_ifa, &sctp_ifn->ifalist, next_ifa) {
 				if (stcb) {
 					/*
 					 * ignore if blacklisted at
@@ -304,7 +304,7 @@ copy_out_local_addresses(struct sctp_inpcb *inp, struct sctp_tcb *stcb, struct s
 			}
 		}
 	} else {
-		LIST_FOREACH(laddr, &inp->sctp_addr_list, sctp_nxt_addr) {
+		BSD_LIST_FOREACH(laddr, &inp->sctp_addr_list, sctp_nxt_addr) {
 			/* ignore if blacklisted at association level */
 			if (stcb && sctp_is_addr_restricted(stcb, laddr->ifa))
 				continue;
@@ -365,14 +365,14 @@ sctp_assoclist(SYSCTL_HANDLER_ARGS)
 
 	SCTP_INP_INFO_RLOCK();
 	if (req->oldptr == USER_ADDR_NULL) {
-		LIST_FOREACH(inp, &SCTP_BASE_INFO(listhead), sctp_list) {
+		BSD_LIST_FOREACH(inp, &SCTP_BASE_INFO(listhead), sctp_list) {
 			SCTP_INP_RLOCK(inp);
 			number_of_endpoints++;
 			number_of_local_addresses += number_of_addresses(inp);
-			LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
+			BSD_LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
 				number_of_associations++;
 				number_of_local_addresses += number_of_addresses(inp);
-				TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
+				BSD_TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
 					number_of_remote_addresses++;
 				}
 			}
@@ -393,7 +393,7 @@ sctp_assoclist(SYSCTL_HANDLER_ARGS)
 		SCTP_LTRACE_ERR_RET(NULL, NULL, NULL, SCTP_FROM_SCTP_SYSCTL, EPERM);
 		return (EPERM);
 	}
-	LIST_FOREACH(inp, &SCTP_BASE_INFO(listhead), sctp_list) {
+	BSD_LIST_FOREACH(inp, &SCTP_BASE_INFO(listhead), sctp_list) {
 		SCTP_INP_RLOCK(inp);
 		if (inp->sctp_flags & SCTP_PCB_FLAGS_SOCKET_ALLGONE) {
 			/* if its allgone it is being freed - skip it  */
@@ -431,7 +431,7 @@ sctp_assoclist(SYSCTL_HANDLER_ARGS)
 			SCTP_INP_DECR_REF(inp);
 			return (error);
 		}
-		LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
+		BSD_LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
 			SCTP_TCB_LOCK(stcb);
 			atomic_add_int(&stcb->asoc.refcnt, 1);
 			SCTP_TCB_UNLOCK(stcb);
@@ -483,7 +483,7 @@ sctp_assoclist(SYSCTL_HANDLER_ARGS)
 				atomic_subtract_int(&stcb->asoc.refcnt, 1);
 				return (error);
 			}
-			TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
+			BSD_TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
 				xraddr.last = 0;
 				xraddr.address = net->ro._l_addr;
 				xraddr.active = ((net->dest_state & SCTP_ADDR_REACHABLE) == SCTP_ADDR_REACHABLE);

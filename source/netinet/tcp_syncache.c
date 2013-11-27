@@ -257,7 +257,7 @@ syncache_init(void)
 #ifdef VIMAGE
 		V_tcp_syncache.hashbase[i].sch_vnet = curvnet;
 #endif
-		TAILQ_INIT(&V_tcp_syncache.hashbase[i].sch_bucket);
+		BSD_TAILQ_INIT(&V_tcp_syncache.hashbase[i].sch_bucket);
 		mtx_init(&V_tcp_syncache.hashbase[i].sch_mtx, "tcp_sc_head",
 			 NULL, MTX_DEF);
 		callout_init_mtx(&V_tcp_syncache.hashbase[i].sch_timer,
@@ -287,10 +287,10 @@ syncache_destroy(void)
 		callout_drain(&sch->sch_timer);
 
 		SCH_LOCK(sch);
-		TAILQ_FOREACH_SAFE(sc, &sch->sch_bucket, sc_hash, nsc)
+		BSD_TAILQ_FOREACH_SAFE(sc, &sch->sch_bucket, sc_hash, nsc)
 			syncache_drop(sc, sch);
 		SCH_UNLOCK(sch);
-		KASSERT(TAILQ_EMPTY(&sch->sch_bucket),
+		KASSERT(BSD_TAILQ_EMPTY(&sch->sch_bucket),
 		    ("%s: sch->sch_bucket not empty", __func__));
 		KASSERT(sch->sch_length == 0, ("%s: sch->sch_length %d not 0",
 		    __func__, sch->sch_length));
@@ -331,15 +331,15 @@ syncache_insert(struct syncache *sc, struct syncache_head *sch)
 	 * If the bucket is full, toss the oldest element.
 	 */
 	if (sch->sch_length >= V_tcp_syncache.bucket_limit) {
-		KASSERT(!TAILQ_EMPTY(&sch->sch_bucket),
+		KASSERT(!BSD_TAILQ_EMPTY(&sch->sch_bucket),
 			("sch->sch_length incorrect"));
-		sc2 = TAILQ_LAST(&sch->sch_bucket, sch_head);
+		sc2 = BSD_TAILQ_LAST(&sch->sch_bucket, sch_head);
 		syncache_drop(sc2, sch);
 		TCPSTAT_INC(tcps_sc_bucketoverflow);
 	}
 
 	/* Put it into the bucket. */
-	TAILQ_INSERT_HEAD(&sch->sch_bucket, sc, sc_hash);
+	BSD_TAILQ_INSERT_HEAD(&sch->sch_bucket, sc, sc_hash);
 	sch->sch_length++;
 
 #ifdef TCP_OFFLOAD
@@ -370,7 +370,7 @@ syncache_drop(struct syncache *sc, struct syncache_head *sch)
 
 	SCH_LOCK_ASSERT(sch);
 
-	TAILQ_REMOVE(&sch->sch_bucket, sc, sc_hash);
+	BSD_TAILQ_REMOVE(&sch->sch_bucket, sc, sc_hash);
 	sch->sch_length--;
 
 #ifdef TCP_OFFLOAD
@@ -425,7 +425,7 @@ syncache_timer(void *xsch)
 	 */
 	sch->sch_nextc = tick + INT_MAX;
 
-	TAILQ_FOREACH_SAFE(sc, &sch->sch_bucket, sc_hash, nsc) {
+	BSD_TAILQ_FOREACH_SAFE(sc, &sch->sch_bucket, sc_hash, nsc) {
 		/*
 		 * We do not check if the listen socket still exists
 		 * and accept the case where the listen socket may be
@@ -461,7 +461,7 @@ syncache_timer(void *xsch)
 		TCPSTAT_INC(tcps_sc_retransmitted);
 		syncache_timeout(sc, sch, 0);
 	}
-	if (!TAILQ_EMPTY(&(sch)->sch_bucket))
+	if (!BSD_TAILQ_EMPTY(&(sch)->sch_bucket))
 		callout_reset(&(sch)->sch_timer, (sch)->sch_nextc - tick,
 			syncache_timer, (void *)(sch));
 	CURVNET_RESTORE();
@@ -486,7 +486,7 @@ syncache_lookup(struct in_conninfo *inc, struct syncache_head **schp)
 		SCH_LOCK(sch);
 
 		/* Circle through bucket row to find matching entry. */
-		TAILQ_FOREACH(sc, &sch->sch_bucket, sc_hash) {
+		BSD_TAILQ_FOREACH(sc, &sch->sch_bucket, sc_hash) {
 			if (ENDPTS6_EQ(&inc->inc_ie, &sc->sc_inc.inc_ie))
 				return (sc);
 		}
@@ -500,7 +500,7 @@ syncache_lookup(struct in_conninfo *inc, struct syncache_head **schp)
 		SCH_LOCK(sch);
 
 		/* Circle through bucket row to find matching entry. */
-		TAILQ_FOREACH(sc, &sch->sch_bucket, sc_hash) {
+		BSD_TAILQ_FOREACH(sc, &sch->sch_bucket, sc_hash) {
 #ifdef INET6
 			if (sc->sc_inc.inc_flags & INC_ISIPV6)
 				continue;
@@ -957,7 +957,7 @@ syncache_expand(struct in_conninfo *inc, struct tcpopt *to, struct tcphdr *th,
 		}
 	} else {
 		/* Pull out the entry to unlock the bucket row. */
-		TAILQ_REMOVE(&sch->sch_bucket, sc, sc_hash);
+		BSD_TAILQ_REMOVE(&sch->sch_bucket, sc, sc_hash);
 		sch->sch_length--;
 #ifdef TCP_OFFLOAD
 		if (ADDED_BY_TOE(sc)) {
@@ -1182,7 +1182,7 @@ _syncache_add(struct in_conninfo *inc, struct tcpopt *to, struct tcphdr *th,
 		 * entry and insert the new one.
 		 */
 		TCPSTAT_INC(tcps_sc_zonefail);
-		if ((sc = TAILQ_LAST(&sch->sch_bucket, sch_head)) != NULL)
+		if ((sc = BSD_TAILQ_LAST(&sch->sch_bucket, sch_head)) != NULL)
 			syncache_drop(sc, sch);
 		sc = uma_zalloc(V_tcp_syncache.zone, M_NOWAIT | M_ZERO);
 		if (sc == NULL) {
@@ -1836,7 +1836,7 @@ syncache_pcblist(struct sysctl_req *req, int max_pcbs, int *pcbs_exported)
 	for (count = 0, error = 0, i = 0; i < V_tcp_syncache.hashsize; i++) {
 		sch = &V_tcp_syncache.hashbase[i];
 		SCH_LOCK(sch);
-		TAILQ_FOREACH(sc, &sch->sch_bucket, sc_hash) {
+		BSD_TAILQ_FOREACH(sc, &sch->sch_bucket, sc_hash) {
 			if (count >= max_pcbs) {
 				SCH_UNLOCK(sch);
 				goto exit;

@@ -112,7 +112,7 @@ static void	seltdclear(struct thread *);
  * 	k - Only accessed by curthread or read-only
  */
 struct seltd {
-	STAILQ_HEAD(, selfd)	st_selq;	/* (k) List of selfds. */
+	BSD_STAILQ_HEAD(, selfd)	st_selq;	/* (k) List of selfds. */
 	struct selfd		*st_free1;	/* (k) free fd for read set. */
 	struct selfd		*st_free2;	/* (k) free fd for write set. */
 	struct mtx		st_mtx;		/* Protects struct seltd */
@@ -128,8 +128,8 @@ struct seltd {
  *	f - protected by sf_mtx
  */
 struct selfd {
-	STAILQ_ENTRY(selfd)	sf_link;	/* (k) fds owned by this td. */
-	TAILQ_ENTRY(selfd)	sf_threads;	/* (f) fds on this selinfo. */
+	BSD_STAILQ_ENTRY(selfd)	sf_link;	/* (k) fds owned by this td. */
+	BSD_TAILQ_ENTRY(selfd)	sf_threads;	/* (f) fds on this selinfo. */
 	struct selinfo		*sf_si;		/* (f) selinfo when linked. */
 	struct mtx		*sf_mtx;	/* Pointer to selinfo mtx. */
 	struct seltd		*sf_td;		/* (k) owning seltd. */
@@ -1178,7 +1178,7 @@ selrescan(struct thread *td, fd_mask **ibits, fd_mask **obits)
 	fdp = td->td_proc->p_fd;
 	stp = td->td_sel;
 	n = 0;
-	STAILQ_FOREACH_SAFE(sfp, &stp->st_selq, sf_link, sfn) {
+	BSD_STAILQ_FOREACH_SAFE(sfp, &stp->st_selq, sf_link, sfn) {
 		fd = (int)(uintptr_t)sfp->sf_cookie;
 		si = sfp->sf_si;
 		selfdfree(stp, sfp);
@@ -1342,7 +1342,7 @@ pollrescan(struct thread *td)
 	fdp = td->td_proc->p_fd;
 	stp = td->td_sel;
 	FILEDESC_SLOCK(fdp);
-	STAILQ_FOREACH_SAFE(sfp, &stp->st_selq, sf_link, sfn) {
+	BSD_STAILQ_FOREACH_SAFE(sfp, &stp->st_selq, sf_link, sfn) {
 		fd = (struct pollfd *)sfp->sf_cookie;
 		si = sfp->sf_si;
 		selfdfree(stp, sfp);
@@ -1553,10 +1553,10 @@ selfdalloc(struct thread *td, void *cookie)
 static void
 selfdfree(struct seltd *stp, struct selfd *sfp)
 {
-	STAILQ_REMOVE(&stp->st_selq, sfp, selfd, sf_link);
+	BSD_STAILQ_REMOVE(&stp->st_selq, sfp, selfd, sf_link);
 	mtx_lock(sfp->sf_mtx);
 	if (sfp->sf_si)
-		TAILQ_REMOVE(&sfp->sf_si->si_tdlist, sfp, sf_threads);
+		BSD_TAILQ_REMOVE(&sfp->sf_si->si_tdlist, sfp, sf_threads);
 	mtx_unlock(sfp->sf_mtx);
 	uma_zfree(selfd_zone, sfp);
 }
@@ -1614,19 +1614,19 @@ selrecord(selector, sip)
 	 */
 	sfp->sf_si = sip;
 	sfp->sf_mtx = mtxp;
-	STAILQ_INSERT_TAIL(&stp->st_selq, sfp, sf_link);
+	BSD_STAILQ_INSERT_TAIL(&stp->st_selq, sfp, sf_link);
 	/*
 	 * Now that we've locked the sip, check for initialization.
 	 */
 	mtx_lock(mtxp);
 	if (sip->si_mtx == NULL) {
 		sip->si_mtx = mtxp;
-		TAILQ_INIT(&sip->si_tdlist);
+		BSD_TAILQ_INIT(&sip->si_tdlist);
 	}
 	/*
 	 * Add this thread to the list of selfds listening on this selinfo.
 	 */
-	TAILQ_INSERT_TAIL(&sip->si_tdlist, sfp, sf_threads);
+	BSD_TAILQ_INSERT_TAIL(&sip->si_tdlist, sfp, sf_threads);
 	mtx_unlock(sip->si_mtx);
 }
 
@@ -1666,12 +1666,12 @@ doselwakeup(sip, pri)
 	 * Locking the selinfo locks all selfds associated with it.
 	 */
 	mtx_lock(sip->si_mtx);
-	TAILQ_FOREACH_SAFE(sfp, &sip->si_tdlist, sf_threads, sfn) {
+	BSD_TAILQ_FOREACH_SAFE(sfp, &sip->si_tdlist, sf_threads, sfn) {
 		/*
 		 * Once we remove this sfp from the list and clear the
 		 * sf_si seltdclear will know to ignore this si.
 		 */
-		TAILQ_REMOVE(&sip->si_tdlist, sfp, sf_threads);
+		BSD_TAILQ_REMOVE(&sip->si_tdlist, sfp, sf_threads);
 		sfp->sf_si = NULL;
 		stp = sfp->sf_td;
 		mtx_lock(&stp->st_mtx);
@@ -1694,7 +1694,7 @@ seltdinit(struct thread *td)
 	cv_init(&stp->st_wait, "select");
 out:
 	stp->st_flags = 0;
-	STAILQ_INIT(&stp->st_selq);
+	BSD_STAILQ_INIT(&stp->st_selq);
 }
 
 static int
@@ -1754,7 +1754,7 @@ seltdclear(struct thread *td)
 	struct selfd *sfn;
 
 	stp = td->td_sel;
-	STAILQ_FOREACH_SAFE(sfp, &stp->st_selq, sf_link, sfn)
+	BSD_STAILQ_FOREACH_SAFE(sfp, &stp->st_selq, sf_link, sfn)
 		selfdfree(stp, sfp);
 	stp->st_flags = 0;
 }

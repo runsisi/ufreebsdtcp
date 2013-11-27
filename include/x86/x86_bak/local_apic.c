@@ -1230,8 +1230,8 @@ DB_SHOW_COMMAND(lapic, db_show_lapic)
  * APIC probing support code.  This includes code to manage enumerators.
  */
 
-static SLIST_HEAD(, apic_enumerator) enumerators =
-	SLIST_HEAD_INITIALIZER(enumerators);
+static BSD_SLIST_HEAD(, apic_enumerator) enumerators =
+	BSD_SLIST_HEAD_INITIALIZER(enumerators);
 static struct apic_enumerator *best_enum;
 
 void
@@ -1240,13 +1240,13 @@ apic_register_enumerator(struct apic_enumerator *enumerator)
 #ifdef INVARIANTS
 	struct apic_enumerator *apic_enum;
 
-	SLIST_FOREACH(apic_enum, &enumerators, apic_next) {
+	BSD_SLIST_FOREACH(apic_enum, &enumerators, apic_next) {
 		if (apic_enum == enumerator)
 			panic("%s: Duplicate register of %s", __func__,
 			    enumerator->apic_name);
 	}
 #endif
-	SLIST_INSERT_HEAD(&enumerators, enumerator, apic_next);
+	BSD_SLIST_INSERT_HEAD(&enumerators, enumerator, apic_next);
 }
 
 /*
@@ -1274,7 +1274,7 @@ apic_init(void *dummy __unused)
 	/* Probe all the enumerators to find the best match. */
 	best_enum = NULL;
 	best = 0;
-	SLIST_FOREACH(enumerator, &enumerators, apic_next) {
+	BSD_SLIST_FOREACH(enumerator, &enumerators, apic_next) {
 		retval = enumerator->apic_probe();
 		if (retval > 0)
 			continue;

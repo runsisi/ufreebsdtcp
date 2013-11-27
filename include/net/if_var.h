@@ -93,11 +93,11 @@ struct	vnet;
 
 #include <altq/if_altq.h>
 
-TAILQ_HEAD(ifnethead, ifnet);	/* we use TAILQs so that the order of */
-TAILQ_HEAD(ifaddrhead, ifaddr);	/* instantiation is preserved in the list */
-TAILQ_HEAD(ifprefixhead, ifprefix);
-TAILQ_HEAD(ifmultihead, ifmultiaddr);
-TAILQ_HEAD(ifgrouphead, ifg_group);
+BSD_TAILQ_HEAD(ifnethead, ifnet);	/* we use TAILQs so that the order of */
+BSD_TAILQ_HEAD(ifaddrhead, ifaddr);	/* instantiation is preserved in the list */
+BSD_TAILQ_HEAD(ifprefixhead, ifprefix);
+BSD_TAILQ_HEAD(ifmultihead, ifmultiaddr);
+BSD_TAILQ_HEAD(ifgrouphead, ifg_group);
 
 /*
  * Structure defining a queue for a network interface.
@@ -121,7 +121,7 @@ struct ifnet {
 	void	*if_softc;		/* pointer to driver state */
 	void	*if_l2com;		/* pointer to protocol bits */
 	struct vnet *if_vnet;		/* pointer to network stack instance */
-	TAILQ_ENTRY(ifnet) if_link; 	/* all struct ifnets are chained */
+	BSD_TAILQ_ENTRY(ifnet) if_link; 	/* all struct ifnets are chained */
 	char	if_xname[IFNAMSIZ];	/* external name (name + unit) */
 	const char *if_dname;		/* driver name */
 	int	if_dunit;		/* unit or IF_DUNIT_NONE */
@@ -190,8 +190,8 @@ struct ifnet {
 	struct	task if_linktask;	/* task for link change events */
 	struct	mtx if_addr_mtx;	/* mutex to protect address lists */
 
-	LIST_ENTRY(ifnet) if_clones;	/* interfaces of a cloner */
-	TAILQ_HEAD(, ifg_list) if_groups; /* linked list of groups per if */
+	BSD_LIST_ENTRY(ifnet) if_clones;	/* interfaces of a cloner */
+	BSD_TAILQ_HEAD(, ifg_list) if_groups; /* linked list of groups per if */
 					/* protected by if_addr_mtx */
 	void	*if_pf_kif;
 	void	*if_lagg;		/* lagg glue */
@@ -386,18 +386,18 @@ struct ifg_group {
 	char				 ifg_group[IFNAMSIZ];
 	u_int				 ifg_refcnt;
 	void				*ifg_pf_kif;
-	TAILQ_HEAD(, ifg_member)	 ifg_members;
-	TAILQ_ENTRY(ifg_group)		 ifg_next;
+	BSD_TAILQ_HEAD(, ifg_member)	 ifg_members;
+	BSD_TAILQ_ENTRY(ifg_group)		 ifg_next;
 };
 
 struct ifg_member {
-	TAILQ_ENTRY(ifg_member)	 ifgm_next;
+	BSD_TAILQ_ENTRY(ifg_member)	 ifgm_next;
 	struct ifnet		*ifgm_ifp;
 };
 
 struct ifg_list {
 	struct ifg_group	*ifgl_group;
-	TAILQ_ENTRY(ifg_list)	 ifgl_next;
+	BSD_TAILQ_ENTRY(ifg_list)	 ifgl_next;
 };
 
 /* group attach event */
@@ -780,7 +780,7 @@ struct ifaddr {
 	struct	sockaddr *ifa_netmask;	/* used to determine subnet */
 	struct	if_data if_data;	/* not all members are meaningful */
 	struct	ifnet *ifa_ifp;		/* back-pointer to interface */
-	TAILQ_ENTRY(ifaddr) ifa_link;	/* queue macro glue */
+	BSD_TAILQ_ENTRY(ifaddr) ifa_link;	/* queue macro glue */
 	void	(*ifa_rtrequest)	/* check or clean routes (+ or -)'d */
 		(int, struct rtentry *, struct rt_addrinfo *);
 	u_short	ifa_flags;		/* mostly rt_flags for cloning */
@@ -814,7 +814,7 @@ void	ifa_ref(struct ifaddr *ifa);
 struct ifprefix {
 	struct	sockaddr *ifpr_prefix;	/* prefix of interface */
 	struct	ifnet *ifpr_ifp;	/* back-pointer to interface */
-	TAILQ_ENTRY(ifprefix) ifpr_list; /* queue macro glue */
+	BSD_TAILQ_ENTRY(ifprefix) ifpr_list; /* queue macro glue */
 	u_char	ifpr_plen;		/* prefix length in bits */
 	u_char	ifpr_type;		/* protocol dependent prefix type */
 };
@@ -824,7 +824,7 @@ struct ifprefix {
  * structure except that it keeps track of multicast addresses.
  */
 struct ifmultiaddr {
-	TAILQ_ENTRY(ifmultiaddr) ifma_link; /* queue macro glue */
+	BSD_TAILQ_ENTRY(ifmultiaddr) ifma_link; /* queue macro glue */
 	struct	sockaddr *ifma_addr; 	/* address this membership is for */
 	struct	sockaddr *ifma_lladdr;	/* link-layer translation, if any */
 	struct	ifnet *ifma_ifp;	/* back-pointer to interface */

@@ -226,14 +226,14 @@ struct pkt_node {
 	/* Number of segments currently in the reassembly queue. */
 	int			t_segqlen;
 	/* Link to next pkt_node in the list. */
-	STAILQ_ENTRY(pkt_node)	nodes;
+	BSD_STAILQ_ENTRY(pkt_node)	nodes;
 };
 
 struct flow_hash_node
 {
 	uint16_t counter;
 	uint8_t key[FLOW_KEY_LEN];
-	LIST_ENTRY(flow_hash_node) nodes;
+	BSD_LIST_ENTRY(flow_hash_node) nodes;
 };
 
 struct siftr_stats
@@ -267,8 +267,8 @@ static unsigned int siftr_generate_hashes = 0;
 /* static unsigned int siftr_binary_log = 0; */
 static char siftr_logfile[PATH_MAX] = "/var/log/siftr.log";
 static u_long siftr_hashmask;
-STAILQ_HEAD(pkthead, pkt_node) pkt_queue = STAILQ_HEAD_INITIALIZER(pkt_queue);
-LIST_HEAD(listhead, flow_hash_node) *counter_hash;
+BSD_STAILQ_HEAD(pkthead, pkt_node) pkt_queue = BSD_STAILQ_HEAD_INITIALIZER(pkt_queue);
+BSD_LIST_HEAD(listhead, flow_hash_node) *counter_hash;
 static int wait_for_pkt;
 static struct alq *siftr_alq = NULL;
 static struct mtx siftr_pkt_queue_mtx;
@@ -357,14 +357,14 @@ siftr_process_pkt(struct pkt_node * pkt_node)
 	 * If the list is not empty i.e. the hash index has
 	 * been used by another flow previously.
 	 */
-	if (LIST_FIRST(counter_list) != NULL) {
+	if (BSD_LIST_FIRST(counter_list) != NULL) {
 		/*
 		 * Loop through the hash nodes in the list.
 		 * There should normally only be 1 hash node in the list,
 		 * except if there have been collisions at the hash index
 		 * computed by hash32_buf().
 		 */
-		LIST_FOREACH(hash_node, counter_list, nodes) {
+		BSD_LIST_FOREACH(hash_node, counter_list, nodes) {
 			/*
 			 * Check if the key for the pkt we are currently
 			 * processing is the same as the key stored in the
@@ -390,7 +390,7 @@ siftr_process_pkt(struct pkt_node * pkt_node)
 			/* Initialise our new hash node list entry. */
 			hash_node->counter = 0;
 			memcpy(hash_node->key, key, sizeof(key));
-			LIST_INSERT_HEAD(counter_list, hash_node, nodes);
+			BSD_LIST_INSERT_HEAD(counter_list, hash_node, nodes);
 		} else {
 			/* Malloc failed. */
 			if (pkt_node->direction == PFIL_IN)
@@ -543,8 +543,8 @@ siftr_process_pkt(struct pkt_node * pkt_node)
 static void
 siftr_pkt_manager_thread(void *arg)
 {
-	STAILQ_HEAD(pkthead, pkt_node) tmp_pkt_queue =
-	    STAILQ_HEAD_INITIALIZER(tmp_pkt_queue);
+	BSD_STAILQ_HEAD(pkthead, pkt_node) tmp_pkt_queue =
+	    BSD_STAILQ_HEAD_INITIALIZER(tmp_pkt_queue);
 	struct pkt_node *pkt_node, *pkt_node_temp;
 	uint8_t draining;
 
@@ -568,7 +568,7 @@ siftr_pkt_manager_thread(void *arg)
 		 * Move pkt_queue to tmp_pkt_queue, which leaves
 		 * pkt_queue empty and ready to receive more pkt_nodes.
 		 */
-		STAILQ_CONCAT(&tmp_pkt_queue, &pkt_queue);
+		BSD_STAILQ_CONCAT(&tmp_pkt_queue, &pkt_queue);
 
 		/*
 		 * We've finished making changes to the list. Unlock it
@@ -583,14 +583,14 @@ siftr_pkt_manager_thread(void *arg)
 		mtx_unlock(&siftr_pkt_mgr_mtx);
 
 		/* Flush all pkt_nodes to the log file. */
-		STAILQ_FOREACH_SAFE(pkt_node, &tmp_pkt_queue, nodes,
+		BSD_STAILQ_FOREACH_SAFE(pkt_node, &tmp_pkt_queue, nodes,
 		    pkt_node_temp) {
 			siftr_process_pkt(pkt_node);
-			STAILQ_REMOVE_HEAD(&tmp_pkt_queue, nodes);
+			BSD_STAILQ_REMOVE_HEAD(&tmp_pkt_queue, nodes);
 			bsd_free(pkt_node, M_SIFTR_PKTNODE);
 		}
 
-		KASSERT(STAILQ_EMPTY(&tmp_pkt_queue),
+		KASSERT(BSD_STAILQ_EMPTY(&tmp_pkt_queue),
 		    ("SIFTR tmp_pkt_queue not empty after flush"));
 
 		mtx_lock(&siftr_pkt_mgr_mtx);
@@ -965,7 +965,7 @@ siftr_chkpkt(void *arg, struct mbuf **m, struct ifnet *ifp, int dir,
 	}
 
 	mtx_lock(&siftr_pkt_queue_mtx);
-	STAILQ_INSERT_TAIL(&pkt_queue, pn, nodes);
+	BSD_STAILQ_INSERT_TAIL(&pkt_queue, pn, nodes);
 	mtx_unlock(&siftr_pkt_queue_mtx);
 	goto ret;
 
@@ -1081,7 +1081,7 @@ siftr_chkpkt6(void *arg, struct mbuf **m, struct ifnet *ifp, int dir,
 	/* XXX: Figure out how to generate hashes for IPv6 packets. */
 
 	mtx_lock(&siftr_pkt_queue_mtx);
-	STAILQ_INSERT_TAIL(&pkt_queue, pn, nodes);
+	BSD_STAILQ_INSERT_TAIL(&pkt_queue, pn, nodes);
 	mtx_unlock(&siftr_pkt_queue_mtx);
 	goto ret6;
 
@@ -1209,7 +1209,7 @@ siftr_manage_ops(uint8_t action)
 		alq_open(&siftr_alq, siftr_logfile, curthread->td_ucred,
 		    SIFTR_LOG_FILE_MODE, SIFTR_ALQ_BUFLEN, 0);
 
-		STAILQ_INIT(&pkt_queue);
+		BSD_STAILQ_INIT(&pkt_queue);
 
 		DPCPU_ZERO(ss);
 
@@ -1314,7 +1314,7 @@ siftr_manage_ops(uint8_t action)
 		 * The hash consists of an array of LISTs (man 3 queue).
 		 */
 		for (i = 0; i <= siftr_hashmask; i++) {
-			LIST_FOREACH_SAFE(counter, counter_hash + i, nodes,
+			BSD_LIST_FOREACH_SAFE(counter, counter_hash + i, nodes,
 			    tmp_counter) {
 				key = counter->key;
 				key_index = 1;
@@ -1391,7 +1391,7 @@ siftr_manage_ops(uint8_t action)
 				bsd_free(counter, M_SIFTR_HASHNODE);
 			}
 
-			LIST_INIT(counter_hash + i);
+			BSD_LIST_INIT(counter_hash + i);
 		}
 
 		sbuf_printf(s, "\n");

@@ -110,7 +110,7 @@ sctp_startup_iterator(void)
 	sctp_it_ctl.cur_it = NULL;
 	SCTP_ITERATOR_LOCK_INIT();
 	SCTP_IPI_ITERATOR_WQ_INIT();
-	TAILQ_INIT(&sctp_it_ctl.iteratorhead);
+	BSD_TAILQ_INIT(&sctp_it_ctl.iteratorhead);
 	ret = kproc_create(sctp_iterator_thread,
 	    (void *)NULL,
 	    &sctp_it_ctl.thread_proc,
@@ -215,13 +215,13 @@ sctp_init_ifns_for_vrf(int vrfid)
 #endif
 
 	IFNET_RLOCK();
-	TAILQ_FOREACH(ifn, &MODULE_GLOBAL(ifnet), if_list) {
+	BSD_TAILQ_FOREACH(ifn, &MODULE_GLOBAL(ifnet), if_list) {
 		if (sctp_is_desired_interface_type(ifn) == 0) {
 			/* non desired type */
 			continue;
 		}
 		IF_ADDR_RLOCK(ifn);
-		TAILQ_FOREACH(ifa, &ifn->if_addrlist, ifa_list) {
+		BSD_TAILQ_FOREACH(ifa, &ifn->if_addrlist, ifa_list) {
 			if (ifa->ifa_addr == NULL) {
 				continue;
 			}
@@ -365,11 +365,11 @@ void
 	struct ifaddr *ifa;
 
 	IFNET_RLOCK();
-	TAILQ_FOREACH(ifn, &MODULE_GLOBAL(ifnet), if_list) {
+	BSD_TAILQ_FOREACH(ifn, &MODULE_GLOBAL(ifnet), if_list) {
 		if (!(*pred) (ifn)) {
 			continue;
 		}
-		TAILQ_FOREACH(ifa, &ifn->if_addrlist, ifa_list) {
+		BSD_TAILQ_FOREACH(ifa, &ifn->if_addrlist, ifa_list) {
 			sctp_addr_change(ifa, add ? RTM_ADD : RTM_DELETE);
 		}
 	}

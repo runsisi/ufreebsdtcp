@@ -205,7 +205,7 @@ static MALLOC_DEFINE(M_MLD, "mld", "mld state");
  * VIMAGE-wide globals.
  */
 static VNET_DEFINE(struct timeval, mld_gsrdelay) = {10, 0};
-static VNET_DEFINE(LIST_HEAD(, mld_ifinfo), mli_head);
+static VNET_DEFINE(BSD_LIST_HEAD(, mld_ifinfo), mli_head);
 static VNET_DEFINE(int, interface_timers_running6);
 static VNET_DEFINE(int, state_change_timers_running6);
 static VNET_DEFINE(int, current_state_timers_running6);
@@ -388,7 +388,7 @@ sysctl_mld_ifinfo(SYSCTL_HANDLER_ARGS)
 	if (ifp == NULL)
 		goto out_locked;
 
-	LIST_FOREACH(mli, &V_mli_head, mli_link) {
+	BSD_LIST_FOREACH(mli, &V_mli_head, mli_link) {
 		if (ifp == mli->mli_ifp) {
 			error = SYSCTL_OUT(req, mli,
 			    sizeof(struct mld_ifinfo));
@@ -501,14 +501,14 @@ mli_alloc_locked(/*const*/ struct ifnet *ifp)
 	mli->mli_qri = MLD_QRI_INIT;
 	mli->mli_uri = MLD_URI_INIT;
 
-	SLIST_INIT(&mli->mli_relinmhead);
+	BSD_SLIST_INIT(&mli->mli_relinmhead);
 
 	/*
 	 * Responses to general queries are subject to bounds.
 	 */
 	IFQ_SET_MAXLEN(&mli->mli_gq, MLD_MAX_RESPONSE_PACKETS);
 
-	LIST_INSERT_HEAD(&V_mli_head, mli, mli_link);
+	BSD_LIST_INSERT_HEAD(&V_mli_head, mli, mli_link);
 
 	CTR2(KTR_MLD, "allocate mld_ifinfo for ifp %p(%s)",
 	     ifp, ifp->if_xname);
@@ -544,21 +544,21 @@ mld_ifdetach(struct ifnet *ifp)
 	mli = MLD_IFINFO(ifp);
 	if (mli->mli_version == MLD_VERSION_2) {
 		IF_ADDR_RLOCK(ifp);
-		TAILQ_FOREACH(ifma, &ifp->if_multiaddrs, ifma_link) {
+		BSD_TAILQ_FOREACH(ifma, &ifp->if_multiaddrs, ifma_link) {
 			if (ifma->ifma_addr->sa_family != AF_INET6 ||
 			    ifma->ifma_protospec == NULL)
 				continue;
 			inm = (struct in6_multi *)ifma->ifma_protospec;
 			if (inm->in6m_state == MLD_LEAVING_MEMBER) {
-				SLIST_INSERT_HEAD(&mli->mli_relinmhead,
+				BSD_SLIST_INSERT_HEAD(&mli->mli_relinmhead,
 				    inm, in6m_nrele);
 			}
 			in6m_clear_recorded(inm);
 		}
 		IF_ADDR_RUNLOCK(ifp);
-		SLIST_FOREACH_SAFE(inm, &mli->mli_relinmhead, in6m_nrele,
+		BSD_SLIST_FOREACH_SAFE(inm, &mli->mli_relinmhead, in6m_nrele,
 		    tinm) {
-			SLIST_REMOVE_HEAD(&mli->mli_relinmhead, in6m_nrele);
+			BSD_SLIST_REMOVE_HEAD(&mli->mli_relinmhead, in6m_nrele);
 			in6m_release_locked(inm);
 		}
 	}
@@ -594,16 +594,16 @@ mli_delete_locked(const struct ifnet *ifp)
 
 	MLD_LOCK_ASSERT();
 
-	LIST_FOREACH_SAFE(mli, &V_mli_head, mli_link, tmli) {
+	BSD_LIST_FOREACH_SAFE(mli, &V_mli_head, mli_link, tmli) {
 		if (mli->mli_ifp == ifp) {
 			/*
 			 * Free deferred General Query responses.
 			 */
 			_IF_DRAIN(&mli->mli_gq);
 
-			LIST_REMOVE(mli, mli_link);
+			BSD_LIST_REMOVE(mli, mli_link);
 
-			KASSERT(SLIST_EMPTY(&mli->mli_relinmhead),
+			KASSERT(BSD_SLIST_EMPTY(&mli->mli_relinmhead),
 			    ("%s: there are dangling in_multi references",
 			    __func__));
 
@@ -702,7 +702,7 @@ mld_v1_input_query(struct ifnet *ifp, const struct ip6_hdr *ip6,
 		 */
 		CTR2(KTR_MLD, "process v1 general query on ifp %p(%s)",
 		    ifp, ifp->if_xname);
-		TAILQ_FOREACH(ifma, &ifp->if_multiaddrs, ifma_link) {
+		BSD_TAILQ_FOREACH(ifma, &ifp->if_multiaddrs, ifma_link) {
 			if (ifma->ifma_addr->sa_family != AF_INET6 ||
 			    ifma->ifma_protospec == NULL)
 				continue;
@@ -1357,7 +1357,7 @@ mld_fasttimo_vnet(void)
 		CTR1(KTR_MLD, "%s: interface timers running", __func__);
 
 		V_interface_timers_running6 = 0;
-		LIST_FOREACH(mli, &V_mli_head, mli_link) {
+		BSD_LIST_FOREACH(mli, &V_mli_head, mli_link) {
 			if (mli->mli_v2_timer == 0) {
 				/* Do nothing. */
 			} else if (--mli->mli_v2_timer == 0) {
@@ -1381,7 +1381,7 @@ mld_fasttimo_vnet(void)
 	 * MLD host report and state-change timer processing.
 	 * Note: Processing a v2 group timer may remove a node.
 	 */
-	LIST_FOREACH(mli, &V_mli_head, mli_link) {
+	BSD_LIST_FOREACH(mli, &V_mli_head, mli_link) {
 		ifp = mli->mli_ifp;
 
 		if (mli->mli_version == MLD_VERSION_2) {
@@ -1396,7 +1396,7 @@ mld_fasttimo_vnet(void)
 		}
 
 		IF_ADDR_RLOCK(ifp);
-		TAILQ_FOREACH(ifma, &ifp->if_multiaddrs, ifma_link) {
+		BSD_TAILQ_FOREACH(ifma, &ifp->if_multiaddrs, ifma_link) {
 			if (ifma->ifma_addr->sa_family != AF_INET6 ||
 			    ifma->ifma_protospec == NULL)
 				continue;
@@ -1423,9 +1423,9 @@ mld_fasttimo_vnet(void)
 			 * IF_ADDR_LOCK internally as well as
 			 * ip6_output() to transmit a packet.
 			 */
-			SLIST_FOREACH_SAFE(inm, &mli->mli_relinmhead,
+			BSD_SLIST_FOREACH_SAFE(inm, &mli->mli_relinmhead,
 			    in6m_nrele, tinm) {
-				SLIST_REMOVE_HEAD(&mli->mli_relinmhead,
+				BSD_SLIST_REMOVE_HEAD(&mli->mli_relinmhead,
 				    in6m_nrele);
 				(void)mld_v1_transmit_report(inm,
 				    MLD_LISTENER_REPORT);
@@ -1439,9 +1439,9 @@ mld_fasttimo_vnet(void)
 			 * Free the in_multi reference(s) for
 			 * this lifecycle.
 			 */
-			SLIST_FOREACH_SAFE(inm, &mli->mli_relinmhead,
+			BSD_SLIST_FOREACH_SAFE(inm, &mli->mli_relinmhead,
 			    in6m_nrele, tinm) {
-				SLIST_REMOVE_HEAD(&mli->mli_relinmhead,
+				BSD_SLIST_REMOVE_HEAD(&mli->mli_relinmhead,
 				    in6m_nrele);
 				in6m_release_locked(inm);
 			}
@@ -1486,7 +1486,7 @@ mld_v1_process_group_timer(struct mld_ifinfo *mli, struct in6_multi *inm)
 	case MLD_REPORTING_MEMBER:
 		if (report_timer_expired) {
 			inm->in6m_state = MLD_IDLE_MEMBER;
-			SLIST_INSERT_HEAD(&mli->mli_relinmhead, inm,
+			BSD_SLIST_INSERT_HEAD(&mli->mli_relinmhead, inm,
 			    in6m_nrele);
 		}
 		break;
@@ -1611,7 +1611,7 @@ mld_v2_process_group_timers(struct mld_ifinfo *mli,
 			if (inm->in6m_state == MLD_LEAVING_MEMBER &&
 			    inm->in6m_scrv == 0) {
 				inm->in6m_state = MLD_NOT_MEMBER;
-				SLIST_INSERT_HEAD(&mli->mli_relinmhead,
+				BSD_SLIST_INSERT_HEAD(&mli->mli_relinmhead,
 				    inm, in6m_nrele);
 			}
 		}
@@ -1680,7 +1680,7 @@ mld_v2_cancel_link_timers(struct mld_ifinfo *mli)
 	ifp = mli->mli_ifp;
 
 	IF_ADDR_RLOCK(ifp);
-	TAILQ_FOREACH(ifma, &ifp->if_multiaddrs, ifma_link) {
+	BSD_TAILQ_FOREACH(ifma, &ifp->if_multiaddrs, ifma_link) {
 		if (ifma->ifma_addr->sa_family != AF_INET6)
 			continue;
 		inm = (struct in6_multi *)ifma->ifma_protospec;
@@ -1698,7 +1698,7 @@ mld_v2_cancel_link_timers(struct mld_ifinfo *mli)
 			 * version, we need to release the final
 			 * reference held for issuing the INCLUDE {}.
 			 */
-			SLIST_INSERT_HEAD(&mli->mli_relinmhead, inm,
+			BSD_SLIST_INSERT_HEAD(&mli->mli_relinmhead, inm,
 			    in6m_nrele);
 			/* FALLTHROUGH */
 		case MLD_G_QUERY_PENDING_MEMBER:
@@ -1717,8 +1717,8 @@ mld_v2_cancel_link_timers(struct mld_ifinfo *mli)
 		}
 	}
 	IF_ADDR_RUNLOCK(ifp);
-	SLIST_FOREACH_SAFE(inm, &mli->mli_relinmhead, in6m_nrele, tinm) {
-		SLIST_REMOVE_HEAD(&mli->mli_relinmhead, in6m_nrele);
+	BSD_SLIST_FOREACH_SAFE(inm, &mli->mli_relinmhead, in6m_nrele, tinm) {
+		BSD_SLIST_REMOVE_HEAD(&mli->mli_relinmhead, in6m_nrele);
 		in6m_release_locked(inm);
 	}
 }
@@ -1751,7 +1751,7 @@ mld_slowtimo_vnet(void)
 
 	MLD_LOCK();
 
-	LIST_FOREACH(mli, &V_mli_head, mli_link) {
+	BSD_LIST_FOREACH(mli, &V_mli_head, mli_link) {
 		mld_v1_process_querier_timers(mli);
 	}
 
@@ -2992,7 +2992,7 @@ mld_v2_dispatch_general_query(struct mld_ifinfo *mli)
 	ifp = mli->mli_ifp;
 
 	IF_ADDR_RLOCK(ifp);
-	TAILQ_FOREACH(ifma, &ifp->if_multiaddrs, ifma_link) {
+	BSD_TAILQ_FOREACH(ifma, &ifp->if_multiaddrs, ifma_link) {
 		if (ifma->ifma_addr->sa_family != AF_INET6 ||
 		    ifma->ifma_protospec == NULL)
 			continue;
@@ -3275,7 +3275,7 @@ vnet_mld_init(const void *unused __unused)
 
 	CTR1(KTR_MLD, "%s: initializing", __func__);
 
-	LIST_INIT(&V_mli_head);
+	BSD_LIST_INIT(&V_mli_head);
 }
 VNET_SYSINIT(vnet_mld_init, SI_SUB_PSEUDO, SI_ORDER_ANY, vnet_mld_init,
     NULL);
@@ -3286,7 +3286,7 @@ vnet_mld_uninit(const void *unused __unused)
 
 	CTR1(KTR_MLD, "%s: tearing down", __func__);
 
-	KASSERT(LIST_EMPTY(&V_mli_head),
+	KASSERT(BSD_LIST_EMPTY(&V_mli_head),
 	    ("%s: mli list not empty; ifnets not detached?", __func__));
 }
 VNET_SYSUNINIT(vnet_mld_uninit, SI_SUB_PSEUDO, SI_ORDER_ANY, vnet_mld_uninit,

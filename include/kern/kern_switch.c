@@ -129,7 +129,7 @@ sysctl_stats_reset(SYSCTL_HANDLER_ARGS)
 	 * Traverse the list of children of _kern_sched_stats and reset each
 	 * to 0.  Skip the reset entry.
 	 */
-	SLIST_FOREACH(p, oidp->oid_parent, oid_link) {
+	BSD_SLIST_FOREACH(p, oidp->oid_parent, oid_link) {
 		if (p == oidp || p->oid_arg1 == NULL)
 			continue;
 		counter = (uintptr_t)p->oid_arg1;
@@ -232,7 +232,7 @@ runq_init(struct runq *rq)
 
 	bzero(rq, sizeof *rq);
 	for (i = 0; i < RQ_NQS; i++)
-		TAILQ_INIT(&rq->rq_queues[i]);
+		BSD_TAILQ_INIT(&rq->rq_queues[i]);
 }
 
 /*
@@ -341,9 +341,9 @@ runq_add(struct runq *rq, struct thread *td, int flags)
 	CTR4(KTR_RUNQ, "runq_add: td=%p pri=%d %d rqh=%p",
 	    td, td->td_priority, pri, rqh);
 	if (flags & SRQ_PREEMPTED) {
-		TAILQ_INSERT_HEAD(rqh, td, td_runq);
+		BSD_TAILQ_INSERT_HEAD(rqh, td, td_runq);
 	} else {
-		TAILQ_INSERT_TAIL(rqh, td, td_runq);
+		BSD_TAILQ_INSERT_TAIL(rqh, td, td_runq);
 	}
 }
 
@@ -359,9 +359,9 @@ runq_add_pri(struct runq *rq, struct thread *td, u_char pri, int flags)
 	CTR4(KTR_RUNQ, "runq_add_pri: td=%p pri=%d idx=%d rqh=%p",
 	    td, td->td_priority, pri, rqh);
 	if (flags & SRQ_PREEMPTED) {
-		TAILQ_INSERT_HEAD(rqh, td, td_runq);
+		BSD_TAILQ_INSERT_HEAD(rqh, td, td_runq);
 	} else {
-		TAILQ_INSERT_TAIL(rqh, td, td_runq);
+		BSD_TAILQ_INSERT_TAIL(rqh, td, td_runq);
 	}
 }
 /*
@@ -408,17 +408,17 @@ runq_choose_fuzz(struct runq *rq, int fuzz)
 			int count = fuzz;
 			int cpu = PCPU_GET(cpuid);
 			struct thread *td2;
-			td2 = td = TAILQ_FIRST(rqh);
+			td2 = td = BSD_TAILQ_FIRST(rqh);
 
 			while (count-- && td2) {
 				if (td2->td_lastcpu == cpu) {
 					td = td2;
 					break;
 				}
-				td2 = TAILQ_NEXT(td2, td_runq);
+				td2 = BSD_TAILQ_NEXT(td2, td_runq);
 			}
 		} else
-			td = TAILQ_FIRST(rqh);
+			td = BSD_TAILQ_FIRST(rqh);
 		KASSERT(td != NULL, ("runq_choose_fuzz: no proc on busy queue"));
 		CTR3(KTR_RUNQ,
 		    "runq_choose_fuzz: pri=%d thread=%p rqh=%p", pri, td, rqh);
@@ -441,7 +441,7 @@ runq_choose(struct runq *rq)
 
 	while ((pri = runq_findbit(rq)) != -1) {
 		rqh = &rq->rq_queues[pri];
-		td = TAILQ_FIRST(rqh);
+		td = BSD_TAILQ_FIRST(rqh);
 		KASSERT(td != NULL, ("runq_choose: no thread on busy queue"));
 		CTR3(KTR_RUNQ,
 		    "runq_choose: pri=%d thread=%p rqh=%p", pri, td, rqh);
@@ -461,7 +461,7 @@ runq_choose_from(struct runq *rq, u_char idx)
 
 	if ((pri = runq_findbit_from(rq, idx)) != -1) {
 		rqh = &rq->rq_queues[pri];
-		td = TAILQ_FIRST(rqh);
+		td = BSD_TAILQ_FIRST(rqh);
 		KASSERT(td != NULL, ("runq_choose: no thread on busy queue"));
 		CTR4(KTR_RUNQ,
 		    "runq_choose_from: pri=%d thread=%p idx=%d rqh=%p",
@@ -497,8 +497,8 @@ runq_remove_idx(struct runq *rq, struct thread *td, u_char *idx)
 	rqh = &rq->rq_queues[pri];
 	CTR4(KTR_RUNQ, "runq_remove_idx: td=%p, pri=%d %d rqh=%p",
 	    td, td->td_priority, pri, rqh);
-	TAILQ_REMOVE(rqh, td, td_runq);
-	if (TAILQ_EMPTY(rqh)) {
+	BSD_TAILQ_REMOVE(rqh, td, td_runq);
+	if (BSD_TAILQ_EMPTY(rqh)) {
 		CTR0(KTR_RUNQ, "runq_remove_idx: empty");
 		runq_clrbit(rq, pri);
 		if (idx != NULL && *idx == pri)

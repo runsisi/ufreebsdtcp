@@ -99,11 +99,11 @@ char *rootdevnames[2] = {NULL, NULL};
 
 struct root_hold_token {
 	const char			*who;
-	LIST_ENTRY(root_hold_token)	list;
+	BSD_LIST_ENTRY(root_hold_token)	list;
 };
 
-static LIST_HEAD(, root_hold_token)	root_holds =
-    LIST_HEAD_INITIALIZER(root_holds);
+static BSD_LIST_HEAD(, root_hold_token)	root_holds =
+    BSD_LIST_HEAD_INITIALIZER(root_holds);
 
 enum action {
 	A_CONTINUE,
@@ -131,7 +131,7 @@ root_mount_hold(const char *identifier)
 	h = bsd_malloc(sizeof *h, M_DEVBUF, M_ZERO | M_WAITOK);
 	h->who = identifier;
 	mtx_lock(&mountlist_mtx);
-	LIST_INSERT_HEAD(&root_holds, h, list);
+	BSD_LIST_INSERT_HEAD(&root_holds, h, list);
 	mtx_unlock(&mountlist_mtx);
 	return (h);
 }
@@ -143,7 +143,7 @@ root_mount_rel(struct root_hold_token *h)
 	if (h == NULL)
 		return;
 	mtx_lock(&mountlist_mtx);
-	LIST_REMOVE(h, list);
+	BSD_LIST_REMOVE(h, list);
 	wakeup(&root_holds);
 	mtx_unlock(&mountlist_mtx);
 	bsd_free(h, M_DEVBUF);
@@ -180,7 +180,7 @@ set_rootvnode(void)
 {
 	struct proc *p;
 
-	if (VFS_ROOT(TAILQ_FIRST(&mountlist), LK_EXCLUSIVE, &rootvnode))
+	if (VFS_ROOT(BSD_TAILQ_FIRST(&mountlist), LK_EXCLUSIVE, &rootvnode))
 		panic("Cannot find root vnode");
 
 	VOP_UNLOCK(rootvnode, 0);
@@ -224,11 +224,11 @@ vfs_mountroot_devfs(struct thread *td, struct mount **mpp)
 		return (error);
 
 	opts = bsd_malloc(sizeof(struct vfsoptlist), M_MOUNT, M_WAITOK);
-	TAILQ_INIT(opts);
+	BSD_TAILQ_INIT(opts);
 	mp->mnt_opt = opts;
 
 	mtx_lock(&mountlist_mtx);
-	TAILQ_INSERT_HEAD(&mountlist, mp, mnt_list);
+	BSD_TAILQ_INSERT_HEAD(&mountlist, mp, mnt_list);
 	mtx_unlock(&mountlist_mtx);
 
 	*mpp = mp;
@@ -250,17 +250,17 @@ vfs_mountroot_shuffle(struct thread *td, struct mount *mpdevfs)
 	char *fspath;
 	int error;
 
-	mpnroot = TAILQ_NEXT(mpdevfs, mnt_list);
+	mpnroot = BSD_TAILQ_NEXT(mpdevfs, mnt_list);
 
 	/* Shuffle the mountlist. */
 	mtx_lock(&mountlist_mtx);
-	mporoot = TAILQ_FIRST(&mountlist);
-	TAILQ_REMOVE(&mountlist, mpdevfs, mnt_list);
+	mporoot = BSD_TAILQ_FIRST(&mountlist);
+	BSD_TAILQ_REMOVE(&mountlist, mpdevfs, mnt_list);
 	if (mporoot != mpdevfs) {
-		TAILQ_REMOVE(&mountlist, mpnroot, mnt_list);
-		TAILQ_INSERT_HEAD(&mountlist, mpnroot, mnt_list);
+		BSD_TAILQ_REMOVE(&mountlist, mpnroot, mnt_list);
+		BSD_TAILQ_INSERT_HEAD(&mountlist, mpnroot, mnt_list);
 	}
-	TAILQ_INSERT_TAIL(&mountlist, mpdevfs, mnt_list);
+	BSD_TAILQ_INSERT_TAIL(&mountlist, mpdevfs, mnt_list);
 	mtx_unlock(&mountlist_mtx);
 
 	cache_purgevfs(mporoot);
@@ -766,7 +766,7 @@ vfs_mountroot_parse(struct sbuf *sb, struct mount *mpdevfs)
 
 retry:
 	conf = sbuf_data(sb);
-	mp = TAILQ_NEXT(mpdevfs, mnt_list);
+	mp = BSD_TAILQ_NEXT(mpdevfs, mnt_list);
 	error = (mp == NULL) ? 0 : EDOOFUS;
 	root_mount_onfail = A_CONTINUE;
 	while (mp == NULL) {
@@ -795,7 +795,7 @@ retry:
 			printf("mountroot: advancing to next directive...\n");
 			(void)parse_skipto(&conf, '\n');
 		}
-		mp = TAILQ_NEXT(mpdevfs, mnt_list);
+		mp = BSD_TAILQ_NEXT(mpdevfs, mnt_list);
 	}
 	if (mp != NULL)
 		return (0);
@@ -918,13 +918,13 @@ vfs_mountroot_wait(void)
 		g_waitidle();
 		PICKUP_GIANT();
 		mtx_lock(&mountlist_mtx);
-		if (LIST_EMPTY(&root_holds)) {
+		if (BSD_LIST_EMPTY(&root_holds)) {
 			mtx_unlock(&mountlist_mtx);
 			break;
 		}
 		if (ppsratecheck(&lastfail, &curfail, 1)) {
 			printf("Root mount waiting for:");
-			LIST_FOREACH(h, &root_holds, list)
+			BSD_LIST_FOREACH(h, &root_holds, list)
 				printf(" %s", h->who);
 			printf("\n");
 		}
@@ -973,11 +973,11 @@ vfs_mountroot(void)
 	 */
 	timebase = 0;
 	mtx_lock(&mountlist_mtx);
-	mp = TAILQ_FIRST(&mountlist);
+	mp = BSD_TAILQ_FIRST(&mountlist);
 	while (mp != NULL) {
 		if (mp->mnt_time > timebase)
 			timebase = mp->mnt_time;
-		mp = TAILQ_NEXT(mp, mnt_list);
+		mp = BSD_TAILQ_NEXT(mp, mnt_list);
 	}
 	mtx_unlock(&mountlist_mtx);
 	inittodr(timebase);

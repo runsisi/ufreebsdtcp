@@ -49,7 +49,7 @@ enum fail_point_return_code {
 };
 
 struct fail_point_entry;
-TAILQ_HEAD(fail_point_entries, fail_point_entry);
+BSD_TAILQ_HEAD(fail_point_entries, fail_point_entry);
 /**
  * Internal failpoint structure, tracking all the current details of the
  * failpoint.  This structure is the core component shared between the
@@ -119,7 +119,7 @@ void fail_point_destroy(struct fail_point *);
 static __inline enum fail_point_return_code
 fail_point_eval(struct fail_point *fp, int *ret)
 {
-	if (TAILQ_EMPTY(&fp->fp_entries)) {
+	if (BSD_TAILQ_EMPTY(&fp->fp_entries)) {
 		return (FAIL_POINT_RC_CONTINUE);
 	}
 	return (fail_point_eval_nontrivial(fp, ret));
@@ -189,7 +189,7 @@ do {									\
 	static struct fail_point _FAIL_POINT_NAME(name) = {		\
 		#name,							\
 		_FAIL_POINT_LOCATION(),					\
-		TAILQ_HEAD_INITIALIZER(_FAIL_POINT_NAME(name).fp_entries), \
+		BSD_TAILQ_HEAD_INITIALIZER(_FAIL_POINT_NAME(name).fp_entries), \
 		0,							\
 		NULL, NULL,						\
 	};								\

@@ -72,16 +72,16 @@ struct sctp_foo_stuff {
  * This is the information we track on each interface that we know about from
  * the distant end.
  */
-TAILQ_HEAD(sctpnetlisthead, sctp_nets);
+BSD_TAILQ_HEAD(sctpnetlisthead, sctp_nets);
 
 struct sctp_stream_reset_list {
-	TAILQ_ENTRY(sctp_stream_reset_list) next_resp;
+	BSD_TAILQ_ENTRY(sctp_stream_reset_list) next_resp;
 	uint32_t tsn;
 	uint32_t number_entries;
 	uint16_t list_of_streams[];
 };
 
-TAILQ_HEAD(sctp_resethead, sctp_stream_reset_list);
+BSD_TAILQ_HEAD(sctp_resethead, sctp_stream_reset_list);
 
 /*
  * Users of the iterator need to malloc a iterator with a call to
@@ -109,14 +109,14 @@ typedef void (*end_func) (void *ptr, uint32_t val);
 #if defined(__FreeBSD__) && defined(SCTP_MCORE_INPUT) && defined(SMP)
 /* whats on the mcore control struct */
 struct sctp_mcore_queue {
-	TAILQ_ENTRY(sctp_mcore_queue) next;
+	BSD_TAILQ_ENTRY(sctp_mcore_queue) next;
 	struct vnet *vn;
 	struct mbuf *m;
 	int off;
 	int v6;
 };
 
-TAILQ_HEAD(sctp_mcore_qhead, sctp_mcore_queue);
+BSD_TAILQ_HEAD(sctp_mcore_qhead, sctp_mcore_queue);
 
 struct sctp_mcore_ctrl {
 	SCTP_PROCESS_STRUCT thread_proc;
@@ -132,7 +132,7 @@ struct sctp_mcore_ctrl {
 
 
 struct sctp_iterator {
-	TAILQ_ENTRY(sctp_iterator) sctp_nxt_itr;
+	BSD_TAILQ_ENTRY(sctp_iterator) sctp_nxt_itr;
 	struct vnet *vn;
 	struct sctp_timer tmr;
 	struct sctp_inpcb *inp;	/* current endpoint */
@@ -157,7 +157,7 @@ struct sctp_iterator {
 #define SCTP_ITERATOR_DO_SINGLE_INP	0x00000002
 
 
-TAILQ_HEAD(sctpiterators, sctp_iterator);
+BSD_TAILQ_HEAD(sctpiterators, sctp_iterator);
 
 struct sctp_copy_all {
 	struct sctp_inpcb *inp;	/* ep */
@@ -243,7 +243,7 @@ struct rtcc_cc {
 
 
 struct sctp_nets {
-	TAILQ_ENTRY(sctp_nets) sctp_next;	/* next link */
+	BSD_TAILQ_ENTRY(sctp_nets) sctp_next;	/* next link */
 
 	/*
 	 * Things on the top half may be able to be split into a common
@@ -407,7 +407,7 @@ struct sctp_data_chunkrec {
 	uint8_t fwd_tsn_cnt;
 };
 
-TAILQ_HEAD(sctpchunk_listhead, sctp_tmit_chunk);
+BSD_TAILQ_HEAD(sctpchunk_listhead, sctp_tmit_chunk);
 
 /* The lower byte is used to enumerate PR_SCTP policies */
 #define CHUNK_FLAGS_PR_SCTP_TTL	        SCTP_PR_SCTP_TTL
@@ -433,7 +433,7 @@ struct sctp_tmit_chunk {
 	struct mbuf *data;	/* pointer to mbuf chain of data */
 	struct mbuf *last_mbuf;	/* pointer to last mbuf in chain */
 	struct sctp_nets *whoTo;
-	          TAILQ_ENTRY(sctp_tmit_chunk) sctp_next;	/* next link */
+	          BSD_TAILQ_ENTRY(sctp_tmit_chunk) sctp_next;	/* next link */
 	int32_t sent;		/* the send status */
 	uint16_t snd_count;	/* number of times I sent */
 	uint16_t flags;		/* flags, such as FRAGMENT_OK */
@@ -477,7 +477,7 @@ struct sctp_queued_to_read {	/* sinfo structure Pluse more */
 	struct mbuf *aux_data;	/* used to hold/cache  control if o/s does not
 				 * take it from us */
 	struct sctp_tcb *stcb;	/* assoc, used for window update */
-	         TAILQ_ENTRY(sctp_queued_to_read) next;
+	         BSD_TAILQ_ENTRY(sctp_queued_to_read) next;
 	uint16_t port_from;
 	uint16_t spec_flags;	/* Flags to hold the notification field */
 	uint8_t do_not_ref_stcb;
@@ -509,8 +509,8 @@ struct sctp_stream_queue_pending {
 	struct mbuf *tail_mbuf;
 	struct timeval ts;
 	struct sctp_nets *net;
-	          TAILQ_ENTRY(sctp_stream_queue_pending) next;
-	          TAILQ_ENTRY(sctp_stream_queue_pending) ss_next;
+	          BSD_TAILQ_ENTRY(sctp_stream_queue_pending) next;
+	          BSD_TAILQ_ENTRY(sctp_stream_queue_pending) ss_next;
 	uint32_t length;
 	uint32_t timetolive;
 	uint32_t ppid;
@@ -532,7 +532,7 @@ struct sctp_stream_queue_pending {
  * this struct contains info that is used to track inbound stream data and
  * help with ordering.
  */
-TAILQ_HEAD(sctpwheelunrel_listhead, sctp_stream_in);
+BSD_TAILQ_HEAD(sctpwheelunrel_listhead, sctp_stream_in);
 struct sctp_stream_in {
 	struct sctp_readhead inqueue;
 	uint16_t stream_no;
@@ -540,19 +540,19 @@ struct sctp_stream_in {
 	uint8_t delivery_started;
 };
 
-TAILQ_HEAD(sctpwheel_listhead, sctp_stream_out);
-TAILQ_HEAD(sctplist_listhead, sctp_stream_queue_pending);
+BSD_TAILQ_HEAD(sctpwheel_listhead, sctp_stream_out);
+BSD_TAILQ_HEAD(sctplist_listhead, sctp_stream_queue_pending);
 
 /* Round-robin schedulers */
 struct ss_rr {
 	/* next link in wheel */
-	TAILQ_ENTRY(sctp_stream_out) next_spoke;
+	BSD_TAILQ_ENTRY(sctp_stream_out) next_spoke;
 };
 
 /* Priority scheduler */
 struct ss_prio {
 	/* next link in wheel */
-	TAILQ_ENTRY(sctp_stream_out) next_spoke;
+	BSD_TAILQ_ENTRY(sctp_stream_out) next_spoke;
 	/* priority id */
 	uint16_t priority;
 };
@@ -560,7 +560,7 @@ struct ss_prio {
 /* Fair Bandwidth scheduler */
 struct ss_fb {
 	/* next link in wheel */
-	TAILQ_ENTRY(sctp_stream_out) next_spoke;
+	BSD_TAILQ_ENTRY(sctp_stream_out) next_spoke;
 	/* stores message size */
 	int32_t rounds;
 };
@@ -595,9 +595,9 @@ struct sctp_stream_out {
 };
 
 /* used to keep track of the addresses yet to try to add/delete */
-TAILQ_HEAD(sctp_asconf_addrhead, sctp_asconf_addr);
+BSD_TAILQ_HEAD(sctp_asconf_addrhead, sctp_asconf_addr);
 struct sctp_asconf_addr {
-	TAILQ_ENTRY(sctp_asconf_addr) next;
+	BSD_TAILQ_ENTRY(sctp_asconf_addr) next;
 	struct sctp_asconf_addr_param ap;
 	struct sctp_ifa *ifa;	/* save the ifa for add/del ip */
 	uint8_t sent;		/* has this been sent yet? */
@@ -718,9 +718,9 @@ struct sctp_ss_functions {
 };
 
 /* used to save ASCONF chunks for retransmission */
-TAILQ_HEAD(sctp_asconf_head, sctp_asconf);
+BSD_TAILQ_HEAD(sctp_asconf_head, sctp_asconf);
 struct sctp_asconf {
-	TAILQ_ENTRY(sctp_asconf) next;
+	BSD_TAILQ_ENTRY(sctp_asconf) next;
 	uint32_t serial_number;
 	uint16_t snd_count;
 	struct mbuf *data;
@@ -728,9 +728,9 @@ struct sctp_asconf {
 };
 
 /* used to save ASCONF-ACK chunks for retransmission */
-TAILQ_HEAD(sctp_asconf_ackhead, sctp_asconf_ack);
+BSD_TAILQ_HEAD(sctp_asconf_ackhead, sctp_asconf_ack);
 struct sctp_asconf_ack {
-	TAILQ_ENTRY(sctp_asconf_ack) next;
+	BSD_TAILQ_ENTRY(sctp_asconf_ack) next;
 	uint32_t serial_number;
 	struct sctp_nets *last_sent_to;
 	struct mbuf *data;

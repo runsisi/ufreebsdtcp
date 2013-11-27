@@ -71,7 +71,7 @@ static MALLOC_DEFINE(M_PLIMIT, "plimit", "plimit structures");
 static MALLOC_DEFINE(M_UIDINFO, "uidinfo", "uidinfo structures");
 #define	UIHASH(uid)	(&uihashtbl[(uid) & uihash])
 static struct rwlock uihashtbl_lock;
-static LIST_HEAD(uihashhead, uidinfo) *uihashtbl;
+static BSD_LIST_HEAD(uihashhead, uidinfo) *uihashtbl;
 static u_long uihash;		/* size of hash table - 1 */
 
 static void	calcru1(struct proc *p, struct rusage_ext *ruxp,
@@ -128,7 +128,7 @@ sys_getpriority(td, uap)
 			}
 		}
 		sx_sunlock(&proctree_lock);
-		LIST_FOREACH(p, &pg->pg_members, p_pglist) {
+		BSD_LIST_FOREACH(p, &pg->pg_members, p_pglist) {
 			PROC_LOCK(p);
 			if (p->p_state == PRS_NORMAL &&
 			    p_cansee(td, p) == 0) {
@@ -215,7 +215,7 @@ sys_setpriority(td, uap)
 			}
 		}
 		sx_sunlock(&proctree_lock);
-		LIST_FOREACH(p, &pg->pg_members, p_pglist) {
+		BSD_LIST_FOREACH(p, &pg->pg_members, p_pglist) {
 			PROC_LOCK(p);
 			if (p->p_state == PRS_NORMAL &&
 			    p_cansee(td, p) == 0) {
@@ -1222,7 +1222,7 @@ uilookup(uid)
 
 	rw_assert(&uihashtbl_lock, RA_LOCKED);
 	uipp = UIHASH(uid);
-	LIST_FOREACH(uip, uipp, ui_hash)
+	BSD_LIST_FOREACH(uip, uipp, ui_hash)
 		if (uip->ui_uid == uid)
 			break;
 
@@ -1262,7 +1262,7 @@ uifind(uid)
 			uip->ui_uid = uid;
 			mtx_init(&uip->ui_vmsize_mtx, "ui_vmsize", NULL,
 			    MTX_DEF);
-			LIST_INSERT_HEAD(UIHASH(uid), uip, ui_hash);
+			BSD_LIST_INSERT_HEAD(UIHASH(uid), uip, ui_hash);
 		}
 	}
 	uihold(uip);
@@ -1311,7 +1311,7 @@ uifree(uip)
 	rw_wlock(&uihashtbl_lock);
 	if (refcount_release(&uip->ui_ref)) {
 		racct_destroy(&uip->ui_racct);
-		LIST_REMOVE(uip, ui_hash);
+		BSD_LIST_REMOVE(uip, ui_hash);
 		rw_wunlock(&uihashtbl_lock);
 		if (uip->ui_sbsize != 0)
 			printf("freeing uidinfo: uid = %d, sbsize = %ld\n",
@@ -1342,7 +1342,7 @@ ui_racct_foreach(void (*callback)(struct racct *racct,
 
 	rw_rlock(&uihashtbl_lock);
 	for (uih = &uihashtbl[uihash]; uih >= uihashtbl; uih--) {
-		LIST_FOREACH(uip, uih, ui_hash) {
+		BSD_LIST_FOREACH(uip, uih, ui_hash) {
 			(callback)(uip->ui_racct, arg2, arg3);
 		}
 	}

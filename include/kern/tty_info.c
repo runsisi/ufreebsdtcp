@@ -242,7 +242,7 @@ tty_info(struct tty *tp)
 		return;
 	}
 	PGRP_LOCK(tp->t_pgrp);
-	if (LIST_EMPTY(&tp->t_pgrp->pg_members)) {
+	if (BSD_LIST_EMPTY(&tp->t_pgrp->pg_members)) {
 		PGRP_UNLOCK(tp->t_pgrp);
 		ttyprintf(tp, "empty foreground process group\n");
 		return;
@@ -256,7 +256,7 @@ tty_info(struct tty *tp)
 	 * thread or proc since we hold the tty locked.
 	 */
 	p = NULL;
-	LIST_FOREACH(ppick, &tp->t_pgrp->pg_members, p_pglist)
+	BSD_LIST_FOREACH(ppick, &tp->t_pgrp->pg_members, p_pglist)
 		if (proc_compare(p, ppick))
 			p = ppick;
 

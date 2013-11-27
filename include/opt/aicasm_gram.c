@@ -970,7 +970,7 @@ initialize_symbol(symbol_t *symbol)
 		}
 		memset(symbol->info.rinfo, 0,
 		       sizeof(struct reg_info));
-		SLIST_INIT(&(symbol->info.rinfo->fields));
+		BSD_SLIST_INIT(&(symbol->info.rinfo->fields));
 		/*
 		 * Default to allowing access in all register modes
 		 * or to the mode specified by the SCB or SRAM space
@@ -1003,7 +1003,7 @@ initialize_symbol(symbol_t *symbol)
 			/* NOTREACHED */
 		}
 		memset(symbol->info.finfo, 0, sizeof(struct field_info));
-		SLIST_INIT(&(symbol->info.finfo->symrefs));
+		BSD_SLIST_INIT(&(symbol->info.finfo->symrefs));
 		break;
 	case CONST:
 	case DOWNLOAD_CONST:
@@ -1045,7 +1045,7 @@ initialize_symbol(symbol_t *symbol)
 		}
 		memset(symbol->info.macroinfo, 0,
 		       sizeof(struct macro_info));
-		STAILQ_INIT(&symbol->info.macroinfo->args);
+		BSD_STAILQ_INIT(&symbol->info.macroinfo->args);
 		break;
 	default:
 		stop("Call to initialize_symbol with invalid symbol type",
@@ -1087,7 +1087,7 @@ add_macro_arg(const char *argtext, int argnum __unused)
 		stop("Regex compilation failed", EX_SOFTWARE);
 		/* NOTREACHED */
 	}
-	STAILQ_INSERT_TAIL(&cur_symbol->info.macroinfo->args, marg, links);
+	BSD_STAILQ_INSERT_TAIL(&cur_symbol->info.macroinfo->args, marg, links);
 }
 
 static void
@@ -1396,7 +1396,7 @@ type_check(symbol_t *symbol, expression_t *expression, int opcode)
 static void
 make_expression(expression_t *immed, int value)
 {
-	SLIST_INIT(&immed->referenced_syms);
+	BSD_SLIST_INIT(&immed->referenced_syms);
 	immed->value = value & 0xff;
 }
 
@@ -2068,7 +2068,7 @@ case 98:
 #line 664 "/usr/src/sys/dev/aic7xxx/aicasm/aicasm_gram.y"
 {
 		yyval.expression.value = yyvsp[0].value;
-		SLIST_INIT(&yyval.expression.referenced_syms);
+		BSD_SLIST_INIT(&yyval.expression.referenced_syms);
 	}
 break;
 case 99:
@@ -2106,7 +2106,7 @@ case 99:
 			break;
 		}
 		}
-		SLIST_INIT(&yyval.expression.referenced_syms);
+		BSD_SLIST_INIT(&yyval.expression.referenced_syms);
 		symlist_add(&yyval.expression.referenced_syms, symbol, SYMLIST_INSERT_HEAD);
 	}
 break;
@@ -2335,7 +2335,7 @@ break;
 case 129:
 #line 925 "/usr/src/sys/dev/aic7xxx/aicasm/aicasm_gram.y"
 {
-		SLIST_INIT(&yyval.expression.referenced_syms);
+		BSD_SLIST_INIT(&yyval.expression.referenced_syms);
 		symlist_add(&yyval.expression.referenced_syms, accumulator.symbol,
 			    SYMLIST_INSERT_HEAD);
 		yyval.expression.value = 0;
@@ -2403,7 +2403,7 @@ case 138:
 			stop("Unballanced 'end_cs'", EX_DATAERR);
 			/* NOTREACHED */
 		}
-		cs = TAILQ_LAST(&cs_tailq, cs_tailq);
+		cs = BSD_TAILQ_LAST(&cs_tailq, cs_tailq);
 		cs->end_addr = instruction_ptr;
 		in_critical_section = FALSE;
 	}
@@ -2494,8 +2494,8 @@ case 149:
 		 * Ensure that the previous scope is either an
 		 * if or and else if.
 		 */
-		scope_context = SLIST_FIRST(&scope_stack);
-		last_scope = TAILQ_LAST(&scope_context->inner_scope,
+		scope_context = BSD_SLIST_FIRST(&scope_stack);
+		last_scope = BSD_TAILQ_LAST(&scope_context->inner_scope,
 					scope_tailq);
 		if (last_scope == NULL
 		 || last_scope->type == SCOPE_ELSE) {
@@ -2521,8 +2521,8 @@ case 150:
 		 * Ensure that the previous scope is either an
 		 * if or and else if.
 		 */
-		scope_context = SLIST_FIRST(&scope_stack);
-		last_scope = TAILQ_LAST(&scope_context->inner_scope,
+		scope_context = BSD_SLIST_FIRST(&scope_stack);
+		last_scope = BSD_TAILQ_LAST(&scope_context->inner_scope,
 					scope_tailq);
 		if (last_scope == NULL
 		 || last_scope->type == SCOPE_ELSE) {
@@ -2540,7 +2540,7 @@ case 151:
 {
 		scope_t *scope_context;
 
-		scope_context = SLIST_FIRST(&scope_stack);
+		scope_context = BSD_SLIST_FIRST(&scope_stack);
 		if (scope_context->type == SCOPE_ROOT) {
 			stop("Unexpected '}' encountered", EX_DATAERR);
 			/* NOTREACHED */
@@ -2549,11 +2549,11 @@ case 151:
 		scope_context->end_addr = instruction_ptr;
 
 		/* Pop the scope */
-		SLIST_REMOVE_HEAD(&scope_stack, scope_stack_links);
+		BSD_SLIST_REMOVE_HEAD(&scope_stack, scope_stack_links);
 
 		process_scope(scope_context);
 
-		if (SLIST_FIRST(&scope_stack) == NULL) {
+		if (BSD_SLIST_FIRST(&scope_stack) == NULL) {
 			stop("Unexpected '}' encountered", EX_DATAERR);
 			/* NOTREACHED */
 		}

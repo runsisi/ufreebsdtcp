@@ -41,7 +41,7 @@ struct rt_msghdr;
 struct rt_addrinfo;
 
 struct llentry;
-LIST_HEAD(llentries, llentry);
+BSD_LIST_HEAD(llentries, llentry);
 
 extern struct rwlock lltable_rwlock;
 #define	LLTABLE_RLOCK()		rw_rlock(&lltable_rwlock)
@@ -55,7 +55,7 @@ extern struct rwlock lltable_rwlock;
  * a shared lock
  */
 struct llentry {
-	LIST_ENTRY(llentry)	 lle_next;
+	BSD_LIST_ENTRY(llentry)	 lle_next;
 	struct rwlock		 lle_lock;
 	struct lltable		 *lle_tbl;
 	struct llentries	 *lle_head;
@@ -149,7 +149,7 @@ struct llentry {
 #endif
 
 struct lltable {
-	SLIST_ENTRY(lltable)	llt_link;
+	BSD_SLIST_ENTRY(lltable)	llt_link;
 	struct llentries	lle_head[LLTBL_HASHTBL_SIZE];
 	int			llt_af;
 	struct ifnet		*llt_ifp;

@@ -78,7 +78,7 @@ static int intrcnt_index;
 static struct intsrc *interrupt_sources[NUM_IO_INTS];
 static struct mtx intr_table_lock;
 static struct mtx intrcnt_lock;
-static TAILQ_HEAD(pics_head, pic) pics;
+static BSD_TAILQ_HEAD(pics_head, pic) pics;
 
 #ifdef SMP
 static int assign_cpu;
@@ -102,7 +102,7 @@ intr_pic_registered(struct pic *pic)
 {
 	struct pic *p;
 
-	TAILQ_FOREACH(p, &pics, pics) {
+	BSD_TAILQ_FOREACH(p, &pics, pics) {
 		if (p == pic)
 			return (1);
 	}
@@ -124,7 +124,7 @@ intr_register_pic(struct pic *pic)
 	if (intr_pic_registered(pic))
 		error = EBUSY;
 	else {
-		TAILQ_INSERT_TAIL(&pics, pic, pics);
+		BSD_TAILQ_INSERT_TAIL(&pics, pic, pics);
 		error = 0;
 	}
 	mtx_unlock(&intr_table_lock);
@@ -287,7 +287,7 @@ intr_resume(void)
 	atpic_reset();
 #endif
 	mtx_lock(&intr_table_lock);
-	TAILQ_FOREACH(pic, &pics, pics) {
+	BSD_TAILQ_FOREACH(pic, &pics, pics) {
 		if (pic->pic_resume != NULL)
 			pic->pic_resume(pic);
 	}
@@ -300,7 +300,7 @@ intr_suspend(void)
 	struct pic *pic;
 
 	mtx_lock(&intr_table_lock);
-	TAILQ_FOREACH_REVERSE(pic, &pics, pics_head, pics) {
+	BSD_TAILQ_FOREACH_REVERSE(pic, &pics, pics_head, pics) {
 		if (pic->pic_suspend != NULL)
 			pic->pic_suspend(pic);
 	}
@@ -381,7 +381,7 @@ intr_init(void *dummy __unused)
 
 	intrcnt_setname("???", 0);
 	intrcnt_index = 1;
-	TAILQ_INIT(&pics);
+	BSD_TAILQ_INIT(&pics);
 	mtx_init(&intr_table_lock, "intr sources", NULL, MTX_DEF);
 	mtx_init(&intrcnt_lock, "intrcnt", NULL, MTX_SPIN);
 }

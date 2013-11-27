@@ -39,7 +39,7 @@
 struct osd {
 	u_int		  osd_nslots;	/* (c) */
 	void		**osd_slots;	/* (c) */
-	LIST_ENTRY(osd)	  osd_next;	/* (l) */
+	BSD_LIST_ENTRY(osd)	  osd_next;	/* (l) */
 };
 
 #ifdef _KERNEL

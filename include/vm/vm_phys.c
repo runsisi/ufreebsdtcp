@@ -339,7 +339,7 @@ vm_phys_init(void)
 		for (pind = 0; pind < VM_NFREEPOOL; pind++) {
 			fl = vm_phys_free_queues[flind][pind];
 			for (oind = 0; oind < VM_NFREEORDER; oind++)
-				TAILQ_INIT(&fl[oind].pl);
+				BSD_TAILQ_INIT(&fl[oind].pl);
 		}
 	}
 #if VM_NDOMAIN > 1
@@ -392,7 +392,7 @@ vm_phys_split_pages(vm_page_t m, int oind, struct vm_freelist *fl, int order)
 		    ("vm_phys_split_pages: page %p has unexpected order %d",
 		    m_buddy, m_buddy->order));
 		m_buddy->order = oind;
-		TAILQ_INSERT_HEAD(&fl[oind].pl, m_buddy, pageq);
+		BSD_TAILQ_INSERT_HEAD(&fl[oind].pl, m_buddy, pageq);
 		fl[oind].lcnt++;
         }
 }
@@ -509,9 +509,9 @@ vm_phys_alloc_domain_pages(int domain, int flind, int pool, int order)
 	mtx_assert(&vm_page_queue_free_mtx, MA_OWNED);
 	fl = (*vm_phys_lookup_lists[domain][flind])[pool];
 	for (oind = order; oind < VM_NFREEORDER; oind++) {
-		m = TAILQ_FIRST(&fl[oind].pl);
+		m = BSD_TAILQ_FIRST(&fl[oind].pl);
 		if (m != NULL) {
-			TAILQ_REMOVE(&fl[oind].pl, m, pageq);
+			BSD_TAILQ_REMOVE(&fl[oind].pl, m, pageq);
 			fl[oind].lcnt--;
 			m->order = VM_NFREEORDER;
 			vm_phys_split_pages(m, oind, fl, order);
@@ -528,9 +528,9 @@ vm_phys_alloc_domain_pages(int domain, int flind, int pool, int order)
 	for (oind = VM_NFREEORDER - 1; oind >= order; oind--) {
 		for (pind = 0; pind < VM_NFREEPOOL; pind++) {
 			alt = (*vm_phys_lookup_lists[domain][flind])[pind];
-			m = TAILQ_FIRST(&alt[oind].pl);
+			m = BSD_TAILQ_FIRST(&alt[oind].pl);
 			if (m != NULL) {
-				TAILQ_REMOVE(&alt[oind].pl, m, pageq);
+				BSD_TAILQ_REMOVE(&alt[oind].pl, m, pageq);
 				alt[oind].lcnt--;
 				m->order = VM_NFREEORDER;
 				vm_phys_set_pool(pool, m, oind);
@@ -736,7 +736,7 @@ vm_phys_free_pages(vm_page_t m, int order)
 		if (m_buddy->order != order)
 			break;
 		fl = (*seg->free_queues)[m_buddy->pool];
-		TAILQ_REMOVE(&fl[m_buddy->order].pl, m_buddy, pageq);
+		BSD_TAILQ_REMOVE(&fl[m_buddy->order].pl, m_buddy, pageq);
 		fl[m_buddy->order].lcnt--;
 		m_buddy->order = VM_NFREEORDER;
 		if (m_buddy->pool != m->pool)
@@ -747,7 +747,7 @@ vm_phys_free_pages(vm_page_t m, int order)
 	}
 	m->order = order;
 	fl = (*seg->free_queues)[m->pool];
-	TAILQ_INSERT_TAIL(&fl[order].pl, m, pageq);
+	BSD_TAILQ_INSERT_TAIL(&fl[order].pl, m, pageq);
 	fl[order].lcnt++;
 }
 
@@ -812,7 +812,7 @@ vm_phys_unfree_page(vm_page_t m)
 	 */
 	fl = (*seg->free_queues)[m_set->pool];
 	order = m_set->order;
-	TAILQ_REMOVE(&fl[order].pl, m_set, pageq);
+	BSD_TAILQ_REMOVE(&fl[order].pl, m_set, pageq);
 	fl[order].lcnt--;
 	m_set->order = VM_NFREEORDER;
 	while (order > 0) {
@@ -825,7 +825,7 @@ vm_phys_unfree_page(vm_page_t m)
 			m_set = &seg->first_page[atop(pa_half - seg->start)];
 		}
 		m_tmp->order = order;
-		TAILQ_INSERT_HEAD(&fl[order].pl, m_tmp, pageq);
+		BSD_TAILQ_INSERT_HEAD(&fl[order].pl, m_tmp, pageq);
 		fl[order].lcnt++;
 	}
 	KASSERT(m_set == m, ("vm_phys_unfree_page: fatal inconsistency"));
@@ -844,7 +844,7 @@ vm_phys_zero_pages_idle(void)
 
 	mtx_assert(&vm_page_queue_free_mtx, MA_OWNED);
 	for (;;) {
-		TAILQ_FOREACH_REVERSE(m, &fl[oind].pl, pglist, pageq) {
+		BSD_TAILQ_FOREACH_REVERSE(m, &fl[oind].pl, pglist, pageq) {
 			for (m_tmp = m; m_tmp < &m[1 << oind]; m_tmp++) {
 				if ((m_tmp->flags & (PG_CACHED | PG_ZERO)) == 0) {
 					vm_phys_unfree_page(m_tmp);
@@ -921,7 +921,7 @@ retry:
 			for (pind = 0; pind < VM_NFREEPOOL; pind++) {
 				fl = (*vm_phys_lookup_lists[domain][flind])
 				    [pind];
-				TAILQ_FOREACH(m_ret, &fl[oind].pl, pageq) {
+				BSD_TAILQ_FOREACH(m_ret, &fl[oind].pl, pageq) {
 					/*
 					 * A free list may contain physical pages
 					 * from one or more segments.
@@ -983,7 +983,7 @@ retry:
 done:
 	for (m = m_ret; m < &m_ret[npages]; m = &m[1 << oind]) {
 		fl = (*seg->free_queues)[m->pool];
-		TAILQ_REMOVE(&fl[m->order].pl, m, pageq);
+		BSD_TAILQ_REMOVE(&fl[m->order].pl, m, pageq);
 		fl[m->order].lcnt--;
 		m->order = VM_NFREEORDER;
 	}

@@ -58,7 +58,7 @@ struct txseginfo;
 /* Structure used as the ertt data block. */
 struct ertt {
 	/* Information about transmitted segments to aid in RTT calculation. */
-	TAILQ_HEAD(txseginfo_head, txseginfo) txsegi_q;
+	BSD_TAILQ_HEAD(txseginfo_head, txseginfo) txsegi_q;
 	/* Bytes TX so far in marked RTT. */
 	long		bytes_tx_in_rtt;
 	/* Final version of above. */

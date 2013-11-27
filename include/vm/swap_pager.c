@@ -147,7 +147,7 @@ struct swblock {
 
 static MALLOC_DEFINE(M_VMPGDATA, "vm_pgdata", "swap pager private data");
 static struct mtx sw_dev_mtx;
-static TAILQ_HEAD(, swdevt) swtailq = TAILQ_HEAD_INITIALIZER(swtailq);
+static BSD_TAILQ_HEAD(, swdevt) swtailq = BSD_TAILQ_HEAD_INITIALIZER(swtailq);
 static struct swdevt *swdevhd;	/* Allocate from here next */
 static int nswapdev;		/* Number of swap devices */
 int swap_pager_avail;
@@ -487,7 +487,7 @@ swap_pager_init(void)
 	int i;
 
 	for (i = 0; i < NOBJLISTS; ++i)
-		TAILQ_INIT(&swap_pager_object_list[i]);
+		BSD_TAILQ_INIT(&swap_pager_object_list[i]);
 	mtx_init(&sw_alloc_mtx, "swap_pager list", NULL, MTX_DEF);
 	mtx_init(&sw_dev_mtx, "swapdev", NULL, MTX_DEF);
 
@@ -671,7 +671,7 @@ swap_pager_dealloc(vm_object_t object)
 	 */
 	if (object->handle != NULL) {
 		mtx_lock(&sw_alloc_mtx);
-		TAILQ_REMOVE(NOBJLIST(object->handle), object, pager_object_list);
+		BSD_TAILQ_REMOVE(NOBJLIST(object->handle), object, pager_object_list);
 		mtx_unlock(&sw_alloc_mtx);
 	}
 
@@ -717,7 +717,7 @@ swp_pager_getswapspace(int npages)
 	sp = swdevhd;
 	for (i = 0; i < nswapdev; i++) {
 		if (sp == NULL)
-			sp = TAILQ_FIRST(&swtailq);
+			sp = BSD_TAILQ_FIRST(&swtailq);
 		if (!(sp->sw_flags & SW_CLOSING)) {
 			blk = blist_alloc(sp->sw_blist, npages);
 			if (blk != SWAPBLK_NONE) {
@@ -725,11 +725,11 @@ swp_pager_getswapspace(int npages)
 				sp->sw_used += npages;
 				swap_pager_avail -= npages;
 				swp_sizecheck();
-				swdevhd = TAILQ_NEXT(sp, sw_list);
+				swdevhd = BSD_TAILQ_NEXT(sp, sw_list);
 				goto done;
 			}
 		}
-		sp = TAILQ_NEXT(sp, sw_list);
+		sp = BSD_TAILQ_NEXT(sp, sw_list);
 	}
 	if (swap_pager_full != 2) {
 		printf("swap_pager_getswapspace(%d): failed\n", npages);
@@ -755,7 +755,7 @@ swp_pager_strategy(struct buf *bp)
 	struct swdevt *sp;
 
 	mtx_lock(&sw_dev_mtx);
-	TAILQ_FOREACH(sp, &swtailq, sw_list) {
+	BSD_TAILQ_FOREACH(sp, &swtailq, sw_list) {
 		if (bp->b_blkno >= sp->sw_first && bp->b_blkno < sp->sw_end) {
 			mtx_unlock(&sw_dev_mtx);
 			if ((sp->sw_flags & SW_UNMAPPED) != 0 &&
@@ -790,7 +790,7 @@ swp_pager_freeswapspace(daddr_t blk, int npages)
 	struct swdevt *sp;
 
 	mtx_lock(&sw_dev_mtx);
-	TAILQ_FOREACH(sp, &swtailq, sw_list) {
+	BSD_TAILQ_FOREACH(sp, &swtailq, sw_list) {
 		if (blk >= sp->sw_first && blk < sp->sw_end) {
 			sp->sw_used -= npages;
 			/*
@@ -905,7 +905,7 @@ swap_pager_copy(vm_object_t srcobject, vm_object_t dstobject,
 	if (destroysource) {
 		if (srcobject->handle != NULL) {
 			mtx_lock(&sw_alloc_mtx);
-			TAILQ_REMOVE(
+			BSD_TAILQ_REMOVE(
 			    NOBJLIST(srcobject->handle),
 			    srcobject,
 			    pager_object_list
@@ -1828,7 +1828,7 @@ swp_pager_meta_build(vm_object_t object, vm_pindex_t pindex, daddr_t swapblk)
 
 		if (object->handle != NULL) {
 			mtx_lock(&sw_alloc_mtx);
-			TAILQ_INSERT_TAIL(
+			BSD_TAILQ_INSERT_TAIL(
 			    NOBJLIST(object->handle),
 			    object, 
 			    pager_object_list
@@ -2201,7 +2201,7 @@ swaponsomething(struct vnode *vp, void *id, u_long nblks,
 
 	dvbase = 0;
 	mtx_lock(&sw_dev_mtx);
-	TAILQ_FOREACH(tsp, &swtailq, sw_list) {
+	BSD_TAILQ_FOREACH(tsp, &swtailq, sw_list) {
 		if (tsp->sw_end >= dvbase) {
 			/*
 			 * We put one uncovered page between the devices
@@ -2213,7 +2213,7 @@ swaponsomething(struct vnode *vp, void *id, u_long nblks,
 	}
 	sp->sw_first = dvbase;
 	sp->sw_end = dvbase + nblks;
-	TAILQ_INSERT_TAIL(&swtailq, sp, sw_list);
+	BSD_TAILQ_INSERT_TAIL(&swtailq, sp, sw_list);
 	nswapdev++;
 	swap_pager_avail += nblks;
 	swap_total += (vm_ooffset_t)nblks * PAGE_SIZE;
@@ -2267,7 +2267,7 @@ sys_swapoff(struct thread *td, struct swapoff_args *uap)
 	vp = nd.ni_vp;
 
 	mtx_lock(&sw_dev_mtx);
-	TAILQ_FOREACH(sp, &swtailq, sw_list) {
+	BSD_TAILQ_FOREACH(sp, &swtailq, sw_list) {
 		if (sp->sw_vp == vp)
 			break;
 	}
@@ -2333,7 +2333,7 @@ swapoff_one(struct swdevt *sp, struct ucred *cred)
 	sp->sw_close(curthread, sp);
 	sp->sw_id = NULL;
 	mtx_lock(&sw_dev_mtx);
-	TAILQ_REMOVE(&swtailq, sp, sw_list);
+	BSD_TAILQ_REMOVE(&swtailq, sp, sw_list);
 	nswapdev--;
 	if (nswapdev == 0) {
 		swap_pager_full = 2;
@@ -2360,7 +2360,7 @@ swapoff_all(void)
 	swdev_syscall_active = 1;
  
 	mtx_lock(&sw_dev_mtx);
-	TAILQ_FOREACH_SAFE(sp, &swtailq, sw_list, spt) {
+	BSD_TAILQ_FOREACH_SAFE(sp, &swtailq, sw_list, spt) {
 		mtx_unlock(&sw_dev_mtx);
 		if (vn_isdisk(sp->sw_vp, NULL))
 			devname = devtoname(sp->sw_vp->v_rdev);
@@ -2390,7 +2390,7 @@ swap_pager_status(int *total, int *used)
 	*total = 0;
 	*used = 0;
 	mtx_lock(&sw_dev_mtx);
-	TAILQ_FOREACH(sp, &swtailq, sw_list) {
+	BSD_TAILQ_FOREACH(sp, &swtailq, sw_list) {
 		*total += sp->sw_nblks;
 		*used += sp->sw_used;
 	}
@@ -2407,7 +2407,7 @@ swap_dev_info(int name, struct xswdev *xs, char *devname, size_t len)
 	n = 0;
 	error = ENOENT;
 	mtx_lock(&sw_dev_mtx);
-	TAILQ_FOREACH(sp, &swtailq, sw_list) {
+	BSD_TAILQ_FOREACH(sp, &swtailq, sw_list) {
 		if (n != name) {
 			n++;
 			continue;
@@ -2571,7 +2571,7 @@ swapgeom_orphan(struct g_consumer *cp)
 	struct swdevt *sp;
 
 	mtx_lock(&sw_dev_mtx);
-	TAILQ_FOREACH(sp, &swtailq, sw_list)
+	BSD_TAILQ_FOREACH(sp, &swtailq, sw_list)
 		if (sp->sw_id == cp)
 			sp->sw_flags |= SW_CLOSING;
 	mtx_unlock(&sw_dev_mtx);
@@ -2622,7 +2622,7 @@ swapongeom_ev(void *arg, int flags)
 		return;
 	}
 	mtx_lock(&sw_dev_mtx);
-	TAILQ_FOREACH(sp, &swtailq, sw_list) {
+	BSD_TAILQ_FOREACH(sp, &swtailq, sw_list) {
 		cp = sp->sw_id;
 		if (cp != NULL && cp->provider == pp) {
 			mtx_unlock(&sw_dev_mtx);
@@ -2722,7 +2722,7 @@ swaponvp(struct thread *td, struct vnode *vp, u_long nblks)
 	if (nblks == 0)
 		return (ENXIO);
 	mtx_lock(&sw_dev_mtx);
-	TAILQ_FOREACH(sp, &swtailq, sw_list) {
+	BSD_TAILQ_FOREACH(sp, &swtailq, sw_list) {
 		if (sp->sw_id == vp) {
 			mtx_unlock(&sw_dev_mtx);
 			return (EBUSY);

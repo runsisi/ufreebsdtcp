@@ -89,7 +89,7 @@ struct hookinfo {
  * variable in order to make the HHOOKS_RUN_IF() macro low impact.
  */
 struct hhook_head {
-	STAILQ_HEAD(hhook_list, hhook)	hhh_hooks;
+	BSD_STAILQ_HEAD(hhook_list, hhook)	hhh_hooks;
 	struct rmlock			hhh_lock;
 	uintptr_t			hhh_vid;
 	int32_t				hhh_id;
@@ -97,8 +97,8 @@ struct hhook_head {
 	int32_t				hhh_type;
 	uint32_t			hhh_flags;
 	volatile uint32_t		hhh_refcount;
-	LIST_ENTRY(hhook_head)		hhh_next;
-	LIST_ENTRY(hhook_head)		hhh_vnext;
+	BSD_LIST_ENTRY(hhook_head)		hhh_next;
+	BSD_LIST_ENTRY(hhook_head)		hhh_vnext;
 };
 
 /* Public KPI functions. */

@@ -41,7 +41,7 @@
  * raw interface.
  */
 struct rawcb {
-	LIST_ENTRY(rawcb) list;
+	BSD_LIST_ENTRY(rawcb) list;
 	struct	socket *rcb_socket;	/* back pointer to socket */
 	struct	sockproto rcb_proto;	/* protocol family, protocol */
 };
@@ -55,7 +55,7 @@ struct rawcb {
 #define	RAWRCVQ		8192
 
 #ifdef _KERNEL
-VNET_DECLARE(LIST_HEAD(rawcb_list_head, rawcb), rawcb_list);
+VNET_DECLARE(BSD_LIST_HEAD(rawcb_list_head, rawcb), rawcb_list);
 #define	V_rawcb_list	VNET(rawcb_list)
 
 extern struct mtx rawcb_mtx;

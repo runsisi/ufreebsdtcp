@@ -113,14 +113,14 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/netinet/cc/cc_cdg.c 252951 2013-07-07 14:1
 
 struct qdiff_sample {
 	long qdiff;
-	STAILQ_ENTRY(qdiff_sample) qdiff_lnk;
+	BSD_STAILQ_ENTRY(qdiff_sample) qdiff_lnk;
 };
 
 struct cdg {
 	long max_qtrend;
 	long min_qtrend;
-	STAILQ_HEAD(minrtts_head, qdiff_sample) qdiffmin_q;
-	STAILQ_HEAD(maxrtts_head, qdiff_sample) qdiffmax_q;
+	BSD_STAILQ_HEAD(minrtts_head, qdiff_sample) qdiffmin_q;
+	BSD_STAILQ_HEAD(maxrtts_head, qdiff_sample) qdiffmax_q;
 	long window_incr;
 	/* rttcount for window increase when in congestion avoidance */
 	long rtt_count;
@@ -304,8 +304,8 @@ cdg_cb_init(struct cc_var *ccv)
 	cdg_data->consec_cong_cnt = 0;
 	cdg_data->sample_q_size = V_cdg_smoothing_factor;
 	cdg_data->num_samples = 0;
-	STAILQ_INIT(&cdg_data->qdiffmin_q);
-	STAILQ_INIT(&cdg_data->qdiffmax_q);
+	BSD_STAILQ_INIT(&cdg_data->qdiffmin_q);
+	BSD_STAILQ_INIT(&cdg_data->qdiffmax_q);
 
 	ccv->cc_data = cdg_data;
 
@@ -332,16 +332,16 @@ cdg_cb_destroy(struct cc_var *ccv)
 
 	cdg_data = ccv->cc_data;
 
-	qds = STAILQ_FIRST(&cdg_data->qdiffmin_q);
+	qds = BSD_STAILQ_FIRST(&cdg_data->qdiffmin_q);
 	while (qds != NULL) {
-		qds_n = STAILQ_NEXT(qds, qdiff_lnk);
+		qds_n = BSD_STAILQ_NEXT(qds, qdiff_lnk);
 		uma_zfree(qdiffsample_zone,qds);
 		qds = qds_n;
 	}
 
-	qds = STAILQ_FIRST(&cdg_data->qdiffmax_q);
+	qds = BSD_STAILQ_FIRST(&cdg_data->qdiffmax_q);
 	while (qds != NULL) {
-		qds_n = STAILQ_NEXT(qds, qdiff_lnk);
+		qds_n = BSD_STAILQ_NEXT(qds, qdiff_lnk);
 		uma_zfree(qdiffsample_zone,qds);
 		qds = qds_n;
 	}
@@ -508,20 +508,20 @@ calc_moving_average(struct cdg *cdg_data, long qdiff_max, long qdiff_min)
 	++cdg_data->num_samples;
 	if (cdg_data->num_samples > cdg_data->sample_q_size) {
 		/* Minimum RTT. */
-		qds = STAILQ_FIRST(&cdg_data->qdiffmin_q);
+		qds = BSD_STAILQ_FIRST(&cdg_data->qdiffmin_q);
 		cdg_data->min_qtrend =  cdg_data->min_qtrend +
 		    (qdiff_min - qds->qdiff) / cdg_data->sample_q_size;
-		STAILQ_REMOVE_HEAD(&cdg_data->qdiffmin_q, qdiff_lnk);
+		BSD_STAILQ_REMOVE_HEAD(&cdg_data->qdiffmin_q, qdiff_lnk);
 		qds->qdiff = qdiff_min;
-		STAILQ_INSERT_TAIL(&cdg_data->qdiffmin_q, qds, qdiff_lnk);
+		BSD_STAILQ_INSERT_TAIL(&cdg_data->qdiffmin_q, qds, qdiff_lnk);
 
 		/* Maximum RTT. */
-		qds = STAILQ_FIRST(&cdg_data->qdiffmax_q);
+		qds = BSD_STAILQ_FIRST(&cdg_data->qdiffmax_q);
 		cdg_data->max_qtrend =  cdg_data->max_qtrend +
 		    (qdiff_max - qds->qdiff) / cdg_data->sample_q_size;
-		STAILQ_REMOVE_HEAD(&cdg_data->qdiffmax_q, qdiff_lnk);
+		BSD_STAILQ_REMOVE_HEAD(&cdg_data->qdiffmax_q, qdiff_lnk);
 		qds->qdiff = qdiff_max;
-		STAILQ_INSERT_TAIL(&cdg_data->qdiffmax_q, qds, qdiff_lnk);
+		BSD_STAILQ_INSERT_TAIL(&cdg_data->qdiffmax_q, qds, qdiff_lnk);
 		--cdg_data->num_samples;
 	} else {
 		qds = uma_zalloc(qdiffsample_zone, M_NOWAIT);
@@ -529,7 +529,7 @@ calc_moving_average(struct cdg *cdg_data, long qdiff_max, long qdiff_min)
 			cdg_data->min_qtrend = cdg_data->min_qtrend +
 			    qdiff_min / cdg_data->sample_q_size;
 			qds->qdiff = qdiff_min;
-			STAILQ_INSERT_TAIL(&cdg_data->qdiffmin_q, qds,
+			BSD_STAILQ_INSERT_TAIL(&cdg_data->qdiffmin_q, qds,
 			    qdiff_lnk);
 		}
 
@@ -538,7 +538,7 @@ calc_moving_average(struct cdg *cdg_data, long qdiff_max, long qdiff_min)
 			cdg_data->max_qtrend = cdg_data->max_qtrend +
 			    qdiff_max / cdg_data->sample_q_size;
 			qds->qdiff = qdiff_max;
-			STAILQ_INSERT_TAIL(&cdg_data->qdiffmax_q, qds,
+			BSD_STAILQ_INSERT_TAIL(&cdg_data->qdiffmax_q, qds,
 			    qdiff_lnk);
 		}
 	}

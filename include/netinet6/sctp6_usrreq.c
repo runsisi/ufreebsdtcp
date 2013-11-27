@@ -243,12 +243,12 @@ sctp6_notify_mbuf(struct sctp_inpcb *inp, struct icmp6_hdr *icmp6,
 		stcb->asoc.smallest_mtu = nxtsz;
 		/* now off to subtract IP_DF flag if needed */
 
-		TAILQ_FOREACH(chk, &stcb->asoc.send_queue, sctp_next) {
+		BSD_TAILQ_FOREACH(chk, &stcb->asoc.send_queue, sctp_next) {
 			if ((uint32_t) (chk->send_size + IP_HDR_SIZE) > nxtsz) {
 				chk->flags |= CHUNK_FLAGS_FRAGMENT_OK;
 			}
 		}
-		TAILQ_FOREACH(chk, &stcb->asoc.sent_queue, sctp_next) {
+		BSD_TAILQ_FOREACH(chk, &stcb->asoc.sent_queue, sctp_next) {
 			if ((uint32_t) (chk->send_size + IP_HDR_SIZE) > nxtsz) {
 				/*
 				 * For this guy we also mark for immediate
@@ -932,7 +932,7 @@ sctp6_connect(struct socket *so, struct sockaddr *addr, struct thread *p)
 #endif				/* INET */
 	/* Now do we connect? */
 	if (inp->sctp_flags & SCTP_PCB_FLAGS_CONNECTED) {
-		stcb = LIST_FIRST(&inp->sctp_asoc_list);
+		stcb = BSD_LIST_FIRST(&inp->sctp_asoc_list);
 		if (stcb) {
 			SCTP_TCB_UNLOCK(stcb);
 		}
@@ -1015,13 +1015,13 @@ sctp6_getaddr(struct socket *so, struct sockaddr **addr)
 			struct sctp_nets *net;
 			int fnd;
 
-			stcb = LIST_FIRST(&inp->sctp_asoc_list);
+			stcb = BSD_LIST_FIRST(&inp->sctp_asoc_list);
 			if (stcb == NULL) {
 				goto notConn6;
 			}
 			fnd = 0;
 			sin_a6 = NULL;
-			TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
+			BSD_TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
 				sin_a6 = (struct sockaddr_in6 *)&net->ro._l_addr;
 				if (sin_a6 == NULL)
 					/* this will make coverity happy */
@@ -1051,7 +1051,7 @@ sctp6_getaddr(struct socket *so, struct sockaddr **addr)
 		struct sctp_laddr *laddr;
 		int fnd = 0;
 
-		LIST_FOREACH(laddr, &inp->sctp_addr_list, sctp_nxt_addr) {
+		BSD_LIST_FOREACH(laddr, &inp->sctp_addr_list, sctp_nxt_addr) {
 			if (laddr->ifa->address.sa.sa_family == AF_INET6) {
 				struct sockaddr_in6 *sin_a;
 
@@ -1105,7 +1105,7 @@ sctp6_peeraddr(struct socket *so, struct sockaddr **addr)
 		return (ENOTCONN);
 	}
 	SCTP_INP_RLOCK(inp);
-	stcb = LIST_FIRST(&inp->sctp_asoc_list);
+	stcb = BSD_LIST_FIRST(&inp->sctp_asoc_list);
 	if (stcb) {
 		SCTP_TCB_LOCK(stcb);
 	}
@@ -1116,7 +1116,7 @@ sctp6_peeraddr(struct socket *so, struct sockaddr **addr)
 		return (ECONNRESET);
 	}
 	fnd = 0;
-	TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
+	BSD_TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
 		sin_a6 = (struct sockaddr_in6 *)&net->ro._l_addr;
 		if (sin_a6->sin6_family == AF_INET6) {
 			fnd = 1;

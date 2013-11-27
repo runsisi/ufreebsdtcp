@@ -143,10 +143,10 @@ struct epair_softc {
  * to the ``hw'' queue.
  */
 struct epair_ifp_drain {
-	STAILQ_ENTRY(epair_ifp_drain)	ifp_next;
+	BSD_STAILQ_ENTRY(epair_ifp_drain)	ifp_next;
 	struct ifnet			*ifp;
 };
-STAILQ_HEAD(eid_list, epair_ifp_drain);
+BSD_STAILQ_HEAD(eid_list, epair_ifp_drain);
 
 #define	EPAIR_LOCK_INIT(dpcpu)		mtx_init(&(dpcpu)->if_epair_mtx, \
 					    "if_epair", NULL, MTX_DEF)
@@ -204,7 +204,7 @@ epair_dpcpu_init(void)
 
 		/*
 		 * Initialize per-cpu drain list.
-		 * Manually do what STAILQ_HEAD_INITIALIZER would do.
+		 * Manually do what BSD_STAILQ_HEAD_INITIALIZER would do.
 		 */
 		s = &epair_dpcpu->epair_ifp_drain_list;
 		s->stqh_first = NULL;
@@ -284,7 +284,7 @@ epair_nh_drainedcpu(u_int cpuid)
 	 * draining, epair_start_locked will set IFF_DRV_OACTIVE
 	 * again and we will stop and return.
 	 */
-	STAILQ_FOREACH_SAFE(elm, &epair_dpcpu->epair_ifp_drain_list,
+	BSD_STAILQ_FOREACH_SAFE(elm, &epair_dpcpu->epair_ifp_drain_list,
 	    ifp_next, tvar) {
 		ifp = elm->ifp;
 		epair_dpcpu->epair_drv_flags &= ~IFF_DRV_OACTIVE;
@@ -295,7 +295,7 @@ epair_nh_drainedcpu(u_int cpuid)
 		if (IFQ_IS_EMPTY(&ifp->if_snd)) {
 			struct epair_softc *sc;
 
-			STAILQ_REMOVE(&epair_dpcpu->epair_ifp_drain_list,
+			BSD_STAILQ_REMOVE(&epair_dpcpu->epair_ifp_drain_list,
 			    elm, epair_ifp_drain, ifp_next);
 			/* The cached ifp goes off the list. */
 			sc = ifp->if_softc;
@@ -331,12 +331,12 @@ epair_remove_ifp_from_draining(struct ifnet *ifp)
 	CPU_FOREACH(cpuid) {
 		epair_dpcpu = DPCPU_ID_PTR(cpuid, epair_dpcpu);
 		EPAIR_LOCK(epair_dpcpu);
-		STAILQ_FOREACH_SAFE(elm, &epair_dpcpu->epair_ifp_drain_list,
+		BSD_STAILQ_FOREACH_SAFE(elm, &epair_dpcpu->epair_ifp_drain_list,
 		    ifp_next, tvar) {
 			if (ifp == elm->ifp) {
 				struct epair_softc *sc;
 
-				STAILQ_REMOVE(
+				BSD_STAILQ_REMOVE(
 				    &epair_dpcpu->epair_ifp_drain_list, elm,
 				    epair_ifp_drain, ifp_next);
 				/* The cached ifp goes off the list. */
@@ -362,7 +362,7 @@ epair_add_ifp_for_draining(struct ifnet *ifp)
 	sc = ifp->if_softc;
 	epair_dpcpu = DPCPU_ID_PTR(sc->cpuid, epair_dpcpu);
 	EPAIR_LOCK_ASSERT(epair_dpcpu);
-	STAILQ_FOREACH(elm, &epair_dpcpu->epair_ifp_drain_list, ifp_next)
+	BSD_STAILQ_FOREACH(elm, &epair_dpcpu->epair_ifp_drain_list, ifp_next)
 		if (elm->ifp == ifp)
 			break;
 	/* If the ifp is there already, return success. */
@@ -376,7 +376,7 @@ epair_add_ifp_for_draining(struct ifnet *ifp)
 	elm->ifp = ifp;
 	/* Add a reference for the ifp pointer on the list. */
 	EPAIR_REFCOUNT_AQUIRE(&sc->refcount);
-	STAILQ_INSERT_TAIL(&epair_dpcpu->epair_ifp_drain_list, elm, ifp_next);
+	BSD_STAILQ_INSERT_TAIL(&epair_dpcpu->epair_ifp_drain_list, elm, ifp_next);
 
 	return (0);
 }

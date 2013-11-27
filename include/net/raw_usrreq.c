@@ -58,7 +58,7 @@ void
 raw_init(void)
 {
 
-	LIST_INIT(&V_rawcb_list);
+	BSD_LIST_INIT(&V_rawcb_list);
 }
 
 /*
@@ -85,7 +85,7 @@ raw_input_ext(struct mbuf *m0, struct sockproto *proto, struct sockaddr *src,
 
 	last = 0;
 	mtx_lock(&rawcb_mtx);
-	LIST_FOREACH(rp, &V_rawcb_list, list) {
+	BSD_LIST_FOREACH(rp, &V_rawcb_list, list) {
 		if (rp->rcb_proto.sp_family != proto->sp_family)
 			continue;
 		if (rp->rcb_proto.sp_protocol  &&

@@ -64,8 +64,8 @@ struct itimer {
 
 		/* cpu timer */
 		struct {
-			LIST_ENTRY(itimer)	it_link;
-			TAILQ_ENTRY(itimer)	it_worklink;
+			BSD_LIST_ENTRY(itimer)	it_link;
+			BSD_TAILQ_ENTRY(itimer)	it_worklink;
 			int			it_active;
 			int			it_cflags;
 		} _cpu;
@@ -88,12 +88,12 @@ struct itimer {
 #define	ITIMER_LOCK(it)		mtx_lock(&(it)->it_mtx)
 #define	ITIMER_UNLOCK(it)	mtx_unlock(&(it)->it_mtx)
 
-LIST_HEAD(itimerlist, itimer);
+BSD_LIST_HEAD(itimerlist, itimer);
 
 struct	itimers {
 	struct itimerlist	its_virtual;
 	struct itimerlist	its_prof;
-	TAILQ_HEAD(, itimer)	its_worklist;
+	BSD_TAILQ_HEAD(, itimer)	its_worklist;
 	struct itimer		*its_timers[TIMER_MAX];
 };
 

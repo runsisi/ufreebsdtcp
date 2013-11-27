@@ -304,7 +304,7 @@ vm_page_startup(vm_offset_t vaddr)
 	 * and the inactive queue.
 	 */
 	for (i = 0; i < PQ_COUNT; i++)
-		TAILQ_INIT(&vm_page_queues[i].pl);
+		BSD_TAILQ_INIT(&vm_page_queues[i].pl);
 	vm_page_queues[PQ_INACTIVE].cnt = &cnt.v_inactive_count;
 	vm_page_queues[PQ_ACTIVE].cnt = &cnt.v_active_count;
 	vm_page_queues[PQ_HOLD].cnt = &cnt.v_active_count;
@@ -926,21 +926,21 @@ vm_page_insert(vm_page_t m, vm_object_t object, vm_pindex_t pindex)
 	if (root == NULL) {
 		m->left = NULL;
 		m->right = NULL;
-		TAILQ_INSERT_TAIL(&object->memq, m, listq);
+		BSD_TAILQ_INSERT_TAIL(&object->memq, m, listq);
 	} else {
 		root = vm_page_splay(pindex, root);
 		if (pindex < root->pindex) {
 			m->left = root->left;
 			m->right = root;
 			root->left = NULL;
-			TAILQ_INSERT_BEFORE(root, m, listq);
+			BSD_TAILQ_INSERT_BEFORE(root, m, listq);
 		} else if (pindex == root->pindex)
 			panic("vm_page_insert: offset already allocated");
 		else {
 			m->right = root->right;
 			m->left = root;
 			root->right = NULL;
-			TAILQ_INSERT_AFTER(&object->memq, root, m, listq);
+			BSD_TAILQ_INSERT_AFTER(&object->memq, root, m, listq);
 		}
 	}
 	object->root = m;
@@ -992,7 +992,7 @@ vm_page_remove(vm_page_t m)
 	/*
 	 * Now remove from the object's list of backed pages.
 	 */
-	if ((next = TAILQ_NEXT(m, listq)) != NULL && next->left == m) {
+	if ((next = BSD_TAILQ_NEXT(m, listq)) != NULL && next->left == m) {
 		/*
 		 * Since the page's successor in the list is also its parent
 		 * in the tree, its right subtree must be empty.
@@ -1000,7 +1000,7 @@ vm_page_remove(vm_page_t m)
 		next->left = m->left;
 		KASSERT(m->right == NULL,
 		    ("vm_page_remove: page %p has right child", m));
-	} else if ((prev = TAILQ_PREV(m, pglist, listq)) != NULL &&
+	} else if ((prev = BSD_TAILQ_PREV(m, pglist, listq)) != NULL &&
 	    prev->right == m) {
 		/*
 		 * Since the page's predecessor in the list is also its parent
@@ -1028,7 +1028,7 @@ vm_page_remove(vm_page_t m)
 		}
 		object->root = root;
 	}
-	TAILQ_REMOVE(&object->memq, m, listq);
+	BSD_TAILQ_REMOVE(&object->memq, m, listq);
 
 	/*
 	 * And show that the object has one fewer resident page.
@@ -1080,11 +1080,11 @@ vm_page_find_least(vm_object_t object, vm_pindex_t pindex)
 	vm_page_t m;
 
 	VM_OBJECT_LOCK_ASSERT(object, MA_OWNED);
-	if ((m = TAILQ_FIRST(&object->memq)) != NULL) {
+	if ((m = BSD_TAILQ_FIRST(&object->memq)) != NULL) {
 		if (m->pindex < pindex) {
 			m = vm_page_splay(pindex, object->root);
 			if ((object->root = m)->pindex < pindex)
-				m = TAILQ_NEXT(m, listq);
+				m = BSD_TAILQ_NEXT(m, listq);
 		}
 	}
 	return (m);
@@ -1102,7 +1102,7 @@ vm_page_next(vm_page_t m)
 	vm_page_t next;
 
 	VM_OBJECT_LOCK_ASSERT(m->object, MA_OWNED);
-	if ((next = TAILQ_NEXT(m, listq)) != NULL &&
+	if ((next = BSD_TAILQ_NEXT(m, listq)) != NULL &&
 	    next->pindex != m->pindex + 1)
 		next = NULL;
 	return (next);
@@ -1120,7 +1120,7 @@ vm_page_prev(vm_page_t m)
 	vm_page_t prev;
 
 	VM_OBJECT_LOCK_ASSERT(m->object, MA_OWNED);
-	if ((prev = TAILQ_PREV(m, pglist, listq)) != NULL &&
+	if ((prev = BSD_TAILQ_PREV(m, pglist, listq)) != NULL &&
 	    prev->pindex != m->pindex - 1)
 		prev = NULL;
 	return (prev);
@@ -1727,8 +1727,8 @@ vm_page_requeue(vm_page_t m)
 	KASSERT(queue != PQ_NONE,
 	    ("vm_page_requeue: page %p is not queued", m));
 	vpq = &vm_page_queues[queue];
-	TAILQ_REMOVE(&vpq->pl, m, pageq);
-	TAILQ_INSERT_TAIL(&vpq->pl, m, pageq);
+	BSD_TAILQ_REMOVE(&vpq->pl, m, pageq);
+	BSD_TAILQ_INSERT_TAIL(&vpq->pl, m, pageq);
 }
 
 /*
@@ -1746,7 +1746,7 @@ vm_page_queue_remove(int queue, vm_page_t m)
 	mtx_assert(&vm_page_queue_mtx, MA_OWNED);
 	vm_page_lock_assert(m, MA_OWNED);
 	pq = &vm_page_queues[queue];
-	TAILQ_REMOVE(&pq->pl, m, pageq);
+	BSD_TAILQ_REMOVE(&pq->pl, m, pageq);
 	(*pq->cnt)--;
 }
 
@@ -1785,7 +1785,7 @@ vm_page_enqueue(int queue, vm_page_t m)
 
 	vpq = &vm_page_queues[queue];
 	m->queue = queue;
-	TAILQ_INSERT_TAIL(&vpq->pl, m, pageq);
+	BSD_TAILQ_INSERT_TAIL(&vpq->pl, m, pageq);
 	++*vpq->cnt;
 }
 
@@ -2056,10 +2056,10 @@ _vm_page_deactivate(vm_page_t m, int athead)
 		if (queue != PQ_NONE)
 			vm_page_queue_remove(queue, m);
 		if (athead)
-			TAILQ_INSERT_HEAD(&vm_page_queues[PQ_INACTIVE].pl, m,
+			BSD_TAILQ_INSERT_HEAD(&vm_page_queues[PQ_INACTIVE].pl, m,
 			    pageq);
 		else
-			TAILQ_INSERT_TAIL(&vm_page_queues[PQ_INACTIVE].pl, m,
+			BSD_TAILQ_INSERT_TAIL(&vm_page_queues[PQ_INACTIVE].pl, m,
 			    pageq);
 		m->queue = PQ_INACTIVE;
 		cnt.v_inactive_count++;
@@ -2169,7 +2169,7 @@ vm_page_cache(vm_page_t m)
 	 * Remove the page from the object's collection of resident
 	 * pages. 
 	 */
-	if ((next = TAILQ_NEXT(m, listq)) != NULL && next->left == m) {
+	if ((next = BSD_TAILQ_NEXT(m, listq)) != NULL && next->left == m) {
 		/*
 		 * Since the page's successor in the list is also its parent
 		 * in the tree, its right subtree must be empty.
@@ -2177,7 +2177,7 @@ vm_page_cache(vm_page_t m)
 		next->left = m->left;
 		KASSERT(m->right == NULL,
 		    ("vm_page_cache: page %p has right child", m));
-	} else if ((prev = TAILQ_PREV(m, pglist, listq)) != NULL &&
+	} else if ((prev = BSD_TAILQ_PREV(m, pglist, listq)) != NULL &&
 	    prev->right == m) {
 		/*
 		 * Since the page's predecessor in the list is also its parent
@@ -2205,7 +2205,7 @@ vm_page_cache(vm_page_t m)
 		}
 		object->root = root;
 	}
-	TAILQ_REMOVE(&object->memq, m, listq);
+	BSD_TAILQ_REMOVE(&object->memq, m, listq);
 	object->resident_page_count--;
 
 	/*

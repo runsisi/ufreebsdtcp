@@ -102,8 +102,8 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/vm/vm_reserv.c 234771 2012-04-28 20:34:14Z
  * A partially-populated reservation can be broken and reclaimed at any time.
  */
 struct vm_reserv {
-	TAILQ_ENTRY(vm_reserv) partpopq;
-	LIST_ENTRY(vm_reserv) objq;
+	BSD_TAILQ_ENTRY(vm_reserv) partpopq;
+	BSD_LIST_ENTRY(vm_reserv) objq;
 	vm_object_t	object;			/* containing object */
 	vm_pindex_t	pindex;			/* offset within object */
 	vm_page_t	pages;			/* first page of a superpage */
@@ -143,8 +143,8 @@ static vm_reserv_t vm_reserv_array;
  *
  * Access to this queue is synchronized by the free page queue lock.
  */
-static TAILQ_HEAD(, vm_reserv) vm_rvq_partpop =
-			    TAILQ_HEAD_INITIALIZER(vm_rvq_partpop);
+static BSD_TAILQ_HEAD(, vm_reserv) vm_rvq_partpop =
+			    BSD_TAILQ_HEAD_INITIALIZER(vm_rvq_partpop);
 
 static SYSCTL_NODE(_vm, OID_AUTO, reserv, CTLFLAG_RD, 0, "Reservation Info");
 
@@ -191,7 +191,7 @@ sysctl_vm_reserv_partpopq(SYSCTL_HANDLER_ARGS)
 		counter = 0;
 		unused_pages = 0;
 		mtx_lock(&vm_page_queue_free_mtx);
-		TAILQ_FOREACH(rv, &vm_rvq_partpop/*[level]*/, partpopq) {
+		BSD_TAILQ_FOREACH(rv, &vm_rvq_partpop/*[level]*/, partpopq) {
 			counter++;
 			unused_pages += VM_LEVEL_0_NPAGES - rv->popcnt;
 		}
@@ -222,18 +222,18 @@ vm_reserv_depopulate(vm_reserv_t rv)
 	KASSERT(rv->popcnt > 0,
 	    ("vm_reserv_depopulate: reserv %p's popcnt is corrupted", rv));
 	if (rv->inpartpopq) {
-		TAILQ_REMOVE(&vm_rvq_partpop, rv, partpopq);
+		BSD_TAILQ_REMOVE(&vm_rvq_partpop, rv, partpopq);
 		rv->inpartpopq = FALSE;
 	}
 	rv->popcnt--;
 	if (rv->popcnt == 0) {
-		LIST_REMOVE(rv, objq);
+		BSD_LIST_REMOVE(rv, objq);
 		rv->object = NULL;
 		vm_phys_free_pages(rv->pages, VM_LEVEL_0_ORDER);
 		vm_reserv_freed++;
 	} else {
 		rv->inpartpopq = TRUE;
-		TAILQ_INSERT_TAIL(&vm_rvq_partpop, rv, partpopq);
+		BSD_TAILQ_INSERT_TAIL(&vm_rvq_partpop, rv, partpopq);
 	}
 }
 
@@ -274,13 +274,13 @@ vm_reserv_populate(vm_reserv_t rv)
 	KASSERT(rv->popcnt < VM_LEVEL_0_NPAGES,
 	    ("vm_reserv_populate: reserv %p is already full", rv));
 	if (rv->inpartpopq) {
-		TAILQ_REMOVE(&vm_rvq_partpop, rv, partpopq);
+		BSD_TAILQ_REMOVE(&vm_rvq_partpop, rv, partpopq);
 		rv->inpartpopq = FALSE;
 	}
 	rv->popcnt++;
 	if (rv->popcnt < VM_LEVEL_0_NPAGES) {
 		rv->inpartpopq = TRUE;
-		TAILQ_INSERT_TAIL(&vm_rvq_partpop, rv, partpopq);
+		BSD_TAILQ_INSERT_TAIL(&vm_rvq_partpop, rv, partpopq);
 	}
 }
 
@@ -324,7 +324,7 @@ vm_reserv_alloc_page(vm_object_t object, vm_pindex_t pindex)
 			return (m);
 		} else if (mpred->pindex < pindex) {
 			if (msucc != NULL ||
-			    (msucc = TAILQ_NEXT(mpred, listq)) == NULL)
+			    (msucc = BSD_TAILQ_NEXT(mpred, listq)) == NULL)
 				break;
 			KASSERT(msucc->pindex != pindex,
 			    ("vm_reserv_alloc_page: pindex already allocated"));
@@ -341,7 +341,7 @@ vm_reserv_alloc_page(vm_object_t object, vm_pindex_t pindex)
 				break;
 		} else if (msucc == NULL) {
 			msucc = mpred;
-			mpred = TAILQ_PREV(msucc, pglist, listq);
+			mpred = BSD_TAILQ_PREV(msucc, pglist, listq);
 			continue;
 		}
 		msucc = NULL;
@@ -403,7 +403,7 @@ vm_reserv_alloc_page(vm_object_t object, vm_pindex_t pindex)
 		    rv));
 		KASSERT(rv->object == NULL,
 		    ("vm_reserv_alloc_page: reserv %p isn't free", rv));
-		LIST_INSERT_HEAD(&object->rvq, rv, objq);
+		BSD_LIST_INSERT_HEAD(&object->rvq, rv, objq);
 		rv->object = object;
 		rv->pindex = first;
 		KASSERT(rv->popcnt == 0,
@@ -428,14 +428,14 @@ vm_reserv_break_all(vm_object_t object)
 	int i;
 
 	mtx_lock(&vm_page_queue_free_mtx);
-	while ((rv = LIST_FIRST(&object->rvq)) != NULL) {
+	while ((rv = BSD_LIST_FIRST(&object->rvq)) != NULL) {
 		KASSERT(rv->object == object,
 		    ("vm_reserv_break_all: reserv %p is corrupted", rv));
 		if (rv->inpartpopq) {
-			TAILQ_REMOVE(&vm_rvq_partpop, rv, partpopq);
+			BSD_TAILQ_REMOVE(&vm_rvq_partpop, rv, partpopq);
 			rv->inpartpopq = FALSE;
 		}
-		LIST_REMOVE(rv, objq);
+		BSD_LIST_REMOVE(rv, objq);
 		rv->object = NULL;
 		for (i = 0; i < VM_LEVEL_0_NPAGES; i++) {
 			if ((rv->pages[i].flags & (PG_CACHED | PG_FREE)) != 0)
@@ -542,9 +542,9 @@ vm_reserv_reactivate_page(vm_page_t m)
 		KASSERT(rv->inpartpopq,
 		    ("vm_reserv_uncache_page: reserv %p's inpartpopq is FALSE",
 		    rv));
-		TAILQ_REMOVE(&vm_rvq_partpop, rv, partpopq);
+		BSD_TAILQ_REMOVE(&vm_rvq_partpop, rv, partpopq);
 		rv->inpartpopq = FALSE;
-		LIST_REMOVE(rv, objq);
+		BSD_LIST_REMOVE(rv, objq);
 		rv->object = NULL;
 		/* Don't vm_phys_free_pages(m, 0). */
 		m_index = m - rv->pages;
@@ -582,11 +582,11 @@ vm_reserv_reclaim(vm_reserv_t rv)
 	mtx_assert(&vm_page_queue_free_mtx, MA_OWNED);
 	KASSERT(rv->inpartpopq,
 	    ("vm_reserv_reclaim: reserv %p's inpartpopq is corrupted", rv));
-	TAILQ_REMOVE(&vm_rvq_partpop, rv, partpopq);
+	BSD_TAILQ_REMOVE(&vm_rvq_partpop, rv, partpopq);
 	rv->inpartpopq = FALSE;
 	KASSERT(rv->object != NULL,
 	    ("vm_reserv_reclaim: reserv %p is free", rv));
-	LIST_REMOVE(rv, objq);
+	BSD_LIST_REMOVE(rv, objq);
 	rv->object = NULL;
 	for (i = 0; i < VM_LEVEL_0_NPAGES; i++) {
 		if ((rv->pages[i].flags & (PG_CACHED | PG_FREE)) != 0)
@@ -612,7 +612,7 @@ vm_reserv_reclaim_inactive(void)
 	vm_reserv_t rv;
 
 	mtx_assert(&vm_page_queue_free_mtx, MA_OWNED);
-	if ((rv = TAILQ_FIRST(&vm_rvq_partpop)) != NULL) {
+	if ((rv = BSD_TAILQ_FIRST(&vm_rvq_partpop)) != NULL) {
 		vm_reserv_reclaim(rv);
 		return (TRUE);
 	}
@@ -639,7 +639,7 @@ vm_reserv_reclaim_contig(vm_paddr_t size, vm_paddr_t low, vm_paddr_t high,
 	mtx_assert(&vm_page_queue_free_mtx, MA_OWNED);
 	if (size > VM_LEVEL_0_SIZE - PAGE_SIZE)
 		return (FALSE);
-	TAILQ_FOREACH(rv, &vm_rvq_partpop, partpopq) {
+	BSD_TAILQ_FOREACH(rv, &vm_rvq_partpop, partpopq) {
 		pa = VM_PAGE_TO_PHYS(&rv->pages[VM_LEVEL_0_NPAGES - 1]);
 		if (pa + PAGE_SIZE - size < low) {
 			/* this entire reservation is too low; go to next */
@@ -686,8 +686,8 @@ vm_reserv_rename(vm_page_t m, vm_object_t new_object, vm_object_t old_object,
 	if (rv->object == old_object) {
 		mtx_lock(&vm_page_queue_free_mtx);
 		if (rv->object == old_object) {
-			LIST_REMOVE(rv, objq);
-			LIST_INSERT_HEAD(&new_object->rvq, rv, objq);
+			BSD_LIST_REMOVE(rv, objq);
+			BSD_LIST_INSERT_HEAD(&new_object->rvq, rv, objq);
 			rv->object = new_object;
 			rv->pindex -= old_object_offset;
 		}

@@ -66,15 +66,15 @@ static MALLOC_DEFINE(M_PCPU, "Per-cpu", "Per-cpu resource accouting.");
 struct dpcpu_free {
 	uintptr_t	df_start;
 	int		df_len;
-	TAILQ_ENTRY(dpcpu_free) df_link;
+	BSD_TAILQ_ENTRY(dpcpu_free) df_link;
 };
 
 static DPCPU_DEFINE(char, modspace[DPCPU_MODMIN]);
-static TAILQ_HEAD(, dpcpu_free) dpcpu_head = TAILQ_HEAD_INITIALIZER(dpcpu_head);
+static BSD_TAILQ_HEAD(, dpcpu_free) dpcpu_head = BSD_TAILQ_HEAD_INITIALIZER(dpcpu_head);
 static struct sx dpcpu_lock;
 uintptr_t dpcpu_off[MAXCPU];
 struct pcpu *cpuid_to_pcpu[MAXCPU];
-struct cpuhead cpuhead = STAILQ_HEAD_INITIALIZER(cpuhead);
+struct cpuhead cpuhead = BSD_STAILQ_HEAD_INITIALIZER(cpuhead);
 
 /*
  * Initialize the MI portions of a struct pcpu.
@@ -88,7 +88,7 @@ pcpu_init(struct pcpu *pcpu, int cpuid, size_t size)
 	    ("pcpu_init: invalid cpuid %d", cpuid));
 	pcpu->pc_cpuid = cpuid;
 	cpuid_to_pcpu[cpuid] = pcpu;
-	STAILQ_INSERT_TAIL(&cpuhead, pcpu, pc_allcpu);
+	BSD_STAILQ_INSERT_TAIL(&cpuhead, pcpu, pc_allcpu);
 	cpu_pcpu_init(pcpu, cpuid, size);
 	pcpu->pc_rm_queue.rmq_next = &pcpu->pc_rm_queue;
 	pcpu->pc_rm_queue.rmq_prev = &pcpu->pc_rm_queue;
@@ -121,7 +121,7 @@ dpcpu_startup(void *dummy __unused)
 	df = bsd_malloc(sizeof(*df), M_PCPU, M_WAITOK | M_ZERO);
 	df->df_start = (uintptr_t)&DPCPU_NAME(modspace);
 	df->df_len = DPCPU_MODMIN;
-	TAILQ_INSERT_HEAD(&dpcpu_head, df, df_link);
+	BSD_TAILQ_INSERT_HEAD(&dpcpu_head, df, df_link);
 	sx_init(&dpcpu_lock, "dpcpu alloc lock");
 }
 SYSINIT(dpcpu, SI_SUB_KLD, SI_ORDER_FIRST, dpcpu_startup, 0);
@@ -140,12 +140,12 @@ dpcpu_alloc(int size)
 	s = NULL;
 	size = roundup2(size, sizeof(void *));
 	sx_xlock(&dpcpu_lock);
-	TAILQ_FOREACH(df, &dpcpu_head, df_link) {
+	BSD_TAILQ_FOREACH(df, &dpcpu_head, df_link) {
 		if (df->df_len < size)
 			continue;
 		if (df->df_len == size) {
 			s = (void *)df->df_start;
-			TAILQ_REMOVE(&dpcpu_head, df, df_link);
+			BSD_TAILQ_REMOVE(&dpcpu_head, df, df_link);
 			bsd_free(df, M_PCPU);
 			break;
 		}
@@ -178,7 +178,7 @@ dpcpu_free(void *s, int size)
 	 * possible.  Keeping the list sorted simplifies this operation.
 	 */
 	sx_xlock(&dpcpu_lock);
-	TAILQ_FOREACH(df, &dpcpu_head, df_link) {
+	BSD_TAILQ_FOREACH(df, &dpcpu_head, df_link) {
 		if (df->df_start > end)
 			break;
 		/*
@@ -187,10 +187,10 @@ dpcpu_free(void *s, int size)
 		 */
 		if (df->df_start + df->df_len == start) {
 			df->df_len += size;
-			dn = TAILQ_NEXT(df, df_link);
+			dn = BSD_TAILQ_NEXT(df, df_link);
 			if (df->df_start + df->df_len == dn->df_start) {
 				df->df_len += dn->df_len;
-				TAILQ_REMOVE(&dpcpu_head, dn, df_link);
+				BSD_TAILQ_REMOVE(&dpcpu_head, dn, df_link);
 				bsd_free(dn, M_PCPU);
 			}
 			sx_xunlock(&dpcpu_lock);
@@ -207,9 +207,9 @@ dpcpu_free(void *s, int size)
 	dn->df_start = start;
 	dn->df_len = size;
 	if (df)
-		TAILQ_INSERT_BEFORE(df, dn, df_link);
+		BSD_TAILQ_INSERT_BEFORE(df, dn, df_link);
 	else
-		TAILQ_INSERT_TAIL(&dpcpu_head, dn, df_link);
+		BSD_TAILQ_INSERT_TAIL(&dpcpu_head, dn, df_link);
 	sx_xunlock(&dpcpu_lock);
 }
 
@@ -241,7 +241,7 @@ void
 pcpu_destroy(struct pcpu *pcpu)
 {
 
-	STAILQ_REMOVE(&cpuhead, pcpu, pcpu, pc_allcpu);
+	BSD_STAILQ_REMOVE(&cpuhead, pcpu, pcpu, pc_allcpu);
 	cpuid_to_pcpu[pcpu->pc_cpuid] = NULL;
 	dpcpu_off[pcpu->pc_cpuid] = 0;
 }

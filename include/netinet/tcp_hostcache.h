@@ -37,7 +37,7 @@
 #ifndef _NETINET_TCP_HOSTCACHE_H_
 #define _NETINET_TCP_HOSTCACHE_H_
 
-TAILQ_HEAD(hc_qhead, hc_metrics);
+BSD_TAILQ_HEAD(hc_qhead, hc_metrics);
 
 struct hc_head {
 	struct hc_qhead	hch_bucket;
@@ -47,7 +47,7 @@ struct hc_head {
 
 struct hc_metrics {
 	/* housekeeping */
-	TAILQ_ENTRY(hc_metrics) rmx_q;
+	BSD_TAILQ_ENTRY(hc_metrics) rmx_q;
 	struct	hc_head *rmx_head; /* head of bucket tail queue */
 	struct	in_addr ip4;	/* IP address */
 	struct	in6_addr ip6;	/* IP6 address */

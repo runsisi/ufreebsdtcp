@@ -223,8 +223,8 @@ struct witness {
 	char  			w_name[MAX_W_NAME];
 	uint32_t 		w_index;  /* Index in the relationship matrix */
 	struct lock_class	*w_class;
-	STAILQ_ENTRY(witness) 	w_list;		/* List of all witnesses. */
-	STAILQ_ENTRY(witness) 	w_typelist;	/* Witnesses of a type. */
+	BSD_STAILQ_ENTRY(witness) 	w_list;		/* List of all witnesses. */
+	BSD_STAILQ_ENTRY(witness) 	w_typelist;	/* Witnesses of a type. */
 	struct witness		*w_hash_next; /* Linked list in hash buckets. */
 	const char		*w_file; /* File where last acquired */
 	uint32_t 		w_line; /* Line where last acquired */
@@ -238,7 +238,7 @@ struct witness {
 	unsigned		w_reversed:1;
 };
 
-STAILQ_HEAD(witness_list, witness);
+BSD_STAILQ_HEAD(witness_list, witness);
 
 /*
  * The witness hash table. Keys are witness names (const char *), elements are
@@ -441,12 +441,12 @@ SYSCTL_PROC(_debug_witness, OID_AUTO, badstacks, CTLTYPE_STRING | CTLFLAG_RD,
 static struct mtx w_mtx;
 
 /* w_list */
-static struct witness_list w_free = STAILQ_HEAD_INITIALIZER(w_free);
-static struct witness_list w_all = STAILQ_HEAD_INITIALIZER(w_all);
+static struct witness_list w_free = BSD_STAILQ_HEAD_INITIALIZER(w_free);
+static struct witness_list w_all = BSD_STAILQ_HEAD_INITIALIZER(w_all);
 
 /* w_typelist */
-static struct witness_list w_spin = STAILQ_HEAD_INITIALIZER(w_spin);
-static struct witness_list w_sleep = STAILQ_HEAD_INITIALIZER(w_sleep);
+static struct witness_list w_spin = BSD_STAILQ_HEAD_INITIALIZER(w_spin);
+static struct witness_list w_sleep = BSD_STAILQ_HEAD_INITIALIZER(w_sleep);
 
 /* lock list */
 static struct lock_list_entry *w_lock_list_free = NULL;
@@ -764,11 +764,11 @@ witness_initialize(void *dummy __unused)
 		w_data[i].w_index = i;	/* Witness index never changes. */
 		witness_free(w);
 	}
-	KASSERT(STAILQ_FIRST(&w_free)->w_index == 0,
+	KASSERT(BSD_STAILQ_FIRST(&w_free)->w_index == 0,
 	    ("%s: Invalid list of free witness objects", __func__));
 
 	/* Witness with index 0 is not used to aid in debugging. */
-	STAILQ_REMOVE_HEAD(&w_free, w_list);
+	BSD_STAILQ_REMOVE_HEAD(&w_free, w_list);
 	w_free_cnt--;
 
 	memset(w_rmatrix, 0,
@@ -888,13 +888,13 @@ witness_ddb_compute_levels(void)
 	/*
 	 * First clear all levels.
 	 */
-	STAILQ_FOREACH(w, &w_all, w_list)
+	BSD_STAILQ_FOREACH(w, &w_all, w_list)
 		w->w_ddb_level = -1;
 
 	/*
 	 * Look for locks with no parents and level all their descendants.
 	 */
-	STAILQ_FOREACH(w, &w_all, w_list) {
+	BSD_STAILQ_FOREACH(w, &w_all, w_list) {
 
 		/* If the witness has ancestors (is not a root), skip it. */
 		if (w->w_num_ancestors > 0)
@@ -958,7 +958,7 @@ witness_ddb_display_list(int(*prnt)(const char *fmt, ...),
 {
 	struct witness *w;
 
-	STAILQ_FOREACH(w, list, w_typelist) {
+	BSD_STAILQ_FOREACH(w, list, w_typelist) {
 		if (w->w_file == NULL || w->w_ddb_level > 0)
 			continue;
 
@@ -978,7 +978,7 @@ witness_ddb_display(int(*prnt)(const char *fmt, ...))
 	witness_ddb_compute_levels();
 
 	/* Clear all the displayed flags. */
-	STAILQ_FOREACH(w, &w_all, w_list)
+	BSD_STAILQ_FOREACH(w, &w_all, w_list)
 		w->w_displayed = 0;
 
 	/*
@@ -1002,7 +1002,7 @@ witness_ddb_display(int(*prnt)(const char *fmt, ...))
 	 * Finally, any locks which have not been acquired yet.
 	 */
 	prnt("\nLocks which were never acquired:\n");
-	STAILQ_FOREACH(w, &w_all, w_list) {
+	BSD_STAILQ_FOREACH(w, &w_all, w_list) {
 		if (w->w_file != NULL || w->w_refcount == 0)
 			continue;
 		prnt("%s (type: %s, depth: %d)\n", w->w_name,
@@ -1766,12 +1766,12 @@ enroll(const char *description, struct lock_class *lock_class)
 	strcpy(w->w_name, description);
 	w->w_class = lock_class;
 	w->w_refcount = 1;
-	STAILQ_INSERT_HEAD(&w_all, w, w_list);
+	BSD_STAILQ_INSERT_HEAD(&w_all, w, w_list);
 	if (lock_class->lc_flags & LC_SPINLOCK) {
-		STAILQ_INSERT_HEAD(&w_spin, w, w_typelist);
+		BSD_STAILQ_INSERT_HEAD(&w_spin, w, w_typelist);
 		w_spin_cnt++;
 	} else if (lock_class->lc_flags & LC_SLEEPLOCK) {
-		STAILQ_INSERT_HEAD(&w_sleep, w, w_typelist);
+		BSD_STAILQ_INSERT_HEAD(&w_sleep, w, w_typelist);
 		w_sleep_cnt++;
 	}
 
@@ -2014,14 +2014,14 @@ witness_get(void)
 		mtx_unlock_spin(&w_mtx);
 		return (NULL);
 	}
-	if (STAILQ_EMPTY(&w_free)) {
+	if (BSD_STAILQ_EMPTY(&w_free)) {
 		witness_watch = -1;
 		mtx_unlock_spin(&w_mtx);
 		printf("WITNESS: unable to allocate a new witness object\n");
 		return (NULL);
 	}
-	w = STAILQ_FIRST(&w_free);
-	STAILQ_REMOVE_HEAD(&w_free, w_list);
+	w = BSD_STAILQ_FIRST(&w_free);
+	BSD_STAILQ_REMOVE_HEAD(&w_free, w_list);
 	w_free_cnt--;
 	index = w->w_index;
 	MPASS(index > 0 && index == w_max_used_index+1 &&
@@ -2037,7 +2037,7 @@ static void
 witness_free(struct witness *w)
 {
 
-	STAILQ_INSERT_HEAD(&w_free, w, w_list);
+	BSD_STAILQ_INSERT_HEAD(&w_free, w, w_list);
 	w_free_cnt++;
 }
 
@@ -2602,9 +2602,9 @@ sysctl_debug_witness_fullgraph(SYSCTL_HANDLER_ARGS)
 	sbuf_printf(sb, "\n");
 
 	mtx_lock_spin(&w_mtx);
-	STAILQ_FOREACH(w, &w_all, w_list)
+	BSD_STAILQ_FOREACH(w, &w_all, w_list)
 		w->w_displayed = 0;
-	STAILQ_FOREACH(w, &w_all, w_list)
+	BSD_STAILQ_FOREACH(w, &w_all, w_list)
 		witness_add_fullgraph(sb, w);
 	mtx_unlock_spin(&w_mtx);
 

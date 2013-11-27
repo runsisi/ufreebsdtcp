@@ -73,7 +73,7 @@
 struct proxy_entry;
 
 struct libalias {
-	LIST_ENTRY(libalias) instancelist;
+	BSD_LIST_ENTRY(libalias) instancelist;
 
 	int		packetAliasMode;	/* Mode flags                      */
 	/* - documented in alias.h  */
@@ -88,11 +88,11 @@ struct libalias {
 	struct in_addr	nullAddress;	/* Used as a dummy parameter for   */
 	/* some function calls           */
 
-			LIST_HEAD     (, alias_link) linkTableOut[LINK_TABLE_OUT_SIZE];
+			BSD_LIST_HEAD     (, alias_link) linkTableOut[LINK_TABLE_OUT_SIZE];
 	/* Lookup table of pointers to     */
 	/* chains of link records. Each  */
 
-			LIST_HEAD     (, alias_link) linkTableIn[LINK_TABLE_IN_SIZE];
+			BSD_LIST_HEAD     (, alias_link) linkTableIn[LINK_TABLE_IN_SIZE];
 	/* link record is doubly indexed */
 	/* into input and output lookup  */
 	/* tables.                       */
@@ -171,11 +171,11 @@ struct libalias {
 /* 
  * local look up table sorted by l_vtag/l_port 
  */
-	LIST_HEAD(sctpNatTableL, sctp_nat_assoc) *sctpTableLocal;
+	BSD_LIST_HEAD(sctpNatTableL, sctp_nat_assoc) *sctpTableLocal;
 /* 
  * global look up table sorted by g_vtag/g_port 
  */
-	LIST_HEAD(sctpNatTableG, sctp_nat_assoc) *sctpTableGlobal;
+	BSD_LIST_HEAD(sctpNatTableG, sctp_nat_assoc) *sctpTableGlobal;
 	
 	/* 
 	 * avoid races in libalias: every public function has to use it.

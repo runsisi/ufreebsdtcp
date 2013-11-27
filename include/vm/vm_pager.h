@@ -44,7 +44,7 @@
 
 #include <sys/bsd_queue.h>
 
-TAILQ_HEAD(pagerlst, vm_object);
+BSD_TAILQ_HEAD(pagerlst, vm_object);
 
 typedef void pgo_init_t(void);
 typedef vm_object_t pgo_alloc_t(void *, vm_ooffset_t, vm_prot_t, vm_ooffset_t,

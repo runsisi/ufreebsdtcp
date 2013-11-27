@@ -117,7 +117,7 @@ struct	in6_ifaddr {
 	struct	sockaddr_in6 ia_dstaddr; /* space for destination addr */
 	struct	sockaddr_in6 ia_prefixmask; /* prefix mask */
 	u_int32_t ia_plen;		/* prefix length */
-	TAILQ_ENTRY(in6_ifaddr)	ia_link;	/* list of IPv6 addresses */
+	BSD_TAILQ_ENTRY(in6_ifaddr)	ia_link;	/* list of IPv6 addresses */
 	int	ia6_flags;
 
 	struct in6_addrlifetime ia6_lifetime;
@@ -130,11 +130,11 @@ struct	in6_ifaddr {
 	struct nd_prefix *ia6_ndpr;
 
 	/* multicast addresses joined from the kernel */
-	LIST_HEAD(, in6_multi_mship) ia6_memberships;
+	BSD_LIST_HEAD(, in6_multi_mship) ia6_memberships;
 };
 
 /* List of in6_ifaddr's. */
-TAILQ_HEAD(in6_ifaddrhead, in6_ifaddr);
+BSD_TAILQ_HEAD(in6_ifaddrhead, in6_ifaddr);
 
 /* control structure to manage address selection policy */
 struct in6_addrpolicy {
@@ -567,7 +567,7 @@ struct in6_mfilter {
  */
 struct in6_multi_mship {
 	struct	in6_multi *i6mm_maddr;
-	LIST_ENTRY(in6_multi_mship) i6mm_chain;
+	BSD_LIST_ENTRY(in6_multi_mship) i6mm_chain;
 };
 
 /*
@@ -588,12 +588,12 @@ struct in6_multi_mship {
  * and kept if retransmissions are necessary.
  *
  * FUTURE: in6m_link is now only used when groups are being purged
- * on a detaching ifnet. It could be demoted to a SLIST_ENTRY, but
+ * on a detaching ifnet. It could be demoted to a BSD_SLIST_ENTRY, but
  * because it is at the very start of the struct, we can't do this
  * w/o breaking the ABI for ifmcstat.
  */
 struct in6_multi {
-	LIST_ENTRY(in6_multi) in6m_entry; /* list glue */
+	BSD_LIST_ENTRY(in6_multi) in6m_entry; /* list glue */
 	struct	in6_addr in6m_addr;	/* IPv6 multicast address */
 	struct	ifnet *in6m_ifp;	/* back pointer to ifnet */
 	struct	ifmultiaddr *in6m_ifma;	/* back pointer to ifmultiaddr */
@@ -603,7 +603,7 @@ struct in6_multi {
 
 	/* New fields for MLDv2 follow. */
 	struct mld_ifinfo	*in6m_mli;	/* MLD info */
-	SLIST_ENTRY(in6_multi)	 in6m_nrele;	/* to-be-released by MLD */
+	BSD_SLIST_ENTRY(in6_multi)	 in6m_nrele;	/* to-be-released by MLD */
 	struct ip6_msource_tree	 in6m_srcs;	/* tree of sources */
 	u_long			 in6m_nsrc;	/* # of tree entries */
 
@@ -682,7 +682,7 @@ in6m_lookup_locked(struct ifnet *ifp, const struct in6_addr *mcaddr)
 	IF_ADDR_LOCK_ASSERT(ifp);
 
 	inm = NULL;
-	TAILQ_FOREACH(ifma, &((ifp)->if_multiaddrs), ifma_link) {
+	BSD_TAILQ_FOREACH(ifma, &((ifp)->if_multiaddrs), ifma_link) {
 		if (ifma->ifma_addr->sa_family == AF_INET6) {
 			inm = (struct in6_multi *)ifma->ifma_protospec;
 			if (IN6_ARE_ADDR_EQUAL(&inm->in6m_addr, mcaddr))

@@ -109,7 +109,7 @@ vmtotal(SYSCTL_HANDLER_ARGS)
 	 * Mark all objects as inactive.
 	 */
 	mtx_lock(&vm_object_list_mtx);
-	TAILQ_FOREACH(object, &vm_object_list, object_list) {
+	BSD_TAILQ_FOREACH(object, &vm_object_list, object_list) {
 		if (!VM_OBJECT_TRYLOCK(object)) {
 			/*
 			 * Avoid a lock-order reversal.  Consequently,
@@ -193,7 +193,7 @@ vmtotal(SYSCTL_HANDLER_ARGS)
 	 * Calculate object memory usage statistics.
 	 */
 	mtx_lock(&vm_object_list_mtx);
-	TAILQ_FOREACH(object, &vm_object_list, object_list) {
+	BSD_TAILQ_FOREACH(object, &vm_object_list, object_list) {
 		/*
 		 * Perform unsynchronized reads on the object to avoid
 		 * a lock-order reversal.  In this case, the lack of

@@ -57,7 +57,7 @@ struct helper {
 	int32_t			h_id;
 	volatile uint32_t	h_refcount;
 	uint16_t		h_flags;
-	TAILQ_ENTRY(helper)	h_next;
+	BSD_TAILQ_ENTRY(helper)	h_next;
 };
 
 struct khelp_modevent_data {

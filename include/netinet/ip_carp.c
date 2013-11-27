@@ -108,7 +108,7 @@ struct carp_softc {
 	struct in6_ifaddr 	*sc_ia6;	/* primary iface address v6 */
 	struct ip6_moptions 	 sc_im6o;
 #endif /* INET6 */
-	TAILQ_ENTRY(carp_softc)	 sc_list;
+	BSD_TAILQ_ENTRY(carp_softc)	 sc_list;
 
 	enum { INIT = 0, BACKUP, MASTER }	sc_state;
 
@@ -138,7 +138,7 @@ struct carp_softc {
 	struct callout		 sc_md_tmo;	/* master down timeout */
 	struct callout 		 sc_md6_tmo;	/* master down timeout */
 	
-	LIST_ENTRY(carp_softc)	 sc_next;	/* Interface clue */
+	BSD_LIST_ENTRY(carp_softc)	 sc_next;	/* Interface clue */
 };
 #define	SC2IFP(sc)	((sc)->sc_ifp)
 
@@ -162,7 +162,7 @@ SYSCTL_STRUCT(_net_inet_carp, CARPCTL_STATS, stats, CTLFLAG_RW,
     "CARP statistics (struct carpstats, netinet/ip_carp.h)");
 
 struct carp_if {
-	TAILQ_HEAD(, carp_softc) vhif_vrs;
+	BSD_TAILQ_HEAD(, carp_softc) vhif_vrs;
 	int vhif_nvrs;
 
 	struct ifnet 	*vhif_ifp;
@@ -243,7 +243,7 @@ static int	carp_del_addr6(struct carp_softc *, struct sockaddr_in6 *);
 static void	carp_multicast6_cleanup(struct carp_softc *, int dofree);
 #endif
 
-static LIST_HEAD(, carp_softc) carpif_list;
+static BSD_LIST_HEAD(, carp_softc) carpif_list;
 static struct mtx carp_mtx;
 IFC_SIMPLE_DECLARE(carp, 0);
 
@@ -293,7 +293,7 @@ carp_hmac_prepare(struct carp_softc *sc)
 		last = cur;
 		cur.s_addr = 0xffffffff;
 		IF_ADDR_RLOCK(SC2IFP(sc));
-		TAILQ_FOREACH(ifa, &SC2IFP(sc)->if_addrlist, ifa_list) {
+		BSD_TAILQ_FOREACH(ifa, &SC2IFP(sc)->if_addrlist, ifa_list) {
 			in.s_addr = ifatoia(ifa)->ia_addr.sin_addr.s_addr;
 			if (ifa->ifa_addr->sa_family == AF_INET &&
 			    ntohl(in.s_addr) > ntohl(last.s_addr) &&
@@ -314,7 +314,7 @@ carp_hmac_prepare(struct carp_softc *sc)
 		last6 = cur6;
 		memset(&cur6, 0xff, sizeof(cur6));
 		IF_ADDR_RLOCK(SC2IFP(sc));
-		TAILQ_FOREACH(ifa, &SC2IFP(sc)->if_addrlist, ifa_list) {
+		BSD_TAILQ_FOREACH(ifa, &SC2IFP(sc)->if_addrlist, ifa_list) {
 			in6 = ifatoia6(ifa)->ia_addr.sin6_addr;
 			if (IN6_IS_SCOPE_EMBED(&in6))
 				in6.s6_addr16[1] = 0;
@@ -381,7 +381,7 @@ carp_setroute(struct carp_softc *sc, int cmd)
 		CARP_SCLOCK_ASSERT(sc);
 
 	s = splnet();
-	TAILQ_FOREACH(ifa, &SC2IFP(sc)->if_addrlist, ifa_list) {
+	BSD_TAILQ_FOREACH(ifa, &SC2IFP(sc)->if_addrlist, ifa_list) {
 #ifdef INET
 		if (ifa->ifa_addr->sa_family == AF_INET &&
 		    sc->sc_carpdev != NULL) {
@@ -453,7 +453,7 @@ carp_clone_create(struct if_clone *ifc, int unit, caddr_t params)
 	if_attach(ifp);
 	bpfattach(SC2IFP(sc), DLT_NULL, sizeof(u_int32_t));
 	mtx_lock(&carp_mtx);
-	LIST_INSERT_HEAD(&carpif_list, sc, sc_next);
+	BSD_LIST_INSERT_HEAD(&carpif_list, sc, sc_next);
 	mtx_unlock(&carp_mtx);
 	return (0);
 }
@@ -468,7 +468,7 @@ carp_clone_destroy(struct ifnet *ifp)
 	carpdetach(sc, 1);	/* Returns unlocked. */
 
 	mtx_lock(&carp_mtx);
-	LIST_REMOVE(sc, sc_next);
+	BSD_LIST_REMOVE(sc, sc_next);
 	mtx_unlock(&carp_mtx);
 	bpfdetach(ifp);
 	if_detach(ifp);
@@ -524,7 +524,7 @@ carpdetach(struct carp_softc *sc, int unlock)
 	if (sc->sc_carpdev != NULL) {
 		cif = (struct carp_if *)sc->sc_carpdev->if_carp;
 		CARP_LOCK_ASSERT(cif);
-		TAILQ_REMOVE(&cif->vhif_vrs, sc, sc_list);
+		BSD_TAILQ_REMOVE(&cif->vhif_vrs, sc, sc_list);
 		if (!--cif->vhif_nvrs) {
 			ifpromisc(sc->sc_carpdev, 0);
 			sc->sc_carpdev->if_carp = NULL;
@@ -550,8 +550,8 @@ carp_ifdetach(void *arg __unused, struct ifnet *ifp)
 	 * XXX: At the end of for() cycle the lock will be destroyed.
 	 */
 	CARP_LOCK(cif);
-	for (sc = TAILQ_FIRST(&cif->vhif_vrs); sc; sc = nextsc) {
-		nextsc = TAILQ_NEXT(sc, sc_list);
+	for (sc = BSD_TAILQ_FIRST(&cif->vhif_vrs); sc; sc = nextsc) {
+		nextsc = BSD_TAILQ_NEXT(sc, sc_list);
 		carpdetach(sc, 0);
 	}
 }
@@ -726,7 +726,7 @@ carp_input_c(struct mbuf *m, struct carp_header *ch, sa_family_t af)
 
 	/* verify that the VHID is valid on the receiving interface */
 	CARP_LOCK(ifp->if_carp);
-	TAILQ_FOREACH(sc, &((struct carp_if *)ifp->if_carp)->vhif_vrs, sc_list)
+	BSD_TAILQ_FOREACH(sc, &((struct carp_if *)ifp->if_carp)->vhif_vrs, sc_list)
 		if (sc->sc_vhid == ch->carp_vhid)
 			break;
 
@@ -894,7 +894,7 @@ carp_send_ad_all(void)
 	struct carp_softc *sc;
 
 	mtx_lock(&carp_mtx);
-	LIST_FOREACH(sc, &carpif_list, sc_next) {
+	BSD_LIST_FOREACH(sc, &carpif_list, sc_next) {
 		if (sc->sc_carpdev == NULL)
 			continue;
 		CARP_SCLOCK(sc);
@@ -1119,7 +1119,7 @@ carp_send_arp(struct carp_softc *sc)
 {
 	struct ifaddr *ifa;
 
-	TAILQ_FOREACH(ifa, &SC2IFP(sc)->if_addrlist, ifa_list) {
+	BSD_TAILQ_FOREACH(ifa, &SC2IFP(sc)->if_addrlist, ifa_list) {
 
 		if (ifa->ifa_addr->sa_family != AF_INET)
 			continue;
@@ -1140,7 +1140,7 @@ carp_send_na(struct carp_softc *sc)
 	struct in6_addr *in6;
 	static struct in6_addr mcast = IN6ADDR_LINKLOCAL_ALLNODES_INIT;
 
-	TAILQ_FOREACH(ifa, &SC2IFP(sc)->if_addrlist, ifa_list) {
+	BSD_TAILQ_FOREACH(ifa, &SC2IFP(sc)->if_addrlist, ifa_list) {
 
 		if (ifa->ifa_addr->sa_family != AF_INET6)
 			continue;
@@ -1163,13 +1163,13 @@ carp_addrcount(struct carp_if *cif, struct in_ifaddr *ia, int type)
 
 	CARP_LOCK_ASSERT(cif);
 
-	TAILQ_FOREACH(vh, &cif->vhif_vrs, sc_list) {
+	BSD_TAILQ_FOREACH(vh, &cif->vhif_vrs, sc_list) {
 		if ((type == CARP_COUNT_RUNNING &&
 		    (SC2IFP(vh)->if_flags & IFF_UP) &&
 		    (SC2IFP(vh)->if_drv_flags & IFF_DRV_RUNNING)) ||
 		    (type == CARP_COUNT_MASTER && vh->sc_state == MASTER)) {
 			IF_ADDR_RLOCK(SC2IFP(vh));
-			TAILQ_FOREACH(ifa, &SC2IFP(vh)->if_addrlist,
+			BSD_TAILQ_FOREACH(ifa, &SC2IFP(vh)->if_addrlist,
 			    ifa_list) {
 				if (ifa->ifa_addr->sa_family == AF_INET &&
 				    ia->ia_addr.sin_addr.s_addr ==
@@ -1213,11 +1213,11 @@ carp_iamatch(struct ifnet *ifp, struct in_ifaddr *ia,
 		index = ntohl(isaddr->s_addr) % count;
 		count = 0;
 
-		TAILQ_FOREACH(vh, &cif->vhif_vrs, sc_list) {
+		BSD_TAILQ_FOREACH(vh, &cif->vhif_vrs, sc_list) {
 			if ((SC2IFP(vh)->if_flags & IFF_UP) &&
 			    (SC2IFP(vh)->if_drv_flags & IFF_DRV_RUNNING)) {
 				IF_ADDR_RLOCK(SC2IFP(vh));
-				TAILQ_FOREACH(ifa, &SC2IFP(vh)->if_addrlist,
+				BSD_TAILQ_FOREACH(ifa, &SC2IFP(vh)->if_addrlist,
 				    ifa_list) {
 					if (ifa->ifa_addr->sa_family ==
 					    AF_INET &&
@@ -1243,7 +1243,7 @@ carp_iamatch(struct ifnet *ifp, struct in_ifaddr *ia,
 			}
 		}
 	} else {
-		TAILQ_FOREACH(vh, &cif->vhif_vrs, sc_list) {
+		BSD_TAILQ_FOREACH(vh, &cif->vhif_vrs, sc_list) {
 			if ((SC2IFP(vh)->if_flags & IFF_UP) &&
 			    (SC2IFP(vh)->if_drv_flags & IFF_DRV_RUNNING) &&
 			    ia->ia_ifp == SC2IFP(vh) &&
@@ -1269,9 +1269,9 @@ carp_iamatch6(struct ifnet *ifp, struct in6_addr *taddr)
 
 	cif = ifp->if_carp;
 	CARP_LOCK(cif);
-	TAILQ_FOREACH(vh, &cif->vhif_vrs, sc_list) {
+	BSD_TAILQ_FOREACH(vh, &cif->vhif_vrs, sc_list) {
 		IF_ADDR_RLOCK(SC2IFP(vh));
-		TAILQ_FOREACH(ifa, &SC2IFP(vh)->if_addrlist, ifa_list) {
+		BSD_TAILQ_FOREACH(ifa, &SC2IFP(vh)->if_addrlist, ifa_list) {
 			if (IN6_ARE_ADDR_EQUAL(taddr,
 			    &ifatoia6(ifa)->ia_addr.sin6_addr) &&
  			    (SC2IFP(vh)->if_flags & IFF_UP) &&
@@ -1300,9 +1300,9 @@ carp_macmatch6(struct ifnet *ifp, struct mbuf *m, const struct in6_addr *taddr)
 
 	cif = ifp->if_carp;
 	CARP_LOCK(cif);
-	TAILQ_FOREACH(sc, &cif->vhif_vrs, sc_list) {
+	BSD_TAILQ_FOREACH(sc, &cif->vhif_vrs, sc_list) {
 		IF_ADDR_RLOCK(SC2IFP(sc));
-		TAILQ_FOREACH(ifa, &SC2IFP(sc)->if_addrlist, ifa_list) {
+		BSD_TAILQ_FOREACH(ifa, &SC2IFP(sc)->if_addrlist, ifa_list) {
 			if (IN6_ARE_ADDR_EQUAL(taddr,
 			    &ifatoia6(ifa)->ia_addr.sin6_addr) &&
  			    (SC2IFP(sc)->if_flags & IFF_UP) &&
@@ -1345,7 +1345,7 @@ carp_forus(struct ifnet *ifp, u_char *dhost)
 
 	cif = ifp->if_carp;
 	CARP_LOCK(cif);
-	TAILQ_FOREACH(vh, &cif->vhif_vrs, sc_list)
+	BSD_TAILQ_FOREACH(vh, &cif->vhif_vrs, sc_list)
 		if ((SC2IFP(vh)->if_flags & IFF_UP) &&
 		    (SC2IFP(vh)->if_drv_flags & IFF_DRV_RUNNING) &&
 		    vh->sc_state == MASTER &&
@@ -1536,7 +1536,7 @@ carp_set_addr(struct carp_softc *sc, struct sockaddr_in *sin)
 	/* we have to do it by hands to check we won't match on us */
 	ia_if = NULL; own = 0;
 	IN_IFADDR_RLOCK();
-	TAILQ_FOREACH(ia, &V_in_ifaddrhead, ia_link) {
+	BSD_TAILQ_FOREACH(ia, &V_in_ifaddrhead, ia_link) {
 		/* and, yeah, we need a multicast-capable iface too */
 		if (ia->ia_ifp != SC2IFP(sc) &&
 		    (ia->ia_ifp->if_flags & IFF_MULTICAST) &&
@@ -1595,7 +1595,7 @@ carp_set_addr(struct carp_softc *sc, struct sockaddr_in *sin)
 		CARP_LOCK_INIT(cif);
 		CARP_LOCK(cif);
 		cif->vhif_ifp = ifp;
-		TAILQ_INIT(&cif->vhif_vrs);
+		BSD_TAILQ_INIT(&cif->vhif_vrs);
 		ifp->if_carp = cif;
 
 	} else {
@@ -1603,7 +1603,7 @@ carp_set_addr(struct carp_softc *sc, struct sockaddr_in *sin)
 
 		cif = (struct carp_if *)ifp->if_carp;
 		CARP_LOCK(cif);
-		TAILQ_FOREACH(vr, &cif->vhif_vrs, sc_list)
+		BSD_TAILQ_FOREACH(vr, &cif->vhif_vrs, sc_list)
 			if (vr != sc && vr->sc_vhid == sc->sc_vhid) {
 				CARP_UNLOCK(cif);
 				error = EEXIST;
@@ -1621,7 +1621,7 @@ carp_set_addr(struct carp_softc *sc, struct sockaddr_in *sin)
 	/* XXX: cif should not change, right? So we still hold the lock */
 	CARP_LOCK_ASSERT(cif);
 
-	TAILQ_FOREACH(vr, &cif->vhif_vrs, sc_list) {
+	BSD_TAILQ_FOREACH(vr, &cif->vhif_vrs, sc_list) {
 		if (vr == sc)
 			myself = 1;
 		if (vr->sc_vhid < sc->sc_vhid)
@@ -1631,9 +1631,9 @@ carp_set_addr(struct carp_softc *sc, struct sockaddr_in *sin)
 	if (!myself) {
 		/* We're trying to keep things in order */
 		if (after == NULL) {
-			TAILQ_INSERT_TAIL(&cif->vhif_vrs, sc, sc_list);
+			BSD_TAILQ_INSERT_TAIL(&cif->vhif_vrs, sc, sc_list);
 		} else {
-			TAILQ_INSERT_AFTER(&cif->vhif_vrs, after, sc, sc_list);
+			BSD_TAILQ_INSERT_AFTER(&cif->vhif_vrs, after, sc, sc_list);
 		}
 		cif->vhif_nvrs++;
 	}
@@ -1673,7 +1673,7 @@ carp_del_addr(struct carp_softc *sc, struct sockaddr_in *sin)
 		sc->sc_vhid = -1;
 		in_delmulti(imo->imo_membership[--imo->imo_num_memberships]);
 		imo->imo_multicast_ifp = NULL;
-		TAILQ_REMOVE(&cif->vhif_vrs, sc, sc_list);
+		BSD_TAILQ_REMOVE(&cif->vhif_vrs, sc, sc_list);
 		if (!--cif->vhif_nvrs) {
 			sc->sc_carpdev->if_carp = NULL;
 			CARP_LOCK_DESTROY(cif);
@@ -1716,7 +1716,7 @@ carp_set_addr6(struct carp_softc *sc, struct sockaddr_in6 *sin6)
 	/* we have to do it by hands to check we won't match on us */
 	ia_if = NULL; own = 0;
 	IN6_IFADDR_RLOCK();
-	TAILQ_FOREACH(ia, &V_in6_ifaddrhead, ia_link) {
+	BSD_TAILQ_FOREACH(ia, &V_in6_ifaddrhead, ia_link) {
 		int i;
 
 		for (i = 0; i < 4; i++) {
@@ -1803,7 +1803,7 @@ carp_set_addr6(struct carp_softc *sc, struct sockaddr_in6 *sin6)
 		CARP_LOCK_INIT(cif);
 		CARP_LOCK(cif);
 		cif->vhif_ifp = ifp;
-		TAILQ_INIT(&cif->vhif_vrs);
+		BSD_TAILQ_INIT(&cif->vhif_vrs);
 		ifp->if_carp = cif;
 
 	} else {
@@ -1811,7 +1811,7 @@ carp_set_addr6(struct carp_softc *sc, struct sockaddr_in6 *sin6)
 
 		cif = (struct carp_if *)ifp->if_carp;
 		CARP_LOCK(cif);
-		TAILQ_FOREACH(vr, &cif->vhif_vrs, sc_list)
+		BSD_TAILQ_FOREACH(vr, &cif->vhif_vrs, sc_list)
 			if (vr != sc && vr->sc_vhid == sc->sc_vhid) {
 				CARP_UNLOCK(cif);
 				error = EINVAL;
@@ -1827,7 +1827,7 @@ carp_set_addr6(struct carp_softc *sc, struct sockaddr_in6 *sin6)
 	cif = (struct carp_if *)ifp->if_carp;
 	CARP_LOCK_ASSERT(cif);
 
-	TAILQ_FOREACH(vr, &cif->vhif_vrs, sc_list) {
+	BSD_TAILQ_FOREACH(vr, &cif->vhif_vrs, sc_list) {
 		if (vr == sc)
 			myself = 1;
 		if (vr->sc_vhid < sc->sc_vhid)
@@ -1837,9 +1837,9 @@ carp_set_addr6(struct carp_softc *sc, struct sockaddr_in6 *sin6)
 	if (!myself) {
 		/* We're trying to keep things in order */
 		if (after == NULL) {
-			TAILQ_INSERT_TAIL(&cif->vhif_vrs, sc, sc_list);
+			BSD_TAILQ_INSERT_TAIL(&cif->vhif_vrs, sc, sc_list);
 		} else {
-			TAILQ_INSERT_AFTER(&cif->vhif_vrs, after, sc, sc_list);
+			BSD_TAILQ_INSERT_AFTER(&cif->vhif_vrs, after, sc, sc_list);
 		}
 		cif->vhif_nvrs++;
 	}
@@ -1878,7 +1878,7 @@ carp_del_addr6(struct carp_softc *sc, struct sockaddr_in6 *sin6)
 		SC2IFP(sc)->if_drv_flags &= ~IFF_DRV_RUNNING;
 		sc->sc_vhid = -1;
 		carp_multicast6_cleanup(sc, 1);
-		TAILQ_REMOVE(&cif->vhif_vrs, sc, sc_list);
+		BSD_TAILQ_REMOVE(&cif->vhif_vrs, sc, sc_list);
 		if (!--cif->vhif_nvrs) {
 			CARP_LOCK_DESTROY(cif);
 			sc->sc_carpdev->if_carp = NULL;
@@ -2021,7 +2021,7 @@ carp_ioctl(struct ifnet *ifp, u_long cmd, caddr_t addr)
 			if (sc->sc_carpdev) {
 				struct carp_if *cif;
 				cif = (struct carp_if *)sc->sc_carpdev->if_carp;
-				TAILQ_FOREACH(vr, &cif->vhif_vrs, sc_list)
+				BSD_TAILQ_FOREACH(vr, &cif->vhif_vrs, sc_list)
 					if (vr != sc &&
 					    vr->sc_vhid == carpr.carpr_vhid) {
 						error = EEXIST;
@@ -2263,7 +2263,7 @@ carp_carpdev_state_locked(struct carp_if *cif)
 {
 	struct carp_softc *sc;
 
-	TAILQ_FOREACH(sc, &cif->vhif_vrs, sc_list)
+	BSD_TAILQ_FOREACH(sc, &cif->vhif_vrs, sc_list)
 		carp_sc_state_locked(sc);
 }
 
@@ -2372,7 +2372,7 @@ carp_mod_load(void)
 	if (if_detach_event_tag == NULL)
 		return (ENOMEM);
 	mtx_init(&carp_mtx, "carp_mtx", NULL, MTX_DEF);
-	LIST_INIT(&carpif_list);
+	BSD_LIST_INIT(&carpif_list);
 	if_clone_attach(&carp_cloner);
 	carp_linkstate_p = carp_carpdev_state;
 	carp_forus_p = carp_forus;

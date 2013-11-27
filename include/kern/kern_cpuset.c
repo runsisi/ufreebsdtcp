@@ -168,10 +168,10 @@ cpuset_rel(struct cpuset *set)
 	if (refcount_release(&set->cs_ref) == 0)
 		return;
 	mtx_lock_spin(&cpuset_lock);
-	LIST_REMOVE(set, cs_siblings);
+	BSD_LIST_REMOVE(set, cs_siblings);
 	id = set->cs_id;
 	if (id != CPUSET_INVALID)
-		LIST_REMOVE(set, cs_link);
+		BSD_LIST_REMOVE(set, cs_link);
 	mtx_unlock_spin(&cpuset_lock);
 	cpuset_rel(set->cs_parent);
 	uma_zfree(cpuset_zone, set);
@@ -190,10 +190,10 @@ cpuset_rel_defer(struct setlist *head, struct cpuset *set)
 	if (refcount_release(&set->cs_ref) == 0)
 		return;
 	mtx_lock_spin(&cpuset_lock);
-	LIST_REMOVE(set, cs_siblings);
+	BSD_LIST_REMOVE(set, cs_siblings);
 	if (set->cs_id != CPUSET_INVALID)
-		LIST_REMOVE(set, cs_link);
-	LIST_INSERT_HEAD(head, set, cs_link);
+		BSD_LIST_REMOVE(set, cs_link);
+	BSD_LIST_INSERT_HEAD(head, set, cs_link);
 	mtx_unlock_spin(&cpuset_lock);
 }
 
@@ -204,7 +204,7 @@ cpuset_rel_defer(struct setlist *head, struct cpuset *set)
 static void
 cpuset_rel_complete(struct cpuset *set)
 {
-	LIST_REMOVE(set, cs_link);
+	BSD_LIST_REMOVE(set, cs_link);
 	cpuset_rel(set->cs_parent);
 	uma_zfree(cpuset_zone, set);
 }
@@ -220,7 +220,7 @@ cpuset_lookup(cpusetid_t setid, struct thread *td)
 	if (setid == CPUSET_INVALID)
 		return (NULL);
 	mtx_lock_spin(&cpuset_lock);
-	LIST_FOREACH(set, &cpuset_ids, cs_link)
+	BSD_LIST_FOREACH(set, &cpuset_ids, cs_link)
 		if (set->cs_id == setid)
 			break;
 	if (set)
@@ -257,16 +257,16 @@ _cpuset_create(struct cpuset *set, struct cpuset *parent, const cpuset_t *mask,
 	if (!CPU_OVERLAP(&parent->cs_mask, mask))
 		return (EDEADLK);
 	CPU_COPY(mask, &set->cs_mask);
-	LIST_INIT(&set->cs_children);
+	BSD_LIST_INIT(&set->cs_children);
 	refcount_init(&set->cs_ref, 1);
 	set->cs_flags = 0;
 	mtx_lock_spin(&cpuset_lock);
 	CPU_AND(&set->cs_mask, &parent->cs_mask);
 	set->cs_id = id;
 	set->cs_parent = cpuset_ref(parent);
-	LIST_INSERT_HEAD(&parent->cs_children, set, cs_siblings);
+	BSD_LIST_INSERT_HEAD(&parent->cs_children, set, cs_siblings);
 	if (set->cs_id != CPUSET_INVALID)
-		LIST_INSERT_HEAD(&cpuset_ids, set, cs_link);
+		BSD_LIST_INSERT_HEAD(&cpuset_ids, set, cs_link);
 	mtx_unlock_spin(&cpuset_lock);
 
 	return (0);
@@ -320,7 +320,7 @@ cpuset_testupdate(struct cpuset *set, cpuset_t *mask, int check_mask)
 	} else
 		CPU_COPY(mask, &newmask);
 	error = 0;
-	LIST_FOREACH(nset, &set->cs_children, cs_siblings) 
+	BSD_LIST_FOREACH(nset, &set->cs_children, cs_siblings) 
 		if ((error = cpuset_testupdate(nset, &newmask, 1)) != 0)
 			break;
 	return (error);
@@ -336,7 +336,7 @@ cpuset_update(struct cpuset *set, cpuset_t *mask)
 
 	mtx_assert(&cpuset_lock, MA_OWNED);
 	CPU_AND(&set->cs_mask, mask);
-	LIST_FOREACH(nset, &set->cs_children, cs_siblings) 
+	BSD_LIST_FOREACH(nset, &set->cs_children, cs_siblings) 
 		cpuset_update(nset, &set->cs_mask);
 
 	return;
@@ -524,8 +524,8 @@ cpuset_setproc(pid_t pid, struct cpuset *set, cpuset_t *mask)
 	 * 2) If enough cpusets have not been allocated release the locks and
 	 *    allocate them.  Loop.
 	 */
-	LIST_INIT(&freelist);
-	LIST_INIT(&droplist);
+	BSD_LIST_INIT(&freelist);
+	BSD_LIST_INIT(&droplist);
 	nfree = 0;
 	for (;;) {
 		error = cpuset_which(CPU_WHICH_PID, pid, &p, &td, &nset);
@@ -537,7 +537,7 @@ cpuset_setproc(pid_t pid, struct cpuset *set, cpuset_t *mask)
 		PROC_UNLOCK(p);
 		for (; nfree < threads; nfree++) {
 			nset = uma_zalloc(cpuset_zone, M_WAITOK);
-			LIST_INSERT_HEAD(&freelist, nset, cs_link);
+			BSD_LIST_INSERT_HEAD(&freelist, nset, cs_link);
 		}
 	}
 	PROC_LOCK_ASSERT(p, MA_OWNED);
@@ -589,15 +589,15 @@ cpuset_setproc(pid_t pid, struct cpuset *set, cpuset_t *mask)
 		 */
 		tdset = td->td_cpuset;
 		if (tdset->cs_id == CPUSET_INVALID || mask) {
-			nset = LIST_FIRST(&freelist);
-			LIST_REMOVE(nset, cs_link);
+			nset = BSD_LIST_FIRST(&freelist);
+			BSD_LIST_REMOVE(nset, cs_link);
 			if (mask)
 				error = cpuset_shadow(tdset, nset, mask);
 			else
 				error = _cpuset_create(nset, set,
 				    &tdset->cs_mask, CPUSET_INVALID);
 			if (error) {
-				LIST_INSERT_HEAD(&freelist, nset, cs_link);
+				BSD_LIST_INSERT_HEAD(&freelist, nset, cs_link);
 				thread_unlock(td);
 				break;
 			}
@@ -611,10 +611,10 @@ cpuset_setproc(pid_t pid, struct cpuset *set, cpuset_t *mask)
 unlock_out:
 	PROC_UNLOCK(p);
 out:
-	while ((nset = LIST_FIRST(&droplist)) != NULL)
+	while ((nset = BSD_LIST_FIRST(&droplist)) != NULL)
 		cpuset_rel_complete(nset);
-	while ((nset = LIST_FIRST(&freelist)) != NULL) {
-		LIST_REMOVE(nset, cs_link);
+	while ((nset = BSD_LIST_FIRST(&freelist)) != NULL) {
+		BSD_LIST_REMOVE(nset, cs_link);
 		uma_zfree(cpuset_zone, nset);
 	}
 	return (error);
@@ -761,8 +761,8 @@ cpuset_thread0(void)
 	 */
 	set = uma_zalloc(cpuset_zone, M_WAITOK | M_ZERO);
 	CPU_FILL(&set->cs_mask);
-	LIST_INIT(&set->cs_children);
-	LIST_INSERT_HEAD(&cpuset_ids, set, cs_link);
+	BSD_LIST_INIT(&set->cs_children);
+	BSD_LIST_INSERT_HEAD(&cpuset_ids, set, cs_link);
 	set->cs_ref = 1;
 	set->cs_flags = CPU_SET_ROOT;
 	cpuset_zero = set;
@@ -1154,7 +1154,7 @@ DB_SHOW_COMMAND(cpusets, db_show_cpusets)
 	struct cpuset *set;
 	int cpu, once;
 
-	LIST_FOREACH(set, &cpuset_ids, cs_link) {
+	BSD_LIST_FOREACH(set, &cpuset_ids, cs_link) {
 		db_printf("set=%p id=%-6u ref=%-6d flags=0x%04x parent id=%d\n",
 		    set, set->cs_id, set->cs_ref, set->cs_flags,
 		    (set->cs_parent != NULL) ? set->cs_parent->cs_id : 0);

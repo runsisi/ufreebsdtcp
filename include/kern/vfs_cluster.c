@@ -377,7 +377,7 @@ cluster_rbuild(struct vnode *vp, u_quad_t filesize, daddr_t lbn,
 	KASSERT(bp->b_offset != NOOFFSET, ("cluster_rbuild: no buffer offset"));
 	pbgetvp(vp, bp);
 
-	TAILQ_INIT(&bp->b_cluster.cluster_head);
+	BSD_TAILQ_INIT(&bp->b_cluster.cluster_head);
 
 	bp->b_bcount = 0;
 	bp->b_bufsize = 0;
@@ -470,7 +470,7 @@ cluster_rbuild(struct vnode *vp, u_quad_t filesize, daddr_t lbn,
 		 * to biodone() it in cluster_callback() anyway
 		 */
 		BUF_KERNPROC(tbp);
-		TAILQ_INSERT_TAIL(&bp->b_cluster.cluster_head,
+		BSD_TAILQ_INSERT_TAIL(&bp->b_cluster.cluster_head,
 			tbp, b_cluster.cluster_entry);
 		VM_OBJECT_LOCK(tbp->b_bufobj->bo_object);
 		for (j = 0; j < tbp->b_npages; j += 1) {
@@ -550,9 +550,9 @@ cluster_callback(bp)
 	 * Move memory from the large cluster buffer into the component
 	 * buffers and mark IO as done on these.
 	 */
-	for (tbp = TAILQ_FIRST(&bp->b_cluster.cluster_head);
+	for (tbp = BSD_TAILQ_FIRST(&bp->b_cluster.cluster_head);
 		tbp; tbp = nbp) {
-		nbp = TAILQ_NEXT(&tbp->b_cluster, cluster_entry);
+		nbp = BSD_TAILQ_NEXT(&tbp->b_cluster, cluster_entry);
 		if (error) {
 			tbp->b_ioflags |= BIO_ERROR;
 			tbp->b_error = error;
@@ -858,7 +858,7 @@ cluster_wbuild_gb(struct vnode *vp, long size, daddr_t start_lbn, int len,
 		 * We got a pbuf to make the cluster in.
 		 * so initialise it.
 		 */
-		TAILQ_INIT(&bp->b_cluster.cluster_head);
+		BSD_TAILQ_INIT(&bp->b_cluster.cluster_head);
 		bp->b_bcount = 0;
 		bp->b_bufsize = 0;
 		bp->b_npages = 0;
@@ -1007,7 +1007,7 @@ cluster_wbuild_gb(struct vnode *vp, long size, daddr_t start_lbn, int len,
 			reassignbuf(tbp);		/* put on clean list */
 			bufobj_wref(tbp->b_bufobj);
 			BUF_KERNPROC(tbp);
-			TAILQ_INSERT_TAIL(&bp->b_cluster.cluster_head,
+			BSD_TAILQ_INSERT_TAIL(&bp->b_cluster.cluster_head,
 				tbp, b_cluster.cluster_entry);
 		}
 	finishcluster:

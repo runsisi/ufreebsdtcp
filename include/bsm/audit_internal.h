@@ -51,16 +51,16 @@
 struct au_token {
 	u_char			*t_data;
 	size_t			 len;
-	TAILQ_ENTRY(au_token)	 tokens;
+	BSD_TAILQ_ENTRY(au_token)	 tokens;
 };
 
 struct au_record {
 	char			 used;		/* Record currently in use? */
 	int			 desc;		/* Descriptor for record. */
-	TAILQ_HEAD(, au_token)	 token_q;	/* Queue of BSM tokens. */
+	BSD_TAILQ_HEAD(, au_token)	 token_q;	/* Queue of BSM tokens. */
 	u_char			*data;
 	size_t			 len;
-	LIST_ENTRY(au_record)	 au_rec_q;
+	BSD_LIST_ENTRY(au_record)	 au_rec_q;
 };
 typedef	struct au_record	au_record_t;
 

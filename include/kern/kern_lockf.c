@@ -191,7 +191,7 @@ static void	 lf_print_owner(struct lock_owner *);
 #define	LOCK_OWNER_HASH_SIZE	256
 
 struct lock_owner {
-	LIST_ENTRY(lock_owner) lo_link; /* (l) hash chain */
+	BSD_LIST_ENTRY(lock_owner) lo_link; /* (l) hash chain */
 	int	lo_refs;	    /* (l) Number of locks referring to this */
 	int	lo_flags;	    /* (c) Flags passwd to lf_advlock */
 	caddr_t	lo_id;		    /* (c) Id value passed to lf_advlock */
@@ -200,7 +200,7 @@ struct lock_owner {
 	struct owner_vertex *lo_vertex; /* (g) entry in deadlock graph */
 };
 
-LIST_HEAD(lock_owner_list, lock_owner);
+BSD_LIST_HEAD(lock_owner_list, lock_owner);
 
 static struct sx		lf_lock_states_lock;
 static struct lockf_list	lf_lock_states; /* (S) */
@@ -239,23 +239,23 @@ static struct lock_owner_list	lf_lock_owners[LOCK_OWNER_HASH_SIZE]; /* (l) */
 struct owner_vertex;
 
 struct owner_edge {
-	LIST_ENTRY(owner_edge) e_outlink; /* (g) link from's out-edge list */
-	LIST_ENTRY(owner_edge) e_inlink;  /* (g) link to's in-edge list */
+	BSD_LIST_ENTRY(owner_edge) e_outlink; /* (g) link from's out-edge list */
+	BSD_LIST_ENTRY(owner_edge) e_inlink;  /* (g) link to's in-edge list */
 	int		e_refs;		  /* (g) number of times added */
 	struct owner_vertex *e_from;	  /* (c) out-going from here */
 	struct owner_vertex *e_to;	  /* (c) in-coming to here */
 };
-LIST_HEAD(owner_edge_list, owner_edge);
+BSD_LIST_HEAD(owner_edge_list, owner_edge);
 
 struct owner_vertex {
-	TAILQ_ENTRY(owner_vertex) v_link; /* (g) workspace for edge insertion */
+	BSD_TAILQ_ENTRY(owner_vertex) v_link; /* (g) workspace for edge insertion */
 	uint32_t	v_gen;		  /* (g) workspace for edge insertion */
 	int		v_order;	  /* (g) order of vertex in graph */
 	struct owner_edge_list v_outedges;/* (g) list of out-edges */
 	struct owner_edge_list v_inedges; /* (g) list of in-edges */
 	struct lock_owner *v_owner;	  /* (c) corresponding lock owner */
 };
-TAILQ_HEAD(owner_vertex_list, owner_vertex);
+BSD_TAILQ_HEAD(owner_vertex_list, owner_vertex);
 
 struct owner_graph {
 	struct owner_vertex** g_vertices; /* (g) pointers to vertices */
@@ -277,11 +277,11 @@ lf_init(void *dummy)
 	int i;
 
 	sx_init(&lf_lock_states_lock, "lock states lock");
-	LIST_INIT(&lf_lock_states);
+	BSD_LIST_INIT(&lf_lock_states);
 
 	sx_init(&lf_lock_owners_lock, "lock owners lock");
 	for (i = 0; i < LOCK_OWNER_HASH_SIZE; i++)
-		LIST_INIT(&lf_lock_owners[i]);
+		BSD_LIST_INIT(&lf_lock_owners[i]);
 
 	sx_init(&lf_owner_graph_lock, "owner graph lock");
 	graph_init(&lf_owner_graph);
@@ -361,9 +361,9 @@ lf_free_lock(struct lockf_entry *lock)
 	 */
 	struct lock_owner *lo = lock->lf_owner;
 	if (lo) {
-		KASSERT(LIST_EMPTY(&lock->lf_outedges),
+		KASSERT(BSD_LIST_EMPTY(&lock->lf_outedges),
 		    ("freeing lock with dependancies"));
-		KASSERT(LIST_EMPTY(&lock->lf_inedges),
+		KASSERT(BSD_LIST_EMPTY(&lock->lf_inedges),
 		    ("freeing lock with dependants"));
 		sx_xlock(&lf_lock_owners_lock);
 		KASSERT(lo->lo_refs > 0, ("lock owner refcount"));
@@ -380,7 +380,7 @@ lf_free_lock(struct lockf_entry *lock)
 				    lo->lo_vertex);
 				sx_xunlock(&lf_owner_graph_lock);
 			}
-			LIST_REMOVE(lo, lo_link);
+			BSD_LIST_REMOVE(lo, lo_link);
 			bsd_free(lo, M_LOCKF);
 #ifdef LOCKF_DEBUG
 			if (lockf_debug & 4)
@@ -488,7 +488,7 @@ lf_advlockasync(struct vop_advlockasync_args *ap, struct lockf **statep,
 	 */
 	hash = lf_hash_owner(id, fl, flags);
 	sx_xlock(&lf_lock_owners_lock);
-	LIST_FOREACH(lo, &lf_lock_owners[hash], lo_link)
+	BSD_LIST_FOREACH(lo, &lf_lock_owners[hash], lo_link)
 		if (lf_owner_matches(lo, id, fl, flags))
 			break;
 	if (!lo) {
@@ -528,7 +528,7 @@ lf_advlockasync(struct vop_advlockasync_args *ap, struct lockf **statep,
 		}
 #endif
 
-		LIST_INSERT_HEAD(&lf_lock_owners[hash], lo, lo_link);
+		BSD_LIST_INSERT_HEAD(&lf_lock_owners[hash], lo, lo_link);
 	} else {
 		/*
 		 * We have seen this lock owner before, increase its
@@ -567,8 +567,8 @@ lf_advlockasync(struct vop_advlockasync_args *ap, struct lockf **statep,
 /*	lock->lf_inode = VTOI(ap->a_vp); */
 	lock->lf_inode = (struct inode *)0;
 	lock->lf_type = fl->l_type;
-	LIST_INIT(&lock->lf_outedges);
-	LIST_INIT(&lock->lf_inedges);
+	BSD_LIST_INIT(&lock->lf_outedges);
+	BSD_LIST_INIT(&lock->lf_inedges);
 	lock->lf_async_task = ap->a_task;
 	lock->lf_flags = ap->a_flags;
 
@@ -596,12 +596,12 @@ lf_advlockasync(struct vop_advlockasync_args *ap, struct lockf **statep,
 
 		ls = bsd_malloc(sizeof(struct lockf), M_LOCKF, M_WAITOK|M_ZERO);
 		sx_init(&ls->ls_lock, "ls_lock");
-		LIST_INIT(&ls->ls_active);
-		LIST_INIT(&ls->ls_pending);
+		BSD_LIST_INIT(&ls->ls_active);
+		BSD_LIST_INIT(&ls->ls_pending);
 		ls->ls_threads = 1;
 
 		sx_xlock(&lf_lock_states_lock);
-		LIST_INSERT_HEAD(&lf_lock_states, ls, ls_link);
+		BSD_LIST_INSERT_HEAD(&lf_lock_states, ls, ls_link);
 		sx_xunlock(&lf_lock_states_lock);
 
 		/*
@@ -612,7 +612,7 @@ lf_advlockasync(struct vop_advlockasync_args *ap, struct lockf **statep,
 		if (vp->v_iflag & VI_DOOMED) {
 			VI_UNLOCK(vp);
 			sx_xlock(&lf_lock_states_lock);
-			LIST_REMOVE(ls, ls_link);
+			BSD_LIST_REMOVE(ls, ls_link);
 			sx_xunlock(&lf_lock_states_lock);
 			sx_destroy(&ls->ls_lock);
 			bsd_free(ls, M_LOCKF);
@@ -628,7 +628,7 @@ lf_advlockasync(struct vop_advlockasync_args *ap, struct lockf **statep,
 			VI_UNLOCK(vp);
 
 			sx_xlock(&lf_lock_states_lock);
-			LIST_REMOVE(ls, ls_link);
+			BSD_LIST_REMOVE(ls, ls_link);
 			sx_xunlock(&lf_lock_states_lock);
 			sx_destroy(&ls->ls_lock);
 			bsd_free(ls, M_LOCKF);
@@ -691,13 +691,13 @@ lf_advlockasync(struct vop_advlockasync_args *ap, struct lockf **statep,
 	 * blocking locks. We also check the pending list for locks
 	 * which should be active (i.e. have no out-going edges).
 	 */
-	LIST_FOREACH(lock, &state->ls_active, lf_link) {
+	BSD_LIST_FOREACH(lock, &state->ls_active, lf_link) {
 		struct lockf_entry *lf;
-		if (LIST_NEXT(lock, lf_link))
+		if (BSD_LIST_NEXT(lock, lf_link))
 			KASSERT((lock->lf_start
-				<= LIST_NEXT(lock, lf_link)->lf_start),
+				<= BSD_LIST_NEXT(lock, lf_link)->lf_start),
 			    ("locks disordered"));
-		LIST_FOREACH(lf, &state->ls_active, lf_link) {
+		BSD_LIST_FOREACH(lf, &state->ls_active, lf_link) {
 			if (lock == lf)
 				break;
 			KASSERT(!lf_blocks(lock, lf),
@@ -707,8 +707,8 @@ lf_advlockasync(struct vop_advlockasync_args *ap, struct lockf **statep,
 				    ("two overlapping locks from same owner"));
 		}
 	}
-	LIST_FOREACH(lock, &state->ls_pending, lf_link) {
-		KASSERT(!LIST_EMPTY(&lock->lf_outedges),
+	BSD_LIST_FOREACH(lock, &state->ls_pending, lf_link) {
+		KASSERT(!BSD_LIST_EMPTY(&lock->lf_outedges),
 		    ("pending lock which should be active"));
 	}
 #endif
@@ -728,8 +728,8 @@ lf_advlockasync(struct vop_advlockasync_args *ap, struct lockf **statep,
 
 	state->ls_threads--;
 	wakeup(state);
-	if (LIST_EMPTY(&state->ls_active) && state->ls_threads == 0) {
-		KASSERT(LIST_EMPTY(&state->ls_pending),
+	if (BSD_LIST_EMPTY(&state->ls_active) && state->ls_threads == 0) {
+		KASSERT(BSD_LIST_EMPTY(&state->ls_pending),
 		    ("freeing state with pending locks"));
 		freestate = state;
 		*statep = NULL;
@@ -739,7 +739,7 @@ lf_advlockasync(struct vop_advlockasync_args *ap, struct lockf **statep,
 
 	if (freestate) {
 		sx_xlock(&lf_lock_states_lock);
-		LIST_REMOVE(freestate, ls_link);
+		BSD_LIST_REMOVE(freestate, ls_link);
 		sx_xunlock(&lf_lock_states_lock);
 		sx_destroy(&freestate->ls_lock);
 		bsd_free(freestate, M_LOCKF);
@@ -787,8 +787,8 @@ lf_purgelocks(struct vnode *vp, struct lockf **statep)
 
 		sx_xlock(&state->ls_lock);
 		sx_xlock(&lf_owner_graph_lock);
-		LIST_FOREACH_SAFE(lock, &state->ls_pending, lf_link, nlock) {
-			LIST_REMOVE(lock, lf_link);
+		BSD_LIST_FOREACH_SAFE(lock, &state->ls_pending, lf_link, nlock) {
+			BSD_LIST_REMOVE(lock, lf_link);
 			lf_remove_outgoing(lock);
 			lf_remove_incoming(lock);
 
@@ -822,14 +822,14 @@ lf_purgelocks(struct vnode *vp, struct lockf **statep)
 		 * above). We don't need to bother locking since we
 		 * are the last thread using this state structure.
 		 */
-		KASSERT(LIST_EMPTY(&state->ls_pending),
+		KASSERT(BSD_LIST_EMPTY(&state->ls_pending),
 		    ("lock pending for %p", state));
-		LIST_FOREACH_SAFE(lock, &state->ls_active, lf_link, nlock) {
-			LIST_REMOVE(lock, lf_link);
+		BSD_LIST_FOREACH_SAFE(lock, &state->ls_active, lf_link, nlock) {
+			BSD_LIST_REMOVE(lock, lf_link);
 			lf_free_lock(lock);
 		}
 		sx_xlock(&lf_lock_states_lock);
-		LIST_REMOVE(state, ls_link);
+		BSD_LIST_REMOVE(state, ls_link);
 		sx_xunlock(&lf_lock_states_lock);
 		sx_destroy(&state->ls_lock);
 		bsd_free(state, M_LOCKF);
@@ -907,7 +907,7 @@ lf_add_edge(struct lockf_entry *x, struct lockf_entry *y)
 	int error;
 
 #ifdef INVARIANTS
-	LIST_FOREACH(e, &x->lf_outedges, le_outlink)
+	BSD_LIST_FOREACH(e, &x->lf_outedges, le_outlink)
 		KASSERT(e->le_to != y, ("adding lock edge twice"));
 #endif
 
@@ -923,8 +923,8 @@ lf_add_edge(struct lockf_entry *x, struct lockf_entry *y)
 		return (error);
 
 	e = lf_alloc_edge();
-	LIST_INSERT_HEAD(&x->lf_outedges, e, le_outlink);
-	LIST_INSERT_HEAD(&y->lf_inedges, e, le_inlink);
+	BSD_LIST_INSERT_HEAD(&x->lf_outedges, e, le_outlink);
+	BSD_LIST_INSERT_HEAD(&y->lf_inedges, e, le_inlink);
 	e->le_from = x;
 	e->le_to = y;
 
@@ -942,8 +942,8 @@ lf_remove_edge(struct lockf_edge *e)
 	struct lockf_entry *y = e->le_to;
 
 	graph_remove_edge(g, x->lf_owner->lo_vertex, y->lf_owner->lo_vertex);
-	LIST_REMOVE(e, le_outlink);
-	LIST_REMOVE(e, le_inlink);
+	BSD_LIST_REMOVE(e, le_outlink);
+	BSD_LIST_REMOVE(e, le_inlink);
 	e->le_from = NULL;
 	e->le_to = NULL;
 	lf_free_edge(e);
@@ -957,7 +957,7 @@ lf_remove_outgoing(struct lockf_entry *x)
 {
 	struct lockf_edge *e;
 
-	while ((e = LIST_FIRST(&x->lf_outedges)) != NULL) {
+	while ((e = BSD_LIST_FIRST(&x->lf_outedges)) != NULL) {
 		lf_remove_edge(e);
 	}
 }
@@ -970,7 +970,7 @@ lf_remove_incoming(struct lockf_entry *x)
 {
 	struct lockf_edge *e;
 
-	while ((e = LIST_FIRST(&x->lf_inedges)) != NULL) {
+	while ((e = BSD_LIST_FIRST(&x->lf_inedges)) != NULL) {
 		lf_remove_edge(e);
 	}
 }
@@ -985,7 +985,7 @@ lf_add_outgoing(struct lockf *state, struct lockf_entry *lock)
 	struct lockf_entry *overlap;
 	int error;
 
-	LIST_FOREACH(overlap, &state->ls_active, lf_link) {
+	BSD_LIST_FOREACH(overlap, &state->ls_active, lf_link) {
 		/*
 		 * We may assume that the active list is sorted by
 		 * lf_start.
@@ -1020,7 +1020,7 @@ lf_add_outgoing(struct lockf *state, struct lockf_entry *lock)
 	 * only happens if we are blocked by at least one active lock
 	 * due to the call to lf_getblock in lf_setlock below.
 	 */
-	LIST_FOREACH(overlap, &state->ls_pending, lf_link) {
+	BSD_LIST_FOREACH(overlap, &state->ls_pending, lf_link) {
 		if (!lf_blocks(lock, overlap))
 			continue;
 		/*
@@ -1053,7 +1053,7 @@ lf_add_incoming(struct lockf *state, struct lockf_entry *lock)
 	struct lockf_entry *overlap;
 	int error;
 
-	LIST_FOREACH(overlap, &state->ls_pending, lf_link) {
+	BSD_LIST_FOREACH(overlap, &state->ls_pending, lf_link) {
 		if (!lf_blocks(lock, overlap))
 			continue;
 
@@ -1085,20 +1085,20 @@ lf_insert_lock(struct lockf *state, struct lockf_entry *lock)
 {
 	struct lockf_entry *lf, *lfprev;
 
-	if (LIST_EMPTY(&state->ls_active)) {
-		LIST_INSERT_HEAD(&state->ls_active, lock, lf_link);
+	if (BSD_LIST_EMPTY(&state->ls_active)) {
+		BSD_LIST_INSERT_HEAD(&state->ls_active, lock, lf_link);
 		return;
 	}
 
 	lfprev = NULL;
-	LIST_FOREACH(lf, &state->ls_active, lf_link) {
+	BSD_LIST_FOREACH(lf, &state->ls_active, lf_link) {
 		if (lf->lf_start > lock->lf_start) {
-			LIST_INSERT_BEFORE(lf, lock, lf_link);
+			BSD_LIST_INSERT_BEFORE(lf, lock, lf_link);
 			return;
 		}
 		lfprev = lf;
 	}
-	LIST_INSERT_AFTER(lfprev, lock, lf_link);
+	BSD_LIST_INSERT_AFTER(lfprev, lock, lf_link);
 }
 
 /*
@@ -1115,7 +1115,7 @@ lf_wakeup_lock(struct lockf *state, struct lockf_entry *wakelock)
 	 * Remove from ls_pending list and wake up the caller
 	 * or start the async notification, as appropriate.
 	 */
-	LIST_REMOVE(wakelock, lf_link);
+	BSD_LIST_REMOVE(wakelock, lf_link);
 #ifdef LOCKF_DEBUG
 	if (lockf_debug & 1)
 		lf_print("lf_wakeup_lock: awakening", wakelock);
@@ -1141,15 +1141,15 @@ lf_update_dependancies(struct lockf *state, struct lockf_entry *lock, int all,
 	struct lockf_edge *e, *ne;
 	struct lockf_entry *deplock;
 
-	LIST_FOREACH_SAFE(e, &lock->lf_inedges, le_inlink, ne) {
+	BSD_LIST_FOREACH_SAFE(e, &lock->lf_inedges, le_inlink, ne) {
 		deplock = e->le_from;
 		if (all || !lf_blocks(lock, deplock)) {
 			sx_xlock(&lf_owner_graph_lock);
 			lf_remove_edge(e);
 			sx_xunlock(&lf_owner_graph_lock);
-			if (LIST_EMPTY(&deplock->lf_outedges)) {
+			if (BSD_LIST_EMPTY(&deplock->lf_outedges)) {
 				lf_wakeup_lock(state, deplock);
-				LIST_INSERT_HEAD(granted, deplock, lf_link);
+				BSD_LIST_INSERT_HEAD(granted, deplock, lf_link);
 			}
 		}
 	}
@@ -1166,7 +1166,7 @@ lf_set_start(struct lockf *state, struct lockf_entry *lock, off_t new_start,
 
 	KASSERT(new_start >= lock->lf_start, ("can't increase lock"));
 	lock->lf_start = new_start;
-	LIST_REMOVE(lock, lf_link);
+	BSD_LIST_REMOVE(lock, lf_link);
 	lf_insert_lock(state, lock);
 	lf_update_dependancies(state, lock, FALSE, granted);
 }
@@ -1207,18 +1207,18 @@ lf_activate_lock(struct lockf *state, struct lockf_entry *lock)
 	struct lockf_entry_list granted;
 	int ovcase;
 
-	LIST_INIT(&granted);
-	LIST_INSERT_HEAD(&granted, lock, lf_link);
+	BSD_LIST_INIT(&granted);
+	BSD_LIST_INSERT_HEAD(&granted, lock, lf_link);
 
-	while (!LIST_EMPTY(&granted)) {
-		lock = LIST_FIRST(&granted);
-		LIST_REMOVE(lock, lf_link);
+	while (!BSD_LIST_EMPTY(&granted)) {
+		lock = BSD_LIST_FIRST(&granted);
+		BSD_LIST_REMOVE(lock, lf_link);
 
 		/*
 		 * Skip over locks owned by other processes.  Handle
 		 * any locks that overlap and are owned by ourselves.
 		 */
-		overlap = LIST_FIRST(&state->ls_active);
+		overlap = BSD_LIST_FIRST(&state->ls_active);
 		for (;;) {
 			ovcase = lf_findoverlap(&overlap, lock, SELF);
 
@@ -1248,7 +1248,7 @@ lf_activate_lock(struct lockf *state, struct lockf_entry *lock)
 				 * into account a possible downgrade
 				 * or unlock. Remove the old lock.
 				 */
-				LIST_REMOVE(overlap, lf_link);
+				BSD_LIST_REMOVE(overlap, lf_link);
 				lf_update_dependancies(state, overlap, TRUE,
 					&granted);
 				lf_free_lock(overlap);
@@ -1266,8 +1266,8 @@ lf_activate_lock(struct lockf *state, struct lockf_entry *lock)
 				 * Delete the overlap and advance to
 				 * the next entry in the list.
 				 */
-				lf = LIST_NEXT(overlap, lf_link);
-				LIST_REMOVE(overlap, lf_link);
+				lf = BSD_LIST_NEXT(overlap, lf_link);
+				BSD_LIST_REMOVE(overlap, lf_link);
 				lf_update_dependancies(state, overlap, TRUE,
 					&granted);
 				lf_free_lock(overlap);
@@ -1281,7 +1281,7 @@ lf_activate_lock(struct lockf *state, struct lockf_entry *lock)
 				 */
 				lf_set_end(state, overlap, lock->lf_start - 1,
 				    &granted);
-				overlap = LIST_NEXT(overlap, lf_link);
+				overlap = BSD_LIST_NEXT(overlap, lf_link);
 				continue;
 
 			case 5: /* overlap ends after lock */
@@ -1333,7 +1333,7 @@ lf_cancel_lock(struct lockf *state, struct lockf_entry *lock)
 	 * C:		cancel [1..2]	
 	 */
 
-	LIST_REMOVE(lock, lf_link);
+	BSD_LIST_REMOVE(lock, lf_link);
 
 	/*
 	 * Removing out-going edges is simple.
@@ -1347,16 +1347,16 @@ lf_cancel_lock(struct lockf *state, struct lockf_entry *lock)
 	 * become active - we use lf_update_dependancies to figure
 	 * this out.
 	 */
-	LIST_INIT(&granted);
+	BSD_LIST_INIT(&granted);
 	lf_update_dependancies(state, lock, TRUE, &granted);
 	lf_free_lock(lock);
 
 	/*
 	 * Feed any newly active locks to lf_activate_lock.
 	 */
-	while (!LIST_EMPTY(&granted)) {
-		lock = LIST_FIRST(&granted);
-		LIST_REMOVE(lock, lf_link);
+	while (!BSD_LIST_EMPTY(&granted)) {
+		lock = BSD_LIST_FIRST(&granted);
+		BSD_LIST_REMOVE(lock, lf_link);
 		lf_activate_lock(state, lock);
 	}
 }
@@ -1433,11 +1433,11 @@ lf_setlock(struct lockf *state, struct lockf_entry *lock, struct vnode *vp,
 		 * We have added edges to everything that blocks
 		 * us. Sleep until they all go away.
 		 */
-		LIST_INSERT_HEAD(&state->ls_pending, lock, lf_link);
+		BSD_LIST_INSERT_HEAD(&state->ls_pending, lock, lf_link);
 #ifdef LOCKF_DEBUG
 		if (lockf_debug & 1) {
 			struct lockf_edge *e;
-			LIST_FOREACH(e, &lock->lf_outedges, le_outlink) {
+			BSD_LIST_FOREACH(e, &lock->lf_outedges, le_outlink) {
 				lf_print("lf_setlock: blocking on", e->le_to);
 				lf_printlist("lf_setlock", e->le_to);
 			}
@@ -1489,7 +1489,7 @@ lf_setlock(struct lockf *state, struct lockf_entry *lock, struct vnode *vp,
 			lf_free_lock(lock);
 			goto out;
 		}
-		if (LIST_EMPTY(&lock->lf_outedges)) {
+		if (BSD_LIST_EMPTY(&lock->lf_outedges)) {
 			error = 0;
 		} else {
 			lf_cancel_lock(state, lock);
@@ -1541,7 +1541,7 @@ lf_clearlock(struct lockf *state, struct lockf_entry *unlock)
 {
 	struct lockf_entry *overlap;
 
-	overlap = LIST_FIRST(&state->ls_active);
+	overlap = BSD_LIST_FIRST(&state->ls_active);
 
 	if (overlap == NOLOCKF)
 		return (0);
@@ -1599,7 +1599,7 @@ lf_cancel(struct lockf *state, struct lockf_entry *lock, void *cookie)
 	 * We need to match this request with an existing lock
 	 * request.
 	 */
-	LIST_FOREACH(reallock, &state->ls_pending, lf_link) {
+	BSD_LIST_FOREACH(reallock, &state->ls_pending, lf_link) {
 		if ((void *) reallock == cookie) {
 			/*
 			 * Double-check that this lock looks right
@@ -1648,7 +1648,7 @@ lf_getblock(struct lockf *state, struct lockf_entry *lock)
 {
 	struct lockf_entry *overlap;
 
-	LIST_FOREACH(overlap, &state->ls_active, lf_link) {
+	BSD_LIST_FOREACH(overlap, &state->ls_active, lf_link) {
 		/*
 		 * We may assume that the active list is sorted by
 		 * lf_start.
@@ -1710,7 +1710,7 @@ lf_findoverlap(struct lockf_entry **overlap, struct lockf_entry *lock, int type)
 			break;
 		if (((type & SELF) && lf->lf_owner != lock->lf_owner) ||
 		    ((type & OTHERS) && lf->lf_owner == lock->lf_owner)) {
-			*overlap = LIST_NEXT(lf, lf_link);
+			*overlap = BSD_LIST_NEXT(lf, lf_link);
 			continue;
 		}
 #ifdef LOCKF_DEBUG
@@ -1734,7 +1734,7 @@ lf_findoverlap(struct lockf_entry **overlap, struct lockf_entry *lock, int type)
 			if (lockf_debug & 2)
 				printf("no overlap\n");
 #endif /* LOCKF_DEBUG */
-			*overlap = LIST_NEXT(lf, lf_link);
+			*overlap = BSD_LIST_NEXT(lf, lf_link);
 			continue;
 		}
 		if (lf->lf_start == start && lf->lf_end == end) {
@@ -1836,8 +1836,8 @@ lf_split(struct lockf *state, struct lockf_entry *lock1,
 	 * was blocked by the tail end of lock1.
 	 */
 	splitlock->lf_start = lock2->lf_end + 1;
-	LIST_INIT(&splitlock->lf_outedges);
-	LIST_INIT(&splitlock->lf_inedges);
+	BSD_LIST_INIT(&splitlock->lf_outedges);
+	BSD_LIST_INIT(&splitlock->lf_inedges);
 	sx_xlock(&lf_owner_graph_lock);
 	lf_add_incoming(state, splitlock);
 	sx_xunlock(&lf_owner_graph_lock);
@@ -1851,11 +1851,11 @@ lf_split(struct lockf *state, struct lockf_entry *lock1,
 }
 
 struct lockdesc {
-	STAILQ_ENTRY(lockdesc) link;
+	BSD_STAILQ_ENTRY(lockdesc) link;
 	struct vnode *vp;
 	struct flock fl;
 };
-STAILQ_HEAD(lockdesclist, lockdesc);
+BSD_STAILQ_HEAD(lockdesclist, lockdesc);
 
 int
 lf_iteratelocks_sysid(int sysid, lf_iterator *fn, void *arg)
@@ -1874,11 +1874,11 @@ lf_iteratelocks_sysid(int sysid, lf_iterator *fn, void *arg)
 	 * We take an extra reference to the vnode for the duration to
 	 * make sure it doesn't go away before we are finished.
 	 */
-	STAILQ_INIT(&locks);
+	BSD_STAILQ_INIT(&locks);
 	sx_xlock(&lf_lock_states_lock);
-	LIST_FOREACH(ls, &lf_lock_states, ls_link) {
+	BSD_LIST_FOREACH(ls, &lf_lock_states, ls_link) {
 		sx_xlock(&ls->ls_lock);
-		LIST_FOREACH(lf, &ls->ls_active, lf_link) {
+		BSD_LIST_FOREACH(lf, &ls->ls_active, lf_link) {
 			if (lf->lf_owner->lo_sysid != sysid)
 				continue;
 
@@ -1896,7 +1896,7 @@ lf_iteratelocks_sysid(int sysid, lf_iterator *fn, void *arg)
 			ldesc->fl.l_type = F_UNLCK;
 			ldesc->fl.l_pid = lf->lf_owner->lo_pid;
 			ldesc->fl.l_sysid = sysid;
-			STAILQ_INSERT_TAIL(&locks, ldesc, link);
+			BSD_STAILQ_INSERT_TAIL(&locks, ldesc, link);
 		}
 		sx_xunlock(&ls->ls_lock);
 	}
@@ -1908,8 +1908,8 @@ lf_iteratelocks_sysid(int sysid, lf_iterator *fn, void *arg)
 	 * lockdesc structures.
 	 */
 	error = 0;
-	while ((ldesc = STAILQ_FIRST(&locks)) != NULL) {
-		STAILQ_REMOVE_HEAD(&locks, link);
+	while ((ldesc = BSD_STAILQ_FIRST(&locks)) != NULL) {
+		BSD_STAILQ_REMOVE_HEAD(&locks, link);
 		if (!error)
 			error = fn(ldesc->vp, &ldesc->fl, arg);
 		vrele(ldesc->vp);
@@ -1936,7 +1936,7 @@ lf_iteratelocks_vnode(struct vnode *vp, lf_iterator *fn, void *arg)
 	 * We take an extra reference to the vnode for the duration to
 	 * make sure it doesn't go away before we are finished.
 	 */
-	STAILQ_INIT(&locks);
+	BSD_STAILQ_INIT(&locks);
 	VI_LOCK(vp);
 	ls = vp->v_lockf;
 	if (!ls) {
@@ -1947,7 +1947,7 @@ lf_iteratelocks_vnode(struct vnode *vp, lf_iterator *fn, void *arg)
 	VI_UNLOCK(vp);
 
 	sx_xlock(&ls->ls_lock);
-	LIST_FOREACH(lf, &ls->ls_active, lf_link) {
+	BSD_LIST_FOREACH(lf, &ls->ls_active, lf_link) {
 		ldesc = bsd_malloc(sizeof(struct lockdesc), M_LOCKF,
 		    M_WAITOK);
 		ldesc->vp = lf->lf_vnode;
@@ -1962,7 +1962,7 @@ lf_iteratelocks_vnode(struct vnode *vp, lf_iterator *fn, void *arg)
 		ldesc->fl.l_type = F_UNLCK;
 		ldesc->fl.l_pid = lf->lf_owner->lo_pid;
 		ldesc->fl.l_sysid = lf->lf_owner->lo_sysid;
-		STAILQ_INSERT_TAIL(&locks, ldesc, link);
+		BSD_STAILQ_INSERT_TAIL(&locks, ldesc, link);
 	}
 	sx_xunlock(&ls->ls_lock);
 	VI_LOCK(vp);
@@ -1976,8 +1976,8 @@ lf_iteratelocks_vnode(struct vnode *vp, lf_iterator *fn, void *arg)
 	 * lockdesc structures.
 	 */
 	error = 0;
-	while ((ldesc = STAILQ_FIRST(&locks)) != NULL) {
-		STAILQ_REMOVE_HEAD(&locks, link);
+	while ((ldesc = BSD_STAILQ_FIRST(&locks)) != NULL) {
+		BSD_STAILQ_REMOVE_HEAD(&locks, link);
 		if (!error)
 			error = fn(ldesc->vp, &ldesc->fl, arg);
 		vrele(ldesc->vp);
@@ -2013,7 +2013,7 @@ lf_countlocks(int sysid)
 	count = 0;
 	sx_xlock(&lf_lock_owners_lock);
 	for (i = 0; i < LOCK_OWNER_HASH_SIZE; i++)
-		LIST_FOREACH(lo, &lf_lock_owners[i], lo_link)
+		BSD_LIST_FOREACH(lo, &lf_lock_owners[i], lo_link)
 			if (lo->lo_sysid == sysid)
 				count += lo->lo_refs;
 	sx_xunlock(&lf_lock_owners_lock);
@@ -2036,14 +2036,14 @@ graph_reaches(struct owner_vertex *x, struct owner_vertex *y,
 
 	if (x == y) {
 		if (path)
-			TAILQ_INSERT_HEAD(path, x, v_link);
+			BSD_TAILQ_INSERT_HEAD(path, x, v_link);
 		return 1;
 	}
 
-	LIST_FOREACH(e, &x->v_outedges, e_outlink) {
+	BSD_LIST_FOREACH(e, &x->v_outedges, e_outlink) {
 		if (graph_reaches(e->e_to, y, path)) {
 			if (path)
-				TAILQ_INSERT_HEAD(path, x, v_link);
+				BSD_TAILQ_INSERT_HEAD(path, x, v_link);
 			return 1;
 		}
 	}
@@ -2083,10 +2083,10 @@ graph_print_vertices(struct owner_vertex_list *set)
 	struct owner_vertex *v;
 
 	printf("{ ");
-	TAILQ_FOREACH(v, set, v_link) {
+	BSD_TAILQ_FOREACH(v, set, v_link) {
 		printf("%d:", v->v_order);
 		lf_print_owner(v->v_owner);
-		if (TAILQ_NEXT(v, v_link))
+		if (BSD_TAILQ_NEXT(v, v_link))
 			printf(", ");
 	}
 	printf(" }\n");
@@ -2116,23 +2116,23 @@ graph_delta_forward(struct owner_graph *g, struct owner_vertex *x,
 	 * [y..x]. If we see the vertex x on our travels, stop
 	 * immediately.
 	 */
-	TAILQ_INIT(delta);
-	TAILQ_INSERT_TAIL(delta, y, v_link);
+	BSD_TAILQ_INIT(delta);
+	BSD_TAILQ_INSERT_TAIL(delta, y, v_link);
 	v = y;
 	n = 1;
 	gen = g->g_gen;
 	while (v) {
-		LIST_FOREACH(e, &v->v_outedges, e_outlink) {
+		BSD_LIST_FOREACH(e, &v->v_outedges, e_outlink) {
 			if (e->e_to == x)
 				return -1;
 			if (e->e_to->v_order < x->v_order
 			    && e->e_to->v_gen != gen) {
 				e->e_to->v_gen = gen;
-				TAILQ_INSERT_TAIL(delta, e->e_to, v_link);
+				BSD_TAILQ_INSERT_TAIL(delta, e->e_to, v_link);
 				n++;
 			}
 		}
-		v = TAILQ_NEXT(v, v_link);
+		v = BSD_TAILQ_NEXT(v, v_link);
 	}
 
 	return (n);
@@ -2157,21 +2157,21 @@ graph_delta_backward(struct owner_graph *g, struct owner_vertex *x,
 	 * has an in-edge from and that is within the affected region
 	 * [y..x].
 	 */
-	TAILQ_INIT(delta);
-	TAILQ_INSERT_TAIL(delta, x, v_link);
+	BSD_TAILQ_INIT(delta);
+	BSD_TAILQ_INSERT_TAIL(delta, x, v_link);
 	v = x;
 	n = 1;
 	gen = g->g_gen;
 	while (v) {
-		LIST_FOREACH(e, &v->v_inedges, e_inlink) {
+		BSD_LIST_FOREACH(e, &v->v_inedges, e_inlink) {
 			if (e->e_from->v_order > y->v_order
 			    && e->e_from->v_gen != gen) {
 				e->e_from->v_gen = gen;
-				TAILQ_INSERT_HEAD(delta, e->e_from, v_link);
+				BSD_TAILQ_INSERT_HEAD(delta, e->e_from, v_link);
 				n++;
 			}
 		}
-		v = TAILQ_PREV(v, owner_vertex_list, v_link);
+		v = BSD_TAILQ_PREV(v, owner_vertex_list, v_link);
 	}
 
 	return (n);
@@ -2183,7 +2183,7 @@ graph_add_indices(int *indices, int n, struct owner_vertex_list *set)
 	struct owner_vertex *v;
 	int i, j;
 
-	TAILQ_FOREACH(v, set, v_link) {
+	BSD_TAILQ_FOREACH(v, set, v_link) {
 		for (i = n;
 		     i > 0 && indices[i - 1] > v->v_order; i--)
 			;
@@ -2202,13 +2202,13 @@ graph_assign_indices(struct owner_graph *g, int *indices, int nextunused,
 {
 	struct owner_vertex *v, *vlowest;
 
-	while (!TAILQ_EMPTY(set)) {
+	while (!BSD_TAILQ_EMPTY(set)) {
 		vlowest = NULL;
-		TAILQ_FOREACH(v, set, v_link) {
+		BSD_TAILQ_FOREACH(v, set, v_link) {
 			if (!vlowest || v->v_order < vlowest->v_order)
 				vlowest = v;
 		}
-		TAILQ_REMOVE(set, vlowest, v_link);
+		BSD_TAILQ_REMOVE(set, vlowest, v_link);
 		vlowest->v_order = indices[nextunused];
 		g->g_vertices[vlowest->v_order] = vlowest;
 		nextunused++;
@@ -2228,7 +2228,7 @@ graph_add_edge(struct owner_graph *g, struct owner_vertex *x,
 
 	sx_assert(&lf_owner_graph_lock, SX_XLOCKED);
 
-	LIST_FOREACH(e, &x->v_outedges, e_outlink) {
+	BSD_LIST_FOREACH(e, &x->v_outedges, e_outlink) {
 		if (e->e_to == y) {
 			e->e_refs++;
 			return (0);
@@ -2274,7 +2274,7 @@ graph_add_edge(struct owner_graph *g, struct owner_vertex *x,
 			if (lockf_debug & 8) {
 				struct owner_vertex_list path;
 				printf("deadlock: ");
-				TAILQ_INIT(&path);
+				BSD_TAILQ_INIT(&path);
 				graph_reaches(y, x, &path);
 				graph_print_vertices(&path);
 			}
@@ -2324,9 +2324,9 @@ graph_add_edge(struct owner_graph *g, struct owner_vertex *x,
 #ifdef LOCKF_DEBUG
 		if (lockf_debug & 8) {
 			struct owner_vertex_list set;
-			TAILQ_INIT(&set);
+			BSD_TAILQ_INIT(&set);
 			for (i = 0; i < nB + nF; i++)
-				TAILQ_INSERT_TAIL(&set,
+				BSD_TAILQ_INSERT_TAIL(&set,
 				    g->g_vertices[indices[i]], v_link);
 			printf("new ordering = ");
 			graph_print_vertices(&set);
@@ -2344,8 +2344,8 @@ graph_add_edge(struct owner_graph *g, struct owner_vertex *x,
 
 	e = bsd_malloc(sizeof(struct owner_edge), M_LOCKF, M_WAITOK);
 
-	LIST_INSERT_HEAD(&x->v_outedges, e, e_outlink);
-	LIST_INSERT_HEAD(&y->v_inedges, e, e_inlink);
+	BSD_LIST_INSERT_HEAD(&x->v_outedges, e, e_outlink);
+	BSD_LIST_INSERT_HEAD(&y->v_inedges, e, e_inlink);
 	e->e_refs = 1;
 	e->e_from = x;
 	e->e_to = y;
@@ -2364,7 +2364,7 @@ graph_remove_edge(struct owner_graph *g, struct owner_vertex *x,
 
 	sx_assert(&lf_owner_graph_lock, SX_XLOCKED);
 
-	LIST_FOREACH(e, &x->v_outedges, e_outlink) {
+	BSD_LIST_FOREACH(e, &x->v_outedges, e_outlink) {
 		if (e->e_to == y)
 			break;
 	}
@@ -2381,8 +2381,8 @@ graph_remove_edge(struct owner_graph *g, struct owner_vertex *x,
 			printf("\n");
 		}
 #endif
-		LIST_REMOVE(e, e_outlink);
-		LIST_REMOVE(e, e_inlink);
+		BSD_LIST_REMOVE(e, e_outlink);
+		BSD_LIST_REMOVE(e, e_inlink);
 		bsd_free(e, M_LOCKF);
 	}
 }
@@ -2413,8 +2413,8 @@ graph_alloc_vertex(struct owner_graph *g, struct lock_owner *lo)
 	g->g_vertices[g->g_size] = v;
 	g->g_size++;
 
-	LIST_INIT(&v->v_outedges);
-	LIST_INIT(&v->v_inedges);
+	BSD_LIST_INIT(&v->v_outedges);
+	BSD_LIST_INIT(&v->v_inedges);
 	v->v_owner = lo;
 
 	return (v);
@@ -2428,8 +2428,8 @@ graph_free_vertex(struct owner_graph *g, struct owner_vertex *v)
 
 	sx_assert(&lf_owner_graph_lock, SX_XLOCKED);
 	
-	KASSERT(LIST_EMPTY(&v->v_outedges), ("Freeing vertex with edges"));
-	KASSERT(LIST_EMPTY(&v->v_inedges), ("Freeing vertex with edges"));
+	KASSERT(BSD_LIST_EMPTY(&v->v_outedges), ("Freeing vertex with edges"));
+	KASSERT(BSD_LIST_EMPTY(&v->v_inedges), ("Freeing vertex with edges"));
 
 	/*
 	 * Remove from the graph's array and close up the gap,
@@ -2499,9 +2499,9 @@ lf_print(char *tag, struct lockf_entry *lock)
 		printf("EOF");
 	else
 		printf("%jd", (intmax_t)lock->lf_end);
-	if (!LIST_EMPTY(&lock->lf_outedges))
+	if (!BSD_LIST_EMPTY(&lock->lf_outedges))
 		printf(" block %p\n",
-		    (void *)LIST_FIRST(&lock->lf_outedges)->le_to);
+		    (void *)BSD_LIST_FIRST(&lock->lf_outedges)->le_to);
 	else
 		printf("\n");
 }
@@ -2518,7 +2518,7 @@ lf_printlist(char *tag, struct lockf_entry *lock)
 	printf("%s: Lock list for ino %ju on dev <%s>:\n",
 	    tag, (uintmax_t)lock->lf_inode->i_number,
 	    devtoname(lock->lf_inode->i_dev));
-	LIST_FOREACH(lf, &lock->lf_vnode->v_lockf->ls_active, lf_link) {
+	BSD_LIST_FOREACH(lf, &lock->lf_vnode->v_lockf->ls_active, lf_link) {
 		printf("\tlock %p for ",(void *)lf);
 		lf_print_owner(lock->lf_owner);
 		printf(", %s, start %jd, end %jd",
@@ -2526,7 +2526,7 @@ lf_printlist(char *tag, struct lockf_entry *lock)
 		    lf->lf_type == F_WRLCK ? "exclusive" :
 		    lf->lf_type == F_UNLCK ? "unlock" :
 		    "unknown", (intmax_t)lf->lf_start, (intmax_t)lf->lf_end);
-		LIST_FOREACH(e, &lf->lf_outedges, le_outlink) {
+		BSD_LIST_FOREACH(e, &lf->lf_outedges, le_outlink) {
 			blk = e->le_to;
 			printf("\n\t\tlock request %p for ", (void *)blk);
 			lf_print_owner(blk->lf_owner);
@@ -2536,7 +2536,7 @@ lf_printlist(char *tag, struct lockf_entry *lock)
 			    blk->lf_type == F_UNLCK ? "unlock" :
 			    "unknown", (intmax_t)blk->lf_start,
 			    (intmax_t)blk->lf_end);
-			if (!LIST_EMPTY(&blk->lf_inedges))
+			if (!BSD_LIST_EMPTY(&blk->lf_inedges))
 				panic("lf_printlist: bad list");
 		}
 		printf("\n");

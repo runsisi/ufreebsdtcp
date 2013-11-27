@@ -109,12 +109,12 @@ sctp_pathmtu_adjustment(struct sctp_tcb *stcb, uint16_t nxtsz)
 	if (sctp_auth_is_required_chunk(SCTP_DATA, stcb->asoc.peer_auth_chunks)) {
 		overhead += sctp_get_auth_chunk_len(stcb->asoc.peer_hmac_id);
 	}
-	TAILQ_FOREACH(chk, &stcb->asoc.send_queue, sctp_next) {
+	BSD_TAILQ_FOREACH(chk, &stcb->asoc.send_queue, sctp_next) {
 		if ((chk->send_size + overhead) > nxtsz) {
 			chk->flags |= CHUNK_FLAGS_FRAGMENT_OK;
 		}
 	}
-	TAILQ_FOREACH(chk, &stcb->asoc.sent_queue, sctp_next) {
+	BSD_TAILQ_FOREACH(chk, &stcb->asoc.sent_queue, sctp_next) {
 		if ((chk->send_size + overhead) > nxtsz) {
 			/*
 			 * For this guy we also mark for immediate resend
@@ -727,7 +727,7 @@ sctp_disconnect(struct socket *so)
 	SCTP_INP_RLOCK(inp);
 	if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 	    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL)) {
-		if (LIST_EMPTY(&inp->sctp_asoc_list)) {
+		if (BSD_LIST_EMPTY(&inp->sctp_asoc_list)) {
 			/* No connection */
 			SCTP_INP_RUNLOCK(inp);
 			return (0);
@@ -735,7 +735,7 @@ sctp_disconnect(struct socket *so)
 			struct sctp_association *asoc;
 			struct sctp_tcb *stcb;
 
-			stcb = LIST_FIRST(&inp->sctp_asoc_list);
+			stcb = BSD_LIST_FIRST(&inp->sctp_asoc_list);
 			if (stcb == NULL) {
 				SCTP_INP_RUNLOCK(inp);
 				SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
@@ -782,8 +782,8 @@ sctp_disconnect(struct socket *so)
 				/* No unlock tcb assoc is gone */
 				return (0);
 			}
-			if (TAILQ_EMPTY(&asoc->send_queue) &&
-			    TAILQ_EMPTY(&asoc->sent_queue) &&
+			if (BSD_TAILQ_EMPTY(&asoc->send_queue) &&
+			    BSD_TAILQ_EMPTY(&asoc->sent_queue) &&
 			    (asoc->stream_queue_cnt == 0)) {
 				/* there is nothing queued to send, so done */
 				if (asoc->locked_on_sending) {
@@ -839,7 +839,7 @@ sctp_disconnect(struct socket *so)
 					/* Locked to send out the data */
 					struct sctp_stream_queue_pending *sp;
 
-					sp = TAILQ_LAST(&asoc->locked_on_sending->outqueue, sctp_streamhead);
+					sp = BSD_TAILQ_LAST(&asoc->locked_on_sending->outqueue, sctp_streamhead);
 					if (sp == NULL) {
 						SCTP_PRINTF("Error, sp is NULL, locked on sending is non-null strm:%d\n",
 						    asoc->locked_on_sending->stream_no);
@@ -848,8 +848,8 @@ sctp_disconnect(struct socket *so)
 							asoc->state |= SCTP_STATE_PARTIAL_MSG_LEFT;
 					}
 				}
-				if (TAILQ_EMPTY(&asoc->send_queue) &&
-				    TAILQ_EMPTY(&asoc->sent_queue) &&
+				if (BSD_TAILQ_EMPTY(&asoc->send_queue) &&
+				    BSD_TAILQ_EMPTY(&asoc->sent_queue) &&
 				    (asoc->state & SCTP_STATE_PARTIAL_MSG_LEFT)) {
 					struct mbuf *op_err;
 
@@ -984,7 +984,7 @@ sctp_shutdown(struct socket *so)
 		}
 		socantsendmore(so);
 
-		stcb = LIST_FIRST(&inp->sctp_asoc_list);
+		stcb = BSD_LIST_FIRST(&inp->sctp_asoc_list);
 		if (stcb == NULL) {
 			/*
 			 * Ok we hit the case that the shutdown call was
@@ -996,8 +996,8 @@ sctp_shutdown(struct socket *so)
 		}
 		SCTP_TCB_LOCK(stcb);
 		asoc = &stcb->asoc;
-		if (TAILQ_EMPTY(&asoc->send_queue) &&
-		    TAILQ_EMPTY(&asoc->sent_queue) &&
+		if (BSD_TAILQ_EMPTY(&asoc->send_queue) &&
+		    BSD_TAILQ_EMPTY(&asoc->sent_queue) &&
 		    (asoc->stream_queue_cnt == 0)) {
 			if (asoc->locked_on_sending) {
 				goto abort_anyway;
@@ -1047,7 +1047,7 @@ sctp_shutdown(struct socket *so)
 				/* Locked to send out the data */
 				struct sctp_stream_queue_pending *sp;
 
-				sp = TAILQ_LAST(&asoc->locked_on_sending->outqueue, sctp_streamhead);
+				sp = BSD_TAILQ_LAST(&asoc->locked_on_sending->outqueue, sctp_streamhead);
 				if (sp == NULL) {
 					SCTP_PRINTF("Error, sp is NULL, locked on sending is non-null strm:%d\n",
 					    asoc->locked_on_sending->stream_no);
@@ -1057,8 +1057,8 @@ sctp_shutdown(struct socket *so)
 					}
 				}
 			}
-			if (TAILQ_EMPTY(&asoc->send_queue) &&
-			    TAILQ_EMPTY(&asoc->sent_queue) &&
+			if (BSD_TAILQ_EMPTY(&asoc->send_queue) &&
+			    BSD_TAILQ_EMPTY(&asoc->sent_queue) &&
 			    (asoc->state & SCTP_STATE_PARTIAL_MSG_LEFT)) {
 				struct mbuf *op_err;
 
@@ -1160,13 +1160,13 @@ sctp_fill_up_addresses_vrf(struct sctp_inpcb *inp,
 		return (0);
 	}
 	if (inp->sctp_flags & SCTP_PCB_FLAGS_BOUNDALL) {
-		LIST_FOREACH(sctp_ifn, &vrf->ifnlist, next_ifn) {
+		BSD_LIST_FOREACH(sctp_ifn, &vrf->ifnlist, next_ifn) {
 			if ((loopback_scope == 0) &&
 			    SCTP_IFN_IS_IFT_LOOP(sctp_ifn)) {
 				/* Skip loopback if loopback_scope not set */
 				continue;
 			}
-			LIST_FOREACH(sctp_ifa, &sctp_ifn->ifalist, next_ifa) {
+			BSD_LIST_FOREACH(sctp_ifa, &sctp_ifn->ifalist, next_ifa) {
 				if (stcb) {
 					/*
 					 * For the BOUND-ALL case, the list
@@ -1284,7 +1284,7 @@ sctp_fill_up_addresses_vrf(struct sctp_inpcb *inp,
 	} else {
 		struct sctp_laddr *laddr;
 
-		LIST_FOREACH(laddr, &inp->sctp_addr_list, sctp_nxt_addr) {
+		BSD_LIST_FOREACH(laddr, &inp->sctp_addr_list, sctp_nxt_addr) {
 			if (stcb) {
 				if (sctp_is_addr_restricted(stcb, laddr->ifa)) {
 					continue;
@@ -1358,8 +1358,8 @@ sctp_count_max_addresses_vrf(struct sctp_inpcb *inp, uint32_t vrf_id)
 		struct sctp_ifn *sctp_ifn;
 		struct sctp_ifa *sctp_ifa;
 
-		LIST_FOREACH(sctp_ifn, &vrf->ifnlist, next_ifn) {
-			LIST_FOREACH(sctp_ifa, &sctp_ifn->ifalist, next_ifa) {
+		BSD_LIST_FOREACH(sctp_ifn, &vrf->ifnlist, next_ifn) {
+			BSD_LIST_FOREACH(sctp_ifa, &sctp_ifn->ifalist, next_ifa) {
 				/* Count them if they are the right type */
 				switch (sctp_ifa->address.sa.sa_family) {
 #ifdef INET
@@ -1383,7 +1383,7 @@ sctp_count_max_addresses_vrf(struct sctp_inpcb *inp, uint32_t vrf_id)
 	} else {
 		struct sctp_laddr *laddr;
 
-		LIST_FOREACH(laddr, &inp->sctp_addr_list, sctp_nxt_addr) {
+		BSD_LIST_FOREACH(laddr, &inp->sctp_addr_list, sctp_nxt_addr) {
 			switch (laddr->ifa->address.sa.sa_family) {
 #ifdef INET
 			case AF_INET:
@@ -1446,7 +1446,7 @@ sctp_do_connect_x(struct socket *so, struct sctp_inpcb *inp, void *optval,
 	}
 	if (inp->sctp_flags & SCTP_PCB_FLAGS_CONNECTED) {
 		SCTP_INP_RLOCK(inp);
-		stcb = LIST_FIRST(&inp->sctp_asoc_list);
+		stcb = BSD_LIST_FIRST(&inp->sctp_asoc_list);
 		SCTP_INP_RUNLOCK(inp);
 	}
 	if (stcb) {
@@ -1581,7 +1581,7 @@ out_now:
 	if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||\
 	    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL)) { \
 		SCTP_INP_RLOCK(inp); \
-		stcb = LIST_FIRST(&inp->sctp_asoc_list); \
+		stcb = BSD_LIST_FIRST(&inp->sctp_asoc_list); \
 		if (stcb) { \
 			SCTP_TCB_LOCK(stcb); \
                 } \
@@ -1895,7 +1895,7 @@ flags_out:
 			SCTP_CHECK_AND_CAST(value, optval, uint32_t, *optsize);
 			cnt = 0;
 			SCTP_INP_RLOCK(inp);
-			LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
+			BSD_LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
 				cnt++;
 			}
 			SCTP_INP_RUNLOCK(inp);
@@ -1912,7 +1912,7 @@ flags_out:
 			at = 0;
 			limit = (*optsize - sizeof(uint32_t)) / sizeof(sctp_assoc_t);
 			SCTP_INP_RLOCK(inp);
-			LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
+			BSD_LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
 				if (at < limit) {
 					ids->gaids_assoc_id[at++] = sctp_get_associd(stcb);
 				} else {
@@ -2206,7 +2206,7 @@ flags_out:
 			if (stcb) {
 				size = 0;
 				/* Count the sizes */
-				TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
+				BSD_TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
 					if (sctp_is_feature_on(inp, SCTP_PCB_FLAGS_NEEDS_MAPPED_V4)) {
 						size += sizeof(struct sockaddr_in6);
 					} else {
@@ -2254,7 +2254,7 @@ flags_out:
 				*optsize = sizeof(struct sctp_getaddresses);
 				sas = (struct sockaddr_storage *)&saddr->addr[0];
 
-				TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
+				BSD_TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
 					if (sctp_is_feature_on(inp, SCTP_PCB_FLAGS_NEEDS_MAPPED_V4)) {
 						cpsz = sizeof(struct sockaddr_in6);
 					} else {
@@ -3501,7 +3501,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 				if ((av->assoc_id == SCTP_CURRENT_ASSOC) ||
 				    (av->assoc_id == SCTP_ALL_ASSOC)) {
 					SCTP_INP_RLOCK(inp);
-					LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
+					BSD_LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
 						SCTP_TCB_LOCK(stcb);
 						stcb->asoc.sctp_cmt_on_off = av->assoc_value;
 						SCTP_TCB_UNLOCK(stcb);
@@ -3533,7 +3533,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 				stcb->asoc.cc_functions = sctp_cc_functions[av->assoc_value];
 				stcb->asoc.congestion_control_module = av->assoc_value;
 				if (stcb->asoc.cc_functions.sctp_set_initial_cc_param != NULL) {
-					TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
+					BSD_TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
 						stcb->asoc.cc_functions.sctp_set_initial_cc_param(stcb, net);
 					}
 				}
@@ -3550,12 +3550,12 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 				if ((av->assoc_id == SCTP_CURRENT_ASSOC) ||
 				    (av->assoc_id == SCTP_ALL_ASSOC)) {
 					SCTP_INP_RLOCK(inp);
-					LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
+					BSD_LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
 						SCTP_TCB_LOCK(stcb);
 						stcb->asoc.cc_functions = sctp_cc_functions[av->assoc_value];
 						stcb->asoc.congestion_control_module = av->assoc_value;
 						if (stcb->asoc.cc_functions.sctp_set_initial_cc_param != NULL) {
-							TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
+							BSD_TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
 								stcb->asoc.cc_functions.sctp_set_initial_cc_param(stcb, net);
 							}
 						}
@@ -3575,7 +3575,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			if (stcb == NULL) {
 				if (cc_opt->aid_value.assoc_id == SCTP_CURRENT_ASSOC) {
 					SCTP_INP_RLOCK(inp);
-					LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
+					BSD_LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
 						SCTP_TCB_LOCK(stcb);
 						if (stcb->asoc.cc_functions.sctp_cwnd_socket_option) {
 							(*stcb->asoc.cc_functions.sctp_cwnd_socket_option) (stcb, 1, cc_opt);
@@ -3631,7 +3631,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 				if ((av->assoc_id == SCTP_CURRENT_ASSOC) ||
 				    (av->assoc_id == SCTP_ALL_ASSOC)) {
 					SCTP_INP_RLOCK(inp);
-					LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
+					BSD_LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
 						SCTP_TCB_LOCK(stcb);
 						stcb->asoc.ss_functions.sctp_ss_clear(stcb, &stcb->asoc, 1, 1);
 						stcb->asoc.ss_functions = sctp_ss_functions[av->assoc_value];
@@ -3660,7 +3660,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			} else {
 				if (av->assoc_id == SCTP_CURRENT_ASSOC) {
 					SCTP_INP_RLOCK(inp);
-					LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
+					BSD_LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
 						SCTP_TCB_LOCK(stcb);
 						stcb->asoc.ss_functions.sctp_ss_set_value(stcb,
 						    &stcb->asoc,
@@ -3707,7 +3707,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 				if ((av->assoc_id == SCTP_CURRENT_ASSOC) ||
 				    (av->assoc_id == SCTP_ALL_ASSOC)) {
 					SCTP_INP_RLOCK(inp);
-					LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
+					BSD_LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
 						SCTP_TCB_LOCK(stcb);
 						stcb->asoc.context = av->assoc_value;
 						SCTP_TCB_UNLOCK(stcb);
@@ -3780,7 +3780,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 				if ((sack->sack_assoc_id == SCTP_CURRENT_ASSOC) ||
 				    (sack->sack_assoc_id == SCTP_ALL_ASSOC)) {
 					SCTP_INP_RLOCK(inp);
-					LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
+					BSD_LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
 						SCTP_TCB_LOCK(stcb);
 						if (sack->sack_delay) {
 							stcb->asoc.delayed_ack = sack->sack_delay;
@@ -3901,7 +3901,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 				if ((sca->sca_assoc_id == SCTP_CURRENT_ASSOC) ||
 				    (sca->sca_assoc_id == SCTP_ALL_ASSOC)) {
 					SCTP_INP_RLOCK(inp);
-					LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
+					BSD_LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
 						SCTP_TCB_LOCK(stcb);
 						shared_keys = &stcb->asoc.shared_keys;
 						/*
@@ -4021,7 +4021,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 				if ((scact->scact_assoc_id == SCTP_CURRENT_ASSOC) ||
 				    (scact->scact_assoc_id == SCTP_ALL_ASSOC)) {
 					SCTP_INP_RLOCK(inp);
-					LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
+					BSD_LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
 						SCTP_TCB_LOCK(stcb);
 						sctp_auth_setactivekey(stcb, scact->scact_keynumber);
 						SCTP_TCB_UNLOCK(stcb);
@@ -4060,7 +4060,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 				if ((scdel->scact_assoc_id == SCTP_CURRENT_ASSOC) ||
 				    (scdel->scact_assoc_id == SCTP_ALL_ASSOC)) {
 					SCTP_INP_RLOCK(inp);
-					LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
+					BSD_LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
 						SCTP_TCB_LOCK(stcb);
 						sctp_delete_sharedkey(stcb, scdel->scact_keynumber);
 						SCTP_TCB_UNLOCK(stcb);
@@ -4099,7 +4099,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 				if ((keyid->scact_assoc_id == SCTP_CURRENT_ASSOC) ||
 				    (keyid->scact_assoc_id == SCTP_ALL_ASSOC)) {
 					SCTP_INP_RLOCK(inp);
-					LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
+					BSD_LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
 						SCTP_TCB_LOCK(stcb);
 						sctp_deact_sharedkey(stcb, keyid->scact_keynumber);
 						SCTP_TCB_UNLOCK(stcb);
@@ -4135,7 +4135,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 				if ((av->assoc_id == SCTP_CURRENT_ASSOC) ||
 				    (av->assoc_id == SCTP_ALL_ASSOC)) {
 					SCTP_INP_RLOCK(inp);
-					LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
+					BSD_LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
 						SCTP_TCB_LOCK(stcb);
 						stcb->asoc.local_strreset_support = (uint8_t) av->assoc_value;
 						SCTP_TCB_UNLOCK(stcb);
@@ -4341,7 +4341,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			/* find tcb */
 			if (inp->sctp_flags & SCTP_PCB_FLAGS_CONNECTED) {
 				SCTP_INP_RLOCK(inp);
-				stcb = LIST_FIRST(&inp->sctp_asoc_list);
+				stcb = BSD_LIST_FIRST(&inp->sctp_asoc_list);
 				if (stcb) {
 					SCTP_TCB_LOCK(stcb);
 					net = sctp_findnet(stcb, sa);
@@ -4407,7 +4407,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 				if ((av->assoc_id == SCTP_CURRENT_ASSOC) ||
 				    (av->assoc_id == SCTP_ALL_ASSOC)) {
 					SCTP_INP_RLOCK(inp);
-					LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
+					BSD_LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
 						SCTP_TCB_LOCK(stcb);
 						stcb->asoc.max_burst = av->assoc_value;
 						SCTP_TCB_UNLOCK(stcb);
@@ -4534,7 +4534,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			SCTP_INP_WUNLOCK(inp);
 
 			SCTP_INP_RLOCK(inp);
-			LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
+			BSD_LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
 				SCTP_TCB_LOCK(stcb);
 				if (events->sctp_association_event) {
 					sctp_stcb_feature_on(inp, stcb, SCTP_PCB_FLAGS_RECVASSOCEVNT);
@@ -4595,11 +4595,11 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 			if (events->sctp_sender_dry_event) {
 				if ((inp->sctp_flags & SCTP_PCB_FLAGS_TCPTYPE) ||
 				    (inp->sctp_flags & SCTP_PCB_FLAGS_IN_TCPPOOL)) {
-					stcb = LIST_FIRST(&inp->sctp_asoc_list);
+					stcb = BSD_LIST_FIRST(&inp->sctp_asoc_list);
 					if (stcb) {
 						SCTP_TCB_LOCK(stcb);
-						if (TAILQ_EMPTY(&stcb->asoc.send_queue) &&
-						    TAILQ_EMPTY(&stcb->asoc.sent_queue) &&
+						if (BSD_TAILQ_EMPTY(&stcb->asoc.send_queue) &&
+						    BSD_TAILQ_EMPTY(&stcb->asoc.sent_queue) &&
 						    (stcb->asoc.stream_queue_cnt == 0)) {
 							sctp_ulp_notify(SCTP_NOTIFY_SENDER_DRY, stcb, 0, NULL, SCTP_SO_LOCKED);
 						}
@@ -4660,7 +4660,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 				if ((s_info->sinfo_assoc_id == SCTP_CURRENT_ASSOC) ||
 				    (s_info->sinfo_assoc_id == SCTP_ALL_ASSOC)) {
 					SCTP_INP_RLOCK(inp);
-					LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
+					BSD_LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
 						SCTP_TCB_LOCK(stcb);
 						if (s_info->sinfo_stream < stcb->asoc.streamoutcnt) {
 							memcpy(&stcb->asoc.def_send, s_info, min(optsize, sizeof(stcb->asoc.def_send)));
@@ -4853,7 +4853,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 					/************************ASSOC ONLY -- NO NET SPECIFIC SET ******************/
 					if (paddrp->spp_pathmaxrxt) {
 						stcb->asoc.def_net_failure = paddrp->spp_pathmaxrxt;
-						TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
+						BSD_TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
 							if (net->dest_state & SCTP_ADDR_PF) {
 								if (net->error_count > paddrp->spp_pathmaxrxt) {
 									net->dest_state &= ~SCTP_ADDR_PF;
@@ -4888,7 +4888,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 							stcb->asoc.heart_beat_delay = 0;
 						}
 						/* Turn back on the timer */
-						TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
+						BSD_TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
 							if (paddrp->spp_hbinterval) {
 								net->heart_beat_delay = paddrp->spp_hbinterval;
 							} else if (paddrp->spp_flags & SPP_HB_TIME_IS_ZERO) {
@@ -4904,7 +4904,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 						sctp_stcb_feature_off(inp, stcb, SCTP_PCB_FLAGS_DONOT_HEARTBEAT);
 					}
 					if (paddrp->spp_flags & SPP_HB_DISABLE) {
-						TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
+						BSD_TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
 							if (!(net->dest_state & SCTP_ADDR_NOHB)) {
 								net->dest_state |= SCTP_ADDR_NOHB;
 								if (!(net->dest_state & SCTP_ADDR_UNCONFIRMED)) {
@@ -4915,7 +4915,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 						sctp_stcb_feature_on(inp, stcb, SCTP_PCB_FLAGS_DONOT_HEARTBEAT);
 					}
 					if ((paddrp->spp_flags & SPP_PMTUD_DISABLE) && (paddrp->spp_pathmtu >= SCTP_SMALLEST_PMTU)) {
-						TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
+						BSD_TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
 							if (SCTP_OS_TIMER_PENDING(&net->pmtu_timer.timer)) {
 								sctp_timer_stop(SCTP_TIMER_TYPE_PATHMTURAISE, inp, stcb, net,
 								    SCTP_FROM_SCTP_USRREQ + SCTP_LOC_10);
@@ -4931,7 +4931,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 						sctp_stcb_feature_on(inp, stcb, SCTP_PCB_FLAGS_DO_NOT_PMTUD);
 					}
 					if (paddrp->spp_flags & SPP_PMTUD_ENABLE) {
-						TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
+						BSD_TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
 							if (!SCTP_OS_TIMER_PENDING(&net->pmtu_timer.timer)) {
 								sctp_timer_start(SCTP_TIMER_TYPE_PATHMTURAISE, inp, stcb, net);
 							}
@@ -4940,7 +4940,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 						sctp_stcb_feature_off(inp, stcb, SCTP_PCB_FLAGS_DO_NOT_PMTUD);
 					}
 					if (paddrp->spp_flags & SPP_DSCP) {
-						TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
+						BSD_TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
 							net->dscp = paddrp->spp_dscp & 0xfc;
 							net->dscp |= 0x01;
 						}
@@ -4949,7 +4949,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 					}
 #ifdef INET6
 					if (paddrp->spp_flags & SPP_IPV6_FLOWLABEL) {
-						TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
+						BSD_TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
 							if (net->ro._l_addr.sa.sa_family == AF_INET6) {
 								net->flowlabel = paddrp->spp_ipv6_flowlabel & 0x000fffff;
 								net->flowlabel |= 0x80000000;
@@ -5227,7 +5227,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 					struct sctp_laddr *laddr;
 					int found = 0;
 
-					LIST_FOREACH(laddr, &inp->sctp_addr_list, sctp_nxt_addr) {
+					BSD_LIST_FOREACH(laddr, &inp->sctp_addr_list, sctp_nxt_addr) {
 						if (laddr->ifa == NULL) {
 							SCTPDBG(SCTP_DEBUG_OUTPUT1, "%s: NULL ifa\n",
 							    __FUNCTION__);
@@ -5410,8 +5410,8 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 					if (event->se_on) {
 						sctp_stcb_feature_on(inp, stcb, event_type);
 						if (event_type == SCTP_PCB_FLAGS_DRYEVNT) {
-							if (TAILQ_EMPTY(&stcb->asoc.send_queue) &&
-							    TAILQ_EMPTY(&stcb->asoc.sent_queue) &&
+							if (BSD_TAILQ_EMPTY(&stcb->asoc.send_queue) &&
+							    BSD_TAILQ_EMPTY(&stcb->asoc.sent_queue) &&
 							    (stcb->asoc.stream_queue_cnt == 0)) {
 								sctp_ulp_notify(SCTP_NOTIFY_SENDER_DRY, stcb, 0, NULL, SCTP_SO_LOCKED);
 							}
@@ -5450,7 +5450,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 					if ((event->se_assoc_id == SCTP_CURRENT_ASSOC) ||
 					    (event->se_assoc_id == SCTP_ALL_ASSOC)) {
 						SCTP_INP_RLOCK(inp);
-						LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
+						BSD_LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
 							SCTP_TCB_LOCK(stcb);
 							if (event->se_on) {
 								sctp_stcb_feature_on(inp, stcb, event_type);
@@ -5531,7 +5531,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 				if ((info->snd_assoc_id == SCTP_CURRENT_ASSOC) ||
 				    (info->snd_assoc_id == SCTP_ALL_ASSOC)) {
 					SCTP_INP_RLOCK(inp);
-					LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
+					BSD_LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
 						SCTP_TCB_LOCK(stcb);
 						if (info->snd_sid < stcb->asoc.streamoutcnt) {
 							stcb->asoc.def_send.sinfo_stream = info->snd_sid;
@@ -5579,7 +5579,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 				if ((info->pr_assoc_id == SCTP_CURRENT_ASSOC) ||
 				    (info->pr_assoc_id == SCTP_ALL_ASSOC)) {
 					SCTP_INP_RLOCK(inp);
-					LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
+					BSD_LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
 						SCTP_TCB_LOCK(stcb);
 						stcb->asoc.def_send.sinfo_flags &= 0xfff0;
 						stcb->asoc.def_send.sinfo_flags |= info->pr_policy;
@@ -5686,7 +5686,7 @@ sctp_setopt(struct socket *so, int optname, void *optval, size_t optsize,
 					net->failure_threshold = thlds->spt_pathmaxrxt;
 					net->pf_threshold = thlds->spt_pathpfthld;
 				} else {
-					TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
+					BSD_TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
 						if (net->dest_state & SCTP_ADDR_PF) {
 							if ((net->failure_threshold > thlds->spt_pathmaxrxt) ||
 							    (net->failure_threshold <= thlds->spt_pathpfthld)) {
@@ -5981,7 +5981,7 @@ sctp_connect(struct socket *so, struct sockaddr *addr, struct thread *p)
 	}
 	if (inp->sctp_flags & SCTP_PCB_FLAGS_CONNECTED) {
 		SCTP_INP_RLOCK(inp);
-		stcb = LIST_FIRST(&inp->sctp_asoc_list);
+		stcb = BSD_LIST_FIRST(&inp->sctp_asoc_list);
 		SCTP_INP_RUNLOCK(inp);
 	} else {
 		/*
@@ -6064,7 +6064,7 @@ sctp_listen(struct socket *so, int backlog, struct thread *p)
 			/* not bound all */
 			struct sctp_laddr *laddr;
 
-			LIST_FOREACH(laddr, &inp->sctp_addr_list, sctp_nxt_addr) {
+			BSD_LIST_FOREACH(laddr, &inp->sctp_addr_list, sctp_nxt_addr) {
 				memcpy(&store, &laddr->ifa->address, sizeof(store));
 				switch (sp->sa.sa_family) {
 #ifdef INET
@@ -6228,7 +6228,7 @@ sctp_accept(struct socket *so, struct sockaddr **addr)
 		SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, ECONNABORTED);
 		return (ECONNABORTED);
 	}
-	stcb = LIST_FIRST(&inp->sctp_asoc_list);
+	stcb = BSD_LIST_FIRST(&inp->sctp_asoc_list);
 	if (stcb == NULL) {
 		SCTP_INP_RUNLOCK(inp);
 		SCTP_LTRACE_ERR_RET(inp, NULL, NULL, SCTP_FROM_SCTP_USRREQ, EINVAL);
@@ -6348,14 +6348,14 @@ sctp_ingetaddr(struct socket *so, struct sockaddr **addr)
 			struct sctp_nets *net;
 			int fnd;
 
-			stcb = LIST_FIRST(&inp->sctp_asoc_list);
+			stcb = BSD_LIST_FIRST(&inp->sctp_asoc_list);
 			if (stcb == NULL) {
 				goto notConn;
 			}
 			fnd = 0;
 			sin_a = NULL;
 			SCTP_TCB_LOCK(stcb);
-			TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
+			BSD_TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
 				sin_a = (struct sockaddr_in *)&net->ro._l_addr;
 				if (sin_a == NULL)
 					/* this will make coverity happy */
@@ -6392,7 +6392,7 @@ sctp_ingetaddr(struct socket *so, struct sockaddr **addr)
 		struct sctp_laddr *laddr;
 		int fnd = 0;
 
-		LIST_FOREACH(laddr, &inp->sctp_addr_list, sctp_nxt_addr) {
+		BSD_LIST_FOREACH(laddr, &inp->sctp_addr_list, sctp_nxt_addr) {
 			if (laddr->ifa->address.sa.sa_family == AF_INET) {
 				struct sockaddr_in *sin_a;
 
@@ -6440,7 +6440,7 @@ sctp_peeraddr(struct socket *so, struct sockaddr **addr)
 		return (ENOTCONN);
 	}
 	SCTP_INP_RLOCK(inp);
-	stcb = LIST_FIRST(&inp->sctp_asoc_list);
+	stcb = BSD_LIST_FIRST(&inp->sctp_asoc_list);
 	if (stcb) {
 		SCTP_TCB_LOCK(stcb);
 	}
@@ -6451,7 +6451,7 @@ sctp_peeraddr(struct socket *so, struct sockaddr **addr)
 		return (ECONNRESET);
 	}
 	fnd = 0;
-	TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
+	BSD_TAILQ_FOREACH(net, &stcb->asoc.nets, sctp_next) {
 		sin_a = (struct sockaddr_in *)&net->ro._l_addr;
 		if (sin_a->sin_family == AF_INET) {
 			fnd = 1;

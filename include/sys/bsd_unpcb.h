@@ -62,17 +62,17 @@
  * back pressure on the sender accordingly.
  */
 typedef	u_quad_t	unp_gen_t;
-LIST_HEAD(unp_head, unpcb);
+BSD_LIST_HEAD(unp_head, unpcb);
 
 struct unpcb {
-	LIST_ENTRY(unpcb) unp_link; 	/* glue on list of all PCBs */
+	BSD_LIST_ENTRY(unpcb) unp_link; 	/* glue on list of all PCBs */
 	struct	socket *unp_socket;	/* pointer back to socket */
 	struct	file *unp_file;		/* back-pointer to file for gc. */
 	struct	vnode *unp_vnode;	/* if associated with file */
 	ino_t	unp_ino;		/* fake inode number */
 	struct	unpcb *unp_conn;	/* control block of connected socket */
 	struct	unp_head unp_refs;	/* referencing socket linked list */
-	LIST_ENTRY(unpcb) unp_reflink;	/* link in unp_refs list */
+	BSD_LIST_ENTRY(unpcb) unp_reflink;	/* link in unp_refs list */
 	struct	sockaddr_un *unp_addr;	/* bound address of socket */
 	int	unp_cc;			/* copy of rcv.sb_cc */
 	int	unp_mbcnt;		/* copy of rcv.sb_mbcnt */

@@ -50,7 +50,7 @@
  */
 struct zbuf;
 struct bpf_d {
-	LIST_ENTRY(bpf_d) bd_next;	/* Linked list of descriptors */
+	BSD_LIST_ENTRY(bpf_d) bd_next;	/* Linked list of descriptors */
 	/*
 	 * Buffer slots: two memory buffers store the incoming packets.
 	 *   The model has three slots.  Sbuf is always occupied.

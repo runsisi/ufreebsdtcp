@@ -144,7 +144,7 @@ struct devstat {
 						      * busy time unaccounted
 						      * for since this time
 						      */
-	STAILQ_ENTRY(devstat) 	dev_links;
+	BSD_STAILQ_ENTRY(devstat) 	dev_links;
 	u_int32_t		device_number;	     /*
 						      * Devstat device
 						      * number.
@@ -180,7 +180,7 @@ struct devstat {
 	u_int			sequence1;	     /* Update sequence# */
 };
 
-STAILQ_HEAD(devstatlist, devstat);
+BSD_STAILQ_HEAD(devstatlist, devstat);
 
 #ifdef _KERNEL
 struct bio;

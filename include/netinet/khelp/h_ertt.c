@@ -91,7 +91,7 @@ struct txseginfo {
 	/* Last received receiver ts (if the TCP option is used). */
 	uint32_t	rx_ts;
 	uint32_t	flags;
-	TAILQ_ENTRY (txseginfo) txsegi_lnk;
+	BSD_TAILQ_ENTRY (txseginfo) txsegi_lnk;
 };
 
 /* Flags for struct txseginfo. */
@@ -227,7 +227,7 @@ ertt_packet_measurement_hook(int hhook_type, int hhook_id, void *udata,
 		} else
 			ack = th->th_ack;
 
-		txsi = TAILQ_FIRST(&e_t->txsegi_q);
+		txsi = BSD_TAILQ_FIRST(&e_t->txsegi_q);
 		while (txsi != NULL) {
 			rts = 0;
 
@@ -239,9 +239,9 @@ ertt_packet_measurement_hook(int hhook_type, int hhook_id, void *udata,
 					    &measurenext, &measurenext_len,
 					    &rtt_bytes_adjust, MULTI_ACK);
 				}
-				TAILQ_REMOVE(&e_t->txsegi_q, txsi, txsegi_lnk);
+				BSD_TAILQ_REMOVE(&e_t->txsegi_q, txsi, txsegi_lnk);
 				uma_zfree(txseginfo_zone, txsi);
-				txsi = TAILQ_FIRST(&e_t->txsegi_q);
+				txsi = BSD_TAILQ_FIRST(&e_t->txsegi_q);
 				continue;
 			}
 
@@ -311,10 +311,10 @@ ertt_packet_measurement_hook(int hhook_type, int hhook_id, void *udata,
 						    &measurenext, &measurenext_len,
 						    &rtt_bytes_adjust, OLD_TXSI);
 					}
-					TAILQ_REMOVE(&e_t->txsegi_q, txsi,
+					BSD_TAILQ_REMOVE(&e_t->txsegi_q, txsi,
 					    txsegi_lnk);
 					uma_zfree(txseginfo_zone, txsi);
-					txsi = TAILQ_FIRST(&e_t->txsegi_q);
+					txsi = BSD_TAILQ_FIRST(&e_t->txsegi_q);
 					continue;
 				}
 				if (rts == txsi->tx_ts &&
@@ -402,7 +402,7 @@ ertt_packet_measurement_hook(int hhook_type, int hhook_id, void *udata,
 				}
 			}
 
-			TAILQ_REMOVE(&e_t->txsegi_q, txsi, txsegi_lnk);
+			BSD_TAILQ_REMOVE(&e_t->txsegi_q, txsi, txsegi_lnk);
 			uma_zfree(txseginfo_zone, txsi);
 			break;
 		}
@@ -482,7 +482,7 @@ ertt_add_tx_segment_info_hook(int hhook_type, int hhook_id, void *udata,
 				txsi->tx_ts = tcp_ts_getticks();
 				txsi->rx_ts = 0; /* No received time stamp. */
 			}
-			TAILQ_INSERT_TAIL(&e_t->txsegi_q, txsi, txsegi_lnk);
+			BSD_TAILQ_INSERT_TAIL(&e_t->txsegi_q, txsi, txsegi_lnk);
 		}
 	}
 
@@ -515,7 +515,7 @@ ertt_uma_ctor(void *mem, int size, void *arg, int flags)
 
 	e_t = mem;
 
-	TAILQ_INIT(&e_t->txsegi_q);
+	BSD_TAILQ_INIT(&e_t->txsegi_q);
 	e_t->timestamp_errors = 0;
 	e_t->minrtt = 0;
 	e_t->maxrtt = 0;
@@ -535,9 +535,9 @@ ertt_uma_dtor(void *mem, int size, void *arg)
 	struct txseginfo *n_txsi, *txsi;
 
 	e_t = mem;
-	txsi = TAILQ_FIRST(&e_t->txsegi_q);
+	txsi = BSD_TAILQ_FIRST(&e_t->txsegi_q);
 	while (txsi != NULL) {
-		n_txsi = TAILQ_NEXT(txsi, txsegi_lnk);
+		n_txsi = BSD_TAILQ_NEXT(txsi, txsegi_lnk);
 		uma_zfree(txseginfo_zone, txsi);
 		txsi = n_txsi;
 	}

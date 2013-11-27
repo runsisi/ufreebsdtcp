@@ -120,14 +120,14 @@ static MALLOC_DEFINE(M_UMAHASH, "UMAHash", "UMA Hash Buckets");
 static int bucketdisable = 1;
 
 /* Linked list of all kegs in the system */
-static LIST_HEAD(,uma_keg) uma_kegs = LIST_HEAD_INITIALIZER(uma_kegs);
+static BSD_LIST_HEAD(,uma_keg) uma_kegs = BSD_LIST_HEAD_INITIALIZER(uma_kegs);
 
 /* This mutex protects the keg list */
 static struct mtx uma_mtx;
 
 /* Linked list of boot time pages */
-static LIST_HEAD(,uma_slab) uma_boot_pages =
-    LIST_HEAD_INITIALIZER(uma_boot_pages);
+static BSD_LIST_HEAD(,uma_slab) uma_boot_pages =
+    BSD_LIST_HEAD_INITIALIZER(uma_boot_pages);
 
 /* This mutex protects the boot time pages list */
 static struct mtx uma_boot_pages_mtx;
@@ -362,7 +362,7 @@ static inline uma_keg_t
 zone_first_keg(uma_zone_t zone)
 {
 
-	return (LIST_FIRST(&zone->uz_kegs)->kl_keg);
+	return (BSD_LIST_FIRST(&zone->uz_kegs)->kl_keg);
 }
 
 static void
@@ -370,7 +370,7 @@ zone_foreach_keg(uma_zone_t zone, void (*kegfn)(uma_keg_t))
 {
 	uma_klink_t klink;
 
-	LIST_FOREACH(klink, &zone->uz_kegs, kl_link)
+	BSD_LIST_FOREACH(klink, &zone->uz_kegs, kl_link)
 		kegfn(klink->kl_keg);
 }
 
@@ -522,11 +522,11 @@ hash_expand(struct uma_hash *oldhash, struct uma_hash *newhash)
 	 */
 
 	for (i = 0; i < oldhash->uh_hashsize; i++)
-		while (!SLIST_EMPTY(&oldhash->uh_slab_hash[i])) {
-			slab = SLIST_FIRST(&oldhash->uh_slab_hash[i]);
-			SLIST_REMOVE_HEAD(&oldhash->uh_slab_hash[i], us_hlink);
+		while (!BSD_SLIST_EMPTY(&oldhash->uh_slab_hash[i])) {
+			slab = BSD_SLIST_FIRST(&oldhash->uh_slab_hash[i]);
+			BSD_SLIST_REMOVE_HEAD(&oldhash->uh_slab_hash[i], us_hlink);
 			hval = UMA_HASH(newhash, slab->us_data);
-			SLIST_INSERT_HEAD(&newhash->uh_slab_hash[hval],
+			BSD_SLIST_INSERT_HEAD(&newhash->uh_slab_hash[hval],
 			    slab, us_hlink);
 		}
 
@@ -644,8 +644,8 @@ bucket_cache_drain(uma_zone_t zone)
 	 * Drain the bucket queues and free the buckets, we just keep two per
 	 * cpu (alloc/free).
 	 */
-	while ((bucket = LIST_FIRST(&zone->uz_full_bucket)) != NULL) {
-		LIST_REMOVE(bucket, ub_link);
+	while ((bucket = BSD_LIST_FIRST(&zone->uz_full_bucket)) != NULL) {
+		BSD_LIST_REMOVE(bucket, ub_link);
 		ZONE_UNLOCK(zone);
 		bucket_drain(zone, bucket);
 		bucket_free(bucket);
@@ -653,8 +653,8 @@ bucket_cache_drain(uma_zone_t zone)
 	}
 
 	/* Now we do the free queue.. */
-	while ((bucket = LIST_FIRST(&zone->uz_free_bucket)) != NULL) {
-		LIST_REMOVE(bucket, ub_link);
+	while ((bucket = BSD_LIST_FIRST(&zone->uz_free_bucket)) != NULL) {
+		BSD_LIST_REMOVE(bucket, ub_link);
 		bucket_free(bucket);
 	}
 }
@@ -689,9 +689,9 @@ keg_drain(uma_keg_t keg)
 	if (keg->uk_free == 0)
 		goto finished;
 
-	slab = LIST_FIRST(&keg->uk_free_slab);
+	slab = BSD_LIST_FIRST(&keg->uk_free_slab);
 	while (slab) {
-		n = LIST_NEXT(slab, us_link);
+		n = BSD_LIST_NEXT(slab, us_link);
 
 		/* We have no where to free these to */
 		if (slab->us_flags & UMA_SLAB_BOOT) {
@@ -699,22 +699,22 @@ keg_drain(uma_keg_t keg)
 			continue;
 		}
 
-		LIST_REMOVE(slab, us_link);
+		BSD_LIST_REMOVE(slab, us_link);
 		keg->uk_pages -= keg->uk_ppera;
 		keg->uk_free -= keg->uk_ipers;
 
 		if (keg->uk_flags & UMA_ZONE_HASH)
 			UMA_HASH_REMOVE(&keg->uk_hash, slab, slab->us_data);
 
-		SLIST_INSERT_HEAD(&freeslabs, slab, us_hlink);
+		BSD_SLIST_INSERT_HEAD(&freeslabs, slab, us_hlink);
 
 		slab = n;
 	}
 finished:
 	KEG_UNLOCK(keg);
 
-	while ((slab = SLIST_FIRST(&freeslabs)) != NULL) {
-		SLIST_REMOVE(&freeslabs, slab, uma_slab, us_hlink);
+	while ((slab = BSD_SLIST_FIRST(&freeslabs)) != NULL) {
+		BSD_SLIST_REMOVE(&freeslabs, slab, uma_slab, us_hlink);
 		if (keg->uk_fini)
 			for (i = 0; i < keg->uk_ipers; i++)
 				keg->uk_fini(
@@ -943,9 +943,9 @@ startup_alloc(uma_zone_t zone, int bytes, u_int8_t *pflag, int wait)
 	mtx_lock(&uma_boot_pages_mtx);
 
 	/* First check if we have enough room. */
-	tmps = LIST_FIRST(&uma_boot_pages);
+	tmps = BSD_LIST_FIRST(&uma_boot_pages);
 	while (tmps != NULL && check_pages-- > 0)
-		tmps = LIST_NEXT(tmps, us_link);
+		tmps = BSD_LIST_NEXT(tmps, us_link);
 	if (tmps != NULL) {
 		/*
 		 * It's ok to lose tmps references.  The last one will
@@ -953,8 +953,8 @@ startup_alloc(uma_zone_t zone, int bytes, u_int8_t *pflag, int wait)
 		 * "pages" contiguous pages of memory.
 		 */
 		while (pages-- > 0) {
-			tmps = LIST_FIRST(&uma_boot_pages);
-			LIST_REMOVE(tmps, us_link);
+			tmps = BSD_LIST_FIRST(&uma_boot_pages);
+			BSD_LIST_REMOVE(tmps, us_link);
 		}
 		mtx_unlock(&uma_boot_pages_mtx);
 		*pflag = tmps->us_flags;
@@ -1024,7 +1024,7 @@ obj_alloc(uma_zone_t zone, int bytes, u_int8_t *flags, int wait)
 	 * This looks a little weird since we're getting one page at a time.
 	 */
 	VM_OBJECT_LOCK(object);
-	p = TAILQ_LAST(&object->memq, pglist);
+	p = BSD_TAILQ_LAST(&object->memq, pglist);
 	pages = p != NULL ? p->pindex + 1 : 0;
 	startpages = pages;
 	zkva = keg->uk_kva + pages * PAGE_SIZE;
@@ -1036,7 +1036,7 @@ obj_alloc(uma_zone_t zone, int bytes, u_int8_t *flags, int wait)
 				pmap_qremove(retkva, pages - startpages);
 			while (pages != startpages) {
 				pages--;
-				p = TAILQ_LAST(&object->memq, pglist);
+				p = BSD_TAILQ_LAST(&object->memq, pglist);
 				vm_page_unwire(p, 0);
 				vm_page_free(p);
 			}
@@ -1390,10 +1390,10 @@ keg_ctor(void *mem, int size, void *udata, int flags)
 	    (keg->uk_ipers * keg->uk_pages) - keg->uk_free, keg->uk_free);
 #endif
 
-	LIST_INSERT_HEAD(&keg->uk_zones, zone, uz_link);
+	BSD_LIST_INSERT_HEAD(&keg->uk_zones, zone, uz_link);
 
 	mtx_lock(&uma_mtx);
-	LIST_INSERT_HEAD(&uma_kegs, keg, uk_link);
+	BSD_LIST_INSERT_HEAD(&uma_kegs, keg, uk_link);
 	mtx_unlock(&uma_mtx);
 	return (0);
 }
@@ -1435,9 +1435,9 @@ zone_ctor(void *mem, int size, void *udata, int flags)
 		zone->uz_flags |= UMA_ZONE_SECONDARY;
 		mtx_lock(&uma_mtx);
 		ZONE_LOCK(zone);
-		LIST_FOREACH(z, &keg->uk_zones, uz_link) {
-			if (LIST_NEXT(z, uz_link) == NULL) {
-				LIST_INSERT_AFTER(z, zone, uz_link);
+		BSD_LIST_FOREACH(z, &keg->uk_zones, uz_link) {
+			if (BSD_LIST_NEXT(z, uz_link) == NULL) {
+				BSD_LIST_INSERT_AFTER(z, zone, uz_link);
 				break;
 			}
 		}
@@ -1467,7 +1467,7 @@ zone_ctor(void *mem, int size, void *udata, int flags)
 	 * Link in the first keg.
 	 */
 	zone->uz_klink.kl_keg = keg;
-	LIST_INSERT_HEAD(&zone->uz_kegs, &zone->uz_klink, kl_link);
+	BSD_LIST_INSERT_HEAD(&zone->uz_kegs, &zone->uz_klink, kl_link);
 	zone->uz_lock = &keg->uk_lock;
 	zone->uz_size = keg->uk_size;
 	zone->uz_flags |= (keg->uk_flags &
@@ -1538,7 +1538,7 @@ zone_dtor(void *arg, int size, void *udata)
 		cache_drain(zone);
 
 	mtx_lock(&uma_mtx);
-	LIST_REMOVE(zone, uz_link);
+	BSD_LIST_REMOVE(zone, uz_link);
 	mtx_unlock(&uma_mtx);
 	/*
 	 * XXX there are some races here where
@@ -1550,9 +1550,9 @@ zone_dtor(void *arg, int size, void *udata)
 	/*
 	 * Unlink all of our kegs.
 	 */
-	while ((klink = LIST_FIRST(&zone->uz_kegs)) != NULL) {
+	while ((klink = BSD_LIST_FIRST(&zone->uz_kegs)) != NULL) {
 		klink->kl_keg = NULL;
-		LIST_REMOVE(klink, kl_link);
+		BSD_LIST_REMOVE(klink, kl_link);
 		if (klink == &zone->uz_klink)
 			continue;
 		bsd_free(klink, M_TEMP);
@@ -1562,7 +1562,7 @@ zone_dtor(void *arg, int size, void *udata)
 	 */
 	if ((zone->uz_flags & UMA_ZONE_SECONDARY) == 0)  {
 		mtx_lock(&uma_mtx);
-		LIST_REMOVE(keg, uk_link);
+		BSD_LIST_REMOVE(keg, uk_link);
 		mtx_unlock(&uma_mtx);
 		zone_free_item(kegs, keg, NULL, SKIP_NONE,
 		    ZFREE_STATFREE);
@@ -1586,8 +1586,8 @@ zone_foreach(void (*zfunc)(uma_zone_t))
 	uma_zone_t zone;
 
 	mtx_lock(&uma_mtx);
-	LIST_FOREACH(keg, &uma_kegs, uk_link) {
-		LIST_FOREACH(zone, &keg->uk_zones, uz_link)
+	BSD_LIST_FOREACH(keg, &uma_kegs, uk_link) {
+		BSD_LIST_FOREACH(zone, &keg->uk_zones, uz_link)
 			zfunc(zone);
 	}
 	mtx_unlock(&uma_mtx);
@@ -1700,7 +1700,7 @@ uma_startup(void *bootmem, int boot_pages)
 		slab = (uma_slab_t)((u_int8_t *)bootmem + (i * UMA_SLAB_SIZE));
 		slab->us_data = (u_int8_t *)slab;
 		slab->us_flags = UMA_SLAB_BOOT;
-		LIST_INSERT_HEAD(&uma_boot_pages, slab, us_link);
+		BSD_LIST_INSERT_HEAD(&uma_boot_pages, slab, us_link);
 	}
 	mtx_init(&uma_boot_pages_mtx, "UMA boot pages", NULL, MTX_DEF);
 
@@ -1931,9 +1931,9 @@ uma_zsecond_add(uma_zone_t zone, uma_zone_t master)
 	 * Put it at the end of the list.
 	 */
 	klink->kl_keg = zone_first_keg(master);
-	LIST_FOREACH(kl, &zone->uz_kegs, kl_link) {
-		if (LIST_NEXT(kl, kl_link) == NULL) {
-			LIST_INSERT_AFTER(kl, klink, kl_link);
+	BSD_LIST_FOREACH(kl, &zone->uz_kegs, kl_link) {
+		if (BSD_LIST_NEXT(kl, kl_link) == NULL) {
+			BSD_LIST_INSERT_AFTER(kl, klink, kl_link);
 			break;
 		}
 	}
@@ -2081,17 +2081,17 @@ zalloc_start:
 	if (cache->uc_allocbucket) {
 		KASSERT(cache->uc_allocbucket->ub_cnt == 0,
 		    ("uma_zalloc_arg: Freeing a non free bucket."));
-		LIST_INSERT_HEAD(&zone->uz_free_bucket,
+		BSD_LIST_INSERT_HEAD(&zone->uz_free_bucket,
 		    cache->uc_allocbucket, ub_link);
 		cache->uc_allocbucket = NULL;
 	}
 
 	/* Check the free list for a new alloc bucket */
-	if ((bucket = LIST_FIRST(&zone->uz_full_bucket)) != NULL) {
+	if ((bucket = BSD_LIST_FIRST(&zone->uz_full_bucket)) != NULL) {
 		KASSERT(bucket->ub_cnt != 0,
 		    ("uma_zalloc_arg: Returning an empty bucket."));
 
-		LIST_REMOVE(bucket, ub_link);
+		BSD_LIST_REMOVE(bucket, ub_link);
 		cache->uc_allocbucket = bucket;
 		ZONE_UNLOCK(zone);
 		goto zalloc_start;
@@ -2138,12 +2138,12 @@ keg_fetch_slab(uma_keg_t keg, uma_zone_t zone, int flags)
 		 * fragmentation.
 		 */
 		if (keg->uk_free != 0) {
-			if (!LIST_EMPTY(&keg->uk_part_slab)) {
-				slab = LIST_FIRST(&keg->uk_part_slab);
+			if (!BSD_LIST_EMPTY(&keg->uk_part_slab)) {
+				slab = BSD_LIST_FIRST(&keg->uk_part_slab);
 			} else {
-				slab = LIST_FIRST(&keg->uk_free_slab);
-				LIST_REMOVE(slab, us_link);
-				LIST_INSERT_HEAD(&keg->uk_part_slab, slab,
+				slab = BSD_LIST_FIRST(&keg->uk_free_slab);
+				BSD_LIST_REMOVE(slab, us_link);
+				BSD_LIST_INSERT_HEAD(&keg->uk_part_slab, slab,
 				    us_link);
 			}
 			MPASS(slab->us_keg == keg);
@@ -2180,7 +2180,7 @@ keg_fetch_slab(uma_keg_t keg, uma_zone_t zone, int flags)
 		 */
 		if (slab) {
 			MPASS(slab->us_keg == keg);
-			LIST_INSERT_HEAD(&keg->uk_part_slab, slab, us_link);
+			BSD_LIST_INSERT_HEAD(&keg->uk_part_slab, slab, us_link);
 			return (slab);
 		}
 		/*
@@ -2286,7 +2286,7 @@ zone_fetch_slab_multi(uma_zone_t zone, uma_keg_t last, int rflags)
 		 * Search the available kegs for slabs.  Be careful to hold the
 		 * correct lock while calling into the keg layer.
 		 */
-		LIST_FOREACH(klink, &zone->uz_kegs, kl_link) {
+		BSD_LIST_FOREACH(klink, &zone->uz_kegs, kl_link) {
 			keg = klink->kl_keg;
 			keg_relock(keg, zone);
 			if ((keg->uk_flags & UMA_ZFLAG_FULL) == 0) {
@@ -2345,8 +2345,8 @@ slab_alloc_item(uma_zone_t zone, uma_slab_t slab)
 #endif
 	/* Move this slab to the full list */
 	if (slab->us_freecount == 0) {
-		LIST_REMOVE(slab, us_link);
-		LIST_INSERT_HEAD(&keg->uk_full_slab, slab, us_link);
+		BSD_LIST_REMOVE(slab, us_link);
+		BSD_LIST_INSERT_HEAD(&keg->uk_full_slab, slab, us_link);
 	}
 
 	return (item);
@@ -2364,10 +2364,10 @@ zone_alloc_bucket(uma_zone_t zone, int flags)
 	/*
 	 * Try this zone's free list first so we don't allocate extra buckets.
 	 */
-	if ((bucket = LIST_FIRST(&zone->uz_free_bucket)) != NULL) {
+	if ((bucket = BSD_LIST_FIRST(&zone->uz_free_bucket)) != NULL) {
 		KASSERT(bucket->ub_cnt == 0,
 		    ("zone_alloc_bucket: Bucket on free list is not empty."));
-		LIST_REMOVE(bucket, ub_link);
+		BSD_LIST_REMOVE(bucket, ub_link);
 	} else {
 		int bflags;
 
@@ -2451,7 +2451,7 @@ zone_alloc_bucket(uma_zone_t zone, int flags)
 
 	zone->uz_fills--;
 	if (bucket->ub_cnt != 0) {
-		LIST_INSERT_HEAD(&zone->uz_full_bucket,
+		BSD_LIST_INSERT_HEAD(&zone->uz_full_bucket,
 		    bucket, ub_link);
 		return (1);
 	}
@@ -2663,11 +2663,11 @@ zfree_start:
 		/* ub_cnt is pointing to the last free item */
 		KASSERT(bucket->ub_cnt != 0,
 		    ("uma_zfree: Attempting to insert an empty bucket onto the full list.\n"));
-		LIST_INSERT_HEAD(&zone->uz_full_bucket,
+		BSD_LIST_INSERT_HEAD(&zone->uz_full_bucket,
 		    bucket, ub_link);
 	}
-	if ((bucket = LIST_FIRST(&zone->uz_free_bucket)) != NULL) {
-		LIST_REMOVE(bucket, ub_link);
+	if ((bucket = BSD_LIST_FIRST(&zone->uz_free_bucket)) != NULL) {
+		BSD_LIST_REMOVE(bucket, ub_link);
 		ZONE_UNLOCK(zone);
 		cache->uc_freebucket = bucket;
 		goto zfree_start;
@@ -2688,7 +2688,7 @@ zfree_start:
 	bucket = bucket_alloc(zone->uz_count, bflags);
 	if (bucket) {
 		ZONE_LOCK(zone);
-		LIST_INSERT_HEAD(&zone->uz_free_bucket,
+		BSD_LIST_INSERT_HEAD(&zone->uz_free_bucket,
 		    bucket, ub_link);
 		ZONE_UNLOCK(zone);
 		goto zfree_restart;
@@ -2758,11 +2758,11 @@ zone_free_item(uma_zone_t zone, void *item, void *udata,
 
 	/* Do we need to remove from any lists? */
 	if (slab->us_freecount+1 == keg->uk_ipers) {
-		LIST_REMOVE(slab, us_link);
-		LIST_INSERT_HEAD(&keg->uk_free_slab, slab, us_link);
+		BSD_LIST_REMOVE(slab, us_link);
+		BSD_LIST_INSERT_HEAD(&keg->uk_free_slab, slab, us_link);
 	} else if (slab->us_freecount == 0) {
-		LIST_REMOVE(slab, us_link);
-		LIST_INSERT_HEAD(&keg->uk_part_slab, slab, us_link);
+		BSD_LIST_REMOVE(slab, us_link);
+		BSD_LIST_INSERT_HEAD(&keg->uk_part_slab, slab, us_link);
 	}
 
 	/* Slab management stuff */
@@ -2992,7 +2992,7 @@ uma_prealloc(uma_zone_t zone, int items)
 		if (slab == NULL)
 			break;
 		MPASS(slab->us_keg == keg);
-		LIST_INSERT_HEAD(&keg->uk_free_slab, slab, us_link);
+		BSD_LIST_INSERT_HEAD(&keg->uk_free_slab, slab, us_link);
 		slabs--;
 	}
 	ZONE_UNLOCK(zone);
@@ -3123,13 +3123,13 @@ uma_print_keg(uma_keg_t keg)
 	    (keg->uk_ipers * keg->uk_pages) - keg->uk_free, keg->uk_free,
 	    (keg->uk_maxpages / keg->uk_ppera) * keg->uk_ipers);
 	printf("Part slabs:\n");
-	LIST_FOREACH(slab, &keg->uk_part_slab, us_link)
+	BSD_LIST_FOREACH(slab, &keg->uk_part_slab, us_link)
 		slab_print(slab);
 	printf("Free slabs:\n");
-	LIST_FOREACH(slab, &keg->uk_free_slab, us_link)
+	BSD_LIST_FOREACH(slab, &keg->uk_free_slab, us_link)
 		slab_print(slab);
 	printf("Full slabs:\n");
-	LIST_FOREACH(slab, &keg->uk_full_slab, us_link)
+	BSD_LIST_FOREACH(slab, &keg->uk_full_slab, us_link)
 		slab_print(slab);
 }
 
@@ -3142,7 +3142,7 @@ uma_print_zone(uma_zone_t zone)
 
 	printf("zone: %s(%p) size %d flags %#x\n",
 	    zone->uz_name, zone, zone->uz_size, zone->uz_flags);
-	LIST_FOREACH(kl, &zone->uz_kegs, kl_link)
+	BSD_LIST_FOREACH(kl, &zone->uz_kegs, kl_link)
 		uma_print_keg(kl->kl_keg);
 	CPU_FOREACH(i) {
 		cache = &zone->uz_cpu[i];
@@ -3205,8 +3205,8 @@ sysctl_vm_zone_count(SYSCTL_HANDLER_ARGS)
 
 	count = 0;
 	mtx_lock(&uma_mtx);
-	LIST_FOREACH(kz, &uma_kegs, uk_link) {
-		LIST_FOREACH(z, &kz->uk_zones, uz_link)
+	BSD_LIST_FOREACH(kz, &uma_kegs, uk_link) {
+		BSD_LIST_FOREACH(z, &kz->uk_zones, uz_link)
 			count++;
 	}
 	mtx_unlock(&uma_mtx);
@@ -3235,8 +3235,8 @@ sysctl_vm_zone_stats(SYSCTL_HANDLER_ARGS)
 
 	count = 0;
 	mtx_lock(&uma_mtx);
-	LIST_FOREACH(kz, &uma_kegs, uk_link) {
-		LIST_FOREACH(z, &kz->uk_zones, uz_link)
+	BSD_LIST_FOREACH(kz, &uma_kegs, uk_link) {
+		BSD_LIST_FOREACH(z, &kz->uk_zones, uz_link)
 			count++;
 	}
 
@@ -3249,15 +3249,15 @@ sysctl_vm_zone_stats(SYSCTL_HANDLER_ARGS)
 	ush.ush_count = count;
 	(void)sbuf_bcat(&sbuf, &ush, sizeof(ush));
 
-	LIST_FOREACH(kz, &uma_kegs, uk_link) {
-		LIST_FOREACH(z, &kz->uk_zones, uz_link) {
+	BSD_LIST_FOREACH(kz, &uma_kegs, uk_link) {
+		BSD_LIST_FOREACH(z, &kz->uk_zones, uz_link) {
 			bzero(&uth, sizeof(uth));
 			ZONE_LOCK(z);
 			strlcpy(uth.uth_name, z->uz_name, UTH_MAX_NAME);
 			uth.uth_align = kz->uk_align;
 			uth.uth_size = kz->uk_size;
 			uth.uth_rsize = kz->uk_rsize;
-			LIST_FOREACH(kl, &z->uz_kegs, kl_link) {
+			BSD_LIST_FOREACH(kl, &z->uz_kegs, kl_link) {
 				k = kl->kl_keg;
 				uth.uth_maxpages += k->uk_maxpages;
 				uth.uth_pages += k->uk_pages;
@@ -3271,10 +3271,10 @@ sysctl_vm_zone_stats(SYSCTL_HANDLER_ARGS)
 			 * on the keg's zone list.
 			 */
 			if ((z->uz_flags & UMA_ZONE_SECONDARY) &&
-			    (LIST_FIRST(&kz->uk_zones) != z))
+			    (BSD_LIST_FIRST(&kz->uk_zones) != z))
 				uth.uth_zone_flags = UTH_ZONE_SECONDARY;
 
-			LIST_FOREACH(bucket, &z->uz_full_bucket, ub_link)
+			BSD_LIST_FOREACH(bucket, &z->uz_full_bucket, ub_link)
 				uth.uth_zone_free += bucket->ub_cnt;
 			uth.uth_allocs = z->uz_allocs;
 			uth.uth_frees = z->uz_frees;
@@ -3327,8 +3327,8 @@ DB_SHOW_COMMAND(uma, db_show_uma)
 
 	db_printf("%18s %8s %8s %8s %12s %8s\n", "Zone", "Size", "Used", "Free",
 	    "Requests", "Sleeps");
-	LIST_FOREACH(kz, &uma_kegs, uk_link) {
-		LIST_FOREACH(z, &kz->uk_zones, uz_link) {
+	BSD_LIST_FOREACH(kz, &uma_kegs, uk_link) {
+		BSD_LIST_FOREACH(z, &kz->uk_zones, uz_link) {
 			if (kz->uk_flags & UMA_ZFLAG_INTERNAL) {
 				allocs = z->uz_allocs;
 				frees = z->uz_frees;
@@ -3338,9 +3338,9 @@ DB_SHOW_COMMAND(uma, db_show_uma)
 				uma_zone_sumstat(z, &cachefree, &allocs,
 				    &frees, &sleeps);
 			if (!((z->uz_flags & UMA_ZONE_SECONDARY) &&
-			    (LIST_FIRST(&kz->uk_zones) != z)))
+			    (BSD_LIST_FIRST(&kz->uk_zones) != z)))
 				cachefree += kz->uk_free;
-			LIST_FOREACH(bucket, &z->uz_full_bucket, ub_link)
+			BSD_LIST_FOREACH(bucket, &z->uz_full_bucket, ub_link)
 				cachefree += bucket->ub_cnt;
 			db_printf("%18s %8ju %8jd %8d %12ju %8ju\n", z->uz_name,
 			    (uintmax_t)kz->uk_size,

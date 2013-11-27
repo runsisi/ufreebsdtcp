@@ -244,7 +244,7 @@ in6_get_hw_ifid(struct ifnet *ifp, struct in6_addr *in6)
 		{ 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 
 	IF_ADDR_RLOCK(ifp);
-	TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
+	BSD_TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
 		if (ifa->ifa_addr->sa_family != AF_LINK)
 			continue;
 		sdl = (struct sockaddr_dl *)ifa->ifa_addr;
@@ -406,7 +406,7 @@ get_ifid(struct ifnet *ifp0, struct ifnet *altifp,
 
 	/* next, try to get it from some other hardware interface */
 	IFNET_RLOCK_NOSLEEP();
-	TAILQ_FOREACH(ifp, &V_ifnet, if_list) {
+	BSD_TAILQ_FOREACH(ifp, &V_ifnet, if_list) {
 		if (ifp == ifp0)
 			continue;
 		if (in6_get_hw_ifid(ifp, in6) != 0)
@@ -820,14 +820,14 @@ in6_ifdetach(struct ifnet *ifp)
 	nd6_purge(ifp);
 
 	/* nuke any of IPv6 addresses we have */
-	TAILQ_FOREACH_SAFE(ifa, &ifp->if_addrhead, ifa_link, next) {
+	BSD_TAILQ_FOREACH_SAFE(ifa, &ifp->if_addrhead, ifa_link, next) {
 		if (ifa->ifa_addr->sa_family != AF_INET6)
 			continue;
 		in6_purgeaddr(ifa);
 	}
 
 	/* undo everything done by in6_ifattach(), just in case */
-	TAILQ_FOREACH_SAFE(ifa, &ifp->if_addrhead, ifa_link, next) {
+	BSD_TAILQ_FOREACH_SAFE(ifa, &ifp->if_addrhead, ifa_link, next) {
 		if (ifa->ifa_addr->sa_family != AF_INET6
 		 || !IN6_IS_ADDR_LINKLOCAL(&satosin6(&ifa->ifa_addr)->sin6_addr)) {
 			continue;
@@ -838,8 +838,8 @@ in6_ifdetach(struct ifnet *ifp)
 		/*
 		 * leave from multicast groups we have joined for the interface
 		 */
-		while ((imm = LIST_FIRST(&ia->ia6_memberships)) != NULL) {
-			LIST_REMOVE(imm, i6mm_chain);
+		while ((imm = BSD_LIST_FIRST(&ia->ia6_memberships)) != NULL) {
+			BSD_LIST_REMOVE(imm, i6mm_chain);
 			in6_leavegroup(imm);
 		}
 
@@ -849,12 +849,12 @@ in6_ifdetach(struct ifnet *ifp)
 
 		/* remove from the linked list */
 		IF_ADDR_WLOCK(ifp);
-		TAILQ_REMOVE(&ifp->if_addrhead, ifa, ifa_link);
+		BSD_TAILQ_REMOVE(&ifp->if_addrhead, ifa, ifa_link);
 		IF_ADDR_WUNLOCK(ifp);
 		ifa_free(ifa);				/* if_addrhead */
 
 		IN6_IFADDR_WLOCK();
-		TAILQ_REMOVE(&V_in6_ifaddrhead, ia, ia_link);
+		BSD_TAILQ_REMOVE(&V_in6_ifaddrhead, ia, ia_link);
 		IN6_IFADDR_WUNLOCK();
 		ifa_free(ifa);
 	}
@@ -938,7 +938,7 @@ in6_tmpaddrtimer(void *arg)
 	    V_ip6_temp_regen_advance) * hz, in6_tmpaddrtimer, curvnet);
 
 	bzero(nullbuf, sizeof(nullbuf));
-	TAILQ_FOREACH(ifp, &V_ifnet, if_list) {
+	BSD_TAILQ_FOREACH(ifp, &V_ifnet, if_list) {
 		ndi = ND_IFINFO(ifp);
 		if (bcmp(ndi->randomid, nullbuf, sizeof(nullbuf)) != 0) {
 			/*
@@ -956,11 +956,11 @@ in6_tmpaddrtimer(void *arg)
 static void
 in6_purgemaddrs(struct ifnet *ifp)
 {
-	LIST_HEAD(,in6_multi)	 purgeinms;
+	BSD_LIST_HEAD(,in6_multi)	 purgeinms;
 	struct in6_multi	*inm, *tinm;
 	struct ifmultiaddr	*ifma;
 
-	LIST_INIT(&purgeinms);
+	BSD_LIST_INIT(&purgeinms);
 	IN6_MULTI_LOCK();
 
 	/*
@@ -970,17 +970,17 @@ in6_purgemaddrs(struct ifnet *ifp)
 	 * by code further down.
 	 */
 	IF_ADDR_RLOCK(ifp);
-	TAILQ_FOREACH(ifma, &ifp->if_multiaddrs, ifma_link) {
+	BSD_TAILQ_FOREACH(ifma, &ifp->if_multiaddrs, ifma_link) {
 		if (ifma->ifma_addr->sa_family != AF_INET6 ||
 		    ifma->ifma_protospec == NULL)
 			continue;
 		inm = (struct in6_multi *)ifma->ifma_protospec;
-		LIST_INSERT_HEAD(&purgeinms, inm, in6m_entry);
+		BSD_LIST_INSERT_HEAD(&purgeinms, inm, in6m_entry);
 	}
 	IF_ADDR_RUNLOCK(ifp);
 
-	LIST_FOREACH_SAFE(inm, &purgeinms, in6m_entry, tinm) {
-		LIST_REMOVE(inm, in6m_entry);
+	BSD_LIST_FOREACH_SAFE(inm, &purgeinms, in6m_entry, tinm) {
+		BSD_LIST_REMOVE(inm, in6m_entry);
 		in6m_release_locked(inm);
 	}
 	mld_ifdetach(ifp);

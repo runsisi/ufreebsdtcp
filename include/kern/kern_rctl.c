@@ -84,7 +84,7 @@ FEATURE(rctl, "Resource Limits");
  * with uidinfo for user X, and to each process of that user.
  */
 struct rctl_rule_link {
-	LIST_ENTRY(rctl_rule_link)	rrl_next;
+	BSD_LIST_ENTRY(rctl_rule_link)	rrl_next;
 	struct rctl_rule		*rrl_rule;
 	int				rrl_exceeded;
 };
@@ -288,7 +288,7 @@ rctl_pcpu_available(const struct proc *p) {
 
 	rw_rlock(&rctl_lock);
 
-	LIST_FOREACH(link, &p->p_racct->r_rule_links, rrl_next) {
+	BSD_LIST_FOREACH(link, &p->p_racct->r_rule_links, rrl_next) {
 		rule = link->rrl_rule;
 		if (rule->rr_resource != RACCT_PCTCPU)
 			continue;
@@ -340,7 +340,7 @@ rctl_enforce(struct proc *p, int resource, uint64_t amount)
 	 * There may be more than one matching rule; go through all of them.
 	 * Denial should be done last, after logging and sending signals.
 	 */
-	LIST_FOREACH(link, &p->p_racct->r_rule_links, rrl_next) {
+	BSD_LIST_FOREACH(link, &p->p_racct->r_rule_links, rrl_next) {
 		rule = link->rrl_rule;
 		if (rule->rr_resource != resource)
 			continue;
@@ -463,7 +463,7 @@ rctl_get_limit(struct proc *p, int resource)
 	 * There may be more than one matching rule; go through all of them.
 	 * Denial should be done last, after logging and sending signals.
 	 */
-	LIST_FOREACH(link, &p->p_racct->r_rule_links, rrl_next) {
+	BSD_LIST_FOREACH(link, &p->p_racct->r_rule_links, rrl_next) {
 		rule = link->rrl_rule;
 		if (rule->rr_resource != resource)
 			continue;
@@ -493,7 +493,7 @@ rctl_get_available(struct proc *p, int resource)
 	 * There may be more than one matching rule; go through all of them.
 	 * Denial should be done last, after logging and sending signals.
 	 */
-	LIST_FOREACH(link, &p->p_racct->r_rule_links, rrl_next) {
+	BSD_LIST_FOREACH(link, &p->p_racct->r_rule_links, rrl_next) {
 		rule = link->rrl_rule;
 		if (rule->rr_resource != resource)
 			continue;
@@ -643,7 +643,7 @@ rctl_racct_add_rule(struct racct *racct, struct rctl_rule *rule)
 	link->rrl_exceeded = 0;
 
 	rw_wlock(&rctl_lock);
-	LIST_INSERT_HEAD(&racct->r_rule_links, link, rrl_next);
+	BSD_LIST_INSERT_HEAD(&racct->r_rule_links, link, rrl_next);
 	rw_wunlock(&rctl_lock);
 }
 
@@ -662,7 +662,7 @@ rctl_racct_add_rule_locked(struct racct *racct, struct rctl_rule *rule)
 	link->rrl_rule = rule;
 	link->rrl_exceeded = 0;
 
-	LIST_INSERT_HEAD(&racct->r_rule_links, link, rrl_next);
+	BSD_LIST_INSERT_HEAD(&racct->r_rule_links, link, rrl_next);
 	return (0);
 }
 
@@ -680,11 +680,11 @@ rctl_racct_remove_rules(struct racct *racct,
 
 	rw_assert(&rctl_lock, RA_WLOCKED);
 
-	LIST_FOREACH_SAFE(link, &racct->r_rule_links, rrl_next, linktmp) {
+	BSD_LIST_FOREACH_SAFE(link, &racct->r_rule_links, rrl_next, linktmp) {
 		if (!rctl_rule_matches(link->rrl_rule, filter))
 			continue;
 
-		LIST_REMOVE(link, rrl_next);
+		BSD_LIST_REMOVE(link, rrl_next);
 		rctl_rule_release(link->rrl_rule);
 		uma_zfree(rctl_rule_link_zone, link);
 		removed++;
@@ -1373,7 +1373,7 @@ rctl_get_rules_callback(struct racct *racct, void *arg2, void *arg3)
 	struct sbuf *sb = (struct sbuf *)arg3;
 
 	rw_rlock(&rctl_lock);
-	LIST_FOREACH(link, &racct->r_rule_links, rrl_next) {
+	BSD_LIST_FOREACH(link, &racct->r_rule_links, rrl_next) {
 		if (!rctl_rule_matches(link->rrl_rule, filter))
 			continue;
 		rctl_rule_to_sbuf(sb, link->rrl_rule);
@@ -1417,7 +1417,7 @@ again:
 	sx_assert(&allproc_lock, SA_LOCKED);
 	FOREACH_PROC_IN_SYSTEM(p) {
 		rw_rlock(&rctl_lock);
-		LIST_FOREACH(link, &p->p_racct->r_rule_links, rrl_next) {
+		BSD_LIST_FOREACH(link, &p->p_racct->r_rule_links, rrl_next) {
 			/*
 			 * Non-process rules will be added to the buffer later.
 			 * Adding them here would result in duplicated output.
@@ -1505,7 +1505,7 @@ again:
 	KASSERT(sb != NULL, ("sbuf_new failed"));
 
 	rw_rlock(&rctl_lock);
-	LIST_FOREACH(link, &filter->rr_subject.rs_proc->p_racct->r_rule_links,
+	BSD_LIST_FOREACH(link, &filter->rr_subject.rs_proc->p_racct->r_rule_links,
 	    rrl_next) {
 		rctl_rule_to_sbuf(sb, link->rrl_rule);
 		sbuf_printf(sb, ",");
@@ -1614,13 +1614,13 @@ rctl_proc_ucred_changed(struct proc *p, struct ucred *newcred)
 	struct uidinfo *newuip;
 	struct loginclass *newlc;
 	struct prison_racct *newprr;
-	LIST_HEAD(, rctl_rule_link) newrules;
+	BSD_LIST_HEAD(, rctl_rule_link) newrules;
 
 	newuip = newcred->cr_ruidinfo;
 	newlc = newcred->cr_loginclass;
 	newprr = newcred->cr_prison->pr_prison_racct;
 	
-	LIST_INIT(&newrules);
+	BSD_LIST_INIT(&newrules);
 
 again:
 	/*
@@ -1629,16 +1629,16 @@ again:
 	 */
 	rulecnt = 0;
 	rw_rlock(&rctl_lock);
-	LIST_FOREACH(link, &p->p_racct->r_rule_links, rrl_next) {
+	BSD_LIST_FOREACH(link, &p->p_racct->r_rule_links, rrl_next) {
 		if (link->rrl_rule->rr_subject_type ==
 		    RCTL_SUBJECT_TYPE_PROCESS)
 			rulecnt++;
 	}
-	LIST_FOREACH(link, &newuip->ui_racct->r_rule_links, rrl_next)
+	BSD_LIST_FOREACH(link, &newuip->ui_racct->r_rule_links, rrl_next)
 		rulecnt++;
-	LIST_FOREACH(link, &newlc->lc_racct->r_rule_links, rrl_next)
+	BSD_LIST_FOREACH(link, &newlc->lc_racct->r_rule_links, rrl_next)
 		rulecnt++;
-	LIST_FOREACH(link, &newprr->prr_racct->r_rule_links, rrl_next)
+	BSD_LIST_FOREACH(link, &newprr->prr_racct->r_rule_links, rrl_next)
 		rulecnt++;
 	rw_runlock(&rctl_lock);
 
@@ -1649,51 +1649,51 @@ again:
 	for (i = 0; i < rulecnt; i++) {
 		newlink = uma_zalloc(rctl_rule_link_zone, M_WAITOK);
 		newlink->rrl_rule = NULL;
-		LIST_INSERT_HEAD(&newrules, newlink, rrl_next);
+		BSD_LIST_INSERT_HEAD(&newrules, newlink, rrl_next);
 	}
 
-	newlink = LIST_FIRST(&newrules);
+	newlink = BSD_LIST_FIRST(&newrules);
 
 	/*
 	 * Assign rules to the newly allocated list entries.
 	 */
 	rw_wlock(&rctl_lock);
-	LIST_FOREACH(link, &p->p_racct->r_rule_links, rrl_next) {
+	BSD_LIST_FOREACH(link, &p->p_racct->r_rule_links, rrl_next) {
 		if (link->rrl_rule->rr_subject_type ==
 		    RCTL_SUBJECT_TYPE_PROCESS) {
 			if (newlink == NULL)
 				goto goaround;
 			rctl_rule_acquire(link->rrl_rule);
 			newlink->rrl_rule = link->rrl_rule;
-			newlink = LIST_NEXT(newlink, rrl_next);
+			newlink = BSD_LIST_NEXT(newlink, rrl_next);
 			rulecnt--;
 		}
 	}
 	
-	LIST_FOREACH(link, &newuip->ui_racct->r_rule_links, rrl_next) {
+	BSD_LIST_FOREACH(link, &newuip->ui_racct->r_rule_links, rrl_next) {
 		if (newlink == NULL)
 			goto goaround;
 		rctl_rule_acquire(link->rrl_rule);
 		newlink->rrl_rule = link->rrl_rule;
-		newlink = LIST_NEXT(newlink, rrl_next);
+		newlink = BSD_LIST_NEXT(newlink, rrl_next);
 		rulecnt--;
 	}
 
-	LIST_FOREACH(link, &newlc->lc_racct->r_rule_links, rrl_next) {
+	BSD_LIST_FOREACH(link, &newlc->lc_racct->r_rule_links, rrl_next) {
 		if (newlink == NULL)
 			goto goaround;
 		rctl_rule_acquire(link->rrl_rule);
 		newlink->rrl_rule = link->rrl_rule;
-		newlink = LIST_NEXT(newlink, rrl_next);
+		newlink = BSD_LIST_NEXT(newlink, rrl_next);
 		rulecnt--;
 	}
 
-	LIST_FOREACH(link, &newprr->prr_racct->r_rule_links, rrl_next) {
+	BSD_LIST_FOREACH(link, &newprr->prr_racct->r_rule_links, rrl_next) {
 		if (newlink == NULL)
 			goto goaround;
 		rctl_rule_acquire(link->rrl_rule);
 		newlink->rrl_rule = link->rrl_rule;
-		newlink = LIST_NEXT(newlink, rrl_next);
+		newlink = BSD_LIST_NEXT(newlink, rrl_next);
 		rulecnt--;
 	}
 
@@ -1701,9 +1701,9 @@ again:
 		/*
 		 * Free the old rule list.
 		 */
-		while (!LIST_EMPTY(&p->p_racct->r_rule_links)) {
-			link = LIST_FIRST(&p->p_racct->r_rule_links);
-			LIST_REMOVE(link, rrl_next);
+		while (!BSD_LIST_EMPTY(&p->p_racct->r_rule_links)) {
+			link = BSD_LIST_FIRST(&p->p_racct->r_rule_links);
+			BSD_LIST_REMOVE(link, rrl_next);
 			rctl_rule_release(link->rrl_rule);
 			uma_zfree(rctl_rule_link_zone, link);
 		}
@@ -1714,10 +1714,10 @@ again:
 		 * XXX: Is there any way to switch list heads instead
 		 *      of iterating here?
 		 */
-		while (!LIST_EMPTY(&newrules)) {
-			newlink = LIST_FIRST(&newrules);
-			LIST_REMOVE(newlink, rrl_next);
-			LIST_INSERT_HEAD(&p->p_racct->r_rule_links,
+		while (!BSD_LIST_EMPTY(&newrules)) {
+			newlink = BSD_LIST_FIRST(&newrules);
+			BSD_LIST_REMOVE(newlink, rrl_next);
+			BSD_LIST_INSERT_HEAD(&p->p_racct->r_rule_links,
 			    newlink, rrl_next);
 		}
 
@@ -1733,9 +1733,9 @@ goaround:
 	 * Rule list changed while we were not holding the rctl_lock.
 	 * Free the new list and try again.
 	 */
-	while (!LIST_EMPTY(&newrules)) {
-		newlink = LIST_FIRST(&newrules);
-		LIST_REMOVE(newlink, rrl_next);
+	while (!BSD_LIST_EMPTY(&newrules)) {
+		newlink = BSD_LIST_FIRST(&newrules);
+		BSD_LIST_REMOVE(newlink, rrl_next);
 		if (newlink->rrl_rule != NULL)
 			rctl_rule_release(newlink->rrl_rule);
 		uma_zfree(rctl_rule_link_zone, newlink);
@@ -1754,7 +1754,7 @@ rctl_proc_fork(struct proc *parent, struct proc *child)
 	struct rctl_rule_link *link;
 	struct rctl_rule *rule;
 
-	LIST_INIT(&child->p_racct->r_rule_links);
+	BSD_LIST_INIT(&child->p_racct->r_rule_links);
 
 	KASSERT(parent->p_racct != NULL, ("process without racct; p = %p", parent));
 
@@ -1765,7 +1765,7 @@ rctl_proc_fork(struct proc *parent, struct proc *child)
 	 * to the child.  Rules with 'process' subject have to be duplicated
 	 * in order to make their rr_subject point to the new process.
 	 */
-	LIST_FOREACH(link, &parent->p_racct->r_rule_links, rrl_next) {
+	BSD_LIST_FOREACH(link, &parent->p_racct->r_rule_links, rrl_next) {
 		if (link->rrl_rule->rr_subject_type ==
 		    RCTL_SUBJECT_TYPE_PROCESS) {
 			rule = rctl_rule_duplicate(link->rrl_rule, M_NOWAIT);
@@ -1791,9 +1791,9 @@ rctl_proc_fork(struct proc *parent, struct proc *child)
 	return (0);
 
 fail:
-	while (!LIST_EMPTY(&child->p_racct->r_rule_links)) {
-		link = LIST_FIRST(&child->p_racct->r_rule_links);
-		LIST_REMOVE(link, rrl_next);
+	while (!BSD_LIST_EMPTY(&child->p_racct->r_rule_links)) {
+		link = BSD_LIST_FIRST(&child->p_racct->r_rule_links);
+		BSD_LIST_REMOVE(link, rrl_next);
 		rctl_rule_release(link->rrl_rule);
 		uma_zfree(rctl_rule_link_zone, link);
 	}
@@ -1810,9 +1810,9 @@ rctl_racct_release(struct racct *racct)
 	struct rctl_rule_link *link;
 
 	rw_wlock(&rctl_lock);
-	while (!LIST_EMPTY(&racct->r_rule_links)) {
-		link = LIST_FIRST(&racct->r_rule_links);
-		LIST_REMOVE(link, rrl_next);
+	while (!BSD_LIST_EMPTY(&racct->r_rule_links)) {
+		link = BSD_LIST_FIRST(&racct->r_rule_links);
+		BSD_LIST_REMOVE(link, rrl_next);
 		rctl_rule_release(link->rrl_rule);
 		uma_zfree(rctl_rule_link_zone, link);
 	}

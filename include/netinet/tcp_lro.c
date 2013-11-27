@@ -77,8 +77,8 @@ tcp_lro_init(struct lro_ctrl *lc)
 	lc->lro_queued = 0;
 	lc->lro_flushed = 0;
 	lc->lro_cnt = 0;
-	SLIST_INIT(&lc->lro_free);
-	SLIST_INIT(&lc->lro_active);
+	BSD_SLIST_INIT(&lc->lro_free);
+	BSD_SLIST_INIT(&lc->lro_active);
 
 	error = 0;
 	for (i = 0; i < LRO_ENTRIES; i++) {
@@ -90,7 +90,7 @@ tcp_lro_init(struct lro_ctrl *lc)
                         break;
                 }
 		lc->lro_cnt = i + 1;
-		SLIST_INSERT_HEAD(&lc->lro_free, le, next);
+		BSD_SLIST_INSERT_HEAD(&lc->lro_free, le, next);
         }
 
 	return (error);
@@ -101,9 +101,9 @@ tcp_lro_free(struct lro_ctrl *lc)
 {
 	struct lro_entry *le;
 
-	while (!SLIST_EMPTY(&lc->lro_free)) {
-		le = SLIST_FIRST(&lc->lro_free);
-		SLIST_REMOVE_HEAD(&lc->lro_free, next);
+	while (!BSD_SLIST_EMPTY(&lc->lro_free)) {
+		le = BSD_SLIST_FIRST(&lc->lro_free);
+		BSD_SLIST_REMOVE_HEAD(&lc->lro_free, next);
 		bsd_free(le, M_DEVBUF);
 	}
 }
@@ -283,7 +283,7 @@ tcp_lro_flush(struct lro_ctrl *lc, struct lro_entry *le)
 	lc->lro_queued += le->append_cnt + 1;
 	lc->lro_flushed++;
 	bzero(le, sizeof(*le));
-	SLIST_INSERT_HEAD(&lc->lro_free, le, next);
+	BSD_SLIST_INSERT_HEAD(&lc->lro_free, le, next);
 }
 
 #ifdef INET6
@@ -456,7 +456,7 @@ tcp_lro_rx(struct lro_ctrl *lc, struct mbuf *m, uint32_t csum)
 	seq = ntohl(th->th_seq);
 
 	/* Try to find a matching previous segment. */
-	SLIST_FOREACH(le, &lc->lro_active, next) {
+	BSD_SLIST_FOREACH(le, &lc->lro_active, next) {
 		if (le->eh_type != eh_type)
 			continue;
 		if (le->source_port != th->th_sport ||
@@ -483,7 +483,7 @@ tcp_lro_rx(struct lro_ctrl *lc, struct mbuf *m, uint32_t csum)
 
 		/* Flush now if appending will result in overflow. */
 		if (le->p_len > (65535 - tcp_data_len)) {
-			SLIST_REMOVE(&lc->lro_active, le, lro_entry, next);
+			BSD_SLIST_REMOVE(&lc->lro_active, le, lro_entry, next);
 			tcp_lro_flush(lc, le);
 			break;
 		}
@@ -492,7 +492,7 @@ tcp_lro_rx(struct lro_ctrl *lc, struct mbuf *m, uint32_t csum)
 		if (__predict_false(seq != le->next_seq ||
 		    (tcp_data_len == 0 && le->ack_seq == th->th_ack))) {
 			/* Out of order packet or duplicate ACK. */
-			SLIST_REMOVE(&lc->lro_active, le, lro_entry, next);
+			BSD_SLIST_REMOVE(&lc->lro_active, le, lro_entry, next);
 			tcp_lro_flush(lc, le);
 			return (TCP_LRO_CANNOT);
 		}
@@ -541,7 +541,7 @@ tcp_lro_rx(struct lro_ctrl *lc, struct mbuf *m, uint32_t csum)
 		 * overflow, pro-actively flush now.
 		 */
 		if (le->p_len > (65535 - lc->ifp->if_mtu)) {
-			SLIST_REMOVE(&lc->lro_active, le, lro_entry, next);
+			BSD_SLIST_REMOVE(&lc->lro_active, le, lro_entry, next);
 			tcp_lro_flush(lc, le);
 		}
 
@@ -549,13 +549,13 @@ tcp_lro_rx(struct lro_ctrl *lc, struct mbuf *m, uint32_t csum)
 	}
 
 	/* Try to find an empty slot. */
-	if (SLIST_EMPTY(&lc->lro_free))
+	if (BSD_SLIST_EMPTY(&lc->lro_free))
 		return (TCP_LRO_CANNOT);
 
 	/* Start a new segment chain. */
-	le = SLIST_FIRST(&lc->lro_free);
-	SLIST_REMOVE_HEAD(&lc->lro_free, next);
-	SLIST_INSERT_HEAD(&lc->lro_active, le, next);
+	le = BSD_SLIST_FIRST(&lc->lro_free);
+	BSD_SLIST_REMOVE_HEAD(&lc->lro_free, next);
+	BSD_SLIST_INSERT_HEAD(&lc->lro_active, le, next);
 
 	/* Start filling in details. */
 	switch (eh_type) {

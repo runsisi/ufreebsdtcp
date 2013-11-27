@@ -379,12 +379,12 @@ kern_accept(struct thread *td, int s, struct sockaddr **name,
 	if (error)
 		goto done;
 	ACCEPT_LOCK();
-	if ((head->so_state & SS_NBIO) && TAILQ_EMPTY(&head->so_comp)) {
+	if ((head->so_state & SS_NBIO) && BSD_TAILQ_EMPTY(&head->so_comp)) {
 		ACCEPT_UNLOCK();
 		error = EWOULDBLOCK;
 		goto noconnection;
 	}
-	while (TAILQ_EMPTY(&head->so_comp) && head->so_error == 0) {
+	while (BSD_TAILQ_EMPTY(&head->so_comp) && head->so_error == 0) {
 		if (head->so_rcv.sb_state & SBS_CANTRCVMORE) {
 			head->so_error = ECONNABORTED;
 			break;
@@ -402,7 +402,7 @@ kern_accept(struct thread *td, int s, struct sockaddr **name,
 		ACCEPT_UNLOCK();
 		goto noconnection;
 	}
-	so = TAILQ_FIRST(&head->so_comp);
+	so = BSD_TAILQ_FIRST(&head->so_comp);
 	KASSERT(!(so->so_qstate & SQ_INCOMP), ("accept1: so SQ_INCOMP"));
 	KASSERT(so->so_qstate & SQ_COMP, ("accept1: so not SQ_COMP"));
 
@@ -414,7 +414,7 @@ kern_accept(struct thread *td, int s, struct sockaddr **name,
 	SOCK_LOCK(so);			/* soref() and so_state update */
 	soref(so);			/* file descriptor reference */
 
-	TAILQ_REMOVE(&head->so_comp, so, so_list);
+	BSD_TAILQ_REMOVE(&head->so_comp, so, so_list);
 	head->so_qlen--;
 	so->so_state |= (head->so_state & SS_NBIO);
 	so->so_qstate &= ~SQ_COMP;
@@ -2379,7 +2379,7 @@ sys_sctp_peeloff(td, uap)
 
 	ACCEPT_LOCK();
 
-	TAILQ_REMOVE(&head->so_comp, so, so_list);
+	BSD_TAILQ_REMOVE(&head->so_comp, so, so_list);
 	head->so_qlen--;
 	so->so_state |= (head->so_state & SS_NBIO);
 	so->so_state &= ~SS_NOFDREF;

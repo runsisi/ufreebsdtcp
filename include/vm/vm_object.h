@@ -83,10 +83,10 @@
 
 struct vm_object {
 	struct mtx mtx;
-	TAILQ_ENTRY(vm_object) object_list; /* list of all objects */
-	LIST_HEAD(, vm_object) shadow_head; /* objects that this is a shadow for */
-	LIST_ENTRY(vm_object) shadow_list; /* chain of shadow objects */
-	TAILQ_HEAD(, vm_page) memq;	/* list of resident pages */
+	BSD_TAILQ_ENTRY(vm_object) object_list; /* list of all objects */
+	BSD_LIST_HEAD(, vm_object) shadow_head; /* objects that this is a shadow for */
+	BSD_LIST_ENTRY(vm_object) shadow_list; /* chain of shadow objects */
+	BSD_TAILQ_HEAD(, vm_page) memq;	/* list of resident pages */
 	vm_page_t root;			/* root of the resident page splay tree */
 	vm_pindex_t size;		/* Object size */
 	int generation;			/* generation ID */
@@ -100,8 +100,8 @@ struct vm_object {
 	int resident_page_count;	/* number of resident pages */
 	struct vm_object *backing_object; /* object that I'm a shadow of */
 	vm_ooffset_t backing_object_offset;/* Offset in backing object */
-	TAILQ_ENTRY(vm_object) pager_object_list; /* list of all objects of this pager type */
-	LIST_HEAD(, vm_reserv) rvq;	/* list of reservations */
+	BSD_TAILQ_ENTRY(vm_object) pager_object_list; /* list of all objects of this pager type */
+	BSD_LIST_HEAD(, vm_reserv) rvq;	/* list of reservations */
 	vm_page_t cache;		/* root of the cache page splay tree */
 	void *handle;
 	union {
@@ -121,7 +121,7 @@ struct vm_object {
 		 *	devp_pglist - list of allocated pages
 		 */
 		struct {
-			TAILQ_HEAD(, vm_page) devp_pglist;
+			BSD_TAILQ_HEAD(, vm_page) devp_pglist;
 			struct cdev_pager_ops *ops;
 		} devp;
 
@@ -131,7 +131,7 @@ struct vm_object {
 		 *	sgp_pglist - list of allocated pages
 		 */
 		struct {
-			TAILQ_HEAD(, vm_page) sgp_pglist;
+			BSD_TAILQ_HEAD(, vm_page) sgp_pglist;
 		} sgp;
 
 		/*
@@ -177,7 +177,7 @@ struct vm_object {
 #define	OBJPR_CLEANONLY	0x1		/* Don't remove dirty pages. */
 #define	OBJPR_NOTMAPPED	0x2		/* Don't unmap pages. */
 
-TAILQ_HEAD(object_q, vm_object);
+BSD_TAILQ_HEAD(object_q, vm_object);
 
 extern struct object_q vm_object_list;	/* list of allocated objects */
 extern struct mtx vm_object_list_mtx;	/* lock for object list and count */

@@ -274,9 +274,9 @@ retry:
 		 * is in use.  Remember the lowest pid that's greater
 		 * than trypid, so we can avoid checking for a while.
 		 */
-		p = LIST_FIRST(&allproc);
+		p = BSD_LIST_FIRST(&allproc);
 again:
-		for (; p != NULL; p = LIST_NEXT(p, p_list)) {
+		for (; p != NULL; p = BSD_LIST_NEXT(p, p_list)) {
 			while (p->p_pid == trypid ||
 			    (p->p_pgrp != NULL &&
 			    (p->p_pgrp->pg_id == trypid ||
@@ -300,7 +300,7 @@ again:
 		}
 		if (!doingzomb) {
 			doingzomb = 1;
-			p = LIST_FIRST(&zombproc);
+			p = BSD_LIST_FIRST(&zombproc);
 			goto again;
 		}
 	}
@@ -395,8 +395,8 @@ do_fork(struct thread *td, int flags, struct proc *p2, struct thread *td2,
 	p2->p_state = PRS_NEW;		/* protect against others */
 	p2->p_pid = trypid;
 	AUDIT_ARG_PID(p2->p_pid);
-	LIST_INSERT_HEAD(&allproc, p2, p_list);
-	LIST_INSERT_HEAD(PIDHASH(p2->p_pid), p2, p_hash);
+	BSD_LIST_INSERT_HEAD(&allproc, p2, p_list);
+	BSD_LIST_INSERT_HEAD(PIDHASH(p2->p_pid), p2, p_hash);
 	tidhash_add(td2);
 	PROC_LOCK(p2);
 	PROC_LOCK(p1);
@@ -587,10 +587,10 @@ do_fork(struct thread *td, int flags, struct proc *p2, struct thread *td2,
 		p2->p_flag |= P_PPWAIT;
 
 	p2->p_pgrp = p1->p_pgrp;
-	LIST_INSERT_AFTER(p1, p2, p_pglist);
+	BSD_LIST_INSERT_AFTER(p1, p2, p_pglist);
 	PGRP_UNLOCK(p1->p_pgrp);
-	LIST_INIT(&p2->p_children);
-	LIST_INIT(&p2->p_orphans);
+	BSD_LIST_INIT(&p2->p_children);
+	BSD_LIST_INIT(&p2->p_orphans);
 
 	callout_init_mtx(&p2->p_itcallout, &p2->p_mtx, 0);
 
@@ -622,7 +622,7 @@ do_fork(struct thread *td, int flags, struct proc *p2, struct thread *td2,
 	else
 		pptr = p1;
 	p2->p_pptr = pptr;
-	LIST_INSERT_HEAD(&pptr->p_children, p2, p_sibling);
+	BSD_LIST_INSERT_HEAD(&pptr->p_children, p2, p_sibling);
 	sx_xunlock(&proctree_lock);
 
 	/* Inform accounting that we have forked. */
@@ -880,7 +880,7 @@ fork1(struct thread *td, int flags, int pages, struct proc **procp,
 	mac_proc_init(newproc);
 #endif
 	knlist_init_mtx(&newproc->p_klist, &newproc->p_mtx);
-	STAILQ_INIT(&newproc->p_ktr);
+	BSD_STAILQ_INIT(&newproc->p_ktr);
 
 	/* We have to lock the process tree while we look for a pid. */
 	sx_slock(&proctree_lock);

@@ -200,8 +200,8 @@ struct lacp_portmap {
 };
 
 struct lacp_port {
-	TAILQ_ENTRY(lacp_port)	lp_dist_q;
-	LIST_ENTRY(lacp_port)	lp_next;
+	BSD_TAILQ_ENTRY(lacp_port)	lp_dist_q;
+	BSD_LIST_ENTRY(lacp_port)	lp_next;
 	struct lacp_softc	*lp_lsc;
 	struct lagg_port	*lp_lagg;
 	struct ifnet		*lp_ifp;
@@ -224,10 +224,10 @@ struct lacp_port {
 };
 
 struct lacp_aggregator {
-	TAILQ_ENTRY(lacp_aggregator)	la_q;
+	BSD_TAILQ_ENTRY(lacp_aggregator)	la_q;
 	int			la_refcnt; /* num of ports which selected us */
 	int			la_nports; /* num of distributing ports  */
-	TAILQ_HEAD(, lacp_port)	la_ports; /* distributing ports */
+	BSD_TAILQ_HEAD(, lacp_port)	la_ports; /* distributing ports */
 	struct lacp_peerinfo	la_partner;
 	struct lacp_peerinfo	la_actor;
 	int			la_pending; /* number of ports in wait_while */
@@ -237,11 +237,11 @@ struct lacp_softc {
 	struct lagg_softc	*lsc_softc;
 	struct mtx		lsc_mtx;
 	struct lacp_aggregator	*lsc_active_aggregator;
-	TAILQ_HEAD(, lacp_aggregator) lsc_aggregators;
+	BSD_TAILQ_HEAD(, lacp_aggregator) lsc_aggregators;
 	boolean_t		lsc_suppress_distributing;
 	struct callout		lsc_transit_callout;
 	struct callout		lsc_callout;
-	LIST_HEAD(, lacp_port)	lsc_ports;
+	BSD_LIST_HEAD(, lacp_port)	lsc_ports;
 	struct lacp_portmap	lsc_pmap[2];
 	volatile u_int		lsc_activemap;
 	u_int32_t		lsc_hashkey;

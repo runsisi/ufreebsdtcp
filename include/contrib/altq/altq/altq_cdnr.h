@@ -245,7 +245,7 @@ struct cdnr_pktinfo {
  * traffic conditioner control block common to all types of tc elements
  */
 struct cdnr_block {
-	LIST_ENTRY(cdnr_block)	cb_next;
+	BSD_LIST_ENTRY(cdnr_block)	cb_next;
 	int		cb_len;		/* size of this tc element */
 	int		cb_type;	/* cdnr block type */
 	int		cb_ref;		/* reference count of this element */
@@ -262,10 +262,10 @@ struct cdnr_block {
 struct top_cdnr {
 	struct cdnr_block	tc_block;
 
-	LIST_ENTRY(top_cdnr)	tc_next;
+	BSD_LIST_ENTRY(top_cdnr)	tc_next;
 	struct ifaltq		*tc_ifq;
 
-	LIST_HEAD(, cdnr_block) tc_elements;
+	BSD_LIST_HEAD(, cdnr_block) tc_elements;
 #ifdef ALTQ3_CLFIER_COMPAT
 	struct acc_classifier	tc_classifier;
 #endif

@@ -87,9 +87,9 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/kern/subr_rman.c 248085 2013-03-09 02:36:3
  */
 struct resource_i {
 	struct resource		r_r;
-	TAILQ_ENTRY(resource_i)	r_link;
-	LIST_ENTRY(resource_i)	r_sharelink;
-	LIST_HEAD(, resource_i)	*r_sharehead;
+	BSD_TAILQ_ENTRY(resource_i)	r_link;
+	BSD_LIST_ENTRY(resource_i)	r_sharelink;
+	BSD_LIST_HEAD(, resource_i)	*r_sharehead;
 	u_long	r_start;	/* index of the first entry in this resource */
 	u_long	r_end;		/* index of the last entry (inclusive) */
 	u_int	r_flags;
@@ -134,7 +134,7 @@ rman_init(struct rman *rm)
 
 	if (once == 0) {
 		once = 1;
-		TAILQ_INIT(&rman_head);
+		BSD_TAILQ_INIT(&rman_head);
 		mtx_init(&rman_mtx, "rman head", NULL, MTX_DEF);
 	}
 
@@ -145,14 +145,14 @@ rman_init(struct rman *rm)
 	if (rm->rm_type == RMAN_GAUGE)
 		panic("implement RMAN_GAUGE");
 
-	TAILQ_INIT(&rm->rm_list);
+	BSD_TAILQ_INIT(&rm->rm_list);
 	rm->rm_mtx = bsd_malloc(sizeof *rm->rm_mtx, M_RMAN, M_NOWAIT | M_ZERO);
 	if (rm->rm_mtx == NULL)
 		return ENOMEM;
 	mtx_init(rm->rm_mtx, "rman", NULL, MTX_DEF);
 
 	mtx_lock(&rman_mtx);
-	TAILQ_INSERT_TAIL(&rman_head, rm, rm_link);
+	BSD_TAILQ_INSERT_TAIL(&rman_head, rm, rm_link);
 	mtx_unlock(&rman_mtx);
 	return 0;
 }
@@ -176,7 +176,7 @@ rman_manage_region(struct rman *rm, u_long start, u_long end)
 	mtx_lock(rm->rm_mtx);
 
 	/* Skip entries before us. */
-	TAILQ_FOREACH(s, &rm->rm_list, r_link) {
+	BSD_TAILQ_FOREACH(s, &rm->rm_list, r_link) {
 		if (s->r_end == ULONG_MAX)
 			break;
 		if (s->r_end + 1 >= r->r_start)
@@ -185,14 +185,14 @@ rman_manage_region(struct rman *rm, u_long start, u_long end)
 
 	/* If we ran off the end of the list, insert at the tail. */
 	if (s == NULL) {
-		TAILQ_INSERT_TAIL(&rm->rm_list, r, r_link);
+		BSD_TAILQ_INSERT_TAIL(&rm->rm_list, r, r_link);
 	} else {
 		/* Check for any overlap with the current region. */
 		if (r->r_start <= s->r_end && r->r_end >= s->r_start)
 			return EBUSY;
 
 		/* Check for any overlap with the next region. */
-		t = TAILQ_NEXT(s, r_link);
+		t = BSD_TAILQ_NEXT(s, r_link);
 		if (t && r->r_start <= t->r_end && r->r_end >= t->r_start)
 			return EBUSY;
 
@@ -208,7 +208,7 @@ rman_manage_region(struct rman *rm, u_long start, u_long end)
 			/* Can we merge all 3 regions? */
 			if (t != NULL) {
 				s->r_end = t->r_end;
-				TAILQ_REMOVE(&rm->rm_list, t, r_link);
+				BSD_TAILQ_REMOVE(&rm->rm_list, t, r_link);
 				bsd_free(r, M_RMAN);
 				bsd_free(t, M_RMAN);
 			} else {
@@ -220,9 +220,9 @@ rman_manage_region(struct rman *rm, u_long start, u_long end)
 			t->r_start = r->r_start;
 			bsd_free(r, M_RMAN);
 		} else if (s->r_end < r->r_start) {
-			TAILQ_INSERT_AFTER(&rm->rm_list, s, r, r_link);
+			BSD_TAILQ_INSERT_AFTER(&rm->rm_list, s, r, r_link);
 		} else {
-			TAILQ_INSERT_BEFORE(s, r, r_link);
+			BSD_TAILQ_INSERT_BEFORE(s, r, r_link);
 		}
 	}
 
@@ -246,7 +246,7 @@ rman_fini(struct rman *rm)
 	struct resource_i *r;
 
 	mtx_lock(rm->rm_mtx);
-	TAILQ_FOREACH(r, &rm->rm_list, r_link) {
+	BSD_TAILQ_FOREACH(r, &rm->rm_list, r_link) {
 		if (r->r_flags & RF_ALLOCATED) {
 			mtx_unlock(rm->rm_mtx);
 			return EBUSY;
@@ -257,14 +257,14 @@ rman_fini(struct rman *rm)
 	 * There really should only be one of these if we are in this
 	 * state and the code is working properly, but it can't hurt.
 	 */
-	while (!TAILQ_EMPTY(&rm->rm_list)) {
-		r = TAILQ_FIRST(&rm->rm_list);
-		TAILQ_REMOVE(&rm->rm_list, r, r_link);
+	while (!BSD_TAILQ_EMPTY(&rm->rm_list)) {
+		r = BSD_TAILQ_FIRST(&rm->rm_list);
+		BSD_TAILQ_REMOVE(&rm->rm_list, r, r_link);
 		bsd_free(r, M_RMAN);
 	}
 	mtx_unlock(rm->rm_mtx);
 	mtx_lock(&rman_mtx);
-	TAILQ_REMOVE(&rman_head, rm, rm_link);
+	BSD_TAILQ_REMOVE(&rman_head, rm, rm_link);
 	mtx_unlock(&rman_mtx);
 	mtx_destroy(rm->rm_mtx);
 	bsd_free(rm->rm_mtx, M_RMAN);
@@ -278,7 +278,7 @@ rman_first_free_region(struct rman *rm, u_long *start, u_long *end)
 	struct resource_i *r;
 
 	mtx_lock(rm->rm_mtx);
-	TAILQ_FOREACH(r, &rm->rm_list, r_link) {
+	BSD_TAILQ_FOREACH(r, &rm->rm_list, r_link) {
 		if (!(r->r_flags & RF_ALLOCATED)) {
 			*start = r->r_start;
 			*end = r->r_end;
@@ -296,7 +296,7 @@ rman_last_free_region(struct rman *rm, u_long *start, u_long *end)
 	struct resource_i *r;
 
 	mtx_lock(rm->rm_mtx);
-	TAILQ_FOREACH_REVERSE(r, &rm->rm_list, resource_head, r_link) {
+	BSD_TAILQ_FOREACH_REVERSE(r, &rm->rm_list, resource_head, r_link) {
 		if (!(r->r_flags & RF_ALLOCATED)) {
 			*start = r->r_start;
 			*end = r->r_end;
@@ -335,15 +335,15 @@ rman_adjust_resource(struct resource *rr, u_long start, u_long end)
 	rm = r->r_rm;
 	mtx_lock(rm->rm_mtx);
 #ifdef INVARIANTS
-	TAILQ_FOREACH(s, &rm->rm_list, r_link) {
+	BSD_TAILQ_FOREACH(s, &rm->rm_list, r_link) {
 		if (s == r)
 			break;
 	}
 	if (s == NULL)
 		panic("resource not in list");
 #endif
-	s = TAILQ_PREV(r, resource_head, r_link);
-	t = TAILQ_NEXT(r, r_link);
+	s = BSD_TAILQ_PREV(r, resource_head, r_link);
+	t = BSD_TAILQ_NEXT(r, r_link);
 	KASSERT(s == NULL || s->r_end + 1 == r->r_start,
 	    ("prev resource mismatch"));
 	KASSERT(t == NULL || r->r_end + 1 == t->r_start,
@@ -375,7 +375,7 @@ rman_adjust_resource(struct resource *rr, u_long start, u_long end)
 		KASSERT(s->r_flags == 0, ("prev is busy"));
 		r->r_start = start;
 		if (s->r_start == start) {
-			TAILQ_REMOVE(&rm->rm_list, s, r_link);
+			BSD_TAILQ_REMOVE(&rm->rm_list, s, r_link);
 			bsd_free(s, M_RMAN);
 		} else
 			s->r_end = start - 1;
@@ -385,7 +385,7 @@ rman_adjust_resource(struct resource *rr, u_long start, u_long end)
 		KASSERT(t->r_flags == 0, ("next is busy"));
 		r->r_end = end;
 		if (t->r_end == end) {
-			TAILQ_REMOVE(&rm->rm_list, t, r_link);
+			BSD_TAILQ_REMOVE(&rm->rm_list, t, r_link);
 			bsd_free(t, M_RMAN);
 		} else
 			t->r_start = end + 1;
@@ -404,12 +404,12 @@ rman_adjust_resource(struct resource *rr, u_long start, u_long end)
 		new->r_rm = rm;
 		mtx_lock(rm->rm_mtx);
 		r->r_start = start;
-		s = TAILQ_PREV(r, resource_head, r_link);
+		s = BSD_TAILQ_PREV(r, resource_head, r_link);
 		if (s != NULL && !(s->r_flags & RF_ALLOCATED)) {
 			s->r_end = start - 1;
 			bsd_free(new, M_RMAN);
 		} else
-			TAILQ_INSERT_BEFORE(r, new, r_link);
+			BSD_TAILQ_INSERT_BEFORE(r, new, r_link);
 		mtx_unlock(rm->rm_mtx);
 	}
 	if (end < r->r_end) {
@@ -419,12 +419,12 @@ rman_adjust_resource(struct resource *rr, u_long start, u_long end)
 		new->r_rm = rm;
 		mtx_lock(rm->rm_mtx);
 		r->r_end = end;
-		t = TAILQ_NEXT(r, r_link);
+		t = BSD_TAILQ_NEXT(r, r_link);
 		if (t != NULL && !(t->r_flags & RF_ALLOCATED)) {
 			t->r_start = end + 1;
 			bsd_free(new, M_RMAN);
 		} else
-			TAILQ_INSERT_AFTER(&rm->rm_list, r, new, r_link);
+			BSD_TAILQ_INSERT_AFTER(&rm->rm_list, r, new, r_link);
 		mtx_unlock(rm->rm_mtx);
 	}
 	return (0);
@@ -450,9 +450,9 @@ rman_reserve_resource_bound(struct rman *rm, u_long start, u_long end,
 
 	mtx_lock(rm->rm_mtx);
 
-	for (r = TAILQ_FIRST(&rm->rm_list);
+	for (r = BSD_TAILQ_FIRST(&rm->rm_list);
 	     r && r->r_end < start;
-	     r = TAILQ_NEXT(r, r_link))
+	     r = BSD_TAILQ_NEXT(r, r_link))
 		;
 
 	if (r == NULL) {
@@ -466,7 +466,7 @@ rman_reserve_resource_bound(struct rman *rm, u_long start, u_long end,
 	/*
 	 * First try to find an acceptable totally-unshared region.
 	 */
-	for (s = r; s; s = TAILQ_NEXT(s, r_link)) {
+	for (s = r; s; s = BSD_TAILQ_NEXT(s, r_link)) {
 		DPRINTF(("considering [%#lx, %#lx]\n", s->r_start, s->r_end));
 		if (s->r_start + count - 1 > end) {
 			DPRINTF(("s->r_start (%#lx) + count - 1> end (%#lx)\n",
@@ -547,9 +547,9 @@ rman_reserve_resource_bound(struct rman *rm, u_long start, u_long end,
 				r->r_flags = s->r_flags;
 				r->r_rm = rm;
 				s->r_end = rv->r_start - 1;
-				TAILQ_INSERT_AFTER(&rm->rm_list, s, rv,
+				BSD_TAILQ_INSERT_AFTER(&rm->rm_list, s, rv,
 						     r_link);
-				TAILQ_INSERT_AFTER(&rm->rm_list, rv, r,
+				BSD_TAILQ_INSERT_AFTER(&rm->rm_list, rv, r,
 						     r_link);
 			} else if (s->r_start == rv->r_start) {
 				DPRINTF(("allocating from the beginning\n"));
@@ -557,14 +557,14 @@ rman_reserve_resource_bound(struct rman *rm, u_long start, u_long end,
 				 * We are allocating at the beginning.
 				 */
 				s->r_start = rv->r_end + 1;
-				TAILQ_INSERT_BEFORE(s, rv, r_link);
+				BSD_TAILQ_INSERT_BEFORE(s, rv, r_link);
 			} else {
 				DPRINTF(("allocating at the end\n"));
 				/*
 				 * We are allocating at the end.
 				 */
 				s->r_end = rv->r_start - 1;
-				TAILQ_INSERT_AFTER(&rm->rm_list, s, rv,
+				BSD_TAILQ_INSERT_AFTER(&rm->rm_list, s, rv,
 						     r_link);
 			}
 			goto out;
@@ -583,7 +583,7 @@ rman_reserve_resource_bound(struct rman *rm, u_long start, u_long end,
 	if ((flags & (RF_SHAREABLE | RF_TIMESHARE)) == 0)
 		goto out;
 
-	for (s = r; s; s = TAILQ_NEXT(s, r_link)) {
+	for (s = r; s; s = BSD_TAILQ_NEXT(s, r_link)) {
 		if (s->r_start > end)
 			break;
 		if ((s->r_flags & flags) != flags)
@@ -611,13 +611,13 @@ rman_reserve_resource_bound(struct rman *rm, u_long start, u_long end,
 					rv = NULL;
 					goto out;
 				}
-				LIST_INIT(s->r_sharehead);
-				LIST_INSERT_HEAD(s->r_sharehead, s,
+				BSD_LIST_INIT(s->r_sharehead);
+				BSD_LIST_INSERT_HEAD(s->r_sharehead, s,
 						 r_sharelink);
 				s->r_flags |= RF_FIRSTSHARE;
 			}
 			rv->r_sharehead = s->r_sharehead;
-			LIST_INSERT_HEAD(s->r_sharehead, rv, r_sharelink);
+			BSD_LIST_INSERT_HEAD(s->r_sharehead, rv, r_sharelink);
 			goto out;
 		}
 	}
@@ -675,8 +675,8 @@ int_rman_activate_resource(struct rman *rm, struct resource_i *r,
 	}
 
 	ok = 1;
-	for (s = LIST_FIRST(r->r_sharehead); s && ok;
-	     s = LIST_NEXT(s, r_sharelink)) {
+	for (s = BSD_LIST_FIRST(r->r_sharehead); s && ok;
+	     s = BSD_LIST_NEXT(s, r_sharelink)) {
 		if ((s->r_flags & RF_ACTIVE) != 0) {
 			ok = 0;
 			*whohas = s;
@@ -773,19 +773,19 @@ int_rman_release_resource(struct rman *rm, struct resource_i *r)
 		 *
 		 * If we are in the main circleq, appoint someone else.
 		 */
-		LIST_REMOVE(r, r_sharelink);
-		s = LIST_FIRST(r->r_sharehead);
+		BSD_LIST_REMOVE(r, r_sharelink);
+		s = BSD_LIST_FIRST(r->r_sharehead);
 		if (r->r_flags & RF_FIRSTSHARE) {
 			s->r_flags |= RF_FIRSTSHARE;
-			TAILQ_INSERT_BEFORE(r, s, r_link);
-			TAILQ_REMOVE(&rm->rm_list, r, r_link);
+			BSD_TAILQ_INSERT_BEFORE(r, s, r_link);
+			BSD_TAILQ_REMOVE(&rm->rm_list, r, r_link);
 		}
 
 		/*
 		 * Make sure that the sharing list goes away completely
 		 * if the resource is no longer being shared at all.
 		 */
-		if (LIST_NEXT(s, r_sharelink) == NULL) {
+		if (BSD_LIST_NEXT(s, r_sharelink) == NULL) {
 			bsd_free(s->r_sharehead, M_RMAN);
 			s->r_sharehead = NULL;
 			s->r_flags &= ~RF_FIRSTSHARE;
@@ -799,11 +799,11 @@ int_rman_release_resource(struct rman *rm, struct resource_i *r)
 	 * resources is allocated or is not exactly adjacent then they
 	 * cannot be merged with our segment.
 	 */
-	s = TAILQ_PREV(r, resource_head, r_link);
+	s = BSD_TAILQ_PREV(r, resource_head, r_link);
 	if (s != NULL && ((s->r_flags & RF_ALLOCATED) != 0 ||
 	    s->r_end + 1 != r->r_start))
 		s = NULL;
-	t = TAILQ_NEXT(r, r_link);
+	t = BSD_TAILQ_NEXT(r, r_link);
 	if (t != NULL && ((t->r_flags & RF_ALLOCATED) != 0 ||
 	    r->r_end + 1 != t->r_start))
 		t = NULL;
@@ -813,21 +813,21 @@ int_rman_release_resource(struct rman *rm, struct resource_i *r)
 		 * Merge all three segments.
 		 */
 		s->r_end = t->r_end;
-		TAILQ_REMOVE(&rm->rm_list, r, r_link);
-		TAILQ_REMOVE(&rm->rm_list, t, r_link);
+		BSD_TAILQ_REMOVE(&rm->rm_list, r, r_link);
+		BSD_TAILQ_REMOVE(&rm->rm_list, t, r_link);
 		bsd_free(t, M_RMAN);
 	} else if (s != NULL) {
 		/*
 		 * Merge previous segment with ours.
 		 */
 		s->r_end = r->r_end;
-		TAILQ_REMOVE(&rm->rm_list, r, r_link);
+		BSD_TAILQ_REMOVE(&rm->rm_list, r, r_link);
 	} else if (t != NULL) {
 		/*
 		 * Merge next segment with ours.
 		 */
 		t->r_start = r->r_start;
-		TAILQ_REMOVE(&rm->rm_list, r, r_link);
+		BSD_TAILQ_REMOVE(&rm->rm_list, r, r_link);
 	} else {
 		/*
 		 * At this point, we know there is nothing we
@@ -1015,7 +1015,7 @@ sysctl_rman(SYSCTL_HANDLER_ARGS)
 	 * Find the indexed resource manager
 	 */
 	mtx_lock(&rman_mtx);
-	TAILQ_FOREACH(rm, &rman_head, rm_link) {
+	BSD_TAILQ_FOREACH(rm, &rman_head, rm_link) {
 		if (rman_idx-- == 0)
 			break;
 	}
@@ -1044,9 +1044,9 @@ sysctl_rman(SYSCTL_HANDLER_ARGS)
 	 * Find the indexed resource and return it.
 	 */
 	mtx_lock(rm->rm_mtx);
-	TAILQ_FOREACH(res, &rm->rm_list, r_link) {
+	BSD_TAILQ_FOREACH(res, &rm->rm_list, r_link) {
 		if (res->r_sharehead != NULL) {
-			LIST_FOREACH(sres, res->r_sharehead, r_sharelink)
+			BSD_LIST_FOREACH(sres, res->r_sharehead, r_sharelink)
 				if (res_idx-- == 0) {
 					res = sres;
 					goto found;
@@ -1107,7 +1107,7 @@ dump_rman(struct rman *rm)
 
 	if (db_pager_quit)
 		return;
-	TAILQ_FOREACH(r, &rm->rm_list, r_link) {
+	BSD_TAILQ_FOREACH(r, &rm->rm_list, r_link) {
 		if (r->r_dev != NULL) {
 			devname = device_get_nameunit(r->r_dev);
 			if (devname == NULL)
@@ -1137,7 +1137,7 @@ DB_SHOW_COMMAND(rmans, db_show_rmans)
 {
 	struct rman *rm;
 
-	TAILQ_FOREACH(rm, &rman_head, rm_link) {
+	BSD_TAILQ_FOREACH(rm, &rman_head, rm_link) {
 		dump_rman_header(rm);
 	}
 }
@@ -1146,7 +1146,7 @@ DB_SHOW_ALL_COMMAND(rman, db_show_all_rman)
 {
 	struct rman *rm;
 
-	TAILQ_FOREACH(rm, &rman_head, rm_link) {
+	BSD_TAILQ_FOREACH(rm, &rman_head, rm_link) {
 		dump_rman_header(rm);
 		dump_rman(rm);
 	}

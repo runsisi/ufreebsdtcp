@@ -92,9 +92,9 @@ SDT_PROBE_DEFINE2(vfs, namecache, zap_negative, done, done, "struct vnode *",
  */
 
 struct	namecache {
-	LIST_ENTRY(namecache) nc_hash;	/* hash chain */
-	LIST_ENTRY(namecache) nc_src;	/* source vnode list */
-	TAILQ_ENTRY(namecache) nc_dst;	/* destination vnode list */
+	BSD_LIST_ENTRY(namecache) nc_hash;	/* hash chain */
+	BSD_LIST_ENTRY(namecache) nc_src;	/* source vnode list */
+	BSD_TAILQ_ENTRY(namecache) nc_dst;	/* destination vnode list */
 	struct	vnode *nc_dvp;		/* vnode of parent of name */
 	struct	vnode *nc_vp;		/* vnode the name refers to */
 	u_char	nc_flag;		/* flag bits */
@@ -111,9 +111,9 @@ struct	namecache {
  * parent.
  */
 struct	namecache_ts {
-	LIST_ENTRY(namecache) nc_hash;	/* hash chain */
-	LIST_ENTRY(namecache) nc_src;	/* source vnode list */
-	TAILQ_ENTRY(namecache) nc_dst;	/* destination vnode list */
+	BSD_LIST_ENTRY(namecache) nc_hash;	/* hash chain */
+	BSD_LIST_ENTRY(namecache) nc_src;	/* source vnode list */
+	BSD_TAILQ_ENTRY(namecache) nc_dst;	/* destination vnode list */
 	struct	vnode *nc_dvp;		/* vnode of parent of name */
 	struct	vnode *nc_vp;		/* vnode the name refers to */
 	u_char	nc_flag;		/* flag bits */
@@ -154,8 +154,8 @@ struct	namecache_ts {
  */
 #define NCHHASH(hash) \
 	(&nchashtbl[(hash) & nchash])
-static LIST_HEAD(nchashhead, namecache) *nchashtbl;	/* Hash Table */
-static TAILQ_HEAD(, namecache) ncneg;	/* Hash Table */
+static BSD_LIST_HEAD(nchashhead, namecache) *nchashtbl;	/* Hash Table */
+static BSD_TAILQ_HEAD(, namecache) ncneg;	/* Hash Table */
 static u_long	nchash;			/* size of hash table */
 SYSCTL_ULONG(_debug, OID_AUTO, nchash, CTLFLAG_RD, &nchash, 0,
     "Size of namecache hash table");
@@ -338,7 +338,7 @@ sysctl_debug_hashstat_rawnchash(SYSCTL_HANDLER_ARGS)
 	for (ncpp = nchashtbl; n_nchash > 0; n_nchash--, ncpp++) {
 		CACHE_RLOCK();
 		count = 0;
-		LIST_FOREACH(ncp, ncpp, nc_hash) {
+		BSD_LIST_FOREACH(ncp, ncpp, nc_hash) {
 			count++;
 		}
 		CACHE_RUNLOCK();
@@ -372,7 +372,7 @@ sysctl_debug_hashstat_nchash(SYSCTL_HANDLER_ARGS)
 	for (ncpp = nchashtbl; n_nchash > 0; n_nchash--, ncpp++) {
 		count = 0;
 		CACHE_RLOCK();
-		LIST_FOREACH(ncp, ncpp, nc_hash) {
+		BSD_LIST_FOREACH(ncp, ncpp, nc_hash) {
 			count++;
 		}
 		CACHE_RUNLOCK();
@@ -426,23 +426,23 @@ cache_zap(ncp)
 	}
 #endif
 	vp = NULL;
-	LIST_REMOVE(ncp, nc_hash);
+	BSD_LIST_REMOVE(ncp, nc_hash);
 	if (ncp->nc_flag & NCF_ISDOTDOT) {
 		if (ncp == ncp->nc_dvp->v_cache_dd)
 			ncp->nc_dvp->v_cache_dd = NULL;
 	} else {
-		LIST_REMOVE(ncp, nc_src);
-		if (LIST_EMPTY(&ncp->nc_dvp->v_cache_src)) {
+		BSD_LIST_REMOVE(ncp, nc_src);
+		if (BSD_LIST_EMPTY(&ncp->nc_dvp->v_cache_src)) {
 			vp = ncp->nc_dvp;
 			numcachehv--;
 		}
 	}
 	if (ncp->nc_vp) {
-		TAILQ_REMOVE(&ncp->nc_vp->v_cache_dst, ncp, nc_dst);
+		BSD_TAILQ_REMOVE(&ncp->nc_vp->v_cache_dst, ncp, nc_dst);
 		if (ncp == ncp->nc_vp->v_cache_dd)
 			ncp->nc_vp->v_cache_dd = NULL;
 	} else {
-		TAILQ_REMOVE(&ncneg, ncp, nc_dst);
+		BSD_TAILQ_REMOVE(&ncneg, ncp, nc_dst);
 		numneg--;
 	}
 	numcache--;
@@ -544,7 +544,7 @@ retry_wlocked:
 
 	hash = fnv_32_buf(cnp->cn_nameptr, cnp->cn_namelen, FNV1_32_INIT);
 	hash = fnv_32_buf(&dvp, sizeof(dvp), hash);
-	LIST_FOREACH(ncp, (NCHHASH(hash)), nc_hash) {
+	BSD_LIST_FOREACH(ncp, (NCHHASH(hash)), nc_hash) {
 		numchecks++;
 		if (ncp->nc_dvp == dvp && ncp->nc_nlen == cnp->cn_namelen &&
 		    !bcmp(nc_get_name(ncp), cnp->cn_nameptr, ncp->nc_nlen))
@@ -609,8 +609,8 @@ negative_success:
 	 * check to see if the entry is a whiteout; indicate this to
 	 * the componentname, if so.
 	 */
-	TAILQ_REMOVE(&ncneg, ncp, nc_dst);
-	TAILQ_INSERT_TAIL(&ncneg, ncp, nc_dst);
+	BSD_TAILQ_REMOVE(&ncneg, ncp, nc_dst);
+	BSD_TAILQ_INSERT_TAIL(&ncneg, ncp, nc_dst);
 	nchstats.ncs_neghits++;
 	if (ncp->nc_flag & NCF_WHITE)
 		cnp->cn_flags |= ISWHITEOUT;
@@ -750,15 +750,15 @@ cache_enter_time(dvp, vp, cnp, tsp, dtsp)
 				KASSERT(ncp->nc_dvp == dvp,
 				    ("wrong isdotdot parent"));
 				if (ncp->nc_vp != NULL)
-					TAILQ_REMOVE(&ncp->nc_vp->v_cache_dst,
+					BSD_TAILQ_REMOVE(&ncp->nc_vp->v_cache_dst,
 					    ncp, nc_dst);
 				else
-					TAILQ_REMOVE(&ncneg, ncp, nc_dst);
+					BSD_TAILQ_REMOVE(&ncneg, ncp, nc_dst);
 				if (vp != NULL)
-					TAILQ_INSERT_HEAD(&vp->v_cache_dst,
+					BSD_TAILQ_INSERT_HEAD(&vp->v_cache_dst,
 					    ncp, nc_dst);
 				else
-					TAILQ_INSERT_TAIL(&ncneg, ncp, nc_dst);
+					BSD_TAILQ_INSERT_TAIL(&ncneg, ncp, nc_dst);
 				ncp->nc_vp = vp;
 				CACHE_WUNLOCK();
 				return;
@@ -804,7 +804,7 @@ cache_enter_time(dvp, vp, cnp, tsp, dtsp)
 	 * the same path name.
 	 */
 	ncpp = NCHHASH(hash);
-	LIST_FOREACH(n2, ncpp, nc_hash) {
+	BSD_LIST_FOREACH(n2, ncpp, nc_hash) {
 		if (n2->nc_dvp == dvp &&
 		    n2->nc_nlen == cnp->cn_namelen &&
 		    !bcmp(nc_get_name(n2), cnp->cn_nameptr, n2->nc_nlen)) {
@@ -869,13 +869,13 @@ cache_enter_time(dvp, vp, cnp, tsp, dtsp)
 	 * Insert the new namecache entry into the appropriate chain
 	 * within the cache entries table.
 	 */
-	LIST_INSERT_HEAD(ncpp, ncp, nc_hash);
+	BSD_LIST_INSERT_HEAD(ncpp, ncp, nc_hash);
 	if (flag != NCF_ISDOTDOT) {
-		if (LIST_EMPTY(&dvp->v_cache_src)) {
+		if (BSD_LIST_EMPTY(&dvp->v_cache_src)) {
 			hold = 1;
 			numcachehv++;
 		}
-		LIST_INSERT_HEAD(&dvp->v_cache_src, ncp, nc_src);
+		BSD_LIST_INSERT_HEAD(&dvp->v_cache_src, ncp, nc_src);
 	}
 
 	/*
@@ -884,16 +884,16 @@ cache_enter_time(dvp, vp, cnp, tsp, dtsp)
 	 * destination vnode's cache entries queue.
 	 */
 	if (vp) {
-		TAILQ_INSERT_HEAD(&vp->v_cache_dst, ncp, nc_dst);
+		BSD_TAILQ_INSERT_HEAD(&vp->v_cache_dst, ncp, nc_dst);
 		SDT_PROBE(vfs, namecache, enter, done, dvp, nc_get_name(ncp),
 		    vp, 0, 0);
 	} else {
-		TAILQ_INSERT_TAIL(&ncneg, ncp, nc_dst);
+		BSD_TAILQ_INSERT_TAIL(&ncneg, ncp, nc_dst);
 		SDT_PROBE(vfs, namecache, enter_negative, done, dvp,
 		    nc_get_name(ncp), 0, 0, 0);
 	}
 	if (numneg * ncnegfactor > numcache) {
-		ncp = TAILQ_FIRST(&ncneg);
+		ncp = BSD_TAILQ_FIRST(&ncneg);
 		zap = 1;
 	}
 	if (hold)
@@ -910,7 +910,7 @@ static void
 nchinit(void *dummy __unused)
 {
 
-	TAILQ_INIT(&ncneg);
+	BSD_TAILQ_INIT(&ncneg);
 
 	cache_zone_small = uma_zcreate("S VFS Cache",
 	    sizeof(struct namecache) + CACHE_PATH_CUTOFF + 1,
@@ -941,10 +941,10 @@ cache_purge(vp)
 	CTR1(KTR_VFS, "cache_purge(%p)", vp);
 	SDT_PROBE(vfs, namecache, purge, done, vp, 0, 0, 0, 0);
 	CACHE_WLOCK();
-	while (!LIST_EMPTY(&vp->v_cache_src))
-		cache_zap(LIST_FIRST(&vp->v_cache_src));
-	while (!TAILQ_EMPTY(&vp->v_cache_dst))
-		cache_zap(TAILQ_FIRST(&vp->v_cache_dst));
+	while (!BSD_LIST_EMPTY(&vp->v_cache_src))
+		cache_zap(BSD_LIST_FIRST(&vp->v_cache_src));
+	while (!BSD_TAILQ_EMPTY(&vp->v_cache_dst))
+		cache_zap(BSD_TAILQ_FIRST(&vp->v_cache_dst));
 	if (vp->v_cache_dd != NULL) {
 		KASSERT(vp->v_cache_dd->nc_flag & NCF_ISDOTDOT,
 		   ("lost dotdot link"));
@@ -966,7 +966,7 @@ cache_purge_negative(vp)
 	CTR1(KTR_VFS, "cache_purge_negative(%p)", vp);
 	SDT_PROBE(vfs, namecache, purge_negative, done, vp, 0, 0, 0, 0);
 	CACHE_WLOCK();
-	LIST_FOREACH_SAFE(cp, &vp->v_cache_src, nc_src, ncp) {
+	BSD_LIST_FOREACH_SAFE(cp, &vp->v_cache_src, nc_src, ncp) {
 		if (cp->nc_vp == NULL)
 			cache_zap(cp);
 	}
@@ -987,7 +987,7 @@ cache_purgevfs(mp)
 	SDT_PROBE(vfs, namecache, purgevfs, done, mp, 0, 0, 0, 0);
 	CACHE_WLOCK();
 	for (ncpp = &nchashtbl[nchash]; ncpp >= nchashtbl; ncpp--) {
-		LIST_FOREACH_SAFE(ncp, ncpp, nc_hash, nnp) {
+		BSD_LIST_FOREACH_SAFE(ncp, ncpp, nc_hash, nnp) {
 			if (ncp->nc_dvp->v_mount == mp)
 				cache_zap(ncp);
 		}
@@ -1210,7 +1210,7 @@ vn_vptocnp_locked(struct vnode **vp, struct ucred *cred, char *buf,
 	struct namecache *ncp;
 	int error, vfslocked;
 
-	TAILQ_FOREACH(ncp, &((*vp)->v_cache_dst), nc_dst) {
+	BSD_TAILQ_FOREACH(ncp, &((*vp)->v_cache_dst), nc_dst) {
 		if ((ncp->nc_flag & NCF_ISDOTDOT) == 0)
 			break;
 	}
@@ -1395,7 +1395,7 @@ vn_dir_dd_ino(struct vnode *vp)
 
 	ASSERT_VOP_LOCKED(vp, "vn_dir_dd_ino");
 	CACHE_RLOCK();
-	TAILQ_FOREACH(ncp, &(vp->v_cache_dst), nc_dst) {
+	BSD_TAILQ_FOREACH(ncp, &(vp->v_cache_dst), nc_dst) {
 		if ((ncp->nc_flag & NCF_ISDOTDOT) != 0)
 			continue;
 		ddvp = ncp->nc_dvp;
@@ -1416,7 +1416,7 @@ vn_commname(struct vnode *vp, char *buf, u_int buflen)
 	int l;
 
 	CACHE_RLOCK();
-	TAILQ_FOREACH(ncp, &vp->v_cache_dst, nc_dst)
+	BSD_TAILQ_FOREACH(ncp, &vp->v_cache_dst, nc_dst)
 		if ((ncp->nc_flag & NCF_ISDOTDOT) == 0)
 			break;
 	if (ncp == NULL) {

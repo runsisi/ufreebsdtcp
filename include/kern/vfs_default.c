@@ -644,7 +644,7 @@ loop1:
 	/*
 	 * MARK/SCAN initialization to avoid infinite loops.
 	 */
-        TAILQ_FOREACH(bp, &bo->bo_dirty.bv_hd, b_bobufs) {
+        BSD_TAILQ_FOREACH(bp, &bo->bo_dirty.bv_hd, b_bobufs) {
                 bp->b_vflags &= ~BV_SCANNED;
 		bp->b_error = 0;
 	}
@@ -653,7 +653,7 @@ loop1:
 	 * Flush all dirty buffers associated with a vnode.
 	 */
 loop2:
-	TAILQ_FOREACH_SAFE(bp, &bo->bo_dirty.bv_hd, b_bobufs, nbp) {
+	BSD_TAILQ_FOREACH_SAFE(bp, &bo->bo_dirty.bv_hd, b_bobufs, nbp) {
 		if ((bp->b_vflags & BV_SCANNED) != 0)
 			continue;
 		bp->b_vflags |= BV_SCANNED;
@@ -698,7 +698,7 @@ loop2:
 			 * then we fail now rather than trying endlessly
 			 * to write them out.
 			 */
-			TAILQ_FOREACH(bp, &bo->bo_dirty.bv_hd, b_bobufs)
+			BSD_TAILQ_FOREACH(bp, &bo->bo_dirty.bv_hd, b_bobufs)
 				if ((error = bp->b_error) == 0)
 					continue;
 			if (error == 0 && --maxretry >= 0)

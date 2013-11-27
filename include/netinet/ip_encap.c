@@ -103,7 +103,7 @@ static void encap_fillarg(struct mbuf *, const struct encaptab *);
  */
 static struct mtx encapmtx;
 MTX_SYSINIT(encapmtx, &encapmtx, "encapmtx", MTX_DEF);
-LIST_HEAD(, encaptab) encaptab = LIST_HEAD_INITIALIZER(encaptab);
+BSD_LIST_HEAD(, encaptab) encaptab = BSD_LIST_HEAD_INITIALIZER(encaptab);
 
 /*
  * We currently keey encap_init() for source code compatibility reasons --
@@ -140,7 +140,7 @@ encap4_input(struct mbuf *m, int off)
 	match = NULL;
 	matchprio = 0;
 	mtx_lock(&encapmtx);
-	LIST_FOREACH(ep, &encaptab, chain) {
+	BSD_LIST_FOREACH(ep, &encaptab, chain) {
 		if (ep->af != AF_INET)
 			continue;
 		if (ep->proto >= 0 && ep->proto != proto)
@@ -224,7 +224,7 @@ encap6_input(struct mbuf **mp, int *offp, int proto)
 	match = NULL;
 	matchprio = 0;
 	mtx_lock(&encapmtx);
-	LIST_FOREACH(ep, &encaptab, chain) {
+	BSD_LIST_FOREACH(ep, &encaptab, chain) {
 		if (ep->af != AF_INET6)
 			continue;
 		if (ep->proto >= 0 && ep->proto != proto)
@@ -273,7 +273,7 @@ encap_add(struct encaptab *ep)
 {
 
 	mtx_assert(&encapmtx, MA_OWNED);
-	LIST_INSERT_HEAD(&encaptab, ep, chain);
+	BSD_LIST_INSERT_HEAD(&encaptab, ep, chain);
 }
 
 /*
@@ -298,7 +298,7 @@ encap_attach(int af, int proto, const struct sockaddr *sp,
 
 	/* check if anyone have already attached with exactly same config */
 	mtx_lock(&encapmtx);
-	LIST_FOREACH(ep, &encaptab, chain) {
+	BSD_LIST_FOREACH(ep, &encaptab, chain) {
 		if (ep->af != af)
 			continue;
 		if (ep->proto != proto)
@@ -372,9 +372,9 @@ encap_detach(const struct encaptab *cookie)
 	struct encaptab *p;
 
 	mtx_lock(&encapmtx);
-	LIST_FOREACH(p, &encaptab, chain) {
+	BSD_LIST_FOREACH(p, &encaptab, chain) {
 		if (p == ep) {
-			LIST_REMOVE(p, chain);
+			BSD_LIST_REMOVE(p, chain);
 			mtx_unlock(&encapmtx);
 			bsd_free(p, M_NETADDR);	/*XXX*/
 			return 0;

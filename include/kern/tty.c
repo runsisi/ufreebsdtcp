@@ -71,7 +71,7 @@ static MALLOC_DEFINE(M_TTY, "tty", "tty device");
 
 static void tty_rel_free(struct tty *tp);
 
-static TAILQ_HEAD(, tty) tty_list = TAILQ_HEAD_INITIALIZER(tty_list);
+static BSD_TAILQ_HEAD(, tty) tty_list = BSD_TAILQ_HEAD_INITIALIZER(tty_list);
 static struct sx tty_list_sx;
 SX_SYSINIT(tty_list, &tty_list_sx, "tty list");
 static unsigned int tty_list_count = 0;
@@ -1006,7 +1006,7 @@ tty_alloc_mutex(struct ttydevsw *tsw, void *sc, struct mtx *mutex)
 	knlist_init_mtx(&tp->t_outpoll.si_note, tp->t_mtx);
 
 	sx_xlock(&tty_list_sx);
-	TAILQ_INSERT_TAIL(&tty_list, tp, t_list);
+	BSD_TAILQ_INSERT_TAIL(&tty_list, tp, t_list);
 	tty_list_count++;
 	sx_xunlock(&tty_list_sx);
 
@@ -1019,7 +1019,7 @@ tty_dealloc(void *arg)
 	struct tty *tp = arg;
 
 	sx_xlock(&tty_list_sx);
-	TAILQ_REMOVE(&tty_list, tp, t_list);
+	BSD_TAILQ_REMOVE(&tty_list, tp, t_list);
 	tty_list_count--;
 	sx_xunlock(&tty_list_sx);
 
@@ -1151,7 +1151,7 @@ sysctl_kern_ttys(SYSCTL_HANDLER_ARGS)
 
 	xtlist = xt = bsd_malloc(lsize, M_TTY, M_WAITOK);
 
-	TAILQ_FOREACH(tp, &tty_list, t_list) {
+	BSD_TAILQ_FOREACH(tp, &tty_list, t_list) {
 		tty_lock(tp);
 		tty_to_xtty(tp, xt);
 		tty_unlock(tp);
@@ -1940,7 +1940,7 @@ ttyconsdev_open(struct cdev *dev, int oflags, int devtype, struct thread *td)
 
 	/* Look up corresponding TTY by device name. */
 	sx_slock(&tty_list_sx);
-	TAILQ_FOREACH(tp, &tty_list, t_list) {
+	BSD_TAILQ_FOREACH(tp, &tty_list, t_list) {
 		if (strcmp(dev_console_filename, tty_devname(tp)) == 0) {
 			dev_console->si_drv1 = tp;
 			break;
@@ -2180,7 +2180,7 @@ DB_SHOW_ALL_COMMAND(ttys, db_show_all_ttys)
 	db_printf("      LINE   INQ  CAN  LIN  LOW  OUTQ  USE  LOW   "
 	    "COL  SESS  PGID STATE\n");
 
-	TAILQ_FOREACH(tp, &tty_list, t_list) {
+	BSD_TAILQ_FOREACH(tp, &tty_list, t_list) {
 		isiz = tp->t_inq.ti_nblocks * TTYINQ_DATASIZE;
 		osiz = tp->t_outq.to_nblocks * TTYOUTQ_DATASIZE;
 

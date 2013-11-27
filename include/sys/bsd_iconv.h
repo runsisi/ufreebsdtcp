@@ -113,7 +113,7 @@ struct iconv_cspairdata;
  */
 struct iconv_converter_class {
 	KOBJ_CLASS_FIELDS;
-	TAILQ_ENTRY(iconv_converter_class)	cc_link;
+	BSD_TAILQ_ENTRY(iconv_converter_class)	cc_link;
 };
 
 struct iconv_cspair {
@@ -124,7 +124,7 @@ struct iconv_cspair {
 	void *		cp_data;
 	struct iconv_converter_class * cp_dcp;
 	struct iconv_cspair *cp_base;
-	TAILQ_ENTRY(iconv_cspair)	cp_link;
+	BSD_TAILQ_ENTRY(iconv_cspair)	cp_link;
 };
 
 #define	KICONV_CONVERTER(name,size)			\

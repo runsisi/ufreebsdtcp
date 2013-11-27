@@ -356,7 +356,7 @@ atm_ifattach(struct ifnet *ifp)
 #endif
 	ifp->if_snd.ifq_maxlen = 50;	/* dummy */
 
-	TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link)
+	BSD_TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link)
 		if (ifa->ifa_addr->sa_family == AF_LINK) {
 			sdl = (struct sockaddr_dl *)ifa->ifa_addr;
 			sdl->sdl_type = IFT_ATM;

@@ -41,8 +41,8 @@
 struct kqueue {
 	struct		mtx kq_lock;
 	int		kq_refcnt;
-	SLIST_ENTRY(kqueue)	kq_list;
-	TAILQ_HEAD(, knote)	kq_head;	/* list of pending event */
+	BSD_SLIST_ENTRY(kqueue)	kq_list;
+	BSD_TAILQ_HEAD(, knote)	kq_head;	/* list of pending event */
 	int		kq_count;		/* number of pending events */
 	struct		selinfo kq_sel;
 	struct		sigio *kq_sigio;

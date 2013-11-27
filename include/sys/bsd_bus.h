@@ -235,7 +235,7 @@ struct	resource;
  * @brief An entry for a single resource in a resource list.
  */
 struct resource_list_entry {
-	STAILQ_ENTRY(resource_list_entry) link;
+	BSD_STAILQ_ENTRY(resource_list_entry) link;
 	int	type;			/**< @brief type argument to alloc_resource */
 	int	rid;			/**< @brief resource identifier */
 	int	flags;			/**< @brief resource flags */
@@ -244,7 +244,7 @@ struct resource_list_entry {
 	u_long	end;			/**< @brief end of resource range */
 	u_long	count;			/**< @brief count within range */
 };
-STAILQ_HEAD(resource_list, resource_list_entry);
+BSD_STAILQ_HEAD(resource_list, resource_list_entry);
 
 #define	RLE_RESERVED		0x0001	/* Reserved by the parent bus. */
 #define	RLE_ALLOCATED		0x0002	/* Reserved resource is allocated. */

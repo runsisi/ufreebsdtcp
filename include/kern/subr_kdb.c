@@ -517,7 +517,7 @@ kdb_thr_ctx(struct thread *thr)
 		return (&kdb_pcb);
 
 #if defined(SMP) && defined(KDB_STOPPEDPCB)
-	STAILQ_FOREACH(pc, &cpuhead, pc_allcpu)  {
+	BSD_STAILQ_FOREACH(pc, &cpuhead, pc_allcpu)  {
 		if (pc->pc_curthread == thr &&
 		    CPU_ISSET(pc->pc_cpuid, &stopped_cpus))
 			return (KDB_STOPPEDPCB(pc));
@@ -532,14 +532,14 @@ kdb_thr_first(void)
 	struct proc *p;
 	struct thread *thr;
 
-	p = LIST_FIRST(&allproc);
+	p = BSD_LIST_FIRST(&allproc);
 	while (p != NULL) {
 		if (p->p_flag & P_INMEM) {
 			thr = FIRST_THREAD_IN_PROC(p);
 			if (thr != NULL)
 				return (thr);
 		}
-		p = LIST_NEXT(p, p_list);
+		p = BSD_LIST_NEXT(p, p_list);
 	}
 	return (NULL);
 }
@@ -549,11 +549,11 @@ kdb_thr_from_pid(pid_t pid)
 {
 	struct proc *p;
 
-	p = LIST_FIRST(&allproc);
+	p = BSD_LIST_FIRST(&allproc);
 	while (p != NULL) {
 		if (p->p_flag & P_INMEM && p->p_pid == pid)
 			return (FIRST_THREAD_IN_PROC(p));
-		p = LIST_NEXT(p, p_list);
+		p = BSD_LIST_NEXT(p, p_list);
 	}
 	return (NULL);
 }
@@ -575,11 +575,11 @@ kdb_thr_next(struct thread *thr)
 	struct proc *p;
 
 	p = thr->td_proc;
-	thr = TAILQ_NEXT(thr, td_plist);
+	thr = BSD_TAILQ_NEXT(thr, td_plist);
 	do {
 		if (thr != NULL)
 			return (thr);
-		p = LIST_NEXT(p, p_list);
+		p = BSD_LIST_NEXT(p, p_list);
 		if (p != NULL && (p->p_flag & P_INMEM))
 			thr = FIRST_THREAD_IN_PROC(p);
 	} while (p != NULL);

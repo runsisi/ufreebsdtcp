@@ -127,10 +127,10 @@ struct elf_set {
 	Elf_Addr	es_start;
 	Elf_Addr	es_stop;
 	Elf_Addr	es_base;
-	TAILQ_ENTRY(elf_set)	es_link;
+	BSD_TAILQ_ENTRY(elf_set)	es_link;
 };
 
-TAILQ_HEAD(elf_set_head, elf_set);
+BSD_TAILQ_HEAD(elf_set_head, elf_set);
 
 #include <kern/kern_ctf.c>
 
@@ -205,7 +205,7 @@ elf_set_add(struct elf_set_head *list, Elf_Addr start, Elf_Addr stop, Elf_Addr b
 	set->es_stop = stop;
 	set->es_base = base;
 
-	TAILQ_FOREACH(iter, list, es_link) {
+	BSD_TAILQ_FOREACH(iter, list, es_link) {
 
 		KASSERT((set->es_start < iter->es_start && set->es_stop < iter->es_stop) ||
 		    (set->es_start > iter->es_start && set->es_stop > iter->es_stop),
@@ -214,13 +214,13 @@ elf_set_add(struct elf_set_head *list, Elf_Addr start, Elf_Addr stop, Elf_Addr b
 		    (uintmax_t)iter->es_start, (uintmax_t)iter->es_stop));
 
 		if (iter->es_start > set->es_start) {
-			TAILQ_INSERT_BEFORE(iter, set, es_link);
+			BSD_TAILQ_INSERT_BEFORE(iter, set, es_link);
 			break;
 		}
 	}
 
 	if (iter == NULL)
-		TAILQ_INSERT_TAIL(list, set, es_link);
+		BSD_TAILQ_INSERT_TAIL(list, set, es_link);
 }
 
 static int
@@ -228,7 +228,7 @@ elf_set_find(struct elf_set_head *list, Elf_Addr addr, Elf_Addr *start, Elf_Addr
 {
 	struct elf_set *set;
 
-	TAILQ_FOREACH(set, list, es_link) {
+	BSD_TAILQ_FOREACH(set, list, es_link) {
 		if (addr < set->es_start)
 			return (0);
 		if (addr < set->es_stop) {
@@ -246,11 +246,11 @@ elf_set_delete(struct elf_set_head *list, Elf_Addr start)
 {
 	struct elf_set *set;
 
-	TAILQ_FOREACH(set, list, es_link) {
+	BSD_TAILQ_FOREACH(set, list, es_link) {
 		if (start < set->es_start)
 			break;
 		if (start == set->es_start) {
-			TAILQ_REMOVE(list, set, es_link);
+			BSD_TAILQ_REMOVE(list, set, es_link);
 			bsd_free(set, M_LINKER);
 			return;
 		}
@@ -423,9 +423,9 @@ link_elf_init(void* arg)
 
 	(void)link_elf_link_common_finish(linker_kernel_file);
 	linker_kernel_file->flags |= LINKER_FILE_LINKED;
-	TAILQ_INIT(&set_pcpu_list);
+	BSD_TAILQ_INIT(&set_pcpu_list);
 #ifdef VIMAGE
-	TAILQ_INIT(&set_vnet_list);
+	BSD_TAILQ_INIT(&set_vnet_list);
 #endif
 }
 

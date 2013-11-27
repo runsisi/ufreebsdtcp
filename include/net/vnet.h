@@ -66,7 +66,7 @@
 #include <sys/bsd_queue.h>
 
 struct vnet {
-	LIST_ENTRY(vnet)	 vnet_le;	/* all vnets list */
+	BSD_LIST_ENTRY(vnet)	 vnet_le;	/* all vnets list */
 	u_int			 vnet_magic_n;
 	u_int			 vnet_ifcnt;
 	u_int			 vnet_sockcnt;
@@ -188,7 +188,7 @@ extern struct vnet *vnet0;
  * access it.  If a caller may sleep while accessing the list, it must use
  * the sleepable lock macros.
  */
-LIST_HEAD(vnet_list_head, vnet);
+BSD_LIST_HEAD(vnet_list_head, vnet);
 extern struct vnet_list_head vnet_head;
 extern struct rwlock vnet_rwlock;
 extern struct sx vnet_sxlock;
@@ -202,7 +202,7 @@ extern struct sx vnet_sxlock;
  * Iteration macros to walk the global list of virtual network stacks.
  */
 #define	VNET_ITERATOR_DECL(arg)	struct vnet *arg
-#define	VNET_FOREACH(arg)	LIST_FOREACH((arg), &vnet_head, vnet_le)
+#define	VNET_FOREACH(arg)	BSD_LIST_FOREACH((arg), &vnet_head, vnet_le)
 
 /*
  * Virtual network stack memory allocator, which allows global variables to
@@ -295,7 +295,7 @@ struct vnet_sysinit {
 	enum sysinit_elem_order	order;
 	sysinit_cfunc_t		func;
 	const void		*arg;
-	TAILQ_ENTRY(vnet_sysinit) link;
+	BSD_TAILQ_ENTRY(vnet_sysinit) link;
 };
 
 #define	VNET_SYSINIT(ident, subsystem, order, func, arg)		\

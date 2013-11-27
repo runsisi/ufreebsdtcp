@@ -296,7 +296,7 @@ static struct mtx nblock;
 #define QUEUE_SENTINEL	1024	/* not an queue index, but mark for sentinel */
 
 /* Queues for free buffers with various properties */
-static TAILQ_HEAD(bqueues, buf) bufqueues[BUFFER_QUEUES] = { { 0 } };
+static BSD_TAILQ_HEAD(bqueues, buf) bufqueues[BUFFER_QUEUES] = { { 0 } };
 #ifdef INVARIANTS
 static int bq_len[BUFFER_QUEUES];
 #endif
@@ -665,7 +665,7 @@ bufinit(void)
 
 	/* next, make a null set of free lists */
 	for (i = 0; i < BUFFER_QUEUES; i++)
-		TAILQ_INIT(&bufqueues[i]);
+		BSD_TAILQ_INIT(&bufqueues[i]);
 
 	/* finally, initialize each buffer header and stick on empty q */
 	for (i = 0; i < nbuf; i++) {
@@ -677,9 +677,9 @@ bufinit(void)
 		bp->b_qindex = QUEUE_EMPTY;
 		bp->b_vflags = BV_INFREECNT;	/* buf is counted as free */
 		bp->b_xflags = 0;
-		LIST_INIT(&bp->b_dep);
+		BSD_LIST_INIT(&bp->b_dep);
 		BUF_LOCKINIT(bp);
-		TAILQ_INSERT_TAIL(&bufqueues[QUEUE_EMPTY], bp, b_freelist);
+		BSD_TAILQ_INSERT_TAIL(&bufqueues[QUEUE_EMPTY], bp, b_freelist);
 #ifdef INVARIANTS
 		bq_len[QUEUE_EMPTY]++;
 #endif
@@ -896,7 +896,7 @@ bremfreel(struct buf *bp)
 	BUF_ASSERT_HELD(bp);
 	mtx_assert(&bqlock, MA_OWNED);
 
-	TAILQ_REMOVE(&bufqueues[bp->b_qindex], bp, b_freelist);
+	BSD_TAILQ_REMOVE(&bufqueues[bp->b_qindex], bp, b_freelist);
 #ifdef INVARIANTS
 	KASSERT(bq_len[bp->b_qindex] >= 1, ("queue %d underflow",
 	    bp->b_qindex));
@@ -1151,7 +1151,7 @@ bufbdflush(struct bufobj *bo, struct buf *bp)
 		/*
 		 * Try to find a buffer to flush.
 		 */
-		TAILQ_FOREACH(nbp, &bo->bo_dirty.bv_hd, b_bobufs) {
+		BSD_TAILQ_FOREACH(nbp, &bo->bo_dirty.bv_hd, b_bobufs) {
 			if ((nbp->b_vflags & BV_BKGRDINPROG) ||
 			    BUF_LOCK(nbp,
 				     LK_EXCLUSIVE | LK_NOWAIT, NULL))
@@ -1483,7 +1483,7 @@ brelse(struct buf *bp)
 		 * cache the buffer.
 		 */
 		bp->b_flags |= B_INVAL;
-		if (!LIST_EMPTY(&bp->b_dep))
+		if (!BSD_LIST_EMPTY(&bp->b_dep))
 			buf_deallocate(bp);
 		if (bp->b_flags & B_DELWRI) {
 			atomic_subtract_int(&numdirtybuffers, 1);
@@ -1679,7 +1679,7 @@ brelse(struct buf *bp)
 		} else {
 			bp->b_qindex = QUEUE_EMPTY;
 		}
-		TAILQ_INSERT_HEAD(&bufqueues[bp->b_qindex], bp, b_freelist);
+		BSD_TAILQ_INSERT_HEAD(&bufqueues[bp->b_qindex], bp, b_freelist);
 	/* buffers with junk contents */
 	} else if (bp->b_flags & (B_INVAL | B_NOCACHE | B_RELBUF) ||
 	    (bp->b_ioflags & BIO_ERROR)) {
@@ -1687,7 +1687,7 @@ brelse(struct buf *bp)
 		if (bp->b_vflags & BV_BKGRDINPROG)
 			panic("losing buffer 2");
 		bp->b_qindex = QUEUE_CLEAN;
-		TAILQ_INSERT_HEAD(&bufqueues[QUEUE_CLEAN], bp, b_freelist);
+		BSD_TAILQ_INSERT_HEAD(&bufqueues[QUEUE_CLEAN], bp, b_freelist);
 	/* remaining buffers */
 	} else {
 		if ((bp->b_flags & (B_DELWRI|B_NEEDSGIANT)) ==
@@ -1698,10 +1698,10 @@ brelse(struct buf *bp)
 		else
 			bp->b_qindex = QUEUE_CLEAN;
 		if (bp->b_flags & B_AGE) {
-			TAILQ_INSERT_HEAD(&bufqueues[bp->b_qindex], bp,
+			BSD_TAILQ_INSERT_HEAD(&bufqueues[bp->b_qindex], bp,
 			    b_freelist);
 		} else {
-			TAILQ_INSERT_TAIL(&bufqueues[bp->b_qindex], bp,
+			BSD_TAILQ_INSERT_TAIL(&bufqueues[bp->b_qindex], bp,
 			    b_freelist);
 		}
 	}
@@ -1800,7 +1800,7 @@ bqrelse(struct buf *bp)
 			bp->b_qindex = QUEUE_DIRTY_GIANT;
 		else
 			bp->b_qindex = QUEUE_DIRTY;
-		TAILQ_INSERT_TAIL(&bufqueues[bp->b_qindex], bp, b_freelist);
+		BSD_TAILQ_INSERT_TAIL(&bufqueues[bp->b_qindex], bp, b_freelist);
 #ifdef INVARIANTS
 		bq_len[bp->b_qindex]++;
 #endif
@@ -1814,7 +1814,7 @@ bqrelse(struct buf *bp)
 		 */
 		if (!buf_vm_page_count_severe() || (bp->b_vflags & BV_BKGRDINPROG)) {
 			bp->b_qindex = QUEUE_CLEAN;
-			TAILQ_INSERT_TAIL(&bufqueues[QUEUE_CLEAN], bp,
+			BSD_TAILQ_INSERT_TAIL(&bufqueues[QUEUE_CLEAN], bp,
 			    b_freelist);
 #ifdef INVARIANTS
 			bq_len[QUEUE_CLEAN]++;
@@ -2174,7 +2174,7 @@ getnewbuf_reuse_bp(struct buf *bp, int qindex)
 		crfree(bp->b_wcred);
 		bp->b_wcred = NOCRED;
 	}
-	if (!LIST_EMPTY(&bp->b_dep))
+	if (!BSD_LIST_EMPTY(&bp->b_dep))
 		buf_deallocate(bp);
 	if (bp->b_vflags & BV_BKGRDINPROG)
 		panic("losing buffer 3");
@@ -2207,7 +2207,7 @@ getnewbuf_reuse_bp(struct buf *bp, int qindex)
 	bp->b_fsprivate2 = NULL;
 	bp->b_fsprivate3 = NULL;
 
-	LIST_INIT(&bp->b_dep);
+	BSD_LIST_INIT(&bp->b_dep);
 }
 
 static int flushingbufs;
@@ -2242,11 +2242,11 @@ restart:
 	mtx_lock(&bqlock);
 	if (!defrag && unmapped) {
 		nqindex = QUEUE_EMPTY;
-		nbp = TAILQ_FIRST(&bufqueues[QUEUE_EMPTY]);
+		nbp = BSD_TAILQ_FIRST(&bufqueues[QUEUE_EMPTY]);
 	}
 	if (nbp == NULL) {
 		nqindex = QUEUE_EMPTYKVA;
-		nbp = TAILQ_FIRST(&bufqueues[QUEUE_EMPTYKVA]);
+		nbp = BSD_TAILQ_FIRST(&bufqueues[QUEUE_EMPTYKVA]);
 	}
 
 	/*
@@ -2257,7 +2257,7 @@ restart:
 	 */
 	if (nbp == NULL && (defrag || bufspace >= lobufspace)) {
 		nqindex = QUEUE_CLEAN;
-		nbp = TAILQ_FIRST(&bufqueues[QUEUE_CLEAN]);
+		nbp = BSD_TAILQ_FIRST(&bufqueues[QUEUE_CLEAN]);
 	}
 
 	/*
@@ -2270,16 +2270,16 @@ restart:
 	if (nbp == NULL && defrag == 0 && (bufspace + maxsize < hibufspace ||
 	    metadata)) {
 		nqindex = QUEUE_EMPTY;
-		nbp = TAILQ_FIRST(&bufqueues[QUEUE_EMPTY]);
+		nbp = BSD_TAILQ_FIRST(&bufqueues[QUEUE_EMPTY]);
 	}
 
 	/*
 	 * All available buffers might be clean, retry ignoring the
 	 * lobufspace as the last resort.
 	 */
-	if (nbp == NULL && !TAILQ_EMPTY(&bufqueues[QUEUE_CLEAN])) {
+	if (nbp == NULL && !BSD_TAILQ_EMPTY(&bufqueues[QUEUE_CLEAN])) {
 		nqindex = QUEUE_CLEAN;
-		nbp = TAILQ_FIRST(&bufqueues[QUEUE_CLEAN]);
+		nbp = BSD_TAILQ_FIRST(&bufqueues[QUEUE_CLEAN]);
 	}
 
 	/*
@@ -2293,17 +2293,17 @@ restart:
 		 * Calculate next bp (we can only use it if we do not
 		 * block or do other fancy things).
 		 */
-		if ((nbp = TAILQ_NEXT(bp, b_freelist)) == NULL) {
+		if ((nbp = BSD_TAILQ_NEXT(bp, b_freelist)) == NULL) {
 			switch (qindex) {
 			case QUEUE_EMPTY:
 				nqindex = QUEUE_EMPTYKVA;
-				nbp = TAILQ_FIRST(&bufqueues[QUEUE_EMPTYKVA]);
+				nbp = BSD_TAILQ_FIRST(&bufqueues[QUEUE_EMPTYKVA]);
 				if (nbp != NULL)
 					break;
 				/* FALLTHROUGH */
 			case QUEUE_EMPTYKVA:
 				nqindex = QUEUE_CLEAN;
-				nbp = TAILQ_FIRST(&bufqueues[QUEUE_CLEAN]);
+				nbp = BSD_TAILQ_FIRST(&bufqueues[QUEUE_CLEAN]);
 				if (nbp != NULL)
 					break;
 				/* FALLTHROUGH */
@@ -2311,7 +2311,7 @@ restart:
 				if (metadata && pass == 1) {
 					pass = 2;
 					nqindex = QUEUE_EMPTY;
-					nbp = TAILQ_FIRST(
+					nbp = BSD_TAILQ_FIRST(
 					    &bufqueues[QUEUE_EMPTY]);
 				}
 				/*
@@ -2558,7 +2558,7 @@ buf_do_flush(struct vnode *vp)
 
 	flushed = flushbufqueues(vp, QUEUE_DIRTY, 0);
 	/* The list empty check here is slightly racy */
-	if (!TAILQ_EMPTY(&bufqueues[QUEUE_DIRTY_GIANT])) {
+	if (!BSD_TAILQ_EMPTY(&bufqueues[QUEUE_DIRTY_GIANT])) {
 		mtx_lock(&Giant);
 		flushed += flushbufqueues(vp, QUEUE_DIRTY_GIANT, 0);
 		mtx_unlock(&Giant);
@@ -2570,7 +2570,7 @@ buf_do_flush(struct vnode *vp)
 		 * in the hopes of eventually making progress.
 		 */
 		flushbufqueues(vp, QUEUE_DIRTY, 1);
-		if (!TAILQ_EMPTY(
+		if (!BSD_TAILQ_EMPTY(
 			    &bufqueues[QUEUE_DIRTY_GIANT])) {
 			mtx_lock(&Giant);
 			flushbufqueues(vp, QUEUE_DIRTY_GIANT, 1);
@@ -2682,12 +2682,12 @@ flushbufqueues(struct vnode *lvp, int queue, int flushdeps)
 	sentinel = bsd_malloc(sizeof(struct buf), M_TEMP, M_WAITOK | M_ZERO);
 	sentinel->b_qindex = QUEUE_SENTINEL;
 	mtx_lock(&bqlock);
-	TAILQ_INSERT_HEAD(&bufqueues[queue], sentinel, b_freelist);
+	BSD_TAILQ_INSERT_HEAD(&bufqueues[queue], sentinel, b_freelist);
 	while (flushed != target) {
-		bp = TAILQ_NEXT(sentinel, b_freelist);
+		bp = BSD_TAILQ_NEXT(sentinel, b_freelist);
 		if (bp != NULL) {
-			TAILQ_REMOVE(&bufqueues[queue], sentinel, b_freelist);
-			TAILQ_INSERT_AFTER(&bufqueues[queue], bp, sentinel,
+			BSD_TAILQ_REMOVE(&bufqueues[queue], sentinel, b_freelist);
+			BSD_TAILQ_INSERT_AFTER(&bufqueues[queue], bp, sentinel,
 			    b_freelist);
 		} else
 			break;
@@ -2727,7 +2727,7 @@ flushbufqueues(struct vnode *lvp, int queue, int flushdeps)
 			continue;
 		}
 
-		if (!LIST_EMPTY(&bp->b_dep) && buf_countdeps(bp, 0)) {
+		if (!BSD_LIST_EMPTY(&bp->b_dep) && buf_countdeps(bp, 0)) {
 			if (flushdeps == 0) {
 				BUF_UNLOCK(bp);
 				continue;
@@ -2779,7 +2779,7 @@ flushbufqueues(struct vnode *lvp, int queue, int flushdeps)
 		vn_finished_write(mp);
 		BUF_UNLOCK(bp);
 	}
-	TAILQ_REMOVE(&bufqueues[queue], sentinel, b_freelist);
+	BSD_TAILQ_REMOVE(&bufqueues[queue], sentinel, b_freelist);
 	mtx_unlock(&bqlock);
 	bsd_free(sentinel, M_TEMP);
 	return (flushed);
@@ -3175,7 +3175,7 @@ loop:
 					bp->b_flags |= B_NOCACHE;
 					bwrite(bp);
 				} else {
-					if (LIST_EMPTY(&bp->b_dep)) {
+					if (BSD_LIST_EMPTY(&bp->b_dep)) {
 						bp->b_flags |= B_RELBUF;
 						brelse(bp);
 					} else {
@@ -3840,7 +3840,7 @@ bufdone_finish(struct buf *bp)
 {
 	BUF_ASSERT_HELD(bp);
 
-	if (!LIST_EMPTY(&bp->b_dep))
+	if (!BSD_LIST_EMPTY(&bp->b_dep))
 		buf_complete(bp);
 
 	if (bp->b_flags & B_VMIO) {
@@ -4627,12 +4627,12 @@ DB_SHOW_COMMAND(vnodebufs, db_show_vnodebufs)
 	}
 	vp = (struct vnode *)addr;
 	db_printf("Clean buffers:\n");
-	TAILQ_FOREACH(bp, &vp->v_bufobj.bo_clean.bv_hd, b_bobufs) {
+	BSD_TAILQ_FOREACH(bp, &vp->v_bufobj.bo_clean.bv_hd, b_bobufs) {
 		db_show_buffer((uintptr_t)bp, 1, 0, NULL);
 		db_printf("\n");
 	}
 	db_printf("Dirty buffers:\n");
-	TAILQ_FOREACH(bp, &vp->v_bufobj.bo_dirty.bv_hd, b_bobufs) {
+	BSD_TAILQ_FOREACH(bp, &vp->v_bufobj.bo_dirty.bv_hd, b_bobufs) {
 		db_show_buffer((uintptr_t)bp, 1, 0, NULL);
 		db_printf("\n");
 	}

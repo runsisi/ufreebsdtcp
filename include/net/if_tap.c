@@ -156,7 +156,7 @@ static int			tapdebug = 0;        /* debug flag   */
 static int			tapuopen = 0;        /* allow user open() */
 static int			tapuponopen = 0;    /* IFF_UP on open() */
 static int			tapdclone = 1;	/* enable devfs cloning */
-static SLIST_HEAD(, tap_softc)	taphead;             /* first device */
+static BSD_SLIST_HEAD(, tap_softc)	taphead;             /* first device */
 static struct clonedevs 	*tapclones;
 
 MALLOC_DECLARE(M_TAP);
@@ -235,7 +235,7 @@ tap_clone_destroy(struct ifnet *ifp)
 	struct tap_softc *tp = ifp->if_softc;
 
 	mtx_lock(&tapmtx);
-	SLIST_REMOVE(&taphead, tp, tap_softc, tap_next);
+	BSD_SLIST_REMOVE(&taphead, tp, tap_softc, tap_next);
 	mtx_unlock(&tapmtx);
 	tap_destroy(tp);
 }
@@ -265,7 +265,7 @@ tapmodevent(module_t mod, int type, void *data)
 		/* intitialize device */
 
 		mtx_init(&tapmtx, "tapmtx", NULL, MTX_DEF);
-		SLIST_INIT(&taphead);
+		BSD_SLIST_INIT(&taphead);
 
 		clone_setup(&tapclones);
 		eh_tag = EVENTHANDLER_REGISTER(dev_clone, tapclone, 0, 1000);
@@ -285,7 +285,7 @@ tapmodevent(module_t mod, int type, void *data)
 		 * release the tap mtx to deregister the clone handler.
 		 */
 		mtx_lock(&tapmtx);
-		SLIST_FOREACH(tp, &taphead, tap_next) {
+		BSD_SLIST_FOREACH(tp, &taphead, tap_next) {
 			mtx_lock(&tp->tap_mtx);
 			if (tp->tap_flags & TAP_OPEN) {
 				mtx_unlock(&tp->tap_mtx);
@@ -302,8 +302,8 @@ tapmodevent(module_t mod, int type, void *data)
 		drain_dev_clone_events();
 
 		mtx_lock(&tapmtx);
-		while ((tp = SLIST_FIRST(&taphead)) != NULL) {
-			SLIST_REMOVE_HEAD(&taphead, tap_next);
+		while ((tp = BSD_SLIST_FIRST(&taphead)) != NULL) {
+			BSD_SLIST_REMOVE_HEAD(&taphead, tap_next);
 			mtx_unlock(&tapmtx);
 
 			ifp = tp->tap_ifp;
@@ -413,7 +413,7 @@ tapcreate(struct cdev *dev)
 	tp = bsd_malloc(sizeof(*tp), M_TAP, M_WAITOK | M_ZERO);
 	mtx_init(&tp->tap_mtx, "tap_mtx", NULL, MTX_DEF);
 	mtx_lock(&tapmtx);
-	SLIST_INSERT_HEAD(&taphead, tp, tap_next);
+	BSD_SLIST_INSERT_HEAD(&taphead, tp, tap_next);
 	mtx_unlock(&tapmtx);
 
 	unit = dev2unit(dev);
@@ -543,7 +543,7 @@ tapclose(struct cdev *dev, int foo, int bar, struct thread *td)
 		if (ifp->if_drv_flags & IFF_DRV_RUNNING) {
 			ifp->if_drv_flags &= ~IFF_DRV_RUNNING;
 			mtx_unlock(&tp->tap_mtx);
-			TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
+			BSD_TAILQ_FOREACH(ifa, &ifp->if_addrhead, ifa_link) {
 				rtinit(ifa, (int)RTM_DELETE, 0);
 			}
 			if_purgeaddrs(ifp);

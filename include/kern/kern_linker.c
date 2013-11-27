@@ -120,7 +120,7 @@ static int linker_no_more_classes = 0;
 									\
 	KLD_LOCK_ASSERT();						\
 retry:									\
-	TAILQ_FOREACH(lftmp, &linker_files, link) {			\
+	BSD_TAILQ_FOREACH(lftmp, &linker_files, link) {			\
 		if (next_file_id == lftmp->id) {			\
 			next_file_id++;					\
 			goto retry;					\
@@ -131,9 +131,9 @@ retry:									\
 
 
 /* XXX wrong name; we're looking at version provision tags here, not modules */
-typedef TAILQ_HEAD(, modlist) modlisthead_t;
+typedef BSD_TAILQ_HEAD(, modlist) modlisthead_t;
 struct modlist {
-	TAILQ_ENTRY(modlist) link;	/* chain together all modules */
+	BSD_TAILQ_ENTRY(modlist) link;	/* chain together all modules */
 	linker_file_t   container;
 	const char 	*name;
 	int             version;
@@ -165,8 +165,8 @@ linker_init(void *arg)
 {
 
 	sx_init(&kld_sx, "kernel linker");
-	TAILQ_INIT(&classes);
-	TAILQ_INIT(&linker_files);
+	BSD_TAILQ_INIT(&classes);
+	BSD_TAILQ_INIT(&linker_files);
 }
 
 SYSINIT(linker, SI_SUB_KLD, SI_ORDER_FIRST, linker_init, 0);
@@ -193,7 +193,7 @@ linker_add_class(linker_class_t lc)
 		return (EPERM);
 	kobj_class_compile((kobj_class_t) lc);
 	((kobj_class_t)lc)->refs++;	/* XXX: kobj_mtx */
-	TAILQ_INSERT_TAIL(&classes, lc, link);
+	BSD_TAILQ_INSERT_TAIL(&classes, lc, link);
 	return (0);
 }
 
@@ -401,7 +401,7 @@ linker_load_file(const char *filename, linker_file_t *result)
 	 * no class registration past startup (SI_SUB_KLD, SI_ORDER_ANY)
 	 * and there is no class deregistration mechanism at this time.
 	 */
-	TAILQ_FOREACH(lc, &classes, link) {
+	BSD_TAILQ_FOREACH(lc, &classes, link) {
 		KLD_DPF(FILE, ("linker_load_file: trying to load %s\n",
 		    filename));
 		error = LINKER_LOAD_FILE(lc, filename, &lf);
@@ -417,7 +417,7 @@ linker_load_file(const char *filename, linker_file_t *result)
 				linker_file_unload(lf, LINKER_UNLOAD_FORCE);
 				return (error);
 			}
-			modules = !TAILQ_EMPTY(&lf->modules);
+			modules = !BSD_TAILQ_EMPTY(&lf->modules);
 			KLD_UNLOCK();
 			linker_file_register_sysctls(lf);
 			linker_file_sysinit(lf);
@@ -429,7 +429,7 @@ linker_load_file(const char *filename, linker_file_t *result)
 			 * to load, unload the file and return an
 			 * error of ENOEXEC.
 			 */
-			if (modules && TAILQ_EMPTY(&lf->modules)) {
+			if (modules && BSD_TAILQ_EMPTY(&lf->modules)) {
 				linker_file_unload(lf, LINKER_UNLOAD_FORCE);
 				return (ENOEXEC);
 			}
@@ -520,7 +520,7 @@ linker_find_file_by_name(const char *filename)
 	sprintf(koname, "%s.ko", filename);
 
 	KLD_LOCK_ASSERT();
-	TAILQ_FOREACH(lf, &linker_files, link) {
+	BSD_TAILQ_FOREACH(lf, &linker_files, link) {
 		if (strcmp(lf->filename, koname) == 0)
 			break;
 		if (strcmp(lf->filename, filename) == 0)
@@ -536,7 +536,7 @@ linker_find_file_by_id(int fileid)
 	linker_file_t lf;
 
 	KLD_LOCK_ASSERT();
-	TAILQ_FOREACH(lf, &linker_files, link)
+	BSD_TAILQ_FOREACH(lf, &linker_files, link)
 		if (lf->id == fileid && lf->flags & LINKER_FILE_LINKED)
 			break;
 	return (lf);
@@ -549,7 +549,7 @@ linker_file_foreach(linker_predicate_t *predicate, void *context)
 	int retval = 0;
 
 	KLD_LOCK();
-	TAILQ_FOREACH(lf, &linker_files, link) {
+	BSD_TAILQ_FOREACH(lf, &linker_files, link) {
 		retval = predicate(lf, context);
 		if (retval != 0)
 			break;
@@ -582,9 +582,9 @@ linker_make_file(const char *pathname, linker_class_t lc)
 	lf->loadcnt = ++loadcnt;
 	lf->sdt_probes = NULL;
 	lf->sdt_nprobes = 0;
-	STAILQ_INIT(&lf->common);
-	TAILQ_INIT(&lf->modules);
-	TAILQ_INSERT_TAIL(&linker_files, lf, link);
+	BSD_STAILQ_INIT(&lf->common);
+	BSD_TAILQ_INIT(&lf->modules);
+	BSD_TAILQ_INSERT_TAIL(&linker_files, lf, link);
 	return (lf);
 }
 
@@ -616,7 +616,7 @@ linker_file_unload(linker_file_t file, int flags)
 	 * Quiesce all the modules to give them a chance to veto the unload.
 	 */
 	MOD_SLOCK;
-	for (mod = TAILQ_FIRST(&file->modules); mod;
+	for (mod = BSD_TAILQ_FIRST(&file->modules); mod;
 	     mod = module_getfnext(mod)) {
 
 		error = module_quiesce(mod);
@@ -639,7 +639,7 @@ linker_file_unload(linker_file_t file, int flags)
 	 * being unloaded.
 	 */
 	MOD_XLOCK;
-	for (mod = TAILQ_FIRST(&file->modules); mod; mod = next) {
+	for (mod = BSD_TAILQ_FIRST(&file->modules); mod; mod = next) {
 		next = module_getfnext(mod);
 		MOD_XUNLOCK;
 
@@ -660,9 +660,9 @@ linker_file_unload(linker_file_t file, int flags)
 	}
 	MOD_XUNLOCK;
 
-	TAILQ_FOREACH_SAFE(ml, &found_modules, link, nextml) {
+	BSD_TAILQ_FOREACH_SAFE(ml, &found_modules, link, nextml) {
 		if (ml->container == file) {
-			TAILQ_REMOVE(&found_modules, ml, link);
+			BSD_TAILQ_REMOVE(&found_modules, ml, link);
 			bsd_free(ml, M_LINKER);
 		}
 	}
@@ -678,7 +678,7 @@ linker_file_unload(linker_file_t file, int flags)
 		linker_file_unregister_sysctls(file);
 		KLD_LOCK();
 	}
-	TAILQ_REMOVE(&linker_files, file, link);
+	BSD_TAILQ_REMOVE(&linker_files, file, link);
 
 	if (file->deps) {
 		for (i = 0; i < file->ndeps; i++)
@@ -686,8 +686,8 @@ linker_file_unload(linker_file_t file, int flags)
 		bsd_free(file->deps, M_LINKER);
 		file->deps = NULL;
 	}
-	while ((cp = STAILQ_FIRST(&file->common)) != NULL) {
-		STAILQ_REMOVE_HEAD(&file->common, link);
+	while ((cp = BSD_STAILQ_FIRST(&file->common)) != NULL) {
+		BSD_STAILQ_REMOVE_HEAD(&file->common, link);
 		bsd_free(cp, M_LINKER);
 	}
 
@@ -829,7 +829,7 @@ linker_file_lookup_symbol_internal(linker_file_t file, const char *name,
 		 */
 		struct common_symbol *cp;
 
-		STAILQ_FOREACH(cp, &file->common, link) {
+		BSD_STAILQ_FOREACH(cp, &file->common, link) {
 			if (strcmp(cp->name, name) == 0) {
 				KLD_DPF(SYM, ("linker_file_lookup_symbol:"
 				    " old common value=%p\n", cp->address));
@@ -847,7 +847,7 @@ linker_file_lookup_symbol_internal(linker_file_t file, const char *name,
 		cp->name = cp->address + common_size;
 		strcpy(cp->name, name);
 		bzero(cp->address, common_size);
-		STAILQ_INSERT_TAIL(&file->common, cp, link);
+		BSD_STAILQ_INSERT_TAIL(&file->common, cp, link);
 
 		KLD_DPF(SYM, ("linker_file_lookup_symbol: new common"
 		    " value=%p\n", cp->address));
@@ -872,7 +872,7 @@ linker_debug_lookup(const char *symstr, c_linker_sym_t *sym)
 {
 	linker_file_t lf;
 
-	TAILQ_FOREACH(lf, &linker_files, link) {
+	BSD_TAILQ_FOREACH(lf, &linker_files, link) {
 		if (LINKER_LOOKUP_SYMBOL(lf, symstr, sym) == 0)
 			return (0);
 	}
@@ -890,7 +890,7 @@ linker_debug_search_symbol(caddr_t value, c_linker_sym_t *sym, long *diffp)
 	best = 0;
 	off = (uintptr_t)value;
 	bestdiff = off;
-	TAILQ_FOREACH(lf, &linker_files, link) {
+	BSD_TAILQ_FOREACH(lf, &linker_files, link) {
 		if (LINKER_SEARCH_SYMBOL(lf, value, &es, &diff) != 0)
 			continue;
 		if (es != 0 && diff < bestdiff) {
@@ -916,7 +916,7 @@ linker_debug_symbol_values(c_linker_sym_t sym, linker_symval_t *symval)
 {
 	linker_file_t lf;
 
-	TAILQ_FOREACH(lf, &linker_files, link) {
+	BSD_TAILQ_FOREACH(lf, &linker_files, link) {
 		if (LINKER_SYMBOL_VALUES(lf, sym, symval) == 0)
 			return (0);
 	}
@@ -1203,19 +1203,19 @@ sys_kldnext(struct thread *td, struct kldnext_args *uap)
 
 	KLD_LOCK();
 	if (uap->fileid == 0)
-		lf = TAILQ_FIRST(&linker_files);
+		lf = BSD_TAILQ_FIRST(&linker_files);
 	else {
 		lf = linker_find_file_by_id(uap->fileid);
 		if (lf == NULL) {
 			error = ENOENT;
 			goto out;
 		}
-		lf = TAILQ_NEXT(lf, link);
+		lf = BSD_TAILQ_NEXT(lf, link);
 	}
 
 	/* Skip partially loaded files. */
 	while (lf != NULL && !(lf->flags & LINKER_FILE_LINKED))
-		lf = TAILQ_NEXT(lf, link);
+		lf = BSD_TAILQ_NEXT(lf, link);
 
 	if (lf)
 		td->td_retval[0] = lf->id;
@@ -1305,7 +1305,7 @@ sys_kldfirstmod(struct thread *td, struct kldfirstmod_args *uap)
 	lf = linker_find_file_by_id(uap->fileid);
 	if (lf) {
 		MOD_SLOCK;
-		mp = TAILQ_FIRST(&lf->modules);
+		mp = BSD_TAILQ_FIRST(&lf->modules);
 		if (mp != NULL)
 			td->td_retval[0] = module_getid(mp);
 		else
@@ -1354,7 +1354,7 @@ sys_kldsym(struct thread *td, struct kldsym_args *uap)
 		} else
 			error = ENOENT;
 	} else {
-		TAILQ_FOREACH(lf, &linker_files, link) {
+		BSD_TAILQ_FOREACH(lf, &linker_files, link) {
 			if (LINKER_LOOKUP_SYMBOL(lf, symstr, &sym) == 0 &&
 			    LINKER_SYMBOL_VALUES(lf, sym, &symval) == 0) {
 				lookup.symvalue = (uintptr_t)symval.value;
@@ -1382,7 +1382,7 @@ modlist_lookup(const char *name, int ver)
 {
 	modlist_t mod;
 
-	TAILQ_FOREACH(mod, &found_modules, link) {
+	BSD_TAILQ_FOREACH(mod, &found_modules, link) {
 		if (strcmp(mod->name, name) == 0 &&
 		    (ver == 0 || mod->version == ver))
 			return (mod);
@@ -1399,7 +1399,7 @@ modlist_lookup2(const char *name, struct mod_depend *verinfo)
 	if (verinfo == NULL)
 		return (modlist_lookup(name, 0));
 	bestmod = NULL;
-	TAILQ_FOREACH(mod, &found_modules, link) {
+	BSD_TAILQ_FOREACH(mod, &found_modules, link) {
 		if (strcmp(mod->name, name) != 0)
 			continue;
 		ver = mod->version;
@@ -1424,7 +1424,7 @@ modlist_newmodule(const char *modname, int version, linker_file_t container)
 	mod->container = container;
 	mod->name = modname;
 	mod->version = version;
-	TAILQ_INSERT_TAIL(&found_modules, mod, link);
+	BSD_TAILQ_INSERT_TAIL(&found_modules, mod, link);
 	return (mod);
 }
 
@@ -1470,9 +1470,9 @@ linker_preload(void *arg)
 	modlist_t mod;
 	struct sysinit **si_start, **si_stop;
 
-	TAILQ_INIT(&loaded_files);
-	TAILQ_INIT(&depended_files);
-	TAILQ_INIT(&found_modules);
+	BSD_TAILQ_INIT(&loaded_files);
+	BSD_TAILQ_INIT(&depended_files);
+	BSD_TAILQ_INIT(&found_modules);
 	error = 0;
 
 	modptr = NULL;
@@ -1493,14 +1493,14 @@ linker_preload(void *arg)
 			printf("Preloaded %s \"%s\" at %p.\n", modtype, modname,
 			    modptr);
 		lf = NULL;
-		TAILQ_FOREACH(lc, &classes, link) {
+		BSD_TAILQ_FOREACH(lc, &classes, link) {
 			error = LINKER_LINK_PRELOAD(lc, modname, &lf);
 			if (!error)
 				break;
 			lf = NULL;
 		}
 		if (lf)
-			TAILQ_INSERT_TAIL(&loaded_files, lf, loaded);
+			BSD_TAILQ_INSERT_TAIL(&loaded_files, lf, loaded);
 	}
 
 	/*
@@ -1515,7 +1515,7 @@ linker_preload(void *arg)
 	 * dependency requirements.
 	 */
 restart:
-	TAILQ_FOREACH(lf, &loaded_files, loaded) {
+	BSD_TAILQ_FOREACH(lf, &loaded_files, loaded) {
 		error = linker_file_lookup_set(lf, MDT_SETNAME, &start,
 		    &stop, NULL);
 		/*
@@ -1567,7 +1567,7 @@ restart:
 					    nver) != NULL) {
 						printf("module %s already"
 						    " present!\n", modname);
-						TAILQ_REMOVE(&loaded_files,
+						BSD_TAILQ_REMOVE(&loaded_files,
 						    lf, loaded);
 						linker_file_unload(lf,
 						    LINKER_UNLOAD_FORCE);
@@ -1577,8 +1577,8 @@ restart:
 					modlist_newmodule(modname, nver, lf);
 				}
 			}
-			TAILQ_REMOVE(&loaded_files, lf, loaded);
-			TAILQ_INSERT_TAIL(&depended_files, lf, loaded);
+			BSD_TAILQ_REMOVE(&loaded_files, lf, loaded);
+			BSD_TAILQ_INSERT_TAIL(&depended_files, lf, loaded);
 			/*
 			 * Since we provided modules, we need to restart the
 			 * sort so that the previous files that depend on us
@@ -1592,8 +1592,8 @@ restart:
 	/*
 	 * At this point, we check to see what could not be resolved..
 	 */
-	while ((lf = TAILQ_FIRST(&loaded_files)) != NULL) {
-		TAILQ_REMOVE(&loaded_files, lf, loaded);
+	while ((lf = BSD_TAILQ_FIRST(&loaded_files)) != NULL) {
+		BSD_TAILQ_REMOVE(&loaded_files, lf, loaded);
 		printf("KLD file %s is missing dependencies\n", lf->filename);
 		linker_file_unload(lf, LINKER_UNLOAD_FORCE);
 	}
@@ -1601,7 +1601,7 @@ restart:
 	/*
 	 * We made it. Finish off the linking in the order we determined.
 	 */
-	TAILQ_FOREACH_SAFE(lf, &depended_files, loaded, nlf) {
+	BSD_TAILQ_FOREACH_SAFE(lf, &depended_files, loaded, nlf) {
 		if (linker_kernel_file) {
 			linker_kernel_file->refs++;
 			error = linker_file_add_dependency(lf,
@@ -1654,7 +1654,7 @@ restart:
 		lf->flags |= LINKER_FILE_LINKED;
 		continue;
 fail:
-		TAILQ_REMOVE(&depended_files, lf, loaded);
+		BSD_TAILQ_REMOVE(&depended_files, lf, loaded);
 		linker_file_unload(lf, LINKER_UNLOAD_FORCE);
 	}
 	/* woohoo! we made it! */
@@ -1963,14 +1963,14 @@ linker_hwpmc_list_objects(void)
 
 	nmappings = 0;
 	KLD_LOCK_READ();
-	TAILQ_FOREACH(lf, &linker_files, link)
+	BSD_TAILQ_FOREACH(lf, &linker_files, link)
 		nmappings++;
 
 	/* Allocate nmappings + 1 entries. */
 	kobase = bsd_malloc((nmappings + 1) * sizeof(struct pmckern_map_in),
 	    M_LINKER, M_WAITOK | M_ZERO);
 	i = 0;
-	TAILQ_FOREACH(lf, &linker_files, link) {
+	BSD_TAILQ_FOREACH(lf, &linker_files, link) {
 
 		/* Save the info for this linker file. */
 		kobase[i].pm_file = lf->filename;
@@ -2170,7 +2170,7 @@ sysctl_kern_function_list(SYSCTL_HANDLER_ARGS)
 	if (error != 0)
 		return (error);
 	KLD_LOCK();
-	TAILQ_FOREACH(lf, &linker_files, link) {
+	BSD_TAILQ_FOREACH(lf, &linker_files, link) {
 		error = LINKER_EACH_FUNCTION_NAME(lf,
 		    sysctl_kern_function_list_iterate, req);
 		if (error) {

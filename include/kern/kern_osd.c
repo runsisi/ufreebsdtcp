@@ -69,7 +69,7 @@ static void do_osd_del(u_int type, struct osd *osd, u_int slot,
  *  (o) osd_object_lock
  *  (l) osd_list_lock
  */
-static LIST_HEAD(, osd)	osd_list[OSD_LAST + 1];		/* (m) */
+static BSD_LIST_HEAD(, osd)	osd_list[OSD_LAST + 1];		/* (m) */
 static osd_method_t *osd_methods[OSD_LAST + 1];		/* (m) */
 static u_int osd_nslots[OSD_LAST + 1];			/* (m) */
 static osd_destructor_t *osd_destructors[OSD_LAST + 1];	/* (o) */
@@ -159,7 +159,7 @@ osd_deregister(u_int type, u_int slot)
 	 * Free all OSD for the given slot.
 	 */
 	mtx_lock(&osd_list_lock[type]);
-	LIST_FOREACH_SAFE(osd, &osd_list[type], osd_next, tosd)
+	BSD_LIST_FOREACH_SAFE(osd, &osd_list[type], osd_next, tosd)
 		do_osd_del(type, osd, slot, 1);
 	mtx_unlock(&osd_list_lock[type]);
 	/*
@@ -222,7 +222,7 @@ osd_set(u_int type, struct osd *osd, u_int slot, void *value)
 			}
 			osd->osd_nslots = slot;
 			mtx_lock(&osd_list_lock[type]);
-			LIST_INSERT_HEAD(&osd_list[type], osd, osd_next);
+			BSD_LIST_INSERT_HEAD(&osd_list[type], osd, osd_next);
 			mtx_unlock(&osd_list_lock[type]);
 			OSD_DEBUG("Setting first slot (type=%u).", type);
 		} else {
@@ -314,7 +314,7 @@ do_osd_del(u_int type, struct osd *osd, u_int slot, int list_locked)
 		OSD_DEBUG("No more slots left (type=%u).", type);
 		if (!list_locked)
 			mtx_lock(&osd_list_lock[type]);
-		LIST_REMOVE(osd, osd_next);
+		BSD_LIST_REMOVE(osd, osd_next);
 		if (!list_locked)
 			mtx_unlock(&osd_list_lock[type]);
 		bsd_free(osd->osd_slots, M_OSD);
@@ -392,7 +392,7 @@ osd_init(void *arg __unused)
 
 	for (i = OSD_FIRST; i <= OSD_LAST; i++) {
 		osd_nslots[i] = 0;
-		LIST_INIT(&osd_list[i]);
+		BSD_LIST_INIT(&osd_list[i]);
 		sx_init(&osd_module_lock[i], "osd_module");
 		rm_init(&osd_object_lock[i], "osd_object");
 		mtx_init(&osd_list_lock[i], "osd_list", NULL, MTX_DEF);

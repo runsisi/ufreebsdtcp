@@ -524,7 +524,7 @@ sctp_find_sharedkey(struct sctp_keyhead *shared_keys, uint16_t key_id)
 {
 	sctp_sharedkey_t *skey;
 
-	LIST_FOREACH(skey, shared_keys, next) {
+	BSD_LIST_FOREACH(skey, shared_keys, next) {
 		if (skey->keyid == key_id)
 			return (skey);
 	}
@@ -541,15 +541,15 @@ sctp_insert_sharedkey(struct sctp_keyhead *shared_keys,
 		return (EINVAL);
 
 	/* insert into an empty list? */
-	if (LIST_EMPTY(shared_keys)) {
-		LIST_INSERT_HEAD(shared_keys, new_skey, next);
+	if (BSD_LIST_EMPTY(shared_keys)) {
+		BSD_LIST_INSERT_HEAD(shared_keys, new_skey, next);
 		return (0);
 	}
 	/* insert into the existing list, ordered by key id */
-	LIST_FOREACH(skey, shared_keys, next) {
+	BSD_LIST_FOREACH(skey, shared_keys, next) {
 		if (new_skey->keyid < skey->keyid) {
 			/* insert it before here */
-			LIST_INSERT_BEFORE(skey, new_skey, next);
+			BSD_LIST_INSERT_BEFORE(skey, new_skey, next);
 			return (0);
 		} else if (new_skey->keyid == skey->keyid) {
 			/* replace the existing key */
@@ -563,14 +563,14 @@ sctp_insert_sharedkey(struct sctp_keyhead *shared_keys,
 			SCTPDBG(SCTP_DEBUG_AUTH1,
 			    "replacing shared key id %u\n",
 			    new_skey->keyid);
-			LIST_INSERT_BEFORE(skey, new_skey, next);
-			LIST_REMOVE(skey, next);
+			BSD_LIST_INSERT_BEFORE(skey, new_skey, next);
+			BSD_LIST_REMOVE(skey, next);
 			sctp_free_sharedkey(skey);
 			return (0);
 		}
-		if (LIST_NEXT(skey, next) == NULL) {
+		if (BSD_LIST_NEXT(skey, next) == NULL) {
 			/* belongs at the end of the list */
-			LIST_INSERT_AFTER(skey, new_skey, next);
+			BSD_LIST_INSERT_AFTER(skey, new_skey, next);
 			return (0);
 		}
 	}
@@ -652,7 +652,7 @@ sctp_copy_skeylist(const struct sctp_keyhead *src, struct sctp_keyhead *dest)
 
 	if ((src == NULL) || (dest == NULL))
 		return (0);
-	LIST_FOREACH(skey, src, next) {
+	BSD_LIST_FOREACH(skey, src, next) {
 		new_skey = sctp_copy_sharedkey(skey);
 		if (new_skey != NULL) {
 			(void)sctp_insert_sharedkey(dest, new_skey);
@@ -1313,7 +1313,7 @@ sctp_clear_cachedkeys_ep(struct sctp_inpcb *inp, uint16_t keyid)
 		return;
 
 	/* clear the cached keys on all assocs on this instance */
-	LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
+	BSD_LIST_FOREACH(stcb, &inp->sctp_asoc_list, sctp_tcblist) {
 		SCTP_TCB_LOCK(stcb);
 		sctp_clear_cachedkeys(stcb, keyid);
 		SCTP_TCB_UNLOCK(stcb);
@@ -1346,7 +1346,7 @@ sctp_delete_sharedkey(struct sctp_tcb *stcb, uint16_t keyid)
 		return (-1);
 
 	/* remove it */
-	LIST_REMOVE(skey, next);
+	BSD_LIST_REMOVE(skey, next);
 	sctp_free_sharedkey(skey);	/* frees skey->key as well */
 
 	/* clear any cached keys */
@@ -1378,7 +1378,7 @@ sctp_delete_sharedkey_ep(struct sctp_inpcb *inp, uint16_t keyid)
 	/* endpoint keys are not refcounted */
 
 	/* remove it */
-	LIST_REMOVE(skey, next);
+	BSD_LIST_REMOVE(skey, next);
 	sctp_free_sharedkey(skey);	/* frees skey->key as well */
 
 	/* clear any cached keys */
@@ -1489,7 +1489,7 @@ sctp_deact_sharedkey_ep(struct sctp_inpcb *inp, uint16_t keyid)
 	/* endpoint keys are not refcounted */
 
 	/* remove it */
-	LIST_REMOVE(skey, next);
+	BSD_LIST_REMOVE(skey, next);
 	sctp_free_sharedkey(skey);	/* frees skey->key as well */
 
 	return (0);

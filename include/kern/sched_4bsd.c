@@ -1139,7 +1139,7 @@ forward_wakeup(int cpunum)
 	CPU_OR(&dontuse, &hlt_cpus_mask);
 	CPU_ZERO(&map2);
 	if (forward_wakeup_use_loop) {
-		STAILQ_FOREACH(pc, &cpuhead, pc_allcpu) {
+		BSD_STAILQ_FOREACH(pc, &cpuhead, pc_allcpu) {
 			id = pc->pc_cpuid;
 			if (!CPU_ISSET(id, &dontuse) &&
 			    pc->pc_curthread == pc->pc_idlethread) {
@@ -1174,7 +1174,7 @@ forward_wakeup(int cpunum)
 	}
 	if (!CPU_EMPTY(&map)) {
 		forward_wakeups_delivered++;
-		STAILQ_FOREACH(pc, &cpuhead, pc_allcpu) {
+		BSD_STAILQ_FOREACH(pc, &cpuhead, pc_allcpu) {
 			id = pc->pc_cpuid;
 			if (!CPU_ISSET(id, &map))
 				continue;

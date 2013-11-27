@@ -170,7 +170,7 @@ vm_contig_launder(int queue, int tries, vm_paddr_t low, vm_paddr_t high)
 	vm_paddr_t pa;
 	int error;
 
-	TAILQ_FOREACH_SAFE(m, &vm_page_queues[queue].pl, pageq, next) {
+	BSD_TAILQ_FOREACH_SAFE(m, &vm_page_queues[queue].pl, pageq, next) {
 		KASSERT(m->queue == queue,
 		    ("vm_contig_launder: page %p's queue is not %d", m, queue));
 		if ((m->flags & PG_MARKER) != 0)
