@@ -1773,7 +1773,7 @@ YY_RULE_SETUP
 					YY_BUFFER_STATE old_state;
 					YY_BUFFER_STATE temp_state;
 
-					ycopy = strdup(yytext);
+					ycopy = bsd_strdup(yytext);
 					yptr = ycopy + yyleng;
 					while (yptr > ycopy)
 						unput(*--yptr);
@@ -2804,7 +2804,7 @@ include_file(char *file_name, include_type type)
 	}
 	yy_switch_to_buffer(yy_create_buffer(newfile, YY_BUF_SIZE));
 	yylineno = 1;
-	yyfilename = strdup(file_name);
+	yyfilename = bsd_strdup(file_name);
 }
 
 static void next_substitution(struct symbol *mac_symbol, const char *body_pos,

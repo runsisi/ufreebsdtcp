@@ -75,7 +75,7 @@
 #endif
 #define	NCCS		20
 
-#define	_POSIX_VDISABLE	0xff
+//#define	_POSIX_VDISABLE	0xff
 
 /*
  * Input flags - software input processing

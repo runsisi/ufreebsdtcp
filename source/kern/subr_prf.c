@@ -95,7 +95,7 @@ extern	int log_open;
 
 static void  msglogchar(int c, int pri);
 static void  msglogstr(char *str, int pri, int filter_cr);
-static void  putchar(int ch, void *arg);
+static void  bsd_putchar(int ch, void *arg);
 static char *ksprintn(char *nbuf, uintmax_t num, int base, int *len, int upper);
 static void  snprintf_func(int ch, void *arg);
 
@@ -166,7 +166,7 @@ uprintf(const char *fmt, ...)
 	pca.p_bufr = NULL;
 	va_start(ap, fmt);
 	tty_lock(pca.tty);
-	retval = kvprintf(fmt, putchar, &pca, 10, ap);
+	retval = kvprintf(fmt, bsd_putchar, &pca, 10, ap);
 	tty_unlock(pca.tty);
 	va_end(ap);
 out:
@@ -211,7 +211,7 @@ tprintf(struct proc *p, int pri, const char *fmt, ...)
 	va_start(ap, fmt);
 	if (pca.tty != NULL)
 		tty_lock(pca.tty);
-	kvprintf(fmt, putchar, &pca, 10, ap);
+	kvprintf(fmt, bsd_putchar, &pca, 10, ap);
 	if (pca.tty != NULL)
 		tty_unlock(pca.tty);
 	va_end(ap);
@@ -237,7 +237,7 @@ ttyprintf(struct tty *tp, const char *fmt, ...)
 	pca.tty = tp;
 	pca.flags = TOTTY;
 	pca.p_bufr = NULL;
-	retval = kvprintf(fmt, putchar, &pca, 10, ap);
+	retval = kvprintf(fmt, bsd_putchar, &pca, 10, ap);
 	va_end(ap);
 	return (retval);
 }
@@ -270,7 +270,7 @@ log(int level, const char *fmt, ...)
 #endif
 
 	va_start(ap, fmt);
-	kvprintf(fmt, putchar, &pca, 10, ap);
+	kvprintf(fmt, bsd_putchar, &pca, 10, ap);
 	va_end(ap);
 
 #ifdef PRINTF_BUFR_SIZE
@@ -388,7 +388,7 @@ vprintf(const char *fmt, va_list ap)
 	pca.p_bufr = NULL;
 #endif
 
-	retval = kvprintf(fmt, putchar, &pca, 10, ap);
+	retval = kvprintf(fmt, bsd_putchar, &pca, 10, ap);
 
 #ifdef PRINTF_BUFR_SIZE
 	/* Write any buffered console/log output: */
@@ -462,7 +462,7 @@ putbuf(int c, struct putchar_arg *ap)
  * inspection later.
  */
 static void
-putchar(int c, void *arg)
+bsd_putchar(int c, void *arg)
 {
 	struct putchar_arg *ap = (struct putchar_arg*) arg;
 	struct tty *tp = ap->tty;
