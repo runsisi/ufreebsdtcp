@@ -495,10 +495,10 @@ copyiniov(struct iovec *iovp, u_int iovcnt, struct iovec **iov, int error)
 	if (iovcnt > UIO_MAXIOV)
 		return (error);
 	iovlen = iovcnt * sizeof (struct iovec);
-	*iov = malloc(iovlen, M_IOV, M_WAITOK);
+	*iov = bsd_malloc(iovlen, M_IOV, M_WAITOK);
 	error = copyin(iovp, *iov, iovlen);
 	if (error) {
-		free(*iov, M_IOV);
+		bsd_free(*iov, M_IOV);
 		*iov = NULL;
 	}
 	return (error);
@@ -516,11 +516,11 @@ copyinuio(struct iovec *iovp, u_int iovcnt, struct uio **uiop)
 	if (iovcnt > UIO_MAXIOV)
 		return (EINVAL);
 	iovlen = iovcnt * sizeof (struct iovec);
-	uio = malloc(iovlen + sizeof *uio, M_IOV, M_WAITOK);
+	uio = bsd_malloc(iovlen + sizeof *uio, M_IOV, M_WAITOK);
 	iov = (struct iovec *)(uio + 1);
 	error = copyin(iovp, iov, iovlen);
 	if (error) {
-		free(uio, M_IOV);
+		bsd_free(uio, M_IOV);
 		return (error);
 	}
 	uio->uio_iov = iov;
@@ -530,7 +530,7 @@ copyinuio(struct iovec *iovp, u_int iovcnt, struct uio **uiop)
 	uio->uio_resid = 0;
 	for (i = 0; i < iovcnt; i++) {
 		if (iov->iov_len > IOSIZE_MAX - uio->uio_resid) {
-			free(uio, M_IOV);
+			bsd_free(uio, M_IOV);
 			return (EINVAL);
 		}
 		uio->uio_resid += iov->iov_len;
@@ -547,7 +547,7 @@ cloneuio(struct uio *uiop)
 	int iovlen;
 
 	iovlen = uiop->uio_iovcnt * sizeof (struct iovec);
-	uio = malloc(iovlen + sizeof *uio, M_IOV, M_WAITOK);
+	uio = bsd_malloc(iovlen + sizeof *uio, M_IOV, M_WAITOK);
 	*uio = *uiop;
 	uio->uio_iov = (struct iovec *)(uio + 1);
 	bcopy(uiop->uio_iov, uio->uio_iov, iovlen);

@@ -569,7 +569,7 @@ filt_timerattach(struct knote *kn)
 
 	kn->kn_flags |= EV_CLEAR;		/* automatically set */
 	kn->kn_status &= ~KN_DETACHED;		/* knlist_add usually sets it */
-	calloutp = malloc(sizeof(*calloutp), M_KQUEUE, M_WAITOK);
+	calloutp = bsd_malloc(sizeof(*calloutp), M_KQUEUE, M_WAITOK);
 	callout_init(calloutp, CALLOUT_MPSAFE);
 	kn->kn_hook = calloutp;
 	callout_reset_curcpu(calloutp, timertoticks(kn->kn_sdata),
@@ -585,7 +585,7 @@ filt_timerdetach(struct knote *kn)
 
 	calloutp = (struct callout *)kn->kn_hook;
 	callout_drain(calloutp);
-	free(calloutp, M_KQUEUE);
+	bsd_free(calloutp, M_KQUEUE);
 	atomic_add_int(&kq_ncallouts, -1);
 	kn->kn_status |= KN_DETACHED;	/* knlist_remove usually clears it */
 }
@@ -699,7 +699,7 @@ sys_kqueue(struct thread *td, struct kqueue_args *uap)
 		goto done2;
 
 	/* An extra reference on `nfp' has been held for us by falloc(). */
-	kq = malloc(sizeof *kq, M_KQUEUE, M_WAITOK | M_ZERO);
+	kq = bsd_malloc(sizeof *kq, M_KQUEUE, M_WAITOK | M_ZERO);
 	mtx_init(&kq->kq_lock, "kqueue", NULL, MTX_DEF|MTX_DUPOK);
 	TAILQ_INIT(&kq->kq_head);
 	kq->kq_fdp = fdp;
@@ -1243,7 +1243,7 @@ kqueue_expand(struct kqueue *kq, struct filterops *fops, uintptr_t ident,
 			size = kq->kq_knlistsize;
 			while (size <= fd)
 				size += KQEXTENT;
-			list = malloc(size * sizeof(*list), M_KQUEUE, mflag);
+			list = bsd_malloc(size * sizeof(*list), M_KQUEUE, mflag);
 			if (list == NULL)
 				return ENOMEM;
 			KQ_LOCK(kq);
@@ -1281,7 +1281,7 @@ kqueue_expand(struct kqueue *kq, struct filterops *fops, uintptr_t ident,
 			KQ_UNLOCK(kq);
 		}
 	}
-	free(to_free, M_KQUEUE);
+	bsd_free(to_free, M_KQUEUE);
 
 	KQ_NOTOWNED(kq);
 	return 0;
@@ -1717,12 +1717,12 @@ kqueue_close(struct file *fp, struct thread *td)
 	kq->kq_fdp = NULL;
 
 	if (kq->kq_knhash != NULL)
-		free(kq->kq_knhash, M_KQUEUE);
+		bsd_free(kq->kq_knhash, M_KQUEUE);
 	if (kq->kq_knlist != NULL)
-		free(kq->kq_knlist, M_KQUEUE);
+		bsd_free(kq->kq_knlist, M_KQUEUE);
 
 	funsetown(&kq->kq_sigio);
-	free(kq, M_KQUEUE);
+	bsd_free(kq, M_KQUEUE);
 	fp->f_data = NULL;
 
 	return (0);

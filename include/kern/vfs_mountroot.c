@@ -128,7 +128,7 @@ root_mount_hold(const char *identifier)
 	if (root_mounted())
 		return (NULL);
 
-	h = malloc(sizeof *h, M_DEVBUF, M_ZERO | M_WAITOK);
+	h = bsd_malloc(sizeof *h, M_DEVBUF, M_ZERO | M_WAITOK);
 	h->who = identifier;
 	mtx_lock(&mountlist_mtx);
 	LIST_INSERT_HEAD(&root_holds, h, list);
@@ -146,7 +146,7 @@ root_mount_rel(struct root_hold_token *h)
 	LIST_REMOVE(h, list);
 	wakeup(&root_holds);
 	mtx_unlock(&mountlist_mtx);
-	free(h, M_DEVBUF);
+	bsd_free(h, M_DEVBUF);
 }
 
 int
@@ -223,7 +223,7 @@ vfs_mountroot_devfs(struct thread *td, struct mount **mpp)
 	if (error)
 		return (error);
 
-	opts = malloc(sizeof(struct vfsoptlist), M_MOUNT, M_WAITOK);
+	opts = bsd_malloc(sizeof(struct vfsoptlist), M_MOUNT, M_WAITOK);
 	TAILQ_INIT(opts);
 	mp->mnt_opt = opts;
 
@@ -438,7 +438,7 @@ parse_token(char **conf, char **tok)
 	p = *conf;
 	error = parse_skipto(conf, CC_WHITESPACE);
 	len = *conf - p;
-	*tok = malloc(len + 1, M_TEMP, M_WAITOK | M_ZERO);
+	*tok = bsd_malloc(len + 1, M_TEMP, M_WAITOK | M_ZERO);
 	bcopy(p, *tok, len);
 	return (0);
 }
@@ -521,10 +521,10 @@ parse_dir_md(char **conf)
 		return (error);
 
 	len = strlen(tok);
-	mdio = malloc(sizeof(*mdio) + len + 1, M_TEMP, M_WAITOK | M_ZERO);
+	mdio = bsd_malloc(sizeof(*mdio) + len + 1, M_TEMP, M_WAITOK | M_ZERO);
 	path = (void *)(mdio + 1);
 	bcopy(tok, path, len);
-	free(tok, M_TEMP);
+	bsd_free(tok, M_TEMP);
 
 	/* Get file status. */
 	error = kern_stat(td, path, UIO_SYSSPACE, &sb);
@@ -578,7 +578,7 @@ parse_dir_md(char **conf)
 	error = kern_close(td, fd);
 
  out:
-	free(mdio, M_TEMP);
+	bsd_free(mdio, M_TEMP);
 	return (error);
 }
 
@@ -605,7 +605,7 @@ parse_dir_onfail(char **conf)
 		error = EINVAL;
 	}
 
-	free(action, M_TEMP);
+	bsd_free(action, M_TEMP);
 	return (0);
 }
 
@@ -624,7 +624,7 @@ parse_dir_timeout(char **conf)
 	error = (secs < 0 || *endtok != '\0') ? EINVAL : 0;
 	if (!error)
 		root_mount_timeout = secs;
-	free(tok, M_TEMP);
+	bsd_free(tok, M_TEMP);
 	return (error);
 }
 
@@ -652,7 +652,7 @@ parse_directive(char **conf)
 		(void)parse_skipto(conf, '\n');
 		error = EINVAL;
 	}
-	free(dir, M_TEMP);
+	bsd_free(dir, M_TEMP);
 	return (error);
 }
 
@@ -685,7 +685,7 @@ parse_mount(char **conf)
 	fs = tok;
 	error = parse_skipto(&tok, ':');
 	if (error) {
-		free(fs, M_TEMP);
+		bsd_free(fs, M_TEMP);
 		return (error);
 	}
 	parse_poke(&tok, '\0');
@@ -706,7 +706,7 @@ parse_mount(char **conf)
 	printf("Trying to mount root from %s:%s [%s]...\n", fs, dev,
 	    (opts != NULL) ? opts : "");
 
-	errmsg = malloc(ERRMSGL, M_TEMP, M_WAITOK | M_ZERO);
+	errmsg = bsd_malloc(ERRMSGL, M_TEMP, M_WAITOK | M_ZERO);
 
 	if (vfs_byname(fs) == NULL) {
 		strlcpy(errmsg, "unknown file system", sizeof(errmsg));
@@ -746,10 +746,10 @@ parse_mount(char **conf)
 			printf(": %s", errmsg);
 		printf(".\n");
 	}
-	free(fs, M_TEMP);
-	free(errmsg, M_TEMP);
+	bsd_free(fs, M_TEMP);
+	bsd_free(errmsg, M_TEMP);
 	if (opts != NULL)
-		free(opts, M_TEMP);
+		bsd_free(opts, M_TEMP);
 	/* kernel_mount can return -1 on error. */
 	return ((error < 0) ? EDOOFUS : error);
 }
@@ -847,7 +847,7 @@ vfs_mountroot_conf0(struct sbuf *sb)
 		while (!error) {
 			sbuf_printf(sb, "%s %s\n", mnt,
 			    (opt != NULL) ? opt : "");
-			free(mnt, M_TEMP);
+			bsd_free(mnt, M_TEMP);
 			error = parse_token(&tok, &mnt);
 		}
 		if (opt != NULL)
@@ -1038,6 +1038,6 @@ parse_mountroot_options(struct mntarg *ma, const char *options)
 		ma = mount_arg(ma, name_arg, val_arg,
 		    (val_arg != NULL ? -1 : 0));
 	}
-	free(opts, M_MOUNT);
+	bsd_free(opts, M_MOUNT);
 	return (ma);
 }

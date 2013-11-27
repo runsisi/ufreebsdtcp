@@ -745,7 +745,7 @@ witness_initialize(void *dummy __unused)
 	struct witness *w, *w1;
 	int i;
 
-	w_data = malloc(sizeof (struct witness) * WITNESS_COUNT, M_WITNESS,
+	w_data = bsd_malloc(sizeof (struct witness) * WITNESS_COUNT, M_WITNESS,
 	    M_NOWAIT | M_ZERO);
 
 	/*
@@ -2445,11 +2445,11 @@ sysctl_debug_witness_badstacks(SYSCTL_HANDLER_ARGS)
 		return (ENOMEM);
 
 	/* Allocate and init temporary storage space. */
-	tmp_w1 = malloc(sizeof(struct witness), M_TEMP, M_WAITOK | M_ZERO);
-	tmp_w2 = malloc(sizeof(struct witness), M_TEMP, M_WAITOK | M_ZERO);
-	tmp_data1 = malloc(sizeof(struct witness_lock_order_data), M_TEMP, 
+	tmp_w1 = bsd_malloc(sizeof(struct witness), M_TEMP, M_WAITOK | M_ZERO);
+	tmp_w2 = bsd_malloc(sizeof(struct witness), M_TEMP, M_WAITOK | M_ZERO);
+	tmp_data1 = bsd_malloc(sizeof(struct witness_lock_order_data), M_TEMP, 
 	    M_WAITOK | M_ZERO);
-	tmp_data2 = malloc(sizeof(struct witness_lock_order_data), M_TEMP, 
+	tmp_data2 = bsd_malloc(sizeof(struct witness_lock_order_data), M_TEMP, 
 	    M_WAITOK | M_ZERO);
 	stack_zero(&tmp_data1->wlod_stack);
 	stack_zero(&tmp_data2->wlod_stack);
@@ -2564,10 +2564,10 @@ restart:
 	mtx_unlock_spin(&w_mtx);
 
 	/* Free temporary storage space. */
-	free(tmp_data1, M_TEMP);
-	free(tmp_data2, M_TEMP);
-	free(tmp_w1, M_TEMP);
-	free(tmp_w2, M_TEMP);
+	bsd_free(tmp_data1, M_TEMP);
+	bsd_free(tmp_data2, M_TEMP);
+	bsd_free(tmp_w1, M_TEMP);
+	bsd_free(tmp_w2, M_TEMP);
 
 	sbuf_finish(sb);
 	error = SYSCTL_OUT(req, sbuf_data(sb), sbuf_len(sb) + 1);

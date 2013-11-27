@@ -362,7 +362,7 @@ shm_alloc(struct ucred *ucred, mode_t mode)
 {
 	struct shmfd *shmfd;
 
-	shmfd = malloc(sizeof(*shmfd), M_SHMFD, M_WAITOK | M_ZERO);
+	shmfd = bsd_malloc(sizeof(*shmfd), M_SHMFD, M_WAITOK | M_ZERO);
 	shmfd->shm_size = 0;
 	shmfd->shm_uid = ucred->cr_uid;
 	shmfd->shm_gid = ucred->cr_gid;
@@ -403,7 +403,7 @@ shm_drop(struct shmfd *shmfd)
 		mac_posixshm_destroy(shmfd);
 #endif
 		vm_object_deallocate(shmfd->shm_object);
-		free(shmfd, M_SHMFD);
+		bsd_free(shmfd, M_SHMFD);
 	}
 }
 
@@ -464,7 +464,7 @@ shm_insert(char *path, Fnv32_t fnv, struct shmfd *shmfd)
 {
 	struct shm_mapping *map;
 
-	map = malloc(sizeof(struct shm_mapping), M_SHMFD, M_WAITOK);
+	map = bsd_malloc(sizeof(struct shm_mapping), M_SHMFD, M_WAITOK);
 	map->sm_path = path;
 	map->sm_fnv = fnv;
 	map->sm_shmfd = shm_hold(shmfd);
@@ -494,8 +494,8 @@ shm_remove(char *path, Fnv32_t fnv, struct ucred *ucred)
 			map->sm_shmfd->shm_path = NULL;
 			LIST_REMOVE(map, sm_link);
 			shm_drop(map->sm_shmfd);
-			free(map->sm_path, M_SHMFD);
-			free(map, M_SHMFD);
+			bsd_free(map->sm_path, M_SHMFD);
+			bsd_free(map, M_SHMFD);
 			return (0);
 		}
 	}
@@ -547,7 +547,7 @@ sys_shm_open(struct thread *td, struct shm_open_args *uap)
 		}
 		shmfd = shm_alloc(td->td_ucred, cmode);
 	} else {
-		path = malloc(MAXPATHLEN, M_SHMFD, M_WAITOK);
+		path = bsd_malloc(MAXPATHLEN, M_SHMFD, M_WAITOK);
 		error = copyinstr(uap->path, path, MAXPATHLEN, NULL);
 
 		/* Require paths to start with a '/' character. */
@@ -556,7 +556,7 @@ sys_shm_open(struct thread *td, struct shm_open_args *uap)
 		if (error) {
 			fdclose(fdp, fp, fd, td);
 			fdrop(fp, td);
-			free(path, M_SHMFD);
+			bsd_free(path, M_SHMFD);
 			return (error);
 		}
 
@@ -577,7 +577,7 @@ sys_shm_open(struct thread *td, struct shm_open_args *uap)
 				}
 #endif
 			} else {
-				free(path, M_SHMFD);
+				bsd_free(path, M_SHMFD);
 				error = ENOENT;
 			}
 		} else {
@@ -585,7 +585,7 @@ sys_shm_open(struct thread *td, struct shm_open_args *uap)
 			 * Object already exists, obtain a new
 			 * reference if requested and permitted.
 			 */
-			free(path, M_SHMFD);
+			bsd_free(path, M_SHMFD);
 			if ((uap->flags & (O_CREAT | O_EXCL)) ==
 			    (O_CREAT | O_EXCL))
 				error = EEXIST;
@@ -641,10 +641,10 @@ sys_shm_unlink(struct thread *td, struct shm_unlink_args *uap)
 	Fnv32_t fnv;
 	int error;
 
-	path = malloc(MAXPATHLEN, M_TEMP, M_WAITOK);
+	path = bsd_malloc(MAXPATHLEN, M_TEMP, M_WAITOK);
 	error = copyinstr(uap->path, path, MAXPATHLEN, NULL);
 	if (error) {
-		free(path, M_TEMP);
+		bsd_free(path, M_TEMP);
 		return (error);
 	}
 
@@ -652,7 +652,7 @@ sys_shm_unlink(struct thread *td, struct shm_unlink_args *uap)
 	sx_xlock(&shm_dict_lock);
 	error = shm_remove(path, fnv, td->td_ucred);
 	sx_xunlock(&shm_dict_lock);
-	free(path, M_TEMP);
+	bsd_free(path, M_TEMP);
 
 	return (error);
 }

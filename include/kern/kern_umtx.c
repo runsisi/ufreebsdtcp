@@ -284,8 +284,8 @@ umtxq_alloc(void)
 {
 	struct umtx_q *uq;
 
-	uq = malloc(sizeof(struct umtx_q), M_UMTX, M_WAITOK | M_ZERO);
-	uq->uq_spare_queue = malloc(sizeof(struct umtxq_queue), M_UMTX, M_WAITOK | M_ZERO);
+	uq = bsd_malloc(sizeof(struct umtx_q), M_UMTX, M_WAITOK | M_ZERO);
+	uq->uq_spare_queue = bsd_malloc(sizeof(struct umtxq_queue), M_UMTX, M_WAITOK | M_ZERO);
 	TAILQ_INIT(&uq->uq_spare_queue->head);
 	TAILQ_INIT(&uq->uq_pi_contested);
 	uq->uq_inherited_pri = PRI_MAX;
@@ -296,8 +296,8 @@ void
 umtxq_free(struct umtx_q *uq)
 {
 	MPASS(uq->uq_spare_queue != NULL);
-	free(uq->uq_spare_queue, M_UMTX);
-	free(uq, M_UMTX);
+	bsd_free(uq->uq_spare_queue, M_UMTX);
+	bsd_free(uq, M_UMTX);
 }
 
 static inline void

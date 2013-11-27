@@ -43,14 +43,14 @@ z_alloc(void *nil, u_int items, u_int size)
 {
 	void *ptr;
 
-	ptr = malloc(items * size, M_TEMP, M_NOWAIT);
+	ptr = bsd_malloc(items * size, M_TEMP, M_NOWAIT);
 	return ptr;
 }
 
 static void
 z_free(void *nil, void *ptr)
 {
-	free(ptr, M_TEMP);
+	bsd_free(ptr, M_TEMP);
 }
 
 #endif
@@ -123,7 +123,7 @@ link_elf_ctf_get(linker_file_t lf, linker_ctf_t *lc)
 	NDFREE(&nd, NDF_ONLY_PNBUF);
 
 	/* Allocate memory for the FLF header. */
-	if ((hdr = malloc(sizeof(*hdr), M_LINKER, M_WAITOK)) == NULL) {
+	if ((hdr = bsd_malloc(sizeof(*hdr), M_LINKER, M_WAITOK)) == NULL) {
 		error = ENOMEM;
 		goto out;
 	}
@@ -148,7 +148,7 @@ link_elf_ctf_get(linker_file_t lf, linker_ctf_t *lc)
 	}
 
 	/* Allocate memory for all the section headers */
-	if ((shdr = malloc(nbytes, M_LINKER, M_WAITOK)) == NULL) {
+	if ((shdr = bsd_malloc(nbytes, M_LINKER, M_WAITOK)) == NULL) {
 		error = ENOMEM;
 		goto out;
 	}
@@ -173,7 +173,7 @@ link_elf_ctf_get(linker_file_t lf, linker_ctf_t *lc)
 	}
 
 	/* Allocate memory to buffer the section header strings. */
-	if ((shstrtab = malloc(shdr[hdr->e_shstrndx].sh_size, M_LINKER,
+	if ((shstrtab = bsd_malloc(shdr[hdr->e_shstrndx].sh_size, M_LINKER,
 	    M_WAITOK)) == NULL) {
 		error = ENOMEM;
 		goto out;
@@ -240,7 +240,7 @@ link_elf_ctf_get(linker_file_t lf, linker_ctf_t *lc)
 		 * Allocate memory for the compressed CTF data, including
 		 * the header (which isn't compressed).
 		 */
-		if ((raw = malloc(shdr[i].sh_size, M_LINKER, M_WAITOK)) == NULL) {
+		if ((raw = bsd_malloc(shdr[i].sh_size, M_LINKER, M_WAITOK)) == NULL) {
 			error = ENOMEM;
 			goto out;
 		}
@@ -256,7 +256,7 @@ link_elf_ctf_get(linker_file_t lf, linker_ctf_t *lc)
 	 * Allocate memory to buffer the CTF data in it's decompressed
 	 * form.
 	 */
-	if ((ctftab = malloc(sz, M_LINKER, M_WAITOK)) == NULL) {
+	if ((ctftab = bsd_malloc(sz, M_LINKER, M_WAITOK)) == NULL) {
 		error = ENOMEM;
 		goto out;
 	}
@@ -326,15 +326,15 @@ out:
 	VFS_UNLOCK_GIANT(vfslocked);
 
 	if (hdr != NULL)
-		free(hdr, M_LINKER);
+		bsd_free(hdr, M_LINKER);
 	if (shdr != NULL)
-		free(shdr, M_LINKER);
+		bsd_free(shdr, M_LINKER);
 	if (shstrtab != NULL)
-		free(shstrtab, M_LINKER);
+		bsd_free(shstrtab, M_LINKER);
 	if (ctftab != NULL)
-		free(ctftab, M_LINKER);
+		bsd_free(ctftab, M_LINKER);
 	if (raw != NULL)
-		free(raw, M_LINKER);
+		bsd_free(raw, M_LINKER);
 #else
 	error = EOPNOTSUPP;
 #endif

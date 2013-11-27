@@ -114,7 +114,7 @@ _taskqueue_create(const char *name __unused, int mflags,
 {
 	struct taskqueue *queue;
 
-	queue = malloc(sizeof(struct taskqueue), M_TASKQUEUE, mflags | M_ZERO);
+	queue = bsd_malloc(sizeof(struct taskqueue), M_TASKQUEUE, mflags | M_ZERO);
 	if (!queue)
 		return NULL;
 
@@ -160,8 +160,8 @@ taskqueue_free(struct taskqueue *queue)
 	KASSERT(TAILQ_EMPTY(&queue->tq_active), ("Tasks still running?"));
 	KASSERT(queue->tq_callouts == 0, ("Armed timeout tasks"));
 	mtx_destroy(&queue->tq_mutex);
-	free(queue->tq_threads, M_TASKQUEUE);
-	free(queue, M_TASKQUEUE);
+	bsd_free(queue->tq_threads, M_TASKQUEUE);
+	bsd_free(queue, M_TASKQUEUE);
 }
 
 static int
@@ -453,7 +453,7 @@ taskqueue_start_threads(struct taskqueue **tqp, int count, int pri,
 	vsnprintf(ktname, sizeof(ktname), name, ap);
 	va_end(ap);
 
-	tq->tq_threads = malloc(sizeof(struct thread *) * count, M_TASKQUEUE,
+	tq->tq_threads = bsd_malloc(sizeof(struct thread *) * count, M_TASKQUEUE,
 	    M_NOWAIT | M_ZERO);
 	if (tq->tq_threads == NULL) {
 		printf("%s: no memory for %s threads\n", __func__, ktname);

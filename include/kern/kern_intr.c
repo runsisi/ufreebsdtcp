@@ -259,7 +259,7 @@ intr_event_create(struct intr_event **event, void *source, int flags, int irq,
 	/* The only valid flag during creation is IE_SOFT. */
 	if ((flags & ~IE_SOFT) != 0)
 		return (EINVAL);
-	ie = malloc(sizeof(struct intr_event), M_ITHREAD, M_WAITOK | M_ZERO);
+	ie = bsd_malloc(sizeof(struct intr_event), M_ITHREAD, M_WAITOK | M_ZERO);
 	ie->ie_source = source;
 	ie->ie_pre_ithread = pre_ithread;
 	ie->ie_post_ithread = post_ithread;
@@ -437,7 +437,7 @@ intr_event_destroy(struct intr_event *ie)
 	mtx_unlock(&ie->ie_lock);
 	mtx_unlock(&event_lock);
 	mtx_destroy(&ie->ie_lock);
-	free(ie, M_ITHREAD);
+	bsd_free(ie, M_ITHREAD);
 	return (0);
 }
 
@@ -449,7 +449,7 @@ ithread_create(const char *name)
 	struct thread *td;
 	int error;
 
-	ithd = malloc(sizeof(struct intr_thread), M_ITHREAD, M_WAITOK | M_ZERO);
+	ithd = bsd_malloc(sizeof(struct intr_thread), M_ITHREAD, M_WAITOK | M_ZERO);
 
 	error = kproc_kthread_add(ithread_loop, ithd, &intrproc,
 		    &td, RFSTOPPED | RFHIGHPID,
@@ -473,7 +473,7 @@ ithread_create(const char *name, struct intr_handler *ih)
 	struct thread *td;
 	int error;
 
-	ithd = malloc(sizeof(struct intr_thread), M_ITHREAD, M_WAITOK | M_ZERO);
+	ithd = bsd_malloc(sizeof(struct intr_thread), M_ITHREAD, M_WAITOK | M_ZERO);
 
 	error = kproc_kthread_add(ithread_loop, ih, &intrproc,
 		    &td, RFSTOPPED | RFHIGHPID,
@@ -520,7 +520,7 @@ intr_event_add_handler(struct intr_event *ie, const char *name,
 		return (EINVAL);
 
 	/* Allocate and populate an interrupt handler structure. */
-	ih = malloc(sizeof(struct intr_handler), M_ITHREAD, M_WAITOK | M_ZERO);
+	ih = bsd_malloc(sizeof(struct intr_handler), M_ITHREAD, M_WAITOK | M_ZERO);
 	ih->ih_filter = filter;
 	ih->ih_handler = handler;
 	ih->ih_argument = arg;
@@ -540,7 +540,7 @@ intr_event_add_handler(struct intr_event *ie, const char *name,
 		if ((flags & INTR_EXCL) ||
 		    (TAILQ_FIRST(&ie->ie_handlers)->ih_flags & IH_EXCLUSIVE)) {
 			mtx_unlock(&ie->ie_lock);
-			free(ih, M_ITHREAD);
+			bsd_free(ih, M_ITHREAD);
 			return (EINVAL);
 		}
 	}
@@ -594,7 +594,7 @@ intr_event_add_handler(struct intr_event *ie, const char *name,
 		return (EINVAL);
 
 	/* Allocate and populate an interrupt handler structure. */
-	ih = malloc(sizeof(struct intr_handler), M_ITHREAD, M_WAITOK | M_ZERO);
+	ih = bsd_malloc(sizeof(struct intr_handler), M_ITHREAD, M_WAITOK | M_ZERO);
 	ih->ih_filter = filter;
 	ih->ih_handler = handler;
 	ih->ih_argument = arg;
@@ -614,7 +614,7 @@ intr_event_add_handler(struct intr_event *ie, const char *name,
 		if ((flags & INTR_EXCL) ||
 		    (TAILQ_FIRST(&ie->ie_handlers)->ih_flags & IH_EXCLUSIVE)) {
 			mtx_unlock(&ie->ie_lock);
-			free(ih, M_ITHREAD);
+			bsd_free(ih, M_ITHREAD);
 			return (EINVAL);
 		}
 	}
@@ -820,7 +820,7 @@ ok:
 	if (ie->ie_thread == NULL) {
 		TAILQ_REMOVE(&ie->ie_handlers, handler, ih_next);
 		mtx_unlock(&ie->ie_lock);
-		free(handler, M_ITHREAD);
+		bsd_free(handler, M_ITHREAD);
 		return (0);
 	}
 
@@ -867,7 +867,7 @@ ok:
 	}
 #endif
 	mtx_unlock(&ie->ie_lock);
-	free(handler, M_ITHREAD);
+	bsd_free(handler, M_ITHREAD);
 	return (0);
 }
 
@@ -967,7 +967,7 @@ ok:
 	if (ie->ie_thread == NULL && handler->ih_thread == NULL) {
 		TAILQ_REMOVE(&ie->ie_handlers, handler, ih_next);
 		mtx_unlock(&ie->ie_lock);
-		free(handler, M_ITHREAD);
+		bsd_free(handler, M_ITHREAD);
 		return (0);
 	}
 
@@ -1024,7 +1024,7 @@ ok:
 	}
 #endif
 	mtx_unlock(&ie->ie_lock);
-	free(handler, M_ITHREAD);
+	bsd_free(handler, M_ITHREAD);
 	return (0);
 }
 
@@ -1349,7 +1349,7 @@ ithread_loop(void *arg)
 		if (ithd->it_flags & IT_DEAD) {
 			CTR3(KTR_INTR, "%s: pid %d (%s) exiting", __func__,
 			    p->p_pid, td->td_name);
-			free(ithd, M_ITHREAD);
+			bsd_free(ithd, M_ITHREAD);
 			kthread_exit();
 		}
 
@@ -1530,7 +1530,7 @@ ithread_loop(void *arg)
 		if (ithd->it_flags & IT_DEAD) {
 			CTR3(KTR_INTR, "%s: pid %d (%s) exiting", __func__,
 			    p->p_pid, td->td_name);
-			free(ithd, M_ITHREAD);
+			bsd_free(ithd, M_ITHREAD);
 			kthread_exit();
 		}
 

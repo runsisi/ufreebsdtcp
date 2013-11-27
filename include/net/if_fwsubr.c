@@ -342,7 +342,7 @@ firewire_input_fragment(struct fw_com *fc, struct mbuf *m, int src)
 		if (r->fr_id == id)
 			break;
 	if (!r) {
-		r = malloc(sizeof(struct fw_reass), M_TEMP, M_NOWAIT);
+		r = bsd_malloc(sizeof(struct fw_reass), M_TEMP, M_NOWAIT);
 		if (!r) {
 			m_freem(m);
 			return 0;
@@ -440,7 +440,7 @@ firewire_input_fragment(struct fw_com *fc, struct mbuf *m, int src)
 				 * merged the whole chain.
 				 */
 				STAILQ_REMOVE(&fc->fc_frags, r, fw_reass, fr_link);
-				free(r, M_TEMP);
+				bsd_free(r, M_TEMP);
 				m = mprev->m_nextpkt;
 				while (m) {
 					mf = m->m_nextpkt;
@@ -801,7 +801,7 @@ firewire_busreset(struct ifnet *ifp)
 			r->fr_frags = m->m_nextpkt;
 			m_freem(m);
 		}
-		free(r, M_TEMP);
+		bsd_free(r, M_TEMP);
 	}
 }
 
@@ -810,7 +810,7 @@ firewire_alloc(u_char type, struct ifnet *ifp)
 {
 	struct fw_com	*fc;
 
-	fc = malloc(sizeof(struct fw_com), M_FWCOM, M_WAITOK | M_ZERO);
+	fc = bsd_malloc(sizeof(struct fw_com), M_FWCOM, M_WAITOK | M_ZERO);
 	fc->fc_ifp = ifp;
 
 	return (fc);
@@ -820,7 +820,7 @@ static void
 firewire_free(void *com, u_char type)
 {
 
-	free(com, M_FWCOM);
+	bsd_free(com, M_FWCOM);
 }
 
 static int

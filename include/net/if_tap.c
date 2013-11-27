@@ -225,7 +225,7 @@ tap_destroy(struct tap_softc *tp)
 	if_free_type(ifp, IFT_ETHER);
 
 	mtx_destroy(&tp->tap_mtx);
-	free(tp, M_TAP);
+	bsd_free(tp, M_TAP);
 	CURVNET_RESTORE();
 }
 
@@ -410,7 +410,7 @@ tapcreate(struct cdev *dev)
 	dev->si_flags &= ~SI_CHEAPCLONE;
 
 	/* allocate driver storage and create device */
-	tp = malloc(sizeof(*tp), M_TAP, M_WAITOK | M_ZERO);
+	tp = bsd_malloc(sizeof(*tp), M_TAP, M_WAITOK | M_ZERO);
 	mtx_init(&tp->tap_mtx, "tap_mtx", NULL, MTX_DEF);
 	mtx_lock(&tapmtx);
 	SLIST_INSERT_HEAD(&taphead, tp, tap_next);

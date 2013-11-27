@@ -2323,13 +2323,13 @@ sys_olio_listio(struct thread *td, struct olio_listio_args *uap)
 	} else
 		sigp = NULL;
 
-	acb_list = malloc(sizeof(struct aiocb *) * nent, M_LIO, M_WAITOK);
+	acb_list = bsd_malloc(sizeof(struct aiocb *) * nent, M_LIO, M_WAITOK);
 	error = copyin(uap->acb_list, acb_list, nent * sizeof(acb_list[0]));
 	if (error == 0)
 		error = kern_lio_listio(td, uap->mode,
 		    (struct aiocb * const *)uap->acb_list, acb_list, nent, sigp,
 		    &aiocb_ops_osigevent);
-	free(acb_list, M_LIO);
+	bsd_free(acb_list, M_LIO);
 	return (error);
 }
 
@@ -2356,12 +2356,12 @@ sys_lio_listio(struct thread *td, struct lio_listio_args *uap)
 	} else
 		sigp = NULL;
 
-	acb_list = malloc(sizeof(struct aiocb *) * nent, M_LIO, M_WAITOK);
+	acb_list = bsd_malloc(sizeof(struct aiocb *) * nent, M_LIO, M_WAITOK);
 	error = copyin(uap->acb_list, acb_list, nent * sizeof(acb_list[0]));
 	if (error == 0)
 		error = kern_lio_listio(td, uap->mode, uap->acb_list, acb_list,
 		    nent, sigp, &aiocb_ops);
-	free(acb_list, M_LIO);
+	bsd_free(acb_list, M_LIO);
 	return (error);
 }
 
@@ -2960,21 +2960,21 @@ freebsd32_olio_listio(struct thread *td, struct freebsd32_olio_listio_args *uap)
 	} else
 		sigp = NULL;
 
-	acb_list32 = malloc(sizeof(uint32_t) * nent, M_LIO, M_WAITOK);
+	acb_list32 = bsd_malloc(sizeof(uint32_t) * nent, M_LIO, M_WAITOK);
 	error = copyin(uap->acb_list, acb_list32, nent * sizeof(uint32_t));
 	if (error) {
-		free(acb_list32, M_LIO);
+		bsd_free(acb_list32, M_LIO);
 		return (error);
 	}
-	acb_list = malloc(sizeof(struct aiocb *) * nent, M_LIO, M_WAITOK);
+	acb_list = bsd_malloc(sizeof(struct aiocb *) * nent, M_LIO, M_WAITOK);
 	for (i = 0; i < nent; i++)
 		acb_list[i] = PTRIN(acb_list32[i]);
-	free(acb_list32, M_LIO);
+	bsd_free(acb_list32, M_LIO);
 
 	error = kern_lio_listio(td, uap->mode,
 	    (struct aiocb * const *)uap->acb_list, acb_list, nent, sigp,
 	    &aiocb32_ops_osigevent);
-	free(acb_list, M_LIO);
+	bsd_free(acb_list, M_LIO);
 	return (error);
 }
 
@@ -3005,21 +3005,21 @@ freebsd32_lio_listio(struct thread *td, struct freebsd32_lio_listio_args *uap)
 	} else
 		sigp = NULL;
 
-	acb_list32 = malloc(sizeof(uint32_t) * nent, M_LIO, M_WAITOK);
+	acb_list32 = bsd_malloc(sizeof(uint32_t) * nent, M_LIO, M_WAITOK);
 	error = copyin(uap->acb_list, acb_list32, nent * sizeof(uint32_t));
 	if (error) {
-		free(acb_list32, M_LIO);
+		bsd_free(acb_list32, M_LIO);
 		return (error);
 	}
-	acb_list = malloc(sizeof(struct aiocb *) * nent, M_LIO, M_WAITOK);
+	acb_list = bsd_malloc(sizeof(struct aiocb *) * nent, M_LIO, M_WAITOK);
 	for (i = 0; i < nent; i++)
 		acb_list[i] = PTRIN(acb_list32[i]);
-	free(acb_list32, M_LIO);
+	bsd_free(acb_list32, M_LIO);
 
 	error = kern_lio_listio(td, uap->mode,
 	    (struct aiocb * const *)uap->acb_list, acb_list, nent, sigp,
 	    &aiocb32_ops);
-	free(acb_list, M_LIO);
+	bsd_free(acb_list, M_LIO);
 	return (error);
 }
 

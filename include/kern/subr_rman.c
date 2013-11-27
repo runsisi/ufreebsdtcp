@@ -120,7 +120,7 @@ int_alloc_resource(int malloc_flag)
 {
 	struct resource_i *r;
 
-	r = malloc(sizeof *r, M_RMAN, malloc_flag | M_ZERO);
+	r = bsd_malloc(sizeof *r, M_RMAN, malloc_flag | M_ZERO);
 	if (r != NULL) {
 		r->r_r.__r_i = r;
 	}
@@ -146,7 +146,7 @@ rman_init(struct rman *rm)
 		panic("implement RMAN_GAUGE");
 
 	TAILQ_INIT(&rm->rm_list);
-	rm->rm_mtx = malloc(sizeof *rm->rm_mtx, M_RMAN, M_NOWAIT | M_ZERO);
+	rm->rm_mtx = bsd_malloc(sizeof *rm->rm_mtx, M_RMAN, M_NOWAIT | M_ZERO);
 	if (rm->rm_mtx == NULL)
 		return ENOMEM;
 	mtx_init(rm->rm_mtx, "rman", NULL, MTX_DEF);
@@ -209,16 +209,16 @@ rman_manage_region(struct rman *rm, u_long start, u_long end)
 			if (t != NULL) {
 				s->r_end = t->r_end;
 				TAILQ_REMOVE(&rm->rm_list, t, r_link);
-				free(r, M_RMAN);
-				free(t, M_RMAN);
+				bsd_free(r, M_RMAN);
+				bsd_free(t, M_RMAN);
 			} else {
 				s->r_end = r->r_end;
-				free(r, M_RMAN);
+				bsd_free(r, M_RMAN);
 			}
 		} else if (t != NULL) {
 			/* Can we merge with just the next region? */
 			t->r_start = r->r_start;
-			free(r, M_RMAN);
+			bsd_free(r, M_RMAN);
 		} else if (s->r_end < r->r_start) {
 			TAILQ_INSERT_AFTER(&rm->rm_list, s, r, r_link);
 		} else {
@@ -260,14 +260,14 @@ rman_fini(struct rman *rm)
 	while (!TAILQ_EMPTY(&rm->rm_list)) {
 		r = TAILQ_FIRST(&rm->rm_list);
 		TAILQ_REMOVE(&rm->rm_list, r, r_link);
-		free(r, M_RMAN);
+		bsd_free(r, M_RMAN);
 	}
 	mtx_unlock(rm->rm_mtx);
 	mtx_lock(&rman_mtx);
 	TAILQ_REMOVE(&rman_head, rm, rm_link);
 	mtx_unlock(&rman_mtx);
 	mtx_destroy(rm->rm_mtx);
-	free(rm->rm_mtx, M_RMAN);
+	bsd_free(rm->rm_mtx, M_RMAN);
 
 	return 0;
 }
@@ -376,7 +376,7 @@ rman_adjust_resource(struct resource *rr, u_long start, u_long end)
 		r->r_start = start;
 		if (s->r_start == start) {
 			TAILQ_REMOVE(&rm->rm_list, s, r_link);
-			free(s, M_RMAN);
+			bsd_free(s, M_RMAN);
 		} else
 			s->r_end = start - 1;
 	}
@@ -386,7 +386,7 @@ rman_adjust_resource(struct resource *rr, u_long start, u_long end)
 		r->r_end = end;
 		if (t->r_end == end) {
 			TAILQ_REMOVE(&rm->rm_list, t, r_link);
-			free(t, M_RMAN);
+			bsd_free(t, M_RMAN);
 		} else
 			t->r_start = end + 1;
 	}
@@ -407,7 +407,7 @@ rman_adjust_resource(struct resource *rr, u_long start, u_long end)
 		s = TAILQ_PREV(r, resource_head, r_link);
 		if (s != NULL && !(s->r_flags & RF_ALLOCATED)) {
 			s->r_end = start - 1;
-			free(new, M_RMAN);
+			bsd_free(new, M_RMAN);
 		} else
 			TAILQ_INSERT_BEFORE(r, new, r_link);
 		mtx_unlock(rm->rm_mtx);
@@ -422,7 +422,7 @@ rman_adjust_resource(struct resource *rr, u_long start, u_long end)
 		t = TAILQ_NEXT(r, r_link);
 		if (t != NULL && !(t->r_flags & RF_ALLOCATED)) {
 			t->r_start = end + 1;
-			free(new, M_RMAN);
+			bsd_free(new, M_RMAN);
 		} else
 			TAILQ_INSERT_AFTER(&rm->rm_list, r, new, r_link);
 		mtx_unlock(rm->rm_mtx);
@@ -538,7 +538,7 @@ rman_reserve_resource_bound(struct rman *rm, u_long start, u_long end,
 				 */
 				r = int_alloc_resource(M_NOWAIT);
 				if (r == NULL) {
-					free(rv, M_RMAN);
+					bsd_free(rv, M_RMAN);
 					rv = NULL;
 					goto out;
 				}
@@ -604,10 +604,10 @@ rman_reserve_resource_bound(struct rman *rm, u_long start, u_long end,
 			rv->r_dev = dev;
 			rv->r_rm = rm;
 			if (s->r_sharehead == NULL) {
-				s->r_sharehead = malloc(sizeof *s->r_sharehead,
+				s->r_sharehead = bsd_malloc(sizeof *s->r_sharehead,
 						M_RMAN, M_NOWAIT | M_ZERO);
 				if (s->r_sharehead == NULL) {
-					free(rv, M_RMAN);
+					bsd_free(rv, M_RMAN);
 					rv = NULL;
 					goto out;
 				}
@@ -786,7 +786,7 @@ int_rman_release_resource(struct rman *rm, struct resource_i *r)
 		 * if the resource is no longer being shared at all.
 		 */
 		if (LIST_NEXT(s, r_sharelink) == NULL) {
-			free(s->r_sharehead, M_RMAN);
+			bsd_free(s->r_sharehead, M_RMAN);
 			s->r_sharehead = NULL;
 			s->r_flags &= ~RF_FIRSTSHARE;
 		}
@@ -815,7 +815,7 @@ int_rman_release_resource(struct rman *rm, struct resource_i *r)
 		s->r_end = t->r_end;
 		TAILQ_REMOVE(&rm->rm_list, r, r_link);
 		TAILQ_REMOVE(&rm->rm_list, t, r_link);
-		free(t, M_RMAN);
+		bsd_free(t, M_RMAN);
 	} else if (s != NULL) {
 		/*
 		 * Merge previous segment with ours.
@@ -844,7 +844,7 @@ int_rman_release_resource(struct rman *rm, struct resource_i *r)
 	}
 
 out:
-	free(r, M_RMAN);
+	bsd_free(r, M_RMAN);
 	return 0;
 }
 

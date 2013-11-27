@@ -488,7 +488,7 @@ kern_getfsstat(struct thread *td, struct statfs **buf, size_t bufsize,
 		mtx_unlock(&mountlist_mtx);
 		if (maxcount > count)
 			maxcount = count;
-		sfsp = *buf = malloc(maxcount * sizeof(struct statfs), M_TEMP,
+		sfsp = *buf = bsd_malloc(maxcount * sizeof(struct statfs), M_TEMP,
 		    M_WAITOK);
 	}
 	count = 0;
@@ -660,7 +660,7 @@ freebsd4_getfsstat(td, uap)
 			uap->buf++;
 			count--;
 		}
-		free(buf, M_TEMP);
+		bsd_free(buf, M_TEMP);
 	}
 	return (error);
 }
@@ -4052,7 +4052,7 @@ unionread:
 		kuio.uio_iov = &kiov;
 		kuio.uio_segflg = UIO_SYSSPACE;
 		kiov.iov_len = uap->count;
-		dirbuf = malloc(uap->count, M_TEMP, M_WAITOK);
+		dirbuf = bsd_malloc(uap->count, M_TEMP, M_WAITOK);
 		kiov.iov_base = dirbuf;
 		error = VOP_READDIR(vp, &kuio, fp->f_cred, &eofflag,
 			    NULL, NULL);
@@ -4089,7 +4089,7 @@ unionread:
 			if (dp >= edp)
 				error = uiomove(dirbuf, readcnt, &auio);
 		}
-		free(dirbuf, M_TEMP);
+		bsd_free(dirbuf, M_TEMP);
 	}
 	if (error) {
 		VOP_UNLOCK(vp, 0);
@@ -4909,7 +4909,7 @@ kern_posix_fadvise(struct thread *td, int fd, off_t offset, off_t len,
 	case POSIX_FADV_SEQUENTIAL:
 	case POSIX_FADV_RANDOM:
 	case POSIX_FADV_NOREUSE:
-		new = malloc(sizeof(*fa), M_FADVISE, M_WAITOK);
+		new = bsd_malloc(sizeof(*fa), M_FADVISE, M_WAITOK);
 		break;
 	case POSIX_FADV_NORMAL:
 	case POSIX_FADV_WILLNEED:
@@ -5014,7 +5014,7 @@ kern_posix_fadvise(struct thread *td, int fd, off_t offset, off_t len,
 out:
 	if (fp != NULL)
 		fdrop(fp, td);
-	free(new, M_FADVISE);
+	bsd_free(new, M_FADVISE);
 	return (error);
 }
 

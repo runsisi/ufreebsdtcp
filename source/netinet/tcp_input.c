@@ -1448,7 +1448,7 @@ dropunlock:
 drop:
 	INP_INFO_UNLOCK_ASSERT(&V_tcbinfo);
 	if (s != NULL)
-		free(s, M_TCPLOG);
+		bsd_free(s, M_TCPLOG);
 	if (m != NULL)
 		m_freem(m);
 }
@@ -2245,7 +2245,7 @@ tcp_do_segment(struct mbuf *m, struct tcphdr *th, struct socket *so,
 			log(LOG_DEBUG, "%s; %s: %s: Received %d bytes of data after socket "
 			    "was closed, sending RST and removing tcpcb\n",
 			    s, __func__, tcpstates[tp->t_state], tlen);
-			free(s, M_TCPLOG);
+			bsd_free(s, M_TCPLOG);
 		}
 		tp = tcp_close(tp);
 		TCPSTAT_INC(tcps_rcvafterclose);

@@ -287,7 +287,7 @@ cdg_cb_init(struct cc_var *ccv)
 {
 	struct cdg *cdg_data;
 
-	cdg_data = malloc(sizeof(struct cdg), M_CDG, M_NOWAIT);
+	cdg_data = bsd_malloc(sizeof(struct cdg), M_CDG, M_NOWAIT);
 	if (cdg_data == NULL)
 		return (ENOMEM);
 
@@ -346,7 +346,7 @@ cdg_cb_destroy(struct cc_var *ccv)
 		qds = qds_n;
 	}
 
-	free(ccv->cc_data, M_CDG);
+	bsd_free(ccv->cc_data, M_CDG);
 }
 
 static int

@@ -172,15 +172,15 @@ void	contigfree(void *addr, unsigned long size, struct malloc_type *type);
 void	*contigmalloc(unsigned long size, struct malloc_type *type, int flags,
 	    vm_paddr_t low, vm_paddr_t high, unsigned long alignment,
 	    unsigned long boundary) __malloc_like;
-void	free(void *addr, struct malloc_type *type);
-void	*malloc(unsigned long size, struct malloc_type *type, int flags) __malloc_like;
+void	bsd_free(void *addr, struct malloc_type *type);
+void	*bsd_malloc(unsigned long size, struct malloc_type *type, int flags) __malloc_like;
 void	malloc_init(void *);
 int	malloc_last_fail(void);
 void	malloc_type_allocated(struct malloc_type *type, unsigned long size);
 void	malloc_type_freed(struct malloc_type *type, unsigned long size);
 void	malloc_type_list(malloc_type_list_func_t *, void *);
 void	malloc_uninit(void *);
-void	*realloc(void *addr, unsigned long size, struct malloc_type *type,
+void	*bsd_realloc(void *addr, unsigned long size, struct malloc_type *type,
 	    int flags);
 void	*reallocf(void *addr, unsigned long size, struct malloc_type *type,
 	    int flags);

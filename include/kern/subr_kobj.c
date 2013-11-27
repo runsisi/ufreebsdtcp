@@ -133,7 +133,7 @@ kobj_class_compile(kobj_class_t cls)
 	/*
 	 * Allocate space for the compiled ops table.
 	 */
-	ops = malloc(sizeof(struct kobj_ops), M_KOBJ, M_NOWAIT);
+	ops = bsd_malloc(sizeof(struct kobj_ops), M_KOBJ, M_NOWAIT);
 	if (!ops)
 		panic("%s: out of memory", __func__);
 
@@ -146,7 +146,7 @@ kobj_class_compile(kobj_class_t cls)
 	 */
 	if (cls->ops) {
 		KOBJ_UNLOCK();
-		free(ops, M_KOBJ);
+		bsd_free(ops, M_KOBJ);
 		return;
 	}
 
@@ -257,7 +257,7 @@ kobj_class_free(kobj_class_t cls)
 	KOBJ_UNLOCK();
 
 	if (ops)
-		free(ops, M_KOBJ);
+		bsd_free(ops, M_KOBJ);
 }
 
 kobj_t
@@ -270,7 +270,7 @@ kobj_create(kobj_class_t cls,
 	/*
 	 * Allocate and initialise the new object.
 	 */
-	obj = malloc(cls->size, mtype, mflags | M_ZERO);
+	obj = bsd_malloc(cls->size, mtype, mflags | M_ZERO);
 	if (!obj)
 		return NULL;
 	kobj_init(obj, cls);
@@ -344,5 +344,5 @@ kobj_delete(kobj_t obj, struct malloc_type *mtype)
 
 	obj->ops = NULL;
 	if (mtype)
-		free(obj, mtype);
+		bsd_free(obj, mtype);
 }

@@ -44,7 +44,7 @@ strdup(const char *string, struct malloc_type *type)
 	char *copy;
 
 	len = strlen(string) + 1;
-	copy = malloc(len, type, M_WAITOK);
+	copy = bsd_malloc(len, type, M_WAITOK);
 	bcopy(string, copy, len);
 	return (copy);
 }

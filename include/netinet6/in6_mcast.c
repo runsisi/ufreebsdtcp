@@ -234,9 +234,9 @@ im6o_grow(struct ip6_moptions *imo)
 	newmax = ((oldmax + 1) * 2) - 1;
 
 	if (newmax <= IPV6_MAX_MEMBERSHIPS) {
-		nmships = (struct in6_multi **)realloc(omships,
+		nmships = (struct in6_multi **)bsd_realloc(omships,
 		    sizeof(struct in6_multi *) * newmax, M_IP6MOPTS, M_NOWAIT);
-		nmfilters = (struct in6_mfilter *)realloc(omfilters,
+		nmfilters = (struct in6_mfilter *)bsd_realloc(omfilters,
 		    sizeof(struct in6_mfilter) * newmax, M_IN6MFILTER,
 		    M_NOWAIT);
 		if (nmships != NULL && nmfilters != NULL) {
@@ -253,9 +253,9 @@ im6o_grow(struct ip6_moptions *imo)
 
 	if (nmships == NULL || nmfilters == NULL) {
 		if (nmships != NULL)
-			free(nmships, M_IP6MOPTS);
+			bsd_free(nmships, M_IP6MOPTS);
 		if (nmfilters != NULL)
-			free(nmfilters, M_IN6MFILTER);
+			bsd_free(nmfilters, M_IN6MFILTER);
 		return (ETOOMANYREFS);
 	}
 
@@ -465,7 +465,7 @@ in6_mc_get(struct ifnet *ifp, const struct in6_addr *group,
 	 * The initial source filter state is INCLUDE, {} as per the RFC.
 	 * Pending state-changes per group are subject to a bounds check.
 	 */
-	inm = malloc(sizeof(*inm), M_IP6MADDR, M_NOWAIT | M_ZERO);
+	inm = bsd_malloc(sizeof(*inm), M_IP6MADDR, M_NOWAIT | M_ZERO);
 	if (inm == NULL) {
 		if_delmulti_ifma(ifma);
 		error = ENOMEM;
@@ -524,7 +524,7 @@ in6m_release_locked(struct in6_multi *inm)
 
 	in6m_purge(inm);
 
-	free(inm, M_IP6MADDR);
+	bsd_free(inm, M_IP6MADDR);
 
 	if_delmulti_ifma(ifma);
 }
@@ -588,7 +588,7 @@ in6m_record_source(struct in6_multi *inm, const struct in6_addr *addr)
 	if (ims == NULL) {
 		if (inm->in6m_nsrc == in6_mcast_maxgrpsrc)
 			return (-ENOSPC);
-		nims = malloc(sizeof(struct ip6_msource), M_IP6MSOURCE,
+		nims = bsd_malloc(sizeof(struct ip6_msource), M_IP6MSOURCE,
 		    M_NOWAIT | M_ZERO);
 		if (nims == NULL)
 			return (-ENOMEM);
@@ -638,7 +638,7 @@ im6f_get_source(struct in6_mfilter *imf, const struct sockaddr_in6 *psin,
 	if (lims == NULL) {
 		if (imf->im6f_nsrc == in6_mcast_maxsocksrc)
 			return (ENOSPC);
-		nims = malloc(sizeof(struct in6_msource), M_IN6MFILTER,
+		nims = bsd_malloc(sizeof(struct in6_msource), M_IN6MFILTER,
 		    M_NOWAIT | M_ZERO);
 		if (nims == NULL)
 			return (ENOMEM);
@@ -669,7 +669,7 @@ im6f_graft(struct in6_mfilter *imf, const uint8_t st1,
 	struct ip6_msource	*nims;
 	struct in6_msource	*lims;
 
-	nims = malloc(sizeof(struct in6_msource), M_IN6MFILTER,
+	nims = bsd_malloc(sizeof(struct in6_msource), M_IN6MFILTER,
 	    M_NOWAIT | M_ZERO);
 	if (nims == NULL)
 		return (NULL);
@@ -728,7 +728,7 @@ im6f_rollback(struct in6_mfilter *imf)
 			/* revert source added t1 */
 			CTR2(KTR_MLD, "%s: free ims %p", __func__, ims);
 			RB_REMOVE(ip6_msource_tree, &imf->im6f_sources, ims);
-			free(ims, M_IN6MFILTER);
+			bsd_free(ims, M_IN6MFILTER);
 			imf->im6f_nsrc--;
 		}
 	}
@@ -782,7 +782,7 @@ im6f_reap(struct in6_mfilter *imf)
 		    (lims->im6sl_st[1] == MCAST_UNDEFINED)) {
 			CTR2(KTR_MLD, "%s: free lims %p", __func__, ims);
 			RB_REMOVE(ip6_msource_tree, &imf->im6f_sources, ims);
-			free(ims, M_IN6MFILTER);
+			bsd_free(ims, M_IN6MFILTER);
 			imf->im6f_nsrc--;
 		}
 	}
@@ -799,7 +799,7 @@ im6f_purge(struct in6_mfilter *imf)
 	RB_FOREACH_SAFE(ims, ip6_msource_tree, &imf->im6f_sources, tims) {
 		CTR2(KTR_MLD, "%s: free ims %p", __func__, ims);
 		RB_REMOVE(ip6_msource_tree, &imf->im6f_sources, ims);
-		free(ims, M_IN6MFILTER);
+		bsd_free(ims, M_IN6MFILTER);
 		imf->im6f_nsrc--;
 	}
 	imf->im6f_st[0] = imf->im6f_st[1] = MCAST_UNDEFINED;
@@ -833,7 +833,7 @@ in6m_get_source(struct in6_multi *inm, const struct in6_addr *addr,
 	if (ims == NULL && !noalloc) {
 		if (inm->in6m_nsrc == in6_mcast_maxgrpsrc)
 			return (ENOSPC);
-		nims = malloc(sizeof(struct ip6_msource), M_IP6MSOURCE,
+		nims = bsd_malloc(sizeof(struct ip6_msource), M_IP6MSOURCE,
 		    M_NOWAIT | M_ZERO);
 		if (nims == NULL)
 			return (ENOMEM);
@@ -1052,7 +1052,7 @@ in6m_reap(struct in6_multi *inm)
 			continue;
 		CTR2(KTR_MLD, "%s: free ims %p", __func__, ims);
 		RB_REMOVE(ip6_msource_tree, &inm->in6m_srcs, ims);
-		free(ims, M_IP6MSOURCE);
+		bsd_free(ims, M_IP6MSOURCE);
 		inm->in6m_nsrc--;
 	}
 }
@@ -1068,7 +1068,7 @@ in6m_purge(struct in6_multi *inm)
 	RB_FOREACH_SAFE(ims, ip6_msource_tree, &inm->in6m_srcs, tims) {
 		CTR2(KTR_MLD, "%s: free ims %p", __func__, ims);
 		RB_REMOVE(ip6_msource_tree, &inm->in6m_srcs, ims);
-		free(ims, M_IP6MSOURCE);
+		bsd_free(ims, M_IP6MSOURCE);
 		inm->in6m_nsrc--;
 	}
 }
@@ -1086,7 +1086,7 @@ in6_joingroup(struct ifnet *ifp, struct in6_addr *mcaddr,
 	struct in6_multi_mship *imm;
 	int error;
 
-	imm = malloc(sizeof(*imm), M_IP6MADDR, M_NOWAIT);
+	imm = bsd_malloc(sizeof(*imm), M_IP6MADDR, M_NOWAIT);
 	if (imm == NULL) {
 		*errorp = ENOBUFS;
 		return (NULL);
@@ -1097,7 +1097,7 @@ in6_joingroup(struct ifnet *ifp, struct in6_addr *mcaddr,
 	error = in6_mc_join(ifp, mcaddr, NULL, &imm->i6mm_maddr, delay);
 	if (error) {
 		*errorp = error;
-		free(imm, M_IP6MADDR);
+		bsd_free(imm, M_IP6MADDR);
 		return (NULL);
 	}
 
@@ -1116,7 +1116,7 @@ in6_leavegroup(struct in6_multi_mship *imm)
 
 	if (imm->i6mm_maddr != NULL)
 		in6_mc_leave(imm->i6mm_maddr, NULL);
-	free(imm,  M_IP6MADDR);
+	bsd_free(imm,  M_IP6MADDR);
 	return 0;
 }
 
@@ -1491,10 +1491,10 @@ in6p_findmoptions(struct inpcb *inp)
 
 	INP_WUNLOCK(inp);
 
-	imo = malloc(sizeof(*imo), M_IP6MOPTS, M_WAITOK);
-	immp = malloc(sizeof(*immp) * IPV6_MIN_MEMBERSHIPS, M_IP6MOPTS,
+	imo = bsd_malloc(sizeof(*imo), M_IP6MOPTS, M_WAITOK);
+	immp = bsd_malloc(sizeof(*immp) * IPV6_MIN_MEMBERSHIPS, M_IP6MOPTS,
 	    M_WAITOK | M_ZERO);
-	imfp = malloc(sizeof(struct in6_mfilter) * IPV6_MIN_MEMBERSHIPS,
+	imfp = bsd_malloc(sizeof(struct in6_mfilter) * IPV6_MIN_MEMBERSHIPS,
 	    M_IN6MFILTER, M_WAITOK);
 
 	imo->im6o_multicast_ifp = NULL;
@@ -1511,9 +1511,9 @@ in6p_findmoptions(struct inpcb *inp)
 
 	INP_WLOCK(inp);
 	if (inp->in6p_moptions != NULL) {
-		free(imfp, M_IN6MFILTER);
-		free(immp, M_IP6MOPTS);
-		free(imo, M_IP6MOPTS);
+		bsd_free(imfp, M_IN6MFILTER);
+		bsd_free(immp, M_IP6MOPTS);
+		bsd_free(imo, M_IP6MOPTS);
 		return (inp->in6p_moptions);
 	}
 	inp->in6p_moptions = imo;
@@ -1545,9 +1545,9 @@ ip6_freemoptions(struct ip6_moptions *imo)
 	}
 
 	if (imo->im6o_mfilters)
-		free(imo->im6o_mfilters, M_IN6MFILTER);
-	free(imo->im6o_membership, M_IP6MOPTS);
-	free(imo, M_IP6MOPTS);
+		bsd_free(imo->im6o_mfilters, M_IN6MFILTER);
+	bsd_free(imo->im6o_membership, M_IP6MOPTS);
+	bsd_free(imo, M_IP6MOPTS);
 }
 
 /*
@@ -1629,7 +1629,7 @@ in6p_get_source_filters(struct inpcb *inp, struct sockopt *sopt)
 		msfr.msfr_nsrcs = in6_mcast_maxsocksrc;
 	tss = NULL;
 	if (msfr.msfr_srcs != NULL && msfr.msfr_nsrcs > 0) {
-		tss = malloc(sizeof(struct sockaddr_storage) * msfr.msfr_nsrcs,
+		tss = bsd_malloc(sizeof(struct sockaddr_storage) * msfr.msfr_nsrcs,
 		    M_TEMP, M_NOWAIT | M_ZERO);
 		if (tss == NULL) {
 			INP_WUNLOCK(inp);
@@ -1666,7 +1666,7 @@ in6p_get_source_filters(struct inpcb *inp, struct sockopt *sopt)
 	if (tss != NULL) {
 		error = copyout(tss, msfr.msfr_srcs,
 		    sizeof(struct sockaddr_storage) * msfr.msfr_nsrcs);
-		free(tss, M_TEMP);
+		bsd_free(tss, M_TEMP);
 		if (error)
 			return (error);
 	}
@@ -2447,12 +2447,12 @@ in6p_set_source_filters(struct inpcb *inp, struct sockopt *sopt)
  
 		CTR2(KTR_MLD, "%s: loading %lu source list entries",
 		    __func__, (unsigned long)msfr.msfr_nsrcs);
-		kss = malloc(sizeof(struct sockaddr_storage) * msfr.msfr_nsrcs,
+		kss = bsd_malloc(sizeof(struct sockaddr_storage) * msfr.msfr_nsrcs,
 		    M_TEMP, M_WAITOK);
 		error = copyin(msfr.msfr_srcs, kss,
 		    sizeof(struct sockaddr_storage) * msfr.msfr_nsrcs);
 		if (error) {
-			free(kss, M_TEMP);
+			bsd_free(kss, M_TEMP);
 			return (error);
 		}
 
@@ -2502,7 +2502,7 @@ in6p_set_source_filters(struct inpcb *inp, struct sockopt *sopt)
 				break;
 			lims->im6sl_st[1] = imf->im6f_st[1];
 		}
-		free(kss, M_TEMP);
+		bsd_free(kss, M_TEMP);
 	}
 
 	if (error)

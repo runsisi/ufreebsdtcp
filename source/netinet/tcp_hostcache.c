@@ -208,7 +208,7 @@ tcp_hc_init(void)
 	 * Allocate the hash table.
 	 */
 	V_tcp_hostcache.hashbase = (struct hc_head *)
-	    malloc(V_tcp_hostcache.hashsize * sizeof(struct hc_head),
+	    bsd_malloc(V_tcp_hostcache.hashsize * sizeof(struct hc_head),
 		   M_HOSTCACHE, M_WAITOK | M_ZERO);
 
 	/*
@@ -253,7 +253,7 @@ tcp_hc_destroy(void)
 
 	for (i = 0; i < V_tcp_hostcache.hashsize; i++)
 		mtx_destroy(&V_tcp_hostcache.hashbase[i].hch_mtx);
-	free(V_tcp_hostcache.hashbase, M_HOSTCACHE);
+	bsd_free(V_tcp_hostcache.hashbase, M_HOSTCACHE);
 }
 #endif
 
@@ -603,7 +603,7 @@ sysctl_tcp_hc_list(SYSCTL_HANDLER_ARGS)
 
 	bufsize = linesize * (V_tcp_hostcache.cache_count + 1);
 
-	p = buf = (char *)malloc(bufsize, M_TEMP, M_WAITOK|M_ZERO);
+	p = buf = (char *)bsd_malloc(bufsize, M_TEMP, M_WAITOK|M_ZERO);
 
 	len = snprintf(p, linesize,
 		"\nIP address        MTU  SSTRESH      RTT   RTTVAR BANDWIDTH "
@@ -643,7 +643,7 @@ sysctl_tcp_hc_list(SYSCTL_HANDLER_ARGS)
 	}
 #undef msec
 	error = SYSCTL_OUT(req, buf, p - buf);
-	free(buf, M_TEMP);
+	bsd_free(buf, M_TEMP);
 	return(error);
 }
 

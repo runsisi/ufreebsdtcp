@@ -725,7 +725,7 @@ iso88025_resolvemulti (ifp, llsa, sa)
 		if (!IN_MULTICAST(ntohl(sin->sin_addr.s_addr))) {
 			return (EADDRNOTAVAIL);
 		}
-		sdl = malloc(sizeof *sdl, M_IFMADDR,
+		sdl = bsd_malloc(sizeof *sdl, M_IFMADDR,
 		       M_NOWAIT|M_ZERO);
 		if (sdl == NULL)
 			return (ENOMEM);
@@ -755,7 +755,7 @@ iso88025_resolvemulti (ifp, llsa, sa)
 		if (!IN6_IS_ADDR_MULTICAST(&sin6->sin6_addr)) {
 			return (EADDRNOTAVAIL);
 		}
-		sdl = malloc(sizeof *sdl, M_IFMADDR,
+		sdl = bsd_malloc(sizeof *sdl, M_IFMADDR,
 		       M_NOWAIT|M_ZERO);
 		if (sdl == NULL)
 			return (ENOMEM);
@@ -788,7 +788,7 @@ iso88025_alloc(u_char type, struct ifnet *ifp)
 {
 	struct arpcom	*ac;
  
-        ac = malloc(sizeof(struct arpcom), M_ISO88025, M_WAITOK | M_ZERO);
+        ac = bsd_malloc(sizeof(struct arpcom), M_ISO88025, M_WAITOK | M_ZERO);
 	ac->ac_ifp = ifp;
 
 	return (ac);
@@ -798,7 +798,7 @@ static void
 iso88025_free(void *com, u_char type)
 {
  
-        free(com, M_ISO88025);
+        bsd_free(com, M_ISO88025);
 }
  
 static int

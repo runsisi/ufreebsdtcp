@@ -231,7 +231,7 @@ static int sysctl_kern_malloc_stats(SYSCTL_HANDLER_ARGS);
 static time_t t_malloc_fail;
 
 #if defined(MALLOC_MAKE_FAILURES) || (MALLOC_DEBUG_MAXZONES > 1)
-static SYSCTL_NODE(_debug, OID_AUTO, malloc, CTLFLAG_RD, 0,
+static SYSCTL_NODE(_debug, OID_AUTO, bsd_malloc, CTLFLAG_RD, 0,
     "Kernel malloc debugging options");
 #endif
 
@@ -416,7 +416,7 @@ malloc_type_freed(struct malloc_type *mtp, unsigned long size)
  *	the allocation fails.
  */
 void *
-malloc(unsigned long size, struct malloc_type *mtp, int flags)
+bsd_malloc(unsigned long size, struct malloc_type *mtp, int flags)
 {
 	int indx;
 	struct malloc_type_internal *mtip;
@@ -516,7 +516,7 @@ malloc(unsigned long size, struct malloc_type *mtp, int flags)
  *	This routine may not block.
  */
 void
-free(void *addr, struct malloc_type *mtp)
+bsd_free(void *addr, struct malloc_type *mtp)
 {
 	uma_slab_t slab;
 	u_long size;
@@ -578,7 +578,7 @@ free(void *addr, struct malloc_type *mtp)
  *	realloc: change the size of a memory block
  */
 void *
-realloc(void *addr, unsigned long size, struct malloc_type *mtp, int flags)
+bsd_realloc(void *addr, unsigned long size, struct malloc_type *mtp, int flags)
 {
 	uma_slab_t slab;
 	unsigned long alloc;
@@ -589,7 +589,7 @@ realloc(void *addr, unsigned long size, struct malloc_type *mtp, int flags)
 
 	/* realloc(NULL, ...) is equivalent to malloc(...) */
 	if (addr == NULL)
-		return (malloc(size, mtp, flags));
+		return (bsd_malloc(size, mtp, flags));
 
 	/*
 	 * XXX: Should report free of old memory and alloc of new memory to
@@ -624,12 +624,12 @@ realloc(void *addr, unsigned long size, struct malloc_type *mtp, int flags)
 #endif /* !DEBUG_REDZONE */
 
 	/* Allocate a new, bigger (or smaller) block */
-	if ((newaddr = malloc(size, mtp, flags)) == NULL)
+	if ((newaddr = bsd_malloc(size, mtp, flags)) == NULL)
 		return (NULL);
 
 	/* Copy over original contents */
 	bcopy(addr, newaddr, min(size, alloc));
-	free(addr, mtp);
+	bsd_free(addr, mtp);
 	return (newaddr);
 }
 
@@ -641,8 +641,8 @@ reallocf(void *addr, unsigned long size, struct malloc_type *mtp, int flags)
 {
 	void *mem;
 
-	if ((mem = realloc(addr, size, mtp, flags)) == NULL)
-		free(addr, mtp);
+	if ((mem = bsd_realloc(addr, size, mtp, flags)) == NULL)
+		bsd_free(addr, mtp);
 	return (mem);
 }
 
@@ -917,12 +917,12 @@ restart:
 	mtx_unlock(&malloc_mtx);
 
 	buflen = sizeof(struct malloc_type *) * count;
-	bufmtp = malloc(buflen, M_TEMP, M_WAITOK);
+	bufmtp = bsd_malloc(buflen, M_TEMP, M_WAITOK);
 
 	mtx_lock(&malloc_mtx);
 
 	if (count < kmemcount) {
-		free(bufmtp, M_TEMP);
+		bsd_free(bufmtp, M_TEMP);
 		goto restart;
 	}
 
@@ -934,11 +934,11 @@ restart:
 	for (i = 0; i < count; i++)
 		(func)(bufmtp[i], arg);
 
-	free(bufmtp, M_TEMP);
+	bsd_free(bufmtp, M_TEMP);
 }
 
 #ifdef DDB
-DB_SHOW_COMMAND(malloc, db_show_malloc)
+DB_SHOW_COMMAND(bsd_malloc, db_show_malloc)
 {
 	struct malloc_type_internal *mtip;
 	struct malloc_type *mtp;

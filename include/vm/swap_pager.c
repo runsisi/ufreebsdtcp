@@ -576,7 +576,7 @@ swap_pager_swap_init(void)
 	 */
 	for (n = 1; n < n2 / 8; n *= 2)
 		;
-	swhash = malloc(sizeof(struct swblock *) * n, M_VMPGDATA, M_WAITOK | M_ZERO);
+	swhash = bsd_malloc(sizeof(struct swblock *) * n, M_VMPGDATA, M_WAITOK | M_ZERO);
 	swhash_mask = n - 1;
 	mtx_init(&swhash_mtx, "swap_pager swhash", NULL, MTX_DEF);
 }
@@ -2181,7 +2181,7 @@ swaponsomething(struct vnode *vp, void *id, u_long nblks,
 		nblks = mblocks;
 	}
 
-	sp = malloc(sizeof *sp, M_VMPGDATA, M_WAITOK | M_ZERO);
+	sp = bsd_malloc(sizeof *sp, M_VMPGDATA, M_WAITOK | M_ZERO);
 	sp->sw_vp = vp;
 	sp->sw_id = id;
 	sp->sw_dev = dev;
@@ -2343,7 +2343,7 @@ swapoff_one(struct swdevt *sp, struct ucred *cred)
 		swdevhd = NULL;
 	mtx_unlock(&sw_dev_mtx);
 	blist_destroy(sp->sw_blist);
-	free(sp, M_VMPGDATA);
+	bsd_free(sp, M_VMPGDATA);
 	return (0);
 }
 

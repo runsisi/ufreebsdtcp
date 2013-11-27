@@ -1113,7 +1113,7 @@ lim_alloc()
 {
 	struct plimit *limp;
 
-	limp = malloc(sizeof(struct plimit), M_PLIMIT, M_WAITOK);
+	limp = bsd_malloc(sizeof(struct plimit), M_PLIMIT, M_WAITOK);
 	refcount_init(&limp->pl_refcnt, 1);
 	return (limp);
 }
@@ -1143,7 +1143,7 @@ lim_free(limp)
 
 	KASSERT(limp->pl_refcnt > 0, ("plimit refcnt underflow"));
 	if (refcount_release(&limp->pl_refcnt))
-		free((void *)limp, M_PLIMIT);
+		bsd_free((void *)limp, M_PLIMIT);
 }
 
 /*
@@ -1244,7 +1244,7 @@ uifind(uid)
 	uip = uilookup(uid);
 	if (uip == NULL) {
 		rw_runlock(&uihashtbl_lock);
-		uip = malloc(sizeof(*uip), M_UIDINFO, M_WAITOK | M_ZERO);
+		uip = bsd_malloc(sizeof(*uip), M_UIDINFO, M_WAITOK | M_ZERO);
 		racct_create(&uip->ui_racct);
 		rw_wlock(&uihashtbl_lock);
 		/*
@@ -1255,7 +1255,7 @@ uifind(uid)
 		if ((old_uip = uilookup(uid)) != NULL) {
 			/* Someone else beat us to it. */
 			racct_destroy(&uip->ui_racct);
-			free(uip, M_UIDINFO);
+			bsd_free(uip, M_UIDINFO);
 			uip = old_uip;
 		} else {
 			refcount_init(&uip->ui_ref, 0);
@@ -1323,7 +1323,7 @@ uifree(uip)
 			printf("freeing uidinfo: uid = %d, swapuse = %lld\n",
 			    uip->ui_uid, (unsigned long long)uip->ui_vmsize);
 		mtx_destroy(&uip->ui_vmsize_mtx);
-		free(uip, M_UIDINFO);
+		bsd_free(uip, M_UIDINFO);
 		return;
 	}
 	/*

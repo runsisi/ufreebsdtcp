@@ -249,7 +249,7 @@ syncache_init(void)
 	    &V_tcp_syncache.cache_limit);
 
 	/* Allocate the hash table. */
-	V_tcp_syncache.hashbase = malloc(V_tcp_syncache.hashsize *
+	V_tcp_syncache.hashbase = bsd_malloc(V_tcp_syncache.hashsize *
 	    sizeof(struct syncache_head), M_SYNCACHE, M_WAITOK | M_ZERO);
 
 	/* Initialize the hash buckets. */
@@ -302,7 +302,7 @@ syncache_destroy(void)
 
 	/* Free the allocated global resources. */
 	uma_zdestroy(V_tcp_syncache.zone);
-	free(V_tcp_syncache.hashbase, M_SYNCACHE);
+	bsd_free(V_tcp_syncache.hashbase, M_SYNCACHE);
 }
 #endif
 
@@ -444,7 +444,7 @@ syncache_timer(void *xsch)
 				log(LOG_DEBUG, "%s; %s: Retransmits exhausted, "
 				    "giving up and removing syncache entry\n",
 				    s, __func__);
-				free(s, M_TCPLOG);
+				bsd_free(s, M_TCPLOG);
 			}
 			syncache_drop(sc, sch);
 			TCPSTAT_INC(tcps_sc_stale);
@@ -454,7 +454,7 @@ syncache_timer(void *xsch)
 			log(LOG_DEBUG, "%s; %s: Response timeout, "
 			    "retransmitting (%u) SYN|ACK\n",
 			    s, __func__, sc->sc_rxmits);
-			free(s, M_TCPLOG);
+			bsd_free(s, M_TCPLOG);
 		}
 
 		(void) syncache_respond(sc);
@@ -588,7 +588,7 @@ syncache_chkrst(struct in_conninfo *inc, struct tcphdr *th)
 
 done:
 	if (s != NULL)
-		free(s, M_TCPLOG);
+		bsd_free(s, M_TCPLOG);
 	SCH_UNLOCK(sch);
 }
 
@@ -672,7 +672,7 @@ syncache_socket(struct syncache *sc, struct socket *lso, struct mbuf *m)
 			log(LOG_DEBUG, "%s; %s: Socket create failed "
 			    "due to limits or memory shortage\n",
 			    s, __func__);
-			free(s, M_TCPLOG);
+			bsd_free(s, M_TCPLOG);
 		}
 		goto abort2;
 	}
@@ -721,7 +721,7 @@ syncache_socket(struct syncache *sc, struct socket *lso, struct mbuf *m)
 			log(LOG_DEBUG, "%s; %s: in_pcbinshash failed "
 			    "with error %i\n",
 			    s, __func__, error);
-			free(s, M_TCPLOG);
+			bsd_free(s, M_TCPLOG);
 		}
 		INP_HASH_WUNLOCK(&V_tcbinfo);
 		goto abort;
@@ -765,7 +765,7 @@ syncache_socket(struct syncache *sc, struct socket *lso, struct mbuf *m)
 				log(LOG_DEBUG, "%s; %s: in6_pcbconnect failed "
 				    "with error %i\n",
 				    s, __func__, error);
-				free(s, M_TCPLOG);
+				bsd_free(s, M_TCPLOG);
 			}
 			INP_HASH_WUNLOCK(&V_tcbinfo);
 			goto abort;
@@ -805,7 +805,7 @@ syncache_socket(struct syncache *sc, struct socket *lso, struct mbuf *m)
 				log(LOG_DEBUG, "%s; %s: in_pcbconnect failed "
 				    "with error %i\n",
 				    s, __func__, error);
-				free(s, M_TCPLOG);
+				bsd_free(s, M_TCPLOG);
 			}
 			INP_HASH_WUNLOCK(&V_tcbinfo);
 			goto abort;
@@ -1025,7 +1025,7 @@ failed:
 	if (sc != NULL && sc != &scs)
 		syncache_free(sc);
 	if (s != NULL)
-		free(s, M_TCPLOG);
+		bsd_free(s, M_TCPLOG);
 	*lsop = NULL;
 	return (0);
 }
@@ -1162,7 +1162,7 @@ _syncache_add(struct in_conninfo *inc, struct tcpopt *to, struct tcphdr *th,
 			log(LOG_DEBUG, "%s; %s: Received duplicate SYN, "
 			    "resetting timer and retransmitting SYN|ACK\n",
 			    s, __func__);
-			free(s, M_TCPLOG);
+			bsd_free(s, M_TCPLOG);
 		}
 		if (syncache_respond(sc) == 0) {
 			sc->sc_rxmits = 0;

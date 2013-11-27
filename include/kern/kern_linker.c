@@ -155,7 +155,7 @@ linker_strdup(const char *str)
 {
 	char *result;
 
-	if ((result = malloc((strlen(str) + 1), M_LINKER, M_WAITOK)) != NULL)
+	if ((result = bsd_malloc((strlen(str) + 1), M_LINKER, M_WAITOK)) != NULL)
 		strcpy(result, str);
 	return (result);
 }
@@ -516,7 +516,7 @@ linker_find_file_by_name(const char *filename)
 	linker_file_t lf;
 	char *koname;
 
-	koname = malloc(strlen(filename) + 4, M_LINKER, M_WAITOK);
+	koname = bsd_malloc(strlen(filename) + 4, M_LINKER, M_WAITOK);
 	sprintf(koname, "%s.ko", filename);
 
 	KLD_LOCK_ASSERT();
@@ -526,7 +526,7 @@ linker_find_file_by_name(const char *filename)
 		if (strcmp(lf->filename, filename) == 0)
 			break;
 	}
-	free(koname, M_LINKER);
+	bsd_free(koname, M_LINKER);
 	return (lf);
 }
 
@@ -663,7 +663,7 @@ linker_file_unload(linker_file_t file, int flags)
 	TAILQ_FOREACH_SAFE(ml, &found_modules, link, nextml) {
 		if (ml->container == file) {
 			TAILQ_REMOVE(&found_modules, ml, link);
-			free(ml, M_LINKER);
+			bsd_free(ml, M_LINKER);
 		}
 	}
 
@@ -683,21 +683,21 @@ linker_file_unload(linker_file_t file, int flags)
 	if (file->deps) {
 		for (i = 0; i < file->ndeps; i++)
 			linker_file_unload(file->deps[i], flags);
-		free(file->deps, M_LINKER);
+		bsd_free(file->deps, M_LINKER);
 		file->deps = NULL;
 	}
 	while ((cp = STAILQ_FIRST(&file->common)) != NULL) {
 		STAILQ_REMOVE_HEAD(&file->common, link);
-		free(cp, M_LINKER);
+		bsd_free(cp, M_LINKER);
 	}
 
 	LINKER_UNLOAD(file);
 	if (file->filename) {
-		free(file->filename, M_LINKER);
+		bsd_free(file->filename, M_LINKER);
 		file->filename = NULL;
 	}
 	if (file->pathname) {
-		free(file->pathname, M_LINKER);
+		bsd_free(file->pathname, M_LINKER);
 		file->pathname = NULL;
 	}
 	kobj_delete((kobj_t) file, M_LINKER);
@@ -716,7 +716,7 @@ linker_file_add_dependency(linker_file_t file, linker_file_t dep)
 	linker_file_t *newdeps;
 
 	KLD_LOCK_ASSERT();
-	newdeps = malloc((file->ndeps + 1) * sizeof(linker_file_t *),
+	newdeps = bsd_malloc((file->ndeps + 1) * sizeof(linker_file_t *),
 	    M_LINKER, M_WAITOK | M_ZERO);
 	if (newdeps == NULL)
 		return (ENOMEM);
@@ -724,7 +724,7 @@ linker_file_add_dependency(linker_file_t file, linker_file_t dep)
 	if (file->deps) {
 		bcopy(file->deps, newdeps,
 		    file->ndeps * sizeof(linker_file_t *));
-		free(file->deps, M_LINKER);
+		bsd_free(file->deps, M_LINKER);
 	}
 	file->deps = newdeps;
 	file->deps[file->ndeps] = dep;
@@ -840,7 +840,7 @@ linker_file_lookup_symbol_internal(linker_file_t file, const char *name,
 		 * Round the symbol size up to align.
 		 */
 		common_size = (common_size + sizeof(int) - 1) & -sizeof(int);
-		cp = malloc(sizeof(struct common_symbol)
+		cp = bsd_malloc(sizeof(struct common_symbol)
 		    + common_size + strlen(name) + 1, M_LINKER,
 		    M_WAITOK | M_ZERO);
 		cp->address = (caddr_t)(cp + 1);
@@ -1067,14 +1067,14 @@ sys_kldload(struct thread *td, struct kldload_args *uap)
 
 	td->td_retval[0] = -1;
 
-	pathname = malloc(MAXPATHLEN, M_TEMP, M_WAITOK);
+	pathname = bsd_malloc(MAXPATHLEN, M_TEMP, M_WAITOK);
 	error = copyinstr(uap->file, pathname, MAXPATHLEN, NULL);
 	if (error == 0) {
 		error = kern_kldload(td, pathname, &fileid);
 		if (error == 0)
 			td->td_retval[0] = fileid;
 	}
-	free(pathname, M_TEMP);
+	bsd_free(pathname, M_TEMP);
 	return (error);
 }
 
@@ -1172,7 +1172,7 @@ sys_kldfind(struct thread *td, struct kldfind_args *uap)
 
 	td->td_retval[0] = -1;
 
-	pathname = malloc(MAXPATHLEN, M_TEMP, M_WAITOK);
+	pathname = bsd_malloc(MAXPATHLEN, M_TEMP, M_WAITOK);
 	if ((error = copyinstr(uap->file, pathname, MAXPATHLEN, NULL)) != 0)
 		goto out;
 
@@ -1185,7 +1185,7 @@ sys_kldfind(struct thread *td, struct kldfind_args *uap)
 		error = ENOENT;
 	KLD_UNLOCK();
 out:
-	free(pathname, M_TEMP);
+	bsd_free(pathname, M_TEMP);
 	return (error);
 }
 
@@ -1338,7 +1338,7 @@ sys_kldsym(struct thread *td, struct kldsym_args *uap)
 	if (lookup.version != sizeof(lookup) ||
 	    uap->cmd != KLDSYM_LOOKUP)
 		return (EINVAL);
-	symstr = malloc(MAXPATHLEN, M_TEMP, M_WAITOK);
+	symstr = bsd_malloc(MAXPATHLEN, M_TEMP, M_WAITOK);
 	if ((error = copyinstr(lookup.symname, symstr, MAXPATHLEN, NULL)) != 0)
 		goto out;
 	KLD_LOCK();
@@ -1369,7 +1369,7 @@ sys_kldsym(struct thread *td, struct kldsym_args *uap)
 	}
 	KLD_UNLOCK();
 out:
-	free(symstr, M_TEMP);
+	bsd_free(symstr, M_TEMP);
 	return (error);
 }
 
@@ -1418,7 +1418,7 @@ modlist_newmodule(const char *modname, int version, linker_file_t container)
 {
 	modlist_t mod;
 
-	mod = malloc(sizeof(struct modlist), M_LINKER, M_NOWAIT | M_ZERO);
+	mod = bsd_malloc(sizeof(struct modlist), M_LINKER, M_NOWAIT | M_ZERO);
 	if (mod == NULL)
 		panic("no memory for module list");
 	mod->container = container;
@@ -1716,7 +1716,7 @@ linker_lookup_file(const char *path, int pathlen, const char *name,
 	sep = (path[pathlen - 1] != '/') ? "/" : "";
 
 	reclen = pathlen + strlen(sep) + namelen + extlen + 1;
-	result = malloc(reclen, M_LINKER, M_WAITOK);
+	result = bsd_malloc(reclen, M_LINKER, M_WAITOK);
 	for (cpp = linker_ext_list; *cpp; cpp++) {
 		snprintf(result, reclen, "%.*s%s%.*s%s", pathlen, path, sep,
 		    namelen, name, *cpp);
@@ -1740,7 +1740,7 @@ linker_lookup_file(const char *path, int pathlen, const char *name,
 				return (result);
 		}
 	}
-	free(result, M_LINKER);
+	bsd_free(result, M_LINKER);
 	return (NULL);
 }
 
@@ -1772,7 +1772,7 @@ linker_hints_lookup(const char *path, int pathlen, const char *modname,
 	sep = (path[pathlen - 1] != '/') ? "/" : "";
 	reclen = imax(modnamelen, strlen(linker_hintfile)) + pathlen +
 	    strlen(sep) + 1;
-	pathbuf = malloc(reclen, M_LINKER, M_WAITOK);
+	pathbuf = bsd_malloc(reclen, M_LINKER, M_WAITOK);
 	snprintf(pathbuf, reclen, "%.*s%s%s", pathlen, path, sep,
 	    linker_hintfile);
 
@@ -1796,7 +1796,7 @@ linker_hints_lookup(const char *path, int pathlen, const char *modname,
 		printf("hints file too large %ld\n", (long)vattr.va_size);
 		goto bad;
 	}
-	hints = malloc(vattr.va_size, M_TEMP, M_WAITOK);
+	hints = bsd_malloc(vattr.va_size, M_TEMP, M_WAITOK);
 	if (hints == NULL)
 		goto bad;
 	error = vn_rdwr(UIO_READ, nd.ni_vp, (caddr_t)hints, vattr.va_size, 0,
@@ -1868,9 +1868,9 @@ linker_hints_lookup(const char *path, int pathlen, const char *modname,
 		printf("warning: KLD '%s' is newer than the linker.hints"
 		    " file\n", result);
 bad:
-	free(pathbuf, M_LINKER);
+	bsd_free(pathbuf, M_LINKER);
 	if (hints)
-		free(hints, M_TEMP);
+		bsd_free(hints, M_TEMP);
 	if (nd.ni_vp != NULL) {
 		VOP_UNLOCK(nd.ni_vp, 0);
 		vn_close(nd.ni_vp, FREAD, cred, td);
@@ -1967,7 +1967,7 @@ linker_hwpmc_list_objects(void)
 		nmappings++;
 
 	/* Allocate nmappings + 1 entries. */
-	kobase = malloc((nmappings + 1) * sizeof(struct pmckern_map_in),
+	kobase = bsd_malloc((nmappings + 1) * sizeof(struct pmckern_map_in),
 	    M_LINKER, M_WAITOK | M_ZERO);
 	i = 0;
 	TAILQ_FOREACH(lf, &linker_files, link) {
@@ -2055,7 +2055,7 @@ linker_load_module(const char *kldname, const char *modname,
 		if (lfpp)
 			*lfpp = lfdep;
 	} while (0);
-	free(pathname, M_LINKER);
+	bsd_free(pathname, M_LINKER);
 	return (error);
 }
 

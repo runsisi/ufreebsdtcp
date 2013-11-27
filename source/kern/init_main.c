@@ -140,7 +140,7 @@ sysinit_add(struct sysinit **set, struct sysinit **set_end)
 		count += newsysinit_end - newsysinit;
 	else
 		count += sysinit_end - sysinit;
-	newset = malloc(count * sizeof(*sipp), M_TEMP, M_NOWAIT);
+	newset = bsd_malloc(count * sizeof(*sipp), M_TEMP, M_NOWAIT);
 	if (newset == NULL)
 		panic("cannot malloc for sysinit");
 	xipp = newset;
@@ -153,7 +153,7 @@ sysinit_add(struct sysinit **set, struct sysinit **set_end)
 	for (sipp = set; sipp < set_end; sipp++)
 		*xipp++ = *sipp;
 	if (newsysinit)
-		free(newsysinit, M_TEMP);
+		bsd_free(newsysinit, M_TEMP);
 	newsysinit = newset;
 	newsysinit_end = newset + count;
 }
@@ -287,7 +287,7 @@ restart:
 		/* Check if we've installed more sysinit items via KLD */
 		if (newsysinit != NULL) {
 			if (sysinit != SET_BEGIN(sysinit_set))
-				free(sysinit, M_TEMP);
+				bsd_free(sysinit, M_TEMP);
 			sysinit = newsysinit;
 			sysinit_end = newsysinit_end;
 			newsysinit = NULL;

@@ -1051,7 +1051,7 @@ add_addrsel_policyent(struct in6_addrpolicy *newpolicy)
 {
 	struct addrsel_policyent *new, *pol;
 
-	new = malloc(sizeof(*new), M_IFADDR,
+	new = bsd_malloc(sizeof(*new), M_IFADDR,
 	       M_WAITOK);
 	ADDRSEL_XLOCK();
 	ADDRSEL_LOCK();
@@ -1064,7 +1064,7 @@ add_addrsel_policyent(struct in6_addrpolicy *newpolicy)
 				       &pol->ape_policy.addrmask.sin6_addr)) {
 			ADDRSEL_UNLOCK();
 			ADDRSEL_XUNLOCK();
-			free(new, M_IFADDR);
+			bsd_free(new, M_IFADDR);
 			return (EEXIST);	/* or override it? */
 		}
 	}
@@ -1107,7 +1107,7 @@ delete_addrsel_policyent(struct in6_addrpolicy *key)
 	TAILQ_REMOVE(&V_addrsel_policytab, pol, ape_entry);
 	ADDRSEL_UNLOCK();
 	ADDRSEL_XUNLOCK();
-	free(pol, M_IFADDR);
+	bsd_free(pol, M_IFADDR);
 
 	return (0);
 }

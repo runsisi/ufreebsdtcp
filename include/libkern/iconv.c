@@ -195,7 +195,7 @@ iconv_register_cspair(const char *to, const char *from,
 	ucsfrom = strcmp(from, iconv_unicode_string) == 0;
 	if (!ucsfrom)
 		csize += strlen(from) + 1;
-	csp = malloc(csize, M_ICONV, M_WAITOK);
+	csp = bsd_malloc(csize, M_ICONV, M_WAITOK);
 	bzero(csp, csize);
 	csp->cp_id = iconv_csid++;
 	csp->cp_dcp = dcp;
@@ -223,8 +223,8 @@ iconv_unregister_cspair(struct iconv_cspair *csp)
 {
 	TAILQ_REMOVE(&iconv_cslist, csp, cp_link);
 	if (csp->cp_data)
-		free(csp->cp_data, M_ICONVDATA);
-	free(csp, M_ICONV);
+		bsd_free(csp->cp_data, M_ICONVDATA);
+	bsd_free(csp, M_ICONV);
 }
 
 /*
@@ -425,7 +425,7 @@ iconv_sysctl_add(SYSCTL_HANDLER_ARGS)
 		return error;
 	}
 	if (din.ia_datalen) {
-		csp->cp_data = malloc(din.ia_datalen, M_ICONVDATA, M_WAITOK);
+		csp->cp_data = bsd_malloc(din.ia_datalen, M_ICONVDATA, M_WAITOK);
 		error = copyin(din.ia_data, csp->cp_data, din.ia_datalen);
 		if (error)
 			goto bad;

@@ -609,7 +609,7 @@ __elfN(load_file)(struct proc *p, const char *file, u_long *addr,
 		return (ECAPMODE);
 #endif
 
-	tempdata = malloc(sizeof(*tempdata), M_TEMP, M_WAITOK);
+	tempdata = bsd_malloc(sizeof(*tempdata), M_TEMP, M_WAITOK);
 	nd = &tempdata->nd;
 	attr = &tempdata->attr;
 	imgp = &tempdata->image_params;
@@ -710,7 +710,7 @@ fail:
 		vput(nd->ni_vp);
 
 	VFS_UNLOCK_GIANT(vfslocked);
-	free(tempdata, M_TEMP);
+	bsd_free(tempdata, M_TEMP);
 
 	return (error);
 }
@@ -927,12 +927,12 @@ __CONCAT(exec_, __elfN(imgact))(struct image_params *imgp)
 		VOP_UNLOCK(imgp->vp, 0);
 		if (brand_info->emul_path != NULL &&
 		    brand_info->emul_path[0] != '\0') {
-			path = malloc(MAXPATHLEN, M_TEMP, M_WAITOK);
+			path = bsd_malloc(MAXPATHLEN, M_TEMP, M_WAITOK);
 			snprintf(path, MAXPATHLEN, "%s%s",
 			    brand_info->emul_path, interp);
 			error = __elfN(load_file)(imgp->proc, path, &addr,
 			    &imgp->entry_addr, sv->sv_pagesize);
-			free(path, M_TEMP);
+			bsd_free(path, M_TEMP);
 			if (error == 0)
 				have_interp = TRUE;
 		}
@@ -957,7 +957,7 @@ __CONCAT(exec_, __elfN(imgact))(struct image_params *imgp)
 	/*
 	 * Construct auxargs table (used by the fixup routine)
 	 */
-	elf_auxargs = malloc(sizeof(Elf_Auxargs), M_TEMP, M_WAITOK);
+	elf_auxargs = bsd_malloc(sizeof(Elf_Auxargs), M_TEMP, M_WAITOK);
 	elf_auxargs->execfd = -1;
 	elf_auxargs->phdr = proghdr;
 	elf_auxargs->phent = hdr->e_phentsize;
@@ -1017,7 +1017,7 @@ __elfN(freebsd_fixup)(register_t **stack_base, struct image_params *imgp)
 	    imgp->sysent->sv_stackprot);
 	AUXARGS_ENTRY(pos, AT_NULL, 0);
 
-	free(imgp->auxargs, M_TEMP);
+	bsd_free(imgp->auxargs, M_TEMP);
 	imgp->auxargs = NULL;
 
 	base--;
@@ -1209,7 +1209,7 @@ __elfN(coredump)(struct thread *td, struct vnode *vp, off_t limit, int flags)
                         error = EFAULT;
                         goto done;
                 }
-                core_buf = malloc(CORE_BUF_SIZE, M_TEMP, M_WAITOK | M_ZERO);
+                core_buf = bsd_malloc(CORE_BUF_SIZE, M_TEMP, M_WAITOK | M_ZERO);
                 if (!core_buf) {
                         error = ENOMEM;
                         goto done;
@@ -1247,7 +1247,7 @@ __elfN(coredump)(struct thread *td, struct vnode *vp, off_t limit, int flags)
 	 * Allocate memory for building the header, fill it up,
 	 * and write it out following the notes.
 	 */
-	hdr = malloc(hdrsize, M_TEMP, M_WAITOK);
+	hdr = bsd_malloc(hdrsize, M_TEMP, M_WAITOK);
 	if (hdr == NULL) {
 		error = EINVAL;
 		goto done;
@@ -1281,16 +1281,16 @@ __elfN(coredump)(struct thread *td, struct vnode *vp, off_t limit, int flags)
 done:
 #ifdef COMPRESS_USER_CORES
 	if (core_buf)
-		free(core_buf, M_TEMP);
+		bsd_free(core_buf, M_TEMP);
 	if (gzfile)
 		gzclose(gzfile);
 #endif
 	while ((ninfo = TAILQ_FIRST(&notelst)) != NULL) {
 		TAILQ_REMOVE(&notelst, ninfo, link);
-		free(ninfo, M_TEMP);
+		bsd_free(ninfo, M_TEMP);
 	}
 	if (hdr != NULL)
-		free(hdr, M_TEMP);
+		bsd_free(hdr, M_TEMP);
 
 	return (error);
 }
@@ -1567,7 +1567,7 @@ register_note(struct note_info_list *list, int type, outfunc_t out, void *arg)
 
 	size = 0;
 	out(arg, NULL, &size);
-	ninfo = malloc(sizeof(*ninfo), M_TEMP, M_ZERO | M_WAITOK);
+	ninfo = bsd_malloc(sizeof(*ninfo), M_TEMP, M_ZERO | M_WAITOK);
 	ninfo->type = type;
 	ninfo->outfunc = out;
 	ninfo->outarg = arg;
@@ -1647,7 +1647,7 @@ __elfN(note_prpsinfo)(void *arg, struct sbuf *sb, size_t *sizep)
 	p = (struct proc *)arg;
 	if (sb != NULL) {
 		KASSERT(*sizep == sizeof(*psinfo), ("invalid size"));
-		psinfo = malloc(sizeof(*psinfo), M_TEMP, M_ZERO | M_WAITOK);
+		psinfo = bsd_malloc(sizeof(*psinfo), M_TEMP, M_ZERO | M_WAITOK);
 		psinfo->pr_version = PRPSINFO_VERSION;
 		psinfo->pr_psinfosz = sizeof(elf_prpsinfo_t);
 		strlcpy(psinfo->pr_fname, p->p_comm, sizeof(psinfo->pr_fname));
@@ -1659,7 +1659,7 @@ __elfN(note_prpsinfo)(void *arg, struct sbuf *sb, size_t *sizep)
 		    sizeof(psinfo->pr_psargs));
 
 		sbuf_bcat(sb, psinfo, sizeof(*psinfo));
-		free(psinfo, M_TEMP);
+		bsd_free(psinfo, M_TEMP);
 	}
 	*sizep = sizeof(*psinfo);
 }
@@ -1673,7 +1673,7 @@ __elfN(note_prstatus)(void *arg, struct sbuf *sb, size_t *sizep)
 	td = (struct thread *)arg;
 	if (sb != NULL) {
 		KASSERT(*sizep == sizeof(*status), ("invalid size"));
-		status = malloc(sizeof(*status), M_TEMP, M_ZERO | M_WAITOK);
+		status = bsd_malloc(sizeof(*status), M_TEMP, M_ZERO | M_WAITOK);
 		status->pr_version = PRSTATUS_VERSION;
 		status->pr_statussz = sizeof(elf_prstatus_t);
 		status->pr_gregsetsz = sizeof(elf_gregset_t);
@@ -1687,7 +1687,7 @@ __elfN(note_prstatus)(void *arg, struct sbuf *sb, size_t *sizep)
 		fill_regs(td, &status->pr_reg);
 #endif
 		sbuf_bcat(sb, status, sizeof(*status));
-		free(status, M_TEMP);
+		bsd_free(status, M_TEMP);
 	}
 	*sizep = sizeof(*status);
 }
@@ -1701,14 +1701,14 @@ __elfN(note_fpregset)(void *arg, struct sbuf *sb, size_t *sizep)
 	td = (struct thread *)arg;
 	if (sb != NULL) {
 		KASSERT(*sizep == sizeof(*fpregset), ("invalid size"));
-		fpregset = malloc(sizeof(*fpregset), M_TEMP, M_ZERO | M_WAITOK);
+		fpregset = bsd_malloc(sizeof(*fpregset), M_TEMP, M_ZERO | M_WAITOK);
 #if defined(COMPAT_FREEBSD32) && __ELF_WORD_SIZE == 32
 		fill_fpregs32(td, fpregset);
 #else
 		fill_fpregs(td, fpregset);
 #endif
 		sbuf_bcat(sb, fpregset, sizeof(*fpregset));
-		free(fpregset, M_TEMP);
+		bsd_free(fpregset, M_TEMP);
 	}
 	*sizep = sizeof(*fpregset);
 }
@@ -1744,7 +1744,7 @@ __elfN(note_threadmd)(void *arg, struct sbuf *sb, size_t *sizep)
 	size = *sizep;
 	buf = NULL;
 	if (size != 0 && sb != NULL)
-		buf = malloc(size, M_TEMP, M_ZERO | M_WAITOK);
+		buf = bsd_malloc(size, M_TEMP, M_ZERO | M_WAITOK);
 	size = 0;
 	__elfN(dump_thread)(td, buf, &size);
 	KASSERT(*sizep == size, ("invalid size"));

@@ -1078,7 +1078,7 @@ kern___getcwd(struct thread *td, u_char *buf, enum uio_seg bufseg, u_int buflen)
 	if (buflen > MAXPATHLEN)
 		buflen = MAXPATHLEN;
 
-	tmpbuf = malloc(buflen, M_TEMP, M_WAITOK);
+	tmpbuf = bsd_malloc(buflen, M_TEMP, M_WAITOK);
 	fdp = td->td_proc->p_fd;
 	FILEDESC_SLOCK(fdp);
 	cdir = fdp->fd_cdir;
@@ -1104,7 +1104,7 @@ kern___getcwd(struct thread *td, u_char *buf, enum uio_seg bufseg, u_int buflen)
 		ktrnamei(bp);
 #endif
 	}
-	free(tmpbuf, M_TEMP);
+	bsd_free(tmpbuf, M_TEMP);
 	return (error);
 }
 
@@ -1146,7 +1146,7 @@ vn_fullpath(struct thread *td, struct vnode *vn, char **retbuf, char **freebuf)
 	if (vn == NULL)
 		return (EINVAL);
 
-	buf = malloc(MAXPATHLEN, M_TEMP, M_WAITOK);
+	buf = bsd_malloc(MAXPATHLEN, M_TEMP, M_WAITOK);
 	fdp = td->td_proc->p_fd;
 	FILEDESC_SLOCK(fdp);
 	rdir = fdp->fd_rdir;
@@ -1160,7 +1160,7 @@ vn_fullpath(struct thread *td, struct vnode *vn, char **retbuf, char **freebuf)
 	if (!error)
 		*freebuf = buf;
 	else
-		free(buf, M_TEMP);
+		bsd_free(buf, M_TEMP);
 	return (error);
 }
 
@@ -1181,12 +1181,12 @@ vn_fullpath_global(struct thread *td, struct vnode *vn,
 		return (ENODEV);
 	if (vn == NULL)
 		return (EINVAL);
-	buf = malloc(MAXPATHLEN, M_TEMP, M_WAITOK);
+	buf = bsd_malloc(MAXPATHLEN, M_TEMP, M_WAITOK);
 	error = vn_fullpath1(td, vn, rootvnode, buf, retbuf, MAXPATHLEN);
 	if (!error)
 		*freebuf = buf;
 	else
-		free(buf, M_TEMP);
+		bsd_free(buf, M_TEMP);
 	return (error);
 }
 
@@ -1522,6 +1522,6 @@ vn_path_to_global_path(struct thread *td, struct vnode *vp, char *path,
 	VFS_UNLOCK_GIANT(vfslocked);
 
 out:
-	free(fbuf, M_TEMP);
+	bsd_free(fbuf, M_TEMP);
 	return (error);
 }

@@ -3079,7 +3079,7 @@ expand_name(const char *name, uid_t uid, pid_t pid, struct thread *td,
 	
 	hostname = NULL;
 	format = corefilename;
-	temp = malloc(MAXPATHLEN, M_TEMP, M_NOWAIT | M_ZERO);
+	temp = bsd_malloc(MAXPATHLEN, M_TEMP, M_NOWAIT | M_ZERO);
 	if (temp == NULL)
 		return (NULL);
 	indexpos = -1;
@@ -3094,7 +3094,7 @@ expand_name(const char *name, uid_t uid, pid_t pid, struct thread *td,
 				break;
 			case 'H':	/* hostname */
 				if (hostname == NULL) {
-					hostname = malloc(MAXHOSTNAMELEN,
+					hostname = bsd_malloc(MAXHOSTNAMELEN,
 					    M_TEMP, M_NOWAIT);
 					if (hostname == NULL) {
 						log(LOG_ERR,
@@ -3133,7 +3133,7 @@ expand_name(const char *name, uid_t uid, pid_t pid, struct thread *td,
 			sbuf_putc(&sb, format[i]);
 		}
 	}
-	free(hostname, M_TEMP);
+	bsd_free(hostname, M_TEMP);
 #ifdef COMPRESS_USER_CORES
 	if (compress) {
 		sbuf_printf(&sb, GZ_SUFFIX);
@@ -3144,7 +3144,7 @@ expand_name(const char *name, uid_t uid, pid_t pid, struct thread *td,
 		    "long\n", (long)pid, name, (u_long)uid);
 nomem:
 		sbuf_delete(&sb);
-		free(temp, M_TEMP);
+		bsd_free(temp, M_TEMP);
 		return (NULL);
 	}
 	sbuf_finish(&sb);
@@ -3176,7 +3176,7 @@ nomem:
 				    "pid %d (%s), uid (%u):  Path `%s' failed "
                                     "on initial open test, error = %d\n",
 				    pid, name, uid, temp, error);
-				free(temp, M_TEMP);
+				bsd_free(temp, M_TEMP);
 				return (NULL);
 			}
 			vfslocked = NDHASGIANT(&nd);
@@ -3190,7 +3190,7 @@ nomem:
                                     "on close after initial open test, "
                                     "error = %d\n",
 				    pid, name, uid, temp, error);
-				free(temp, M_TEMP);
+				bsd_free(temp, M_TEMP);
 				return (NULL);
 			}
 			break;
@@ -3246,7 +3246,7 @@ coredump(struct thread *td)
 #ifdef AUDIT
 		audit_proc_coredump(td, name, EFAULT);
 #endif
-		free(name, M_TEMP);
+		bsd_free(name, M_TEMP);
 		return (EFAULT);
 	}
 	
@@ -3264,7 +3264,7 @@ coredump(struct thread *td)
 #ifdef AUDIT
 		audit_proc_coredump(td, name, EFBIG);
 #endif
-		free(name, M_TEMP);
+		bsd_free(name, M_TEMP);
 		return (EFBIG);
 	}
 	PROC_UNLOCK(p);
@@ -3278,7 +3278,7 @@ restart:
 #ifdef AUDIT
 		audit_proc_coredump(td, name, error);
 #endif
-		free(name, M_TEMP);
+		bsd_free(name, M_TEMP);
 		return (error);
 	}
 	vfslocked = NDHASGIANT(&nd);
@@ -3340,7 +3340,7 @@ out:
 #ifdef AUDIT
 	audit_proc_coredump(td, name, error);
 #endif
-	free(name, M_TEMP);
+	bsd_free(name, M_TEMP);
 	VFS_UNLOCK_GIANT(vfslocked);
 	return (error);
 }
@@ -3457,7 +3457,7 @@ sigacts_alloc(void)
 {
 	struct sigacts *ps;
 
-	ps = malloc(sizeof(struct sigacts), M_SUBPROC, M_WAITOK | M_ZERO);
+	ps = bsd_malloc(sizeof(struct sigacts), M_SUBPROC, M_WAITOK | M_ZERO);
 	ps->ps_refcnt = 1;
 	mtx_init(&ps->ps_mtx, "sigacts", NULL, MTX_DEF);
 	return (ps);
@@ -3471,7 +3471,7 @@ sigacts_free(struct sigacts *ps)
 	ps->ps_refcnt--;
 	if (ps->ps_refcnt == 0) {
 		mtx_destroy(&ps->ps_mtx);
-		free(ps, M_SUBPROC);
+		bsd_free(ps, M_SUBPROC);
 	} else
 		mtx_unlock(&ps->ps_mtx);
 }

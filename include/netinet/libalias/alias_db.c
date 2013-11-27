@@ -875,7 +875,7 @@ DeleteLink(struct alias_link *lnk)
 		head = curr = lnk->server;
 		do {
 			next = curr->next;
-			free(curr);
+			bsd_free(curr);
 		} while ((curr = next) != head);
 	}
 /* Adjust output table pointers */
@@ -900,7 +900,7 @@ DeleteLink(struct alias_link *lnk)
 		break;
 	case LINK_TCP:
 		la->tcpLinkCount--;
-		free(lnk->data.tcp);
+		bsd_free(lnk->data.tcp);
 		break;
 	case LINK_PPTP:
 		la->pptpLinkCount--;
@@ -911,7 +911,7 @@ DeleteLink(struct alias_link *lnk)
 	case LINK_FRAGMENT_PTR:
 		la->fragmentPtrLinkCount--;
 		if (lnk->data.frag_ptr != NULL)
-			free(lnk->data.frag_ptr);
+			bsd_free(lnk->data.frag_ptr);
 		break;
 	case LINK_ADDR:
 		break;
@@ -921,7 +921,7 @@ DeleteLink(struct alias_link *lnk)
 	}
 
 /* Free memory */
-	free(lnk);
+	bsd_free(lnk);
 
 /* Write statistics, if logging enabled */
 	if (la->packetAliasMode & PKT_ALIAS_LOG) {
@@ -939,7 +939,7 @@ AddLink(struct libalias *la, struct in_addr src_addr, struct in_addr dst_addr,
 	struct alias_link *lnk;
 
 	LIBALIAS_LOCK_ASSERT(la);
-	lnk = malloc(sizeof(struct alias_link));
+	lnk = bsd_malloc(sizeof(struct alias_link));
 	if (lnk != NULL) {
 		/* Basic initialization */
 		lnk->la = la;
@@ -994,7 +994,7 @@ AddLink(struct libalias *la, struct in_addr src_addr, struct in_addr dst_addr,
 
 		/* Determine alias port */
 		if (GetNewPort(la, lnk, alias_port_param) != 0) {
-			free(lnk);
+			bsd_free(lnk);
 			return (NULL);
 		}
 		/* Link-type dependent initialization */
@@ -1008,7 +1008,7 @@ AddLink(struct libalias *la, struct in_addr src_addr, struct in_addr dst_addr,
 			la->udpLinkCount++;
 			break;
 		case LINK_TCP:
-			aux_tcp = malloc(sizeof(struct tcp_dat));
+			aux_tcp = bsd_malloc(sizeof(struct tcp_dat));
 			if (aux_tcp != NULL) {
 				int i;
 
@@ -1026,7 +1026,7 @@ AddLink(struct libalias *la, struct in_addr src_addr, struct in_addr dst_addr,
 				fprintf(stderr, "PacketAlias/AddLink: ");
 				fprintf(stderr, " cannot allocate auxiliary TCP data\n");
 #endif
-				free(lnk);
+				bsd_free(lnk);
 				return (NULL);
 			}
 			break;
@@ -2212,7 +2212,7 @@ InitPacketAliasLog(struct libalias *la)
 	LIBALIAS_LOCK_ASSERT(la);
 	if (~la->packetAliasMode & PKT_ALIAS_LOG) {
 #ifdef _KERNEL
-		if ((la->logDesc = malloc(LIBALIAS_BUF_SIZE)))
+		if ((la->logDesc = bsd_malloc(LIBALIAS_BUF_SIZE)))
 			;
 #else 		
 		if ((la->logDesc = fopen("/var/log/alias.log", "w")))
@@ -2234,7 +2234,7 @@ UninitPacketAliasLog(struct libalias *la)
 	LIBALIAS_LOCK_ASSERT(la);
 	if (la->logDesc) {
 #ifdef _KERNEL
-		free(la->logDesc);
+		bsd_free(la->logDesc);
 #else
 		fclose(la->logDesc);
 #endif
@@ -2321,7 +2321,7 @@ LibAliasAddServer(struct libalias *la, struct alias_link *lnk, struct in_addr ad
 	LIBALIAS_LOCK(la);
 	(void)la;
 
-	server = malloc(sizeof(struct server));
+	server = bsd_malloc(sizeof(struct server));
 
 	if (server != NULL) {
 		struct server *head;
@@ -2480,7 +2480,7 @@ LibAliasInit(struct libalias *la)
 	if (la == NULL) {
 #ifdef _KERNEL
 #undef malloc	/* XXX: ugly */
-		la = malloc(sizeof *la, M_ALIAS, M_WAITOK | M_ZERO);
+		la = bsd_malloc(sizeof *la, M_ALIAS, M_WAITOK | M_ZERO);
 #else
 		la = calloc(sizeof *la, 1);
 		if (la == NULL)
@@ -2570,7 +2570,7 @@ LibAliasUninit(struct libalias *la)
 	LIST_REMOVE(la, instancelist);
 	LIBALIAS_UNLOCK(la);
 	LIBALIAS_LOCK_DESTROY(la);
-	free(la);
+	bsd_free(la);
 }
 
 /* Change mode for some operations */
@@ -2729,7 +2729,7 @@ static void
 InitPunchFW(struct libalias *la)
 {
 
-	la->fireWallField = malloc(la->fireWallNumNums);
+	la->fireWallField = bsd_malloc(la->fireWallNumNums);
 	if (la->fireWallField) {
 		memset(la->fireWallField, 0, la->fireWallNumNums);
 		if (la->fireWallFD < 0) {
@@ -2749,7 +2749,7 @@ UninitPunchFW(struct libalias *la)
 		close(la->fireWallFD);
 	la->fireWallFD = -1;
 	if (la->fireWallField)
-		free(la->fireWallField);
+		bsd_free(la->fireWallField);
 	la->fireWallField = NULL;
 	la->packetAliasMode &= ~PKT_ALIAS_PUNCH_FW;
 }

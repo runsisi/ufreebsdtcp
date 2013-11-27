@@ -216,7 +216,7 @@ vnet_route_init(const void *unused __unused)
 	int table;
 	int fam;
 
-	V_rt_tables = malloc(rt_numfibs * (AF_MAX+1) *
+	V_rt_tables = bsd_malloc(rt_numfibs * (AF_MAX+1) *
 	    sizeof(struct radix_node_head *), M_RTABLE, M_WAITOK|M_ZERO);
 
 	V_rtzone = uma_zcreate("rtentry", sizeof(struct rtentry), NULL, NULL,

@@ -320,7 +320,7 @@ ksem_alloc(struct ucred *ucred, mode_t mode, unsigned int value)
 	}
 	nsems++;
 	mtx_unlock(&ksem_count_lock);
-	ks = malloc(sizeof(*ks), M_KSEM, M_WAITOK | M_ZERO);
+	ks = bsd_malloc(sizeof(*ks), M_KSEM, M_WAITOK | M_ZERO);
 	ks->ks_uid = ucred->cr_uid;
 	ks->ks_gid = ucred->cr_gid;
 	ks->ks_mode = mode;
@@ -354,7 +354,7 @@ ksem_drop(struct ksem *ks)
 		mac_posixsem_destroy(ks);
 #endif
 		cv_destroy(&ks->ks_cv);
-		free(ks, M_KSEM);
+		bsd_free(ks, M_KSEM);
 		mtx_lock(&ksem_count_lock);
 		nsems--;
 		mtx_unlock(&ksem_count_lock);
@@ -402,7 +402,7 @@ ksem_insert(char *path, Fnv32_t fnv, struct ksem *ks)
 {
 	struct ksem_mapping *map;
 
-	map = malloc(sizeof(struct ksem_mapping), M_KSEM, M_WAITOK);
+	map = bsd_malloc(sizeof(struct ksem_mapping), M_KSEM, M_WAITOK);
 	map->km_path = path;
 	map->km_fnv = fnv;
 	map->km_ksem = ksem_hold(ks);
@@ -431,8 +431,8 @@ ksem_remove(char *path, Fnv32_t fnv, struct ucred *ucred)
 			map->km_ksem->ks_path = NULL;
 			LIST_REMOVE(map, km_link);
 			ksem_drop(map->km_ksem);
-			free(map->km_path, M_KSEM);
-			free(map, M_KSEM);
+			bsd_free(map->km_path, M_KSEM);
+			bsd_free(map, M_KSEM);
 			return (0);
 		}
 	}
@@ -527,7 +527,7 @@ ksem_create(struct thread *td, const char *name, semid_t *semidp, mode_t mode,
 		else
 			ks->ks_flags |= KS_ANONYMOUS;
 	} else {
-		path = malloc(MAXPATHLEN, M_KSEM, M_WAITOK);
+		path = bsd_malloc(MAXPATHLEN, M_KSEM, M_WAITOK);
 		error = copyinstr(name, path, MAXPATHLEN, NULL);
 
 		/* Require paths to start with a '/' character. */
@@ -536,7 +536,7 @@ ksem_create(struct thread *td, const char *name, semid_t *semidp, mode_t mode,
 		if (error) {
 			fdclose(fdp, fp, fd, td);
 			fdrop(fp, td);
-			free(path, M_KSEM);
+			bsd_free(path, M_KSEM);
 			return (error);
 		}
 
@@ -580,7 +580,7 @@ ksem_create(struct thread *td, const char *name, semid_t *semidp, mode_t mode,
 		}
 		sx_xunlock(&ksem_dict_lock);
 		if (path)
-			free(path, M_KSEM);
+			bsd_free(path, M_KSEM);
 	}
 
 	if (error) {
@@ -669,10 +669,10 @@ sys_ksem_unlink(struct thread *td, struct ksem_unlink_args *uap)
 	Fnv32_t fnv;
 	int error;
 
-	path = malloc(MAXPATHLEN, M_TEMP, M_WAITOK);
+	path = bsd_malloc(MAXPATHLEN, M_TEMP, M_WAITOK);
 	error = copyinstr(uap->name, path, MAXPATHLEN, NULL);
 	if (error) {
-		free(path, M_TEMP);
+		bsd_free(path, M_TEMP);
 		return (error);
 	}
 
@@ -680,7 +680,7 @@ sys_ksem_unlink(struct thread *td, struct ksem_unlink_args *uap)
 	sx_xlock(&ksem_dict_lock);
 	error = ksem_remove(path, fnv, td->td_ucred);
 	sx_xunlock(&ksem_dict_lock);
-	free(path, M_TEMP);
+	bsd_free(path, M_TEMP);
 
 	return (error);
 }

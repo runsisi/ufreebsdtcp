@@ -94,7 +94,7 @@ loginclass_free(struct loginclass *lc)
 		racct_destroy(&lc->lc_racct);
 		LIST_REMOVE(lc, lc_next);
 		mtx_unlock(&loginclasses_lock);
-		free(lc, M_LOGINCLASS);
+		bsd_free(lc, M_LOGINCLASS);
 
 		return;
 	}
@@ -116,7 +116,7 @@ loginclass_find(const char *name)
 	if (name[0] == '\0' || strlen(name) >= MAXLOGNAME)
 		return (NULL);
 
-	newlc = malloc(sizeof(*newlc), M_LOGINCLASS, M_ZERO | M_WAITOK);
+	newlc = bsd_malloc(sizeof(*newlc), M_LOGINCLASS, M_ZERO | M_WAITOK);
 	racct_create(&newlc->lc_racct);
 
 	mtx_lock(&loginclasses_lock);
@@ -128,7 +128,7 @@ loginclass_find(const char *name)
 		loginclass_hold(lc);
 		mtx_unlock(&loginclasses_lock);
 		racct_destroy(&newlc->lc_racct);
-		free(newlc, M_LOGINCLASS);
+		bsd_free(newlc, M_LOGINCLASS);
 		return (lc);
 	}
 

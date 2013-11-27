@@ -54,7 +54,7 @@ stack_create(void)
 {
 	struct stack *st;
 
-	st = malloc(sizeof *st, M_STACK, M_WAITOK | M_ZERO);
+	st = bsd_malloc(sizeof *st, M_STACK, M_WAITOK | M_ZERO);
 	return (st);
 }
 
@@ -62,7 +62,7 @@ void
 stack_destroy(struct stack *st)
 {
 
-	free(st, M_STACK);
+	bsd_free(st, M_STACK);
 }
 
 int

@@ -1431,7 +1431,7 @@ itimers_alloc(struct proc *p)
 	struct itimers *its;
 	int i;
 
-	its = malloc(sizeof (struct itimers), M_SUBPROC, M_WAITOK | M_ZERO);
+	its = bsd_malloc(sizeof (struct itimers), M_SUBPROC, M_WAITOK | M_ZERO);
 	LIST_INIT(&its->its_virtual);
 	LIST_INIT(&its->its_prof);
 	TAILQ_INIT(&its->its_worklist);
@@ -1444,7 +1444,7 @@ itimers_alloc(struct proc *p)
 	}
 	else {
 		PROC_UNLOCK(p);
-		free(its, M_SUBPROC);
+		bsd_free(its, M_SUBPROC);
 	}
 }
 
@@ -1486,7 +1486,7 @@ itimers_event_hook_exit(void *arg, struct proc *p)
 		if (its->its_timers[0] == NULL &&
 		    its->its_timers[1] == NULL &&
 		    its->its_timers[2] == NULL) {
-			free(its, M_SUBPROC);
+			bsd_free(its, M_SUBPROC);
 			p->p_itimers = NULL;
 		}
 	}

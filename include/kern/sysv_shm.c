@@ -355,7 +355,7 @@ kern_shmat(td, shmid, shmaddr, shmflg)
 	mtx_lock(&Giant);
 	shmmap_s = p->p_vmspace->vm_shm;
 	if (shmmap_s == NULL) {
-		shmmap_s = malloc(shminfo.shmseg * sizeof(struct shmmap_state),
+		shmmap_s = bsd_malloc(shminfo.shmseg * sizeof(struct shmmap_state),
 		    M_SHM, M_WAITOK);
 		for (i = 0; i < shminfo.shmseg; i++)
 			shmmap_s[i].shmid = -1;
@@ -789,7 +789,7 @@ shmfork_myhook(p1, p2)
 
 	mtx_lock(&Giant);
 	size = shminfo.shmseg * sizeof(struct shmmap_state);
-	shmmap_s = malloc(size, M_SHM, M_WAITOK);
+	shmmap_s = bsd_malloc(size, M_SHM, M_WAITOK);
 	bcopy(p1->p_vmspace->vm_shm, shmmap_s, size);
 	p2->p_vmspace->vm_shm = shmmap_s;
 	for (i = 0; i < shminfo.shmseg; i++, shmmap_s++)
@@ -812,7 +812,7 @@ shmexit_myhook(struct vmspace *vm)
 				shm_delete_mapping(vm, shm);
 		}
 		mtx_unlock(&Giant);
-		free(base, M_SHM);
+		bsd_free(base, M_SHM);
 	}
 }
 
@@ -825,7 +825,7 @@ shmrealloc(void)
 	if (shmalloced >= shminfo.shmmni)
 		return;
 
-	newsegs = malloc(shminfo.shmmni * sizeof(*newsegs), M_SHM, M_WAITOK);
+	newsegs = bsd_malloc(shminfo.shmmni * sizeof(*newsegs), M_SHM, M_WAITOK);
 	if (newsegs == NULL)
 		return;
 	for (i = 0; i < shmalloced; i++)
@@ -837,7 +837,7 @@ shmrealloc(void)
 		mac_sysvshm_init(&shmsegs[i]);
 #endif
 	}
-	free(shmsegs, M_SHM);
+	bsd_free(shmsegs, M_SHM);
 	shmsegs = newsegs;
 	shmalloced = shminfo.shmmni;
 }
@@ -903,7 +903,7 @@ shminit()
 	TUNABLE_INT_FETCH("kern.ipc.shm_use_phys", &shm_use_phys);
 
 	shmalloced = shminfo.shmmni;
-	shmsegs = malloc(shmalloced * sizeof(shmsegs[0]), M_SHM, M_WAITOK);
+	shmsegs = bsd_malloc(shmalloced * sizeof(shmsegs[0]), M_SHM, M_WAITOK);
 	for (i = 0; i < shmalloced; i++) {
 		shmsegs[i].u.shm_perm.mode = SHMSEG_FREE;
 		shmsegs[i].u.shm_perm.seq = 0;
@@ -953,7 +953,7 @@ shmunload()
 		if (shmsegs[i].u.shm_perm.mode != SHMSEG_FREE)
 			vm_object_deallocate(shmsegs[i].object);
 	}
-	free(shmsegs, M_SHM);
+	bsd_free(shmsegs, M_SHM);
 	shmexit_hook = NULL;
 	shmfork_hook = NULL;
 	return (0);

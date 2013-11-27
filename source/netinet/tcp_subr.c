@@ -457,7 +457,7 @@ tcpip_maketemplate(struct inpcb *inp)
 {
 	struct tcptemp *t;
 
-	t = malloc(sizeof(*t), M_TEMP, M_NOWAIT);
+	t = bsd_malloc(sizeof(*t), M_TEMP, M_NOWAIT);
 	if (t == NULL)
 		return (NULL);
 	tcpip_fillheaders(inp, (void *)&t->tt_ipgen, (void *)&t->tt_t);
@@ -1123,7 +1123,7 @@ tcp_pcblist(SYSCTL_HANDLER_ARGS)
 	if (error)
 		return (error);
 
-	inp_list = malloc(n * sizeof *inp_list, M_TEMP, M_WAITOK);
+	inp_list = bsd_malloc(n * sizeof *inp_list, M_TEMP, M_WAITOK);
 	if (inp_list == NULL)
 		return (ENOMEM);
 
@@ -1214,7 +1214,7 @@ tcp_pcblist(SYSCTL_HANDLER_ARGS)
 		INP_INFO_RUNLOCK(&V_tcbinfo);
 		error = SYSCTL_OUT(req, &xig, sizeof xig);
 	}
-	free(inp_list, M_TEMP);
+	bsd_free(inp_list, M_TEMP);
 	return (error);
 }
 
@@ -2266,7 +2266,7 @@ tcp_log_addr(struct in_conninfo *inc, struct tcphdr *th, void *ip4hdr,
 	    2 * INET_ADDRSTRLEN;
 #endif /* INET6 */
 
-	s = malloc(size, M_TCPLOG, M_ZERO|M_NOWAIT);
+	s = bsd_malloc(size, M_TCPLOG, M_ZERO|M_NOWAIT);
 	if (s == NULL)
 		return (NULL);
 
@@ -2310,7 +2310,7 @@ tcp_log_addr(struct in_conninfo *inc, struct tcphdr *th, void *ip4hdr,
 		sprintf(sp, "]:%i", ntohs(th->th_dport));
 #endif /* INET */
 	} else {
-		free(s, M_TCPLOG);
+		bsd_free(s, M_TCPLOG);
 		return (NULL);
 	}
 	sp = s + strlen(s);

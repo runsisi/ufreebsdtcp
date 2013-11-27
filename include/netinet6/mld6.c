@@ -489,7 +489,7 @@ mli_alloc_locked(/*const*/ struct ifnet *ifp)
 
 	MLD_LOCK_ASSERT();
 
-	mli = malloc(sizeof(struct mld_ifinfo), M_MLD, M_NOWAIT|M_ZERO);
+	mli = bsd_malloc(sizeof(struct mld_ifinfo), M_MLD, M_NOWAIT|M_ZERO);
 	if (mli == NULL)
 		goto out;
 
@@ -607,7 +607,7 @@ mli_delete_locked(const struct ifnet *ifp)
 			    ("%s: there are dangling in_multi references",
 			    __func__));
 
-			free(mli, M_MLD);
+			bsd_free(mli, M_MLD);
 			return;
 		}
 	}

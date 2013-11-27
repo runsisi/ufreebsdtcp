@@ -1307,7 +1307,7 @@ flowtable_alloc(char *name, int nentry, int flags)
 
 	KASSERT(nentry > 0, ("nentry must be > 0, is %d\n", nentry));
 
-	ft = malloc(sizeof(struct flowtable),
+	ft = bsd_malloc(sizeof(struct flowtable),
 	    M_RTABLE, M_WAITOK | M_ZERO);
 
 	ft->ft_name = name;
@@ -1324,7 +1324,7 @@ flowtable_alloc(char *name, int nentry, int flags)
 
 		for (i = 0; i <= mp_maxid; i++) {
 			ft->ft_table.pcpu[i] =
-			    malloc(nentry*sizeof(struct flentry *),
+			    bsd_malloc(nentry*sizeof(struct flentry *),
 				M_RTABLE, M_WAITOK | M_ZERO);
 			ft->ft_masks[i] = bit_alloc(nentry);
 		}
@@ -1335,9 +1335,9 @@ flowtable_alloc(char *name, int nentry, int flags)
 		ft->ft_lock = flowtable_global_lock;
 		ft->ft_unlock = flowtable_global_unlock;
 		ft->ft_table.global =
-			    malloc(nentry*sizeof(struct flentry *),
+			    bsd_malloc(nentry*sizeof(struct flentry *),
 				M_RTABLE, M_WAITOK | M_ZERO);
-		ft->ft_locks = malloc(ft->ft_lock_count*sizeof(struct mtx),
+		ft->ft_locks = bsd_malloc(ft->ft_lock_count*sizeof(struct mtx),
 				M_RTABLE, M_WAITOK | M_ZERO);
 		for (i = 0; i < ft->ft_lock_count; i++)
 			mtx_init(&ft->ft_locks[i], "flow", NULL, MTX_DEF|MTX_DUPOK);

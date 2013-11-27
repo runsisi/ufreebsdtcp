@@ -95,10 +95,10 @@ isa_dma_init(int chan, u_int bouncebufsize, int flag)
 
 
 	/* Try malloc() first.  It works better if it works. */
-	buf = malloc(bouncebufsize, M_DEVBUF, flag);
+	buf = bsd_malloc(bouncebufsize, M_DEVBUF, flag);
 	if (buf != NULL) {
 		if (isa_dmarangecheck(buf, bouncebufsize, chan) != 0) {
-			free(buf, M_DEVBUF);
+			bsd_free(buf, M_DEVBUF);
 			buf = NULL;
 		}
 		contig = 0;
@@ -126,7 +126,7 @@ isa_dma_init(int chan, u_int bouncebufsize, int flag)
 		if (contig)
 			contigfree(buf, bouncebufsize, M_DEVBUF);
 		else
-			free(buf, M_DEVBUF);
+			bsd_free(buf, M_DEVBUF);
 		mtx_unlock(&isa_dma_lock);
 		return (0);
 	}

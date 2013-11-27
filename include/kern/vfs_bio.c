@@ -2679,7 +2679,7 @@ flushbufqueues(struct vnode *lvp, int queue, int flushdeps)
 		target = flushbufqtarget;
 	flushed = 0;
 	bp = NULL;
-	sentinel = malloc(sizeof(struct buf), M_TEMP, M_WAITOK | M_ZERO);
+	sentinel = bsd_malloc(sizeof(struct buf), M_TEMP, M_WAITOK | M_ZERO);
 	sentinel->b_qindex = QUEUE_SENTINEL;
 	mtx_lock(&bqlock);
 	TAILQ_INSERT_HEAD(&bufqueues[queue], sentinel, b_freelist);
@@ -2781,7 +2781,7 @@ flushbufqueues(struct vnode *lvp, int queue, int flushdeps)
 	}
 	TAILQ_REMOVE(&bufqueues[queue], sentinel, b_freelist);
 	mtx_unlock(&bqlock);
-	free(sentinel, M_TEMP);
+	bsd_free(sentinel, M_TEMP);
 	return (flushed);
 }
 
@@ -3401,7 +3401,7 @@ allocbuf(struct buf *bp, int size)
 				if (newbsize) {
 					bp->b_bcount = size;
 				} else {
-					free(bp->b_data, M_BIOBUF);
+					bsd_free(bp->b_data, M_BIOBUF);
 					if (bp->b_bufsize) {
 						atomic_subtract_long(
 						    &bufmallocspace,
@@ -3433,7 +3433,7 @@ allocbuf(struct buf *bp, int size)
 				(bp->b_bufsize == 0) &&
 				(mbsize <= PAGE_SIZE/2)) {
 
-				bp->b_data = malloc(mbsize, M_BIOBUF, M_WAITOK);
+				bp->b_data = bsd_malloc(mbsize, M_BIOBUF, M_WAITOK);
 				bp->b_bufsize = mbsize;
 				bp->b_bcount = size;
 				bp->b_flags |= B_MALLOC;
@@ -3465,7 +3465,7 @@ allocbuf(struct buf *bp, int size)
 			    (vm_offset_t) bp->b_data + newbsize);
 			if (origbuf) {
 				bcopy(origbuf, bp->b_data, origbufsize);
-				free(origbuf, M_BIOBUF);
+				bsd_free(origbuf, M_BIOBUF);
 			}
 		}
 	} else {

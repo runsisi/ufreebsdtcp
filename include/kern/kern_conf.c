@@ -104,7 +104,7 @@ dev_unlock_and_free(void)
 	}
 	while ((csw = SLIST_FIRST(&csw_free)) != NULL) {
 		SLIST_REMOVE_HEAD(&csw_free, d_postfree_list);
-		free(csw, M_DEVT);
+		bsd_free(csw, M_DEVT);
 	}
 }
 
@@ -541,13 +541,13 @@ notify(struct cdev *dev, const char *ev, int flags)
 		return;
 	mflags = (flags & MAKEDEV_NOWAIT) ? M_NOWAIT : M_WAITOK;
 	namelen = strlen(dev->si_name);
-	data = malloc(namelen + sizeof(prefix), M_TEMP, mflags);
+	data = bsd_malloc(namelen + sizeof(prefix), M_TEMP, mflags);
 	if (data == NULL)
 		return;
 	memcpy(data, prefix, sizeof(prefix) - 1);
 	memcpy(data + sizeof(prefix) - 1, dev->si_name, namelen + 1);
 	devctl_notify_f("DEVFS", "CDEV", ev, data, mflags);
-	free(data, M_TEMP);
+	bsd_free(data, M_TEMP);
 }
 
 static void
@@ -609,7 +609,7 @@ prep_cdevsw(struct cdevsw *devsw, int flags)
 		return (0);
 	if (devsw->d_flags & D_NEEDGIANT) {
 		dev_unlock();
-		dsw2 = malloc(sizeof *dsw2, M_DEVT,
+		dsw2 = bsd_malloc(sizeof *dsw2, M_DEVT,
 		     (flags & MAKEDEV_NOWAIT) ? M_NOWAIT : M_WAITOK);
 		dev_lock();
 		if (dsw2 == NULL && !(devsw->d_flags & D_INIT))
@@ -1002,7 +1002,7 @@ make_dev_physpath_alias(int flags, struct cdev **cdev, struct cdev *pdev,
 
 	mflags = (flags & MAKEDEV_NOWAIT) ? M_NOWAIT : M_WAITOK;
 	devfspathbuf_len = physpath_len + /*/*/1 + parentpath_len + /*NUL*/1;
-	devfspath = malloc(devfspathbuf_len, M_DEVBUF, mflags);
+	devfspath = bsd_malloc(devfspathbuf_len, M_DEVBUF, mflags);
 	if (devfspath == NULL) {
 		ret = ENOMEM;
 		goto out;
@@ -1021,7 +1021,7 @@ out:
 	if (old_alias != NULL)	
 		destroy_dev(old_alias);
 	if (devfspath != NULL)
-		free(devfspath, M_DEVBUF);
+		bsd_free(devfspath, M_DEVBUF);
 	return (ret);
 }
 
@@ -1178,7 +1178,7 @@ void
 clone_setup(struct clonedevs **cdp)
 {
 
-	*cdp = malloc(sizeof **cdp, M_DEVBUF, M_WAITOK | M_ZERO);
+	*cdp = bsd_malloc(sizeof **cdp, M_DEVBUF, M_WAITOK | M_ZERO);
 	LIST_INIT(&(*cdp)->head);
 }
 
@@ -1292,7 +1292,7 @@ clone_cleanup(struct clonedevs **cdp)
 		}
 	}
 	dev_unlock_and_free();
-	free(cd, M_DEVBUF);
+	bsd_free(cd, M_DEVBUF);
 	*cdp = NULL;
 }
 

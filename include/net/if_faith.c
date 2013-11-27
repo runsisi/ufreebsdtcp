@@ -151,10 +151,10 @@ faith_clone_create(ifc, unit, params)
 	struct ifnet *ifp;
 	struct faith_softc *sc;
 
-	sc = malloc(sizeof(struct faith_softc), M_FAITH, M_WAITOK | M_ZERO);
+	sc = bsd_malloc(sizeof(struct faith_softc), M_FAITH, M_WAITOK | M_ZERO);
 	ifp = sc->sc_ifp = if_alloc(IFT_FAITH);
 	if (ifp == NULL) {
-		free(sc, M_FAITH);
+		bsd_free(sc, M_FAITH);
 		return (ENOSPC);
 	}
 
@@ -183,7 +183,7 @@ faith_clone_destroy(ifp)
 	bpfdetach(ifp);
 	if_detach(ifp);
 	if_free(ifp);
-	free(sc, M_FAITH);
+	bsd_free(sc, M_FAITH);
 }
 
 int

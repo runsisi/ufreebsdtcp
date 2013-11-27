@@ -699,7 +699,7 @@ ptsdrv_free(void *softc)
 		destroy_dev_sched(psc->pts_cdev);
 #endif /* PTS_EXTERNAL */
 
-	free(psc, M_PTS);
+	bsd_free(psc, M_PTS);
 }
 
 static struct ttydevsw pts_class = {
@@ -748,7 +748,7 @@ pts_alloc(int fflags, struct thread *td, struct file *fp)
 	}
 
 	/* Allocate TTY and softc. */
-	psc = malloc(sizeof(struct pts_softc), M_PTS, M_WAITOK|M_ZERO);
+	psc = bsd_malloc(sizeof(struct pts_softc), M_PTS, M_WAITOK|M_ZERO);
 	cv_init(&psc->pts_inwait, "ptsin");
 	cv_init(&psc->pts_outwait, "ptsout");
 
@@ -794,7 +794,7 @@ pts_alloc_external(int fflags, struct thread *td, struct file *fp,
 	PROC_UNLOCK(p);
 
 	/* Allocate TTY and softc. */
-	psc = malloc(sizeof(struct pts_softc), M_PTS, M_WAITOK|M_ZERO);
+	psc = bsd_malloc(sizeof(struct pts_softc), M_PTS, M_WAITOK|M_ZERO);
 	cv_init(&psc->pts_inwait, "ptsin");
 	cv_init(&psc->pts_outwait, "ptsout");
 

@@ -457,7 +457,7 @@ ef_clone(struct ef_link *efl, int ft)
 	struct ifnet *eifp;
 	struct ifnet *ifp = efl->el_ifp;
 
-	efp = (struct efnet*)malloc(sizeof(struct efnet), M_IFADDR,
+	efp = (struct efnet*)bsd_malloc(sizeof(struct efnet), M_IFADDR,
 	    M_WAITOK | M_ZERO);
 	if (efp == NULL)
 		return ENOMEM;
@@ -465,7 +465,7 @@ ef_clone(struct ef_link *efl, int ft)
 	efp->ef_frametype = ft;
 	eifp = efp->ef_ifp = if_alloc(IFT_ETHER);
 	if (eifp == NULL) {
-		free(efp, M_IFADDR);
+		bsd_free(efp, M_IFADDR);
 		return (ENOSPC);
 	}
 	snprintf(eifp->if_xname, IFNAMSIZ,
@@ -508,7 +508,7 @@ ef_load(void)
 		TAILQ_FOREACH(ifp, &V_ifnet, if_link) {
 			if (ifp->if_type != IFT_ETHER) continue;
 			EFDEBUG("Found interface %s\n", ifp->if_xname);
-			efl = (struct ef_link*)malloc(sizeof(struct ef_link), 
+			efl = (struct ef_link*)bsd_malloc(sizeof(struct ef_link), 
 			    M_IFADDR, M_WAITOK | M_ZERO);
 			if (efl == NULL) {
 				error = ENOMEM;
@@ -547,9 +547,9 @@ ef_load(void)
 				if (efl->el_units[d]) {
 					if (efl->el_units[d]->ef_pifp != NULL)
 						if_free(efl->el_units[d]->ef_pifp);
-					free(efl->el_units[d], M_IFADDR);
+					bsd_free(efl->el_units[d], M_IFADDR);
 				}
-			free(efl, M_IFADDR);
+			bsd_free(efl, M_IFADDR);
 		}
 		return error;
 	}

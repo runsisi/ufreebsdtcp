@@ -978,10 +978,10 @@ tty_alloc_mutex(struct ttydevsw *tsw, void *sc, struct mtx *mutex)
 	PATCH_FUNC(modem);
 	PATCH_FUNC(mmap);
 	PATCH_FUNC(pktnotify);
-	PATCH_FUNC(free);
+	PATCH_FUNC(bsd_free);
 #undef PATCH_FUNC
 
-	tp = malloc(sizeof(struct tty), M_TTY, M_WAITOK|M_ZERO);
+	tp = bsd_malloc(sizeof(struct tty), M_TTY, M_WAITOK|M_ZERO);
 	tp->t_devsw = tsw;
 	tp->t_devswsoftc = sc;
 	tp->t_flags = tsw->tsw_flags;
@@ -1041,7 +1041,7 @@ tty_dealloc(void *arg)
 	if (tp->t_mtx == &tp->t_mtxobj)
 		mtx_destroy(&tp->t_mtxobj);
 	ttydevsw_free(tp);
-	free(tp, M_TTY);
+	bsd_free(tp, M_TTY);
 }
 
 static void
@@ -1149,7 +1149,7 @@ sysctl_kern_ttys(SYSCTL_HANDLER_ARGS)
 		return (0);
 	}
 
-	xtlist = xt = malloc(lsize, M_TTY, M_WAITOK);
+	xtlist = xt = bsd_malloc(lsize, M_TTY, M_WAITOK);
 
 	TAILQ_FOREACH(tp, &tty_list, t_list) {
 		tty_lock(tp);
@@ -1160,7 +1160,7 @@ sysctl_kern_ttys(SYSCTL_HANDLER_ARGS)
 	sx_sunlock(&tty_list_sx);
 
 	error = SYSCTL_OUT(req, xtlist, lsize);
-	free(xtlist, M_TTY);
+	bsd_free(xtlist, M_TTY);
 	return (error);
 }
 
@@ -2074,7 +2074,7 @@ _db_show_devsw(const char *sep, const struct ttydevsw *tsw)
 	DB_PRINTSYM(modem, tsw->tsw_modem);
 	DB_PRINTSYM(mmap, tsw->tsw_mmap);
 	DB_PRINTSYM(pktnotify, tsw->tsw_pktnotify);
-	DB_PRINTSYM(free, tsw->tsw_free);
+	DB_PRINTSYM(bsd_free, tsw->tsw_free);
 }
 static void
 _db_show_hooks(const char *sep, const struct ttyhook *th)

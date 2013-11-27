@@ -360,7 +360,7 @@ tcp_timer_keep(void *xtp)
 			tcp_respond(tp, t_template->tt_ipgen,
 				    &t_template->tt_t, (struct mbuf *)NULL,
 				    tp->rcv_nxt, tp->snd_una - 1, 0);
-			free(t_template, M_TEMP);
+			bsd_free(t_template, M_TEMP);
 		}
 		callout_reset_on(&tp->t_timers->tt_keep, TP_KEEPINTVL(tp),
 		    tcp_timer_keep, tp, INP_CPU(inp));

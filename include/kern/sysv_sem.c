@@ -259,12 +259,12 @@ seminit(void)
 	TUNABLE_INT_FETCH("kern.ipc.semvmx", &seminfo.semvmx);
 	TUNABLE_INT_FETCH("kern.ipc.semaem", &seminfo.semaem);
 
-	sem = malloc(sizeof(struct sem) * seminfo.semmns, M_SEM, M_WAITOK);
-	sema = malloc(sizeof(struct semid_kernel) * seminfo.semmni, M_SEM,
+	sem = bsd_malloc(sizeof(struct sem) * seminfo.semmns, M_SEM, M_WAITOK);
+	sema = bsd_malloc(sizeof(struct semid_kernel) * seminfo.semmni, M_SEM,
 	    M_WAITOK);
-	sema_mtx = malloc(sizeof(struct mtx) * seminfo.semmni, M_SEM,
+	sema_mtx = bsd_malloc(sizeof(struct mtx) * seminfo.semmni, M_SEM,
 	    M_WAITOK | M_ZERO);
-	semu = malloc(seminfo.semmnu * seminfo.semusz, M_SEM, M_WAITOK);
+	semu = bsd_malloc(seminfo.semmnu * seminfo.semusz, M_SEM, M_WAITOK);
 
 	for (i = 0; i < seminfo.semmni; i++) {
 		sema[i].u.sem_base = 0;
@@ -317,12 +317,12 @@ semunload(void)
 	for (i = 0; i < seminfo.semmni; i++)
 		mac_sysvsem_destroy(&sema[i]);
 #endif
-	free(sem, M_SEM);
-	free(sema, M_SEM);
-	free(semu, M_SEM);
+	bsd_free(sem, M_SEM);
+	bsd_free(sema, M_SEM);
+	bsd_free(semu, M_SEM);
 	for (i = 0; i < seminfo.semmni; i++)
 		mtx_destroy(&sema_mtx[i]);
-	free(sema_mtx, M_SEM);
+	bsd_free(sema_mtx, M_SEM);
 	mtx_destroy(&sem_mtx);
 	mtx_destroy(&sem_undo_mtx);
 	return (0);
@@ -757,7 +757,7 @@ kern_semctl(struct thread *td, int semid, int semnum, int cmd,
 		 */
 		count = semakptr->u.sem_nsems;
 		mtx_unlock(sema_mtxp);		    
-		array = malloc(sizeof(*array) * count, M_TEMP, M_WAITOK);
+		array = bsd_malloc(sizeof(*array) * count, M_TEMP, M_WAITOK);
 		mtx_lock(sema_mtxp);
 		if ((error = semvalid(semid, semakptr)) != 0)
 			goto done2;
@@ -810,7 +810,7 @@ kern_semctl(struct thread *td, int semid, int semnum, int cmd,
 		 */
 		count = semakptr->u.sem_nsems;
 		mtx_unlock(sema_mtxp);		    
-		array = malloc(sizeof(*array) * count, M_TEMP, M_WAITOK);
+		array = bsd_malloc(sizeof(*array) * count, M_TEMP, M_WAITOK);
 		error = copyin(arg->array, array, count * sizeof(*array));
 		mtx_lock(sema_mtxp);
 		if (error)
@@ -844,7 +844,7 @@ done2:
 	if (cmd == IPC_RMID)
 		mtx_unlock(&sem_mtx);
 	if (array != NULL)
-		free(array, M_TEMP);
+		bsd_free(array, M_TEMP);
 	return(error);
 }
 
@@ -1027,13 +1027,13 @@ sys_semop(struct thread *td, struct semop_args *uap)
 		PROC_UNLOCK(td->td_proc);
 #endif
 
-		sops = malloc(nsops * sizeof(*sops), M_TEMP, M_WAITOK);
+		sops = bsd_malloc(nsops * sizeof(*sops), M_TEMP, M_WAITOK);
 	}
 	if ((error = copyin(uap->sops, sops, nsops * sizeof(sops[0]))) != 0) {
 		DPRINTF(("error = %d from copyin(%p, %p, %d)\n", error,
 		    uap->sops, sops, nsops * sizeof(sops[0])));
 		if (sops != small_sops)
-			free(sops, M_SEM);
+			bsd_free(sops, M_SEM);
 		return (error);
 	}
 
@@ -1282,7 +1282,7 @@ done:
 done2:
 	mtx_unlock(sema_mtxp);
 	if (sops != small_sops)
-		free(sops, M_SEM);
+		bsd_free(sops, M_SEM);
 	return (error);
 }
 

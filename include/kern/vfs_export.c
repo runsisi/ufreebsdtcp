@@ -144,7 +144,7 @@ vfs_hang_addrlist(struct mount *mp, struct netexport *nep,
 #endif
 
 	i = sizeof(struct netcred) + argp->ex_addrlen + argp->ex_masklen;
-	np = (struct netcred *) malloc(i, M_NETADDR, M_WAITOK | M_ZERO);
+	np = (struct netcred *) bsd_malloc(i, M_NETADDR, M_WAITOK | M_ZERO);
 	saddr = (struct sockaddr *) (np + 1);
 	if ((error = copyin(argp->ex_addr, saddr, argp->ex_addrlen)))
 		goto out;
@@ -217,7 +217,7 @@ vfs_hang_addrlist(struct mount *mp, struct netexport *nep,
 	    sizeof(np->netc_secflavors));
 	return (0);
 out:
-	free(np, M_NETADDR);
+	bsd_free(np, M_NETADDR);
 	return (error);
 }
 
@@ -233,7 +233,7 @@ vfs_free_netcred(struct radix_node *rn, void *w)
 	cred = ((struct netcred *)rn)->netc_anon;
 	if (cred != NULL)
 		crfree(cred);
-	free(rn, M_NETADDR);
+	bsd_free(rn, M_NETADDR);
 	return (0);
 }
 
@@ -253,7 +253,7 @@ vfs_free_addrlist(struct netexport *nep)
 			(*rnh->rnh_walktree) (rnh, vfs_free_netcred, rnh);
 			RADIX_NODE_HEAD_UNLOCK(rnh);
 			RADIX_NODE_HEAD_DESTROY(rnh);
-			free(rnh, M_RTABLE);
+			bsd_free(rnh, M_RTABLE);
 			nep->ne_rtable[i] = NULL;	/* not SMP safe XXX */
 		}
 	}
@@ -295,7 +295,7 @@ vfs_export(struct mount *mp, struct export_args *argp)
 		}
 		vfs_free_addrlist(nep);
 		mp->mnt_export = NULL;
-		free(nep, M_MOUNT);
+		bsd_free(nep, M_MOUNT);
 		nep = NULL;
 		MNT_ILOCK(mp);
 		mp->mnt_flag &= ~(MNT_EXPORTED | MNT_DEFEXPORTED);
@@ -303,7 +303,7 @@ vfs_export(struct mount *mp, struct export_args *argp)
 	}
 	if (argp->ex_flags & MNT_EXPORTED) {
 		if (nep == NULL) {
-			nep = malloc(sizeof(struct netexport), M_MOUNT, M_WAITOK | M_ZERO);
+			nep = bsd_malloc(sizeof(struct netexport), M_MOUNT, M_WAITOK | M_ZERO);
 			mp->mnt_export = nep;
 		}
 		if (argp->ex_flags & MNT_EXPUBLIC) {
@@ -356,7 +356,7 @@ vfs_setpublicfs(struct mount *mp, struct netexport *nep,
 		if (nfs_pub.np_valid) {
 			nfs_pub.np_valid = 0;
 			if (nfs_pub.np_index != NULL) {
-				free(nfs_pub.np_index, M_TEMP);
+				bsd_free(nfs_pub.np_index, M_TEMP);
 				nfs_pub.np_index = NULL;
 			}
 		}
@@ -388,7 +388,7 @@ vfs_setpublicfs(struct mount *mp, struct netexport *nep,
 	 */
 	if (argp->ex_indexfile != NULL) {
 		if (nfs_pub.np_index != NULL)
-			nfs_pub.np_index = malloc(MAXNAMLEN + 1, M_TEMP,
+			nfs_pub.np_index = bsd_malloc(MAXNAMLEN + 1, M_TEMP,
 			    M_WAITOK);
 		error = copyinstr(argp->ex_indexfile, nfs_pub.np_index,
 		    MAXNAMLEN, (size_t *)0);
@@ -404,7 +404,7 @@ vfs_setpublicfs(struct mount *mp, struct netexport *nep,
 			}
 		}
 		if (error) {
-			free(nfs_pub.np_index, M_TEMP);
+			bsd_free(nfs_pub.np_index, M_TEMP);
 			nfs_pub.np_index = NULL;
 			return (error);
 		}

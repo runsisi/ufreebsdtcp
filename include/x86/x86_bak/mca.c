@@ -432,7 +432,7 @@ mca_fill_freelist(void)
 	mtx_lock_spin(&mca_lock);
 	while (mca_freecount < desired) {
 		mtx_unlock_spin(&mca_lock);
-		rec = malloc(sizeof(*rec), M_MCA, M_WAITOK);
+		rec = bsd_malloc(sizeof(*rec), M_MCA, M_WAITOK);
 		mtx_lock_spin(&mca_lock);
 		STAILQ_INSERT_TAIL(&mca_freelist, rec, link);
 		mca_freecount++;
@@ -453,7 +453,7 @@ mca_record_entry(enum scan_mode mode, const struct mca_record *record)
 	struct mca_internal *rec;
 
 	if (mode == POLLED) {
-		rec = malloc(sizeof(*rec), M_MCA, M_WAITOK);
+		rec = bsd_malloc(sizeof(*rec), M_MCA, M_WAITOK);
 		mtx_lock_spin(&mca_lock);
 	} else {
 		mtx_lock_spin(&mca_lock);
@@ -699,10 +699,10 @@ cmci_setup(void)
 {
 	int i;
 
-	cmc_state = malloc((mp_maxid + 1) * sizeof(struct cmc_state **),
+	cmc_state = bsd_malloc((mp_maxid + 1) * sizeof(struct cmc_state **),
 	    M_MCA, M_WAITOK);
 	for (i = 0; i <= mp_maxid; i++)
-		cmc_state[i] = malloc(sizeof(struct cmc_state) * mca_banks,
+		cmc_state[i] = bsd_malloc(sizeof(struct cmc_state) * mca_banks,
 		    M_MCA, M_WAITOK | M_ZERO);
 	SYSCTL_ADD_PROC(NULL, SYSCTL_STATIC_CHILDREN(_hw_mca), OID_AUTO,
 	    "cmc_throttle", CTLTYPE_INT | CTLFLAG_RW | CTLFLAG_MPSAFE,

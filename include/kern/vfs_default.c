@@ -344,7 +344,7 @@ dirent_exists(struct vnode *vp, const char *dirname, struct thread *td)
 	dirbuflen = DEV_BSIZE;
 	if (dirbuflen < va.va_blocksize)
 		dirbuflen = va.va_blocksize;
-	dirbuf = (char *)malloc(dirbuflen, M_TEMP, M_WAITOK);
+	dirbuf = (char *)bsd_malloc(dirbuflen, M_TEMP, M_WAITOK);
 
 	off = 0;
 	len = 0;
@@ -362,7 +362,7 @@ dirent_exists(struct vnode *vp, const char *dirname, struct thread *td)
 	} while (len > 0 || !eofflag);
 
 out:
-	free(dirbuf, M_TEMP);
+	bsd_free(dirbuf, M_TEMP);
 	return (found);
 }
 
@@ -820,7 +820,7 @@ vop_stdvptocnp(struct vop_vptocnp_args *ap)
 	dirbuflen = DEV_BSIZE;
 	if (dirbuflen < va.va_blocksize)
 		dirbuflen = va.va_blocksize;
-	dirbuf = (char *)malloc(dirbuflen, M_TEMP, M_WAITOK);
+	dirbuf = (char *)bsd_malloc(dirbuflen, M_TEMP, M_WAITOK);
 
 	if ((*dvp)->v_type != VDIR) {
 		error = ENOENT;
@@ -868,7 +868,7 @@ vop_stdvptocnp(struct vop_vptocnp_args *ap)
 	error = ENOENT;
 
 out:
-	free(dirbuf, M_TEMP);
+	bsd_free(dirbuf, M_TEMP);
 	if (!error) {
 		*buflen = i;
 		vref(*dvp);
@@ -917,7 +917,7 @@ vop_stdallocate(struct vop_allocate_args *ap)
 		iosize = BLKDEV_IOSIZE;
 	if (iosize > MAXPHYS)
 		iosize = MAXPHYS;
-	buf = malloc(iosize, M_TEMP, M_WAITOK);
+	buf = bsd_malloc(iosize, M_TEMP, M_WAITOK);
 
 #ifdef __notyet__
 	/*
@@ -1008,7 +1008,7 @@ vop_stdallocate(struct vop_allocate_args *ap)
  out:
 	*ap->a_len = len;
 	*ap->a_offset = offset;
-	free(buf, M_TEMP);
+	bsd_free(buf, M_TEMP);
 	return (error);
 }
 

@@ -241,7 +241,7 @@ vlan_inithash(struct ifvlantrunk *trunk)
 	trunk->hwidth = VLAN_DEF_HWIDTH;
 	n = 1 << trunk->hwidth;
 	trunk->hmask = n - 1;
-	trunk->hash = malloc(sizeof(struct ifvlanhead) * n, M_VLAN, M_WAITOK);
+	trunk->hash = bsd_malloc(sizeof(struct ifvlanhead) * n, M_VLAN, M_WAITOK);
 	for (i = 0; i < n; i++)
 		LIST_INIT(&trunk->hash[i]);
 }
@@ -257,7 +257,7 @@ vlan_freehash(struct ifvlantrunk *trunk)
 		KASSERT(LIST_EMPTY(&trunk->hash[i]),
 		    ("%s: hash table not empty", __func__));
 #endif
-	free(trunk->hash, M_VLAN);
+	bsd_free(trunk->hash, M_VLAN);
 	trunk->hash = NULL;
 	trunk->hwidth = trunk->hmask = 0;
 }
@@ -343,7 +343,7 @@ vlan_growhash(struct ifvlantrunk *trunk, int howmuch)
 		return;
 
 	/* M_NOWAIT because we're called with trunk mutex held */
-	hash2 = malloc(sizeof(struct ifvlanhead) * n2, M_VLAN, M_NOWAIT);
+	hash2 = bsd_malloc(sizeof(struct ifvlanhead) * n2, M_VLAN, M_NOWAIT);
 	if (hash2 == NULL) {
 		printf("%s: out of memory -- hash size not changed\n",
 		    __func__);
@@ -357,7 +357,7 @@ vlan_growhash(struct ifvlantrunk *trunk, int howmuch)
 			j = HASH(ifv->ifv_tag, n2 - 1);
 			LIST_INSERT_HEAD(&hash2[j], ifv, ifv_list);
 		}
-	free(trunk->hash, M_VLAN);
+	bsd_free(trunk->hash, M_VLAN);
 	trunk->hash = hash2;
 	trunk->hwidth = hwidth2;
 	trunk->hmask = n2 - 1;
@@ -449,7 +449,7 @@ trunk_destroy(struct ifvlantrunk *trunk)
 	trunk->parent->if_vlantrunk = NULL;
 	TRUNK_UNLOCK(trunk);
 	TRUNK_LOCK_DESTROY(trunk);
-	free(trunk, M_VLAN);
+	bsd_free(trunk, M_VLAN);
 }
 
 /*
@@ -486,14 +486,14 @@ vlan_setmulti(struct ifnet *ifp)
 		if (error)
 			return (error);
 		SLIST_REMOVE_HEAD(&sc->vlan_mc_listhead, mc_entries);
-		free(mc, M_VLAN);
+		bsd_free(mc, M_VLAN);
 	}
 
 	/* Now program new ones. */
 	TAILQ_FOREACH(ifma, &ifp->if_multiaddrs, ifma_link) {
 		if (ifma->ifma_addr->sa_family != AF_LINK)
 			continue;
-		mc = malloc(sizeof(struct vlan_mc_entry), M_VLAN, M_NOWAIT);
+		mc = bsd_malloc(sizeof(struct vlan_mc_entry), M_VLAN, M_NOWAIT);
 		if (mc == NULL)
 			return (ENOMEM);
 		bcopy(ifma->ifma_addr, &mc->mc_addr, ifma->ifma_addr->sa_len);
@@ -927,11 +927,11 @@ vlan_clone_create(struct if_clone *ifc, char *name, size_t len, caddr_t params)
 		}
 	}
 
-	ifv = malloc(sizeof(struct ifvlan), M_VLAN, M_WAITOK | M_ZERO);
+	ifv = bsd_malloc(sizeof(struct ifvlan), M_VLAN, M_WAITOK | M_ZERO);
 	ifp = ifv->ifv_ifp = if_alloc(IFT_ETHER);
 	if (ifp == NULL) {
 		ifc_free_unit(ifc, unit);
-		free(ifv, M_VLAN);
+		bsd_free(ifv, M_VLAN);
 		return (ENOSPC);
 	}
 	SLIST_INIT(&ifv->vlan_mc_listhead);
@@ -975,7 +975,7 @@ vlan_clone_create(struct if_clone *ifc, char *name, size_t len, caddr_t params)
 			vlan_unconfig(ifp);
 			if_free_type(ifp, IFT_ETHER);
 			ifc_free_unit(ifc, unit);
-			free(ifv, M_VLAN);
+			bsd_free(ifv, M_VLAN);
 
 			return (error);
 		}
@@ -996,7 +996,7 @@ vlan_clone_destroy(struct if_clone *ifc, struct ifnet *ifp)
 	ether_ifdetach(ifp);	/* first, remove it from system-wide lists */
 	vlan_unconfig(ifp);	/* now it can be unconfigured and freed */
 	if_free_type(ifp, IFT_ETHER);
-	free(ifv, M_VLAN);
+	bsd_free(ifv, M_VLAN);
 	ifc_free_unit(ifc, unit);
 
 	return (0);
@@ -1196,14 +1196,14 @@ vlan_config(struct ifvlan *ifv, struct ifnet *p, uint16_t tag)
 		return (EBUSY);
 
 	if (p->if_vlantrunk == NULL) {
-		trunk = malloc(sizeof(struct ifvlantrunk),
+		trunk = bsd_malloc(sizeof(struct ifvlantrunk),
 		    M_VLAN, M_WAITOK | M_ZERO);
 		vlan_inithash(trunk);
 		VLAN_LOCK();
 		if (p->if_vlantrunk != NULL) {
 			/* A race that that is very unlikely to be hit. */
 			vlan_freehash(trunk);
-			free(trunk, M_VLAN);
+			bsd_free(trunk, M_VLAN);
 			goto exists;
 		}
 		TRUNK_LOCK_INIT(trunk);
@@ -1353,7 +1353,7 @@ vlan_unconfig_locked(struct ifnet *ifp, int departing)
 					    error);
 			}
 			SLIST_REMOVE_HEAD(&ifv->vlan_mc_listhead, mc_entries);
-			free(mc, M_VLAN);
+			bsd_free(mc, M_VLAN);
 		}
 
 		vlan_setflags(ifp, 0); /* clear special flags on parent */

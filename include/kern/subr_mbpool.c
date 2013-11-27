@@ -126,7 +126,7 @@ mbp_create(struct mbpool **pp, const char *name, bus_dma_tag_t dmat,
 	if (nchunks == 0 || nchunks > MBPOOL_MAX_CHUNKS)
 		return (EINVAL);
 
-	(*pp) = malloc(sizeof(struct mbpool) +
+	(*pp) = bsd_malloc(sizeof(struct mbpool) +
 	    max_pages * sizeof(struct mbpage),
 	    M_MBPOOL, M_WAITOK | M_ZERO);
 
@@ -174,7 +174,7 @@ mbp_destroy(struct mbpool *p)
 	}
 	mtx_destroy(&p->free_lock);
 
-	free(p, M_MBPOOL);
+	bsd_free(p, M_MBPOOL);
 }
 
 /*
@@ -210,7 +210,7 @@ mbp_alloc_page(struct mbpool *p)
 
 	error = bus_dmamem_alloc(p->dmat, &pg->va, BUS_DMA_NOWAIT, &pg->map);
 	if (error != 0) {
-		free(pg, M_MBPOOL);
+		bsd_free(pg, M_MBPOOL);
 		return;
 	}
 
@@ -218,7 +218,7 @@ mbp_alloc_page(struct mbpool *p)
 	    mbp_callback, &pg->phy, 0);
 	if (error != 0) {
 		bus_dmamem_free(p->dmat, pg->va, pg->map);
-		free(pg, M_MBPOOL);
+		bsd_free(pg, M_MBPOOL);
 		return;
 	}
 

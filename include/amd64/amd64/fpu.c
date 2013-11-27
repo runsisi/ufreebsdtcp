@@ -270,7 +270,7 @@ fpuinitstate(void *arg __unused)
 	register_t saveintr;
 	int cp[4], i, max_ext_n;
 
-	fpu_initialstate = malloc(cpu_max_ext_state_size, M_DEVBUF,
+	fpu_initialstate = bsd_malloc(cpu_max_ext_state_size, M_DEVBUF,
 	    M_WAITOK | M_ZERO);
 	saveintr = intr_disable();
 	stop_emulating();
@@ -296,7 +296,7 @@ fpuinitstate(void *arg __unused)
 	 */
 	if (use_xsave) {
 		max_ext_n = flsl(xsave_mask);
-		xsave_area_desc = malloc(max_ext_n * sizeof(struct
+		xsave_area_desc = bsd_malloc(max_ext_n * sizeof(struct
 		    xsave_area_elm_descr), M_DEVBUF, M_WAITOK | M_ZERO);
 		/* x87 state */
 		xsave_area_desc[0].offset = 0;
@@ -890,7 +890,7 @@ fpu_kern_alloc_ctx(u_int flags)
 
 	sz = sizeof(struct fpu_kern_ctx) + XSAVE_AREA_ALIGN +
 	    cpu_max_ext_state_size;
-	res = malloc(sz, M_FPUKERN_CTX, ((flags & FPU_KERN_NOWAIT) ?
+	res = bsd_malloc(sz, M_FPUKERN_CTX, ((flags & FPU_KERN_NOWAIT) ?
 	    M_NOWAIT : M_WAITOK) | M_ZERO);
 	return (res);
 }
@@ -900,7 +900,7 @@ fpu_kern_free_ctx(struct fpu_kern_ctx *ctx)
 {
 
 	/* XXXKIB clear the memory ? */
-	free(ctx, M_FPUKERN_CTX);
+	bsd_free(ctx, M_FPUKERN_CTX);
 }
 
 static struct savefpu *

@@ -283,13 +283,13 @@ link_elf_link_preload(linker_class_t cls, const char *filename,
 
 	/* Allocate space for tracking the load chunks */
 	if (ef->nprogtab != 0)
-		ef->progtab = malloc(ef->nprogtab * sizeof(*ef->progtab),
+		ef->progtab = bsd_malloc(ef->nprogtab * sizeof(*ef->progtab),
 		    M_LINKER, M_WAITOK | M_ZERO);
 	if (ef->nreltab != 0)
-		ef->reltab = malloc(ef->nreltab * sizeof(*ef->reltab),
+		ef->reltab = bsd_malloc(ef->nreltab * sizeof(*ef->reltab),
 		    M_LINKER, M_WAITOK | M_ZERO);
 	if (ef->nrelatab != 0)
-		ef->relatab = malloc(ef->nrelatab * sizeof(*ef->relatab),
+		ef->relatab = bsd_malloc(ef->nrelatab * sizeof(*ef->relatab),
 		    M_LINKER, M_WAITOK | M_ZERO);
 	if ((ef->nprogtab != 0 && ef->progtab == NULL) ||
 	    (ef->nreltab != 0 && ef->reltab == NULL) ||
@@ -476,7 +476,7 @@ link_elf_load_file(linker_class_t cls, const char *filename,
 #endif
 
 	/* Read the elf header from the file. */
-	hdr = malloc(sizeof(*hdr), M_LINKER, M_WAITOK);
+	hdr = bsd_malloc(sizeof(*hdr), M_LINKER, M_WAITOK);
 	error = vn_rdwr(UIO_READ, nd.ni_vp, (void *)hdr, sizeof(*hdr), 0,
 	    UIO_SYSSPACE, IO_NODELOCKED, td->td_ucred, NOCRED,
 	    &resid, td);
@@ -532,7 +532,7 @@ link_elf_load_file(linker_class_t cls, const char *filename,
 		error = ENOEXEC;
 		goto out;
 	}
-	shdr = malloc(nbytes, M_LINKER, M_WAITOK);
+	shdr = bsd_malloc(nbytes, M_LINKER, M_WAITOK);
 	ef->e_shdr = shdr;
 	error = vn_rdwr(UIO_READ, nd.ni_vp, (caddr_t)shdr, nbytes, hdr->e_shoff,
 	    UIO_SYSSPACE, IO_NODELOCKED, td->td_ucred, NOCRED, &resid, td);
@@ -590,20 +590,20 @@ link_elf_load_file(linker_class_t cls, const char *filename,
 
 	/* Allocate space for tracking the load chunks */
 	if (ef->nprogtab != 0)
-		ef->progtab = malloc(ef->nprogtab * sizeof(*ef->progtab),
+		ef->progtab = bsd_malloc(ef->nprogtab * sizeof(*ef->progtab),
 		    M_LINKER, M_WAITOK | M_ZERO);
 	if (ef->nreltab != 0)
-		ef->reltab = malloc(ef->nreltab * sizeof(*ef->reltab),
+		ef->reltab = bsd_malloc(ef->nreltab * sizeof(*ef->reltab),
 		    M_LINKER, M_WAITOK | M_ZERO);
 	if (ef->nrelatab != 0)
-		ef->relatab = malloc(ef->nrelatab * sizeof(*ef->relatab),
+		ef->relatab = bsd_malloc(ef->nrelatab * sizeof(*ef->relatab),
 		    M_LINKER, M_WAITOK | M_ZERO);
 
 	if (symtabindex == -1)
 		panic("lost symbol table index");
 	/* Allocate space for and load the symbol table */
 	ef->ddbsymcnt = shdr[symtabindex].sh_size / sizeof(Elf_Sym);
-	ef->ddbsymtab = malloc(shdr[symtabindex].sh_size, M_LINKER, M_WAITOK);
+	ef->ddbsymtab = bsd_malloc(shdr[symtabindex].sh_size, M_LINKER, M_WAITOK);
 	error = vn_rdwr(UIO_READ, nd.ni_vp, (void *)ef->ddbsymtab,
 	    shdr[symtabindex].sh_size, shdr[symtabindex].sh_offset,
 	    UIO_SYSSPACE, IO_NODELOCKED, td->td_ucred, NOCRED,
@@ -619,7 +619,7 @@ link_elf_load_file(linker_class_t cls, const char *filename,
 		panic("lost symbol string index");
 	/* Allocate space for and load the symbol strings */
 	ef->ddbstrcnt = shdr[symstrindex].sh_size;
-	ef->ddbstrtab = malloc(shdr[symstrindex].sh_size, M_LINKER, M_WAITOK);
+	ef->ddbstrtab = bsd_malloc(shdr[symstrindex].sh_size, M_LINKER, M_WAITOK);
 	error = vn_rdwr(UIO_READ, nd.ni_vp, ef->ddbstrtab,
 	    shdr[symstrindex].sh_size, shdr[symstrindex].sh_offset,
 	    UIO_SYSSPACE, IO_NODELOCKED, td->td_ucred, NOCRED,
@@ -637,7 +637,7 @@ link_elf_load_file(linker_class_t cls, const char *filename,
 	    shdr[hdr->e_shstrndx].sh_type == SHT_STRTAB) {
 		shstrindex = hdr->e_shstrndx;
 		ef->shstrcnt = shdr[shstrindex].sh_size;
-		ef->shstrtab = malloc(shdr[shstrindex].sh_size, M_LINKER,
+		ef->shstrtab = bsd_malloc(shdr[shstrindex].sh_size, M_LINKER,
 		    M_WAITOK);
 		error = vn_rdwr(UIO_READ, nd.ni_vp, ef->shstrtab,
 		    shdr[shstrindex].sh_size, shdr[shstrindex].sh_offset,
@@ -788,7 +788,7 @@ link_elf_load_file(linker_class_t cls, const char *filename,
 			pb++;
 			break;
 		case SHT_REL:
-			ef->reltab[rl].rel = malloc(shdr[i].sh_size, M_LINKER,
+			ef->reltab[rl].rel = bsd_malloc(shdr[i].sh_size, M_LINKER,
 			    M_WAITOK);
 			ef->reltab[rl].nrel = shdr[i].sh_size / sizeof(Elf_Rel);
 			ef->reltab[rl].sec = shdr[i].sh_info;
@@ -806,7 +806,7 @@ link_elf_load_file(linker_class_t cls, const char *filename,
 			rl++;
 			break;
 		case SHT_RELA:
-			ef->relatab[ra].rela = malloc(shdr[i].sh_size, M_LINKER,
+			ef->relatab[ra].rela = bsd_malloc(shdr[i].sh_size, M_LINKER,
 			    M_WAITOK);
 			ef->relatab[ra].nrela =
 			    shdr[i].sh_size / sizeof(Elf_Rela);
@@ -866,7 +866,7 @@ out:
 	if (error && lf)
 		linker_file_unload(lf, LINKER_UNLOAD_FORCE);
 	if (hdr)
-		free(hdr, M_LINKER);
+		bsd_free(hdr, M_LINKER);
 
 	return error;
 }
@@ -898,17 +898,17 @@ link_elf_unload_file(linker_file_t file)
 	}
 	if (ef->preloaded) {
 		if (ef->reltab)
-			free(ef->reltab, M_LINKER);
+			bsd_free(ef->reltab, M_LINKER);
 		if (ef->relatab)
-			free(ef->relatab, M_LINKER);
+			bsd_free(ef->relatab, M_LINKER);
 		if (ef->progtab)
-			free(ef->progtab, M_LINKER);
+			bsd_free(ef->progtab, M_LINKER);
 		if (ef->ctftab)
-			free(ef->ctftab, M_LINKER);
+			bsd_free(ef->ctftab, M_LINKER);
 		if (ef->ctfoff)
-			free(ef->ctfoff, M_LINKER);
+			bsd_free(ef->ctfoff, M_LINKER);
 		if (ef->typoff)
-			free(ef->typoff, M_LINKER);
+			bsd_free(ef->typoff, M_LINKER);
 		if (file->filename != NULL)
 			preload_delete_name(file->filename);
 		/* XXX reclaim module memory? */
@@ -917,16 +917,16 @@ link_elf_unload_file(linker_file_t file)
 
 	for (i = 0; i < ef->nreltab; i++)
 		if (ef->reltab[i].rel)
-			free(ef->reltab[i].rel, M_LINKER);
+			bsd_free(ef->reltab[i].rel, M_LINKER);
 	for (i = 0; i < ef->nrelatab; i++)
 		if (ef->relatab[i].rela)
-			free(ef->relatab[i].rela, M_LINKER);
+			bsd_free(ef->relatab[i].rela, M_LINKER);
 	if (ef->reltab)
-		free(ef->reltab, M_LINKER);
+		bsd_free(ef->reltab, M_LINKER);
 	if (ef->relatab)
-		free(ef->relatab, M_LINKER);
+		bsd_free(ef->relatab, M_LINKER);
 	if (ef->progtab)
-		free(ef->progtab, M_LINKER);
+		bsd_free(ef->progtab, M_LINKER);
 
 	if (ef->object) {
 		vm_map_remove(kernel_map, (vm_offset_t) ef->address,
@@ -934,19 +934,19 @@ link_elf_unload_file(linker_file_t file)
 		    (ef->object->size << PAGE_SHIFT));
 	}
 	if (ef->e_shdr)
-		free(ef->e_shdr, M_LINKER);
+		bsd_free(ef->e_shdr, M_LINKER);
 	if (ef->ddbsymtab)
-		free(ef->ddbsymtab, M_LINKER);
+		bsd_free(ef->ddbsymtab, M_LINKER);
 	if (ef->ddbstrtab)
-		free(ef->ddbstrtab, M_LINKER);
+		bsd_free(ef->ddbstrtab, M_LINKER);
 	if (ef->shstrtab)
-		free(ef->shstrtab, M_LINKER);
+		bsd_free(ef->shstrtab, M_LINKER);
 	if (ef->ctftab)
-		free(ef->ctftab, M_LINKER);
+		bsd_free(ef->ctftab, M_LINKER);
 	if (ef->ctfoff)
-		free(ef->ctfoff, M_LINKER);
+		bsd_free(ef->ctfoff, M_LINKER);
 	if (ef->typoff)
-		free(ef->typoff, M_LINKER);
+		bsd_free(ef->typoff, M_LINKER);
 }
 
 static const char *

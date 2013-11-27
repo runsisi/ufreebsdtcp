@@ -385,7 +385,7 @@ vnet_if_uninit(const void *unused __unused)
 	VNET_ASSERT(TAILQ_EMPTY(&V_ifg_head), ("%s:%d tailq &V_ifg_head=%p "
 	    "not empty", __func__, __LINE__, &V_ifg_head));
 
-	free((caddr_t)V_ifindex_table, M_IFNET);
+	bsd_free((caddr_t)V_ifindex_table, M_IFNET);
 }
 VNET_SYSUNINIT(vnet_if_uninit, SI_SUB_INIT_IF, SI_ORDER_FIRST,
     vnet_if_uninit, NULL);
@@ -402,15 +402,15 @@ if_grow(void)
 	oldlim = V_if_indexlim;
 	IFNET_WUNLOCK();
 	n = (oldlim << 1) * sizeof(*e);
-	e = malloc(n, M_IFNET, M_WAITOK | M_ZERO);
+	e = bsd_malloc(n, M_IFNET, M_WAITOK | M_ZERO);
 	IFNET_WLOCK();
 	if (V_if_indexlim != oldlim) {
-		free(e, M_IFNET);
+		bsd_free(e, M_IFNET);
 		return;
 	}
 	if (V_ifindex_table != NULL) {
 		memcpy((caddr_t)e, (caddr_t)V_ifindex_table, n/2);
-		free((caddr_t)V_ifindex_table, M_IFNET);
+		bsd_free((caddr_t)V_ifindex_table, M_IFNET);
 	}
 	V_if_indexlim <<= 1;
 	V_ifindex_table = e;
@@ -427,11 +427,11 @@ if_alloc(u_char type)
 	struct ifnet *ifp;
 	u_short idx;
 
-	ifp = malloc(sizeof(struct ifnet), M_IFNET, M_WAITOK|M_ZERO);
+	ifp = bsd_malloc(sizeof(struct ifnet), M_IFNET, M_WAITOK|M_ZERO);
 	IFNET_WLOCK();
 	if (ifindex_alloc_locked(&idx) != 0) {
 		IFNET_WUNLOCK();
-		free(ifp, M_IFNET);
+		bsd_free(ifp, M_IFNET);
 		return (NULL);
 	}
 	ifnet_setbyindex_locked(idx, IFNET_HOLD);
@@ -442,7 +442,7 @@ if_alloc(u_char type)
 	if (if_com_alloc[type] != NULL) {
 		ifp->if_l2com = if_com_alloc[type](type, ifp);
 		if (ifp->if_l2com == NULL) {
-			free(ifp, M_IFNET);
+			bsd_free(ifp, M_IFNET);
 			ifindex_free(idx);
 			return (NULL);
 		}
@@ -486,11 +486,11 @@ if_free_internal(struct ifnet *ifp)
 	mac_ifnet_destroy(ifp);
 #endif /* MAC */
 	if (ifp->if_description != NULL)
-		free(ifp->if_description, M_IFDESCR);
+		bsd_free(ifp->if_description, M_IFDESCR);
 	IF_AFDATA_DESTROY(ifp);
 	IF_ADDR_LOCK_DESTROY(ifp);
 	ifq_delete(&ifp->if_snd);
-	free(ifp, M_IFNET);
+	bsd_free(ifp, M_IFNET);
 }
 
 /*
@@ -649,7 +649,7 @@ if_attach_internal(struct ifnet *ifp, int vmove)
 			socksize = sizeof(*sdl);
 		socksize = roundup2(socksize, sizeof(long));
 		ifasize = sizeof(*ifa) + 2 * socksize;
-		ifa = malloc(ifasize, M_IFADDR, M_WAITOK | M_ZERO);
+		ifa = bsd_malloc(ifasize, M_IFADDR, M_WAITOK | M_ZERO);
 		ifa_init(ifa);
 		sdl = (struct sockaddr_dl *)(ifa + 1);
 		sdl->sdl_len = socksize;
@@ -1125,15 +1125,15 @@ if_addgroup(struct ifnet *ifp, const char *groupname)
 			return (EEXIST);
 		}
 
-	if ((ifgl = (struct ifg_list *)malloc(sizeof(struct ifg_list), M_TEMP,
+	if ((ifgl = (struct ifg_list *)bsd_malloc(sizeof(struct ifg_list), M_TEMP,
 	    M_NOWAIT)) == NULL) {
 	    	IFNET_WUNLOCK();
 		return (ENOMEM);
 	}
 
-	if ((ifgm = (struct ifg_member *)malloc(sizeof(struct ifg_member),
+	if ((ifgm = (struct ifg_member *)bsd_malloc(sizeof(struct ifg_member),
 	    M_TEMP, M_NOWAIT)) == NULL) {
-		free(ifgl, M_TEMP);
+		bsd_free(ifgl, M_TEMP);
 		IFNET_WUNLOCK();
 		return (ENOMEM);
 	}
@@ -1143,10 +1143,10 @@ if_addgroup(struct ifnet *ifp, const char *groupname)
 			break;
 
 	if (ifg == NULL) {
-		if ((ifg = (struct ifg_group *)malloc(sizeof(struct ifg_group),
+		if ((ifg = (struct ifg_group *)bsd_malloc(sizeof(struct ifg_group),
 		    M_TEMP, M_NOWAIT)) == NULL) {
-			free(ifgl, M_TEMP);
-			free(ifgm, M_TEMP);
+			bsd_free(ifgl, M_TEMP);
+			bsd_free(ifgm, M_TEMP);
 			IFNET_WUNLOCK();
 			return (ENOMEM);
 		}
@@ -1201,17 +1201,17 @@ if_delgroup(struct ifnet *ifp, const char *groupname)
 
 	if (ifgm != NULL) {
 		TAILQ_REMOVE(&ifgl->ifgl_group->ifg_members, ifgm, ifgm_next);
-		free(ifgm, M_TEMP);
+		bsd_free(ifgm, M_TEMP);
 	}
 
 	if (--ifgl->ifgl_group->ifg_refcnt == 0) {
 		TAILQ_REMOVE(&V_ifg_head, ifgl->ifgl_group, ifg_next);
 		EVENTHANDLER_INVOKE(group_detach_event, ifgl->ifgl_group);
-		free(ifgl->ifgl_group, M_TEMP);
+		bsd_free(ifgl->ifgl_group, M_TEMP);
 	}
 	IFNET_WUNLOCK();
 
-	free(ifgl, M_TEMP);
+	bsd_free(ifgl, M_TEMP);
 
 	EVENTHANDLER_INVOKE(group_change_event, groupname);
 
@@ -1245,18 +1245,18 @@ if_delgroups(struct ifnet *ifp)
 		if (ifgm != NULL) {
 			TAILQ_REMOVE(&ifgl->ifgl_group->ifg_members, ifgm,
 			    ifgm_next);
-			free(ifgm, M_TEMP);
+			bsd_free(ifgm, M_TEMP);
 		}
 
 		if (--ifgl->ifgl_group->ifg_refcnt == 0) {
 			TAILQ_REMOVE(&V_ifg_head, ifgl->ifgl_group, ifg_next);
 			EVENTHANDLER_INVOKE(group_detach_event,
 			    ifgl->ifgl_group);
-			free(ifgl->ifgl_group, M_TEMP);
+			bsd_free(ifgl->ifgl_group, M_TEMP);
 		}
 		IFNET_WUNLOCK();
 
-		free(ifgl, M_TEMP);
+		bsd_free(ifgl, M_TEMP);
 
 		EVENTHANDLER_INVOKE(group_change_event, groupname);
 
@@ -1460,7 +1460,7 @@ ifa_free(struct ifaddr *ifa)
 
 	if (refcount_release(&ifa->ifa_refcnt)) {
 		mtx_destroy(&ifa->ifa_mtx);
-		free(ifa, M_IFADDR);
+		bsd_free(ifa, M_IFADDR);
 	}
 }
 
@@ -2127,12 +2127,12 @@ ifhwioctl(u_long cmd, struct ifnet *ifp, caddr_t data, struct thread *td)
 		else if (ifr->ifr_buffer.length == 0)
 			descrbuf = NULL;
 		else {
-			descrbuf = malloc(ifr->ifr_buffer.length, M_IFDESCR,
+			descrbuf = bsd_malloc(ifr->ifr_buffer.length, M_IFDESCR,
 			    M_WAITOK | M_ZERO);
 			error = copyin(ifr->ifr_buffer.buffer, descrbuf,
 			    ifr->ifr_buffer.length - 1);
 			if (error) {
-				free(descrbuf, M_IFDESCR);
+				bsd_free(descrbuf, M_IFDESCR);
 				break;
 			}
 		}
@@ -2143,7 +2143,7 @@ ifhwioctl(u_long cmd, struct ifnet *ifp, caddr_t data, struct thread *td)
 		sx_xunlock(&ifdescr_sx);
 
 		getmicrotime(&ifp->if_lastchange);
-		free(odescrbuf, M_IFDESCR);
+		bsd_free(odescrbuf, M_IFDESCR);
 		break;
 
 	case SIOCGIFFIB:
@@ -2896,14 +2896,14 @@ if_allocmulti(struct ifnet *ifp, struct sockaddr *sa, struct sockaddr *llsa,
 	struct ifmultiaddr *ifma;
 	struct sockaddr *dupsa;
 
-	ifma = malloc(sizeof *ifma, M_IFMADDR, mflags |
+	ifma = bsd_malloc(sizeof *ifma, M_IFMADDR, mflags |
 	    M_ZERO);
 	if (ifma == NULL)
 		return (NULL);
 
-	dupsa = malloc(sa->sa_len, M_IFMADDR, mflags);
+	dupsa = bsd_malloc(sa->sa_len, M_IFMADDR, mflags);
 	if (dupsa == NULL) {
-		free(ifma, M_IFMADDR);
+		bsd_free(ifma, M_IFMADDR);
 		return (NULL);
 	}
 	bcopy(sa, dupsa, sa->sa_len);
@@ -2918,10 +2918,10 @@ if_allocmulti(struct ifnet *ifp, struct sockaddr *sa, struct sockaddr *llsa,
 		return (ifma);
 	}
 
-	dupsa = malloc(llsa->sa_len, M_IFMADDR, mflags);
+	dupsa = bsd_malloc(llsa->sa_len, M_IFMADDR, mflags);
 	if (dupsa == NULL) {
-		free(ifma->ifma_addr, M_IFMADDR);
-		free(ifma, M_IFMADDR);
+		bsd_free(ifma->ifma_addr, M_IFMADDR);
+		bsd_free(ifma, M_IFMADDR);
 		return (NULL);
 	}
 	bcopy(llsa, dupsa, llsa->sa_len);
@@ -2946,9 +2946,9 @@ if_freemulti(struct ifmultiaddr *ifma)
 	    ("if_freemulti: protospec not NULL"));
 
 	if (ifma->ifma_lladdr != NULL)
-		free(ifma->ifma_lladdr, M_IFMADDR);
-	free(ifma->ifma_addr, M_IFMADDR);
-	free(ifma, M_IFMADDR);
+		bsd_free(ifma->ifma_lladdr, M_IFMADDR);
+	bsd_free(ifma->ifma_addr, M_IFMADDR);
+	bsd_free(ifma, M_IFMADDR);
 }
 
 /*
@@ -3064,13 +3064,13 @@ if_addmulti(struct ifnet *ifp, struct sockaddr *sa,
 	}
 
 	if (llsa != NULL)
-		free(llsa, M_IFMADDR);
+		bsd_free(llsa, M_IFMADDR);
 
 	return (0);
 
 free_llsa_out:
 	if (llsa != NULL)
-		free(llsa, M_IFMADDR);
+		bsd_free(llsa, M_IFMADDR);
 
 unlock_out:
 	IF_ADDR_WUNLOCK(ifp);

@@ -61,13 +61,13 @@ cpu_ptrace_xstate(struct thread *td, int req, void *addr, int data)
 			error = EINVAL;
 			break;
 		}
-		savefpu = malloc(data, M_TEMP, M_WAITOK);
+		savefpu = bsd_malloc(data, M_TEMP, M_WAITOK);
 		error = copyin(addr, savefpu, data);
 		if (error == 0) {
 			fpugetregs(td);
 			error = fpusetxstate(td, savefpu, data);
 		}
-		free(savefpu, M_TEMP);
+		bsd_free(savefpu, M_TEMP);
 		break;
 
 	default:

@@ -263,7 +263,7 @@ tun_destroy(struct tun_softc *tp)
 	knlist_destroy(&tp->tun_rsel.si_note);
 	mtx_destroy(&tp->tun_mtx);
 	cv_destroy(&tp->tun_cv);
-	free(tp, M_TUN);
+	bsd_free(tp, M_TUN);
 	CURVNET_RESTORE();
 }
 
@@ -363,7 +363,7 @@ tuncreate(const char *name, struct cdev *dev)
 
 	dev->si_flags &= ~SI_CHEAPCLONE;
 
-	sc = malloc(sizeof(*sc), M_TUN, M_WAITOK | M_ZERO);
+	sc = bsd_malloc(sizeof(*sc), M_TUN, M_WAITOK | M_ZERO);
 	mtx_init(&sc->tun_mtx, "tun_mtx", NULL, MTX_DEF);
 	cv_init(&sc->tun_cv, "tun_condvar");
 	sc->tun_flags = TUN_INITED;

@@ -130,9 +130,9 @@ pfil_head_unregister(struct pfil_head *ph)
 	LIST_REMOVE(ph, ph_list);
 	PFIL_LIST_UNLOCK();
 	TAILQ_FOREACH_SAFE(pfh, &ph->ph_in, pfil_link, pfnext)
-		free(pfh, M_IFADDR);
+		bsd_free(pfh, M_IFADDR);
 	TAILQ_FOREACH_SAFE(pfh, &ph->ph_out, pfil_link, pfnext)
-		free(pfh, M_IFADDR);
+		bsd_free(pfh, M_IFADDR);
 	PFIL_LOCK_DESTROY(ph);
 	return (0);
 }
@@ -170,7 +170,7 @@ pfil_add_hook(int (*func)(void *, struct mbuf **, struct ifnet *, int,
 	int err;
 
 	if (flags & PFIL_IN) {
-		pfh1 = (struct packet_filter_hook *)malloc(sizeof(*pfh1), 
+		pfh1 = (struct packet_filter_hook *)bsd_malloc(sizeof(*pfh1), 
 		    M_IFADDR, (flags & PFIL_WAITOK) ? M_WAITOK : M_NOWAIT);
 		if (pfh1 == NULL) {
 			err = ENOMEM;
@@ -178,7 +178,7 @@ pfil_add_hook(int (*func)(void *, struct mbuf **, struct ifnet *, int,
 		}
 	}
 	if (flags & PFIL_OUT) {
-		pfh2 = (struct packet_filter_hook *)malloc(sizeof(*pfh1),
+		pfh2 = (struct packet_filter_hook *)bsd_malloc(sizeof(*pfh1),
 		    M_IFADDR, (flags & PFIL_WAITOK) ? M_WAITOK : M_NOWAIT);
 		if (pfh2 == NULL) {
 			err = ENOMEM;
@@ -211,9 +211,9 @@ locked_error:
 	PFIL_WUNLOCK(ph);
 error:
 	if (pfh1 != NULL)
-		free(pfh1, M_IFADDR);
+		bsd_free(pfh1, M_IFADDR);
 	if (pfh2 != NULL)
-		free(pfh2, M_IFADDR);
+		bsd_free(pfh2, M_IFADDR);
 	return (err);
 }
 
@@ -280,7 +280,7 @@ pfil_list_remove(pfil_list_t *list,
 	TAILQ_FOREACH(pfh, list, pfil_link)
 		if (pfh->pfil_func == func && pfh->pfil_arg == arg) {
 			TAILQ_REMOVE(list, pfh, pfil_link);
-			free(pfh, M_IFADDR);
+			bsd_free(pfh, M_IFADDR);
 			return (0);
 		}
 	return (ENOENT);

@@ -183,11 +183,11 @@ gre_clone_create(ifc, unit, params)
 {
 	struct gre_softc *sc;
 
-	sc = malloc(sizeof(struct gre_softc), M_GRE, M_WAITOK | M_ZERO);
+	sc = bsd_malloc(sizeof(struct gre_softc), M_GRE, M_WAITOK | M_ZERO);
 
 	GRE2IFP(sc) = if_alloc(IFT_TUNNEL);
 	if (GRE2IFP(sc) == NULL) {
-		free(sc, M_GRE);
+		bsd_free(sc, M_GRE);
 		return (ENOSPC);
 	}
 
@@ -233,7 +233,7 @@ gre_clone_destroy(ifp)
 	bpfdetach(ifp);
 	if_detach(ifp);
 	if_free(ifp);
-	free(sc, M_GRE);
+	bsd_free(sc, M_GRE);
 }
 
 /*

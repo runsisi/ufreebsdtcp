@@ -1264,7 +1264,7 @@ nd6_dad_start(struct ifaddr *ifa, int delay)
 		return;
 	}
 
-	dp = malloc(sizeof(*dp), M_IP6NDP, M_NOWAIT);
+	dp = bsd_malloc(sizeof(*dp), M_IP6NDP, M_NOWAIT);
 	if (dp == NULL) {
 		log(LOG_ERR, "nd6_dad_start: memory allocation failed for "
 			"%s(%s)\n",
@@ -1321,7 +1321,7 @@ nd6_dad_stop(struct ifaddr *ifa)
 	nd6_dad_stoptimer(dp);
 
 	TAILQ_REMOVE(&V_dadq, (struct dadq *)dp, dad_list);
-	free(dp, M_IP6NDP);
+	bsd_free(dp, M_IP6NDP);
 	dp = NULL;
 	ifa_free(ifa);
 }
@@ -1363,7 +1363,7 @@ nd6_dad_timer(struct dadq *dp)
 		    if_name(ifa->ifa_ifp)));
 
 		TAILQ_REMOVE(&V_dadq, (struct dadq *)dp, dad_list);
-		free(dp, M_IP6NDP);
+		bsd_free(dp, M_IP6NDP);
 		dp = NULL;
 		ifa_free(ifa);
 		goto done;
@@ -1416,7 +1416,7 @@ nd6_dad_timer(struct dadq *dp)
 			    ip6_sprintf(ip6buf, &ia->ia_addr.sin6_addr)));
 
 			TAILQ_REMOVE(&V_dadq, (struct dadq *)dp, dad_list);
-			free(dp, M_IP6NDP);
+			bsd_free(dp, M_IP6NDP);
 			dp = NULL;
 			ifa_free(ifa);
 		}
@@ -1494,7 +1494,7 @@ nd6_dad_duplicated(struct ifaddr *ifa)
 	}
 
 	TAILQ_REMOVE(&V_dadq, (struct dadq *)dp, dad_list);
-	free(dp, M_IP6NDP);
+	bsd_free(dp, M_IP6NDP);
 	dp = NULL;
 	ifa_free(ifa);
 }

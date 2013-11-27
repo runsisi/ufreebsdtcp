@@ -297,8 +297,8 @@ alq_destroy(struct alq *alq)
 	alq_shutdown(alq);
 
 	mtx_destroy(&alq->aq_mtx);
-	free(alq->aq_entbuf, M_ALD);
-	free(alq, M_ALD);
+	bsd_free(alq->aq_entbuf, M_ALD);
+	bsd_free(alq, M_ALD);
 }
 
 /*
@@ -459,7 +459,7 @@ alq_open_flags(struct alq **alqp, const char *file, struct ucred *cred, int cmod
 	VOP_UNLOCK(nd.ni_vp, 0);
 	VFS_UNLOCK_GIANT(vfslocked);
 
-	alq = malloc(sizeof(*alq), M_ALD, M_WAITOK|M_ZERO);
+	alq = bsd_malloc(sizeof(*alq), M_ALD, M_WAITOK|M_ZERO);
 	alq->aq_vp = nd.ni_vp;
 	alq->aq_cred = crhold(cred);
 
@@ -470,7 +470,7 @@ alq_open_flags(struct alq **alqp, const char *file, struct ucred *cred, int cmod
 	alq->aq_entlen = 0;
 
 	alq->aq_freebytes = alq->aq_buflen;
-	alq->aq_entbuf = malloc(alq->aq_buflen, M_ALD, M_WAITOK|M_ZERO);
+	alq->aq_entbuf = bsd_malloc(alq->aq_buflen, M_ALD, M_WAITOK|M_ZERO);
 	alq->aq_writehead = alq->aq_writetail = 0;
 	if (flags & ALQ_ORDERED)
 		alq->aq_flags |= AQ_ORDERED;

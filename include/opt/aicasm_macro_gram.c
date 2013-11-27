@@ -260,14 +260,14 @@ static int yygrowstack()
     else if ((newsize *= 2) > YYMAXDEPTH)
         newsize = YYMAXDEPTH;
     i = yyssp - yyss;
-    newss = yyss ? (short *)realloc(yyss, newsize * sizeof *newss) :
-      (short *)malloc(newsize * sizeof *newss);
+    newss = yyss ? (short *)bsd_realloc(yyss, newsize * sizeof *newss) :
+      (short *)bsd_malloc(newsize * sizeof *newss);
     if (newss == NULL)
         return -1;
     yyss = newss;
     yyssp = newss + i;
-    newvs = yyvs ? (YYSTYPE *)realloc(yyvs, newsize * sizeof *newvs) :
-      (YYSTYPE *)malloc(newsize * sizeof *newvs);
+    newvs = yyvs ? (YYSTYPE *)bsd_realloc(yyvs, newsize * sizeof *newvs) :
+      (YYSTYPE *)bsd_malloc(newsize * sizeof *newvs);
     if (newvs == NULL)
         return -1;
     yyvs = newvs;

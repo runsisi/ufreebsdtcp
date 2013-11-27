@@ -287,7 +287,7 @@ sysctl_ctx_free(struct sysctl_ctx_list *clist)
 		if (error)
 			panic("sysctl_remove_oid: corrupt tree, entry: %s",
 			    e->entry->oid_name);
-		free(e, M_SYSCTLOID);
+		bsd_free(e, M_SYSCTLOID);
 		e = e1;
 	}
 	SYSCTL_XUNLOCK();
@@ -303,7 +303,7 @@ sysctl_ctx_entry_add(struct sysctl_ctx_list *clist, struct sysctl_oid *oidp)
 	SYSCTL_ASSERT_XLOCKED();
 	if (clist == NULL || oidp == NULL)
 		return(NULL);
-	e = malloc(sizeof(struct sysctl_ctx_entry), M_SYSCTLOID, M_WAITOK);
+	e = bsd_malloc(sizeof(struct sysctl_ctx_entry), M_SYSCTLOID, M_WAITOK);
 	e->entry = oidp;
 	TAILQ_INSERT_HEAD(clist, e, link);
 	return (e);
@@ -342,7 +342,7 @@ sysctl_ctx_entry_del(struct sysctl_ctx_list *clist, struct sysctl_oid *oidp)
 	if (e != NULL) {
 		TAILQ_REMOVE(clist, e, link);
 		SYSCTL_XUNLOCK();
-		free(e, M_SYSCTLOID);
+		bsd_free(e, M_SYSCTLOID);
 		return (0);
 	} else {
 		SYSCTL_XUNLOCK();
@@ -420,7 +420,7 @@ sysctl_remove_oid_locked(struct sysctl_oid *oidp, int del, int recurse)
 					return (error);
 			}
 			if (del)
-				free(SYSCTL_CHILDREN(oidp), M_SYSCTLOID);
+				bsd_free(SYSCTL_CHILDREN(oidp), M_SYSCTLOID);
 		}
 	}
 	if (oidp->oid_refcnt > 1 ) {
@@ -444,10 +444,10 @@ sysctl_remove_oid_locked(struct sysctl_oid *oidp, int del, int recurse)
 				SYSCTL_SLEEP(&oidp->oid_running, "oidrm", 0);
 			}
 			if (oidp->oid_descr)
-				free(__DECONST(char *, oidp->oid_descr),
+				bsd_free(__DECONST(char *, oidp->oid_descr),
 				    M_SYSCTLOID);
-			free(__DECONST(char *, oidp->oid_name), M_SYSCTLOID);
-			free(oidp, M_SYSCTLOID);
+			bsd_free(__DECONST(char *, oidp->oid_name), M_SYSCTLOID);
+			bsd_free(oidp, M_SYSCTLOID);
 		}
 	}
 	return (0);
@@ -483,7 +483,7 @@ sysctl_add_oid(struct sysctl_ctx_list *clist, struct sysctl_oid_list *parent,
 			return (NULL);
 		}
 	}
-	oidp = malloc(sizeof(struct sysctl_oid), M_SYSCTLOID, M_WAITOK|M_ZERO);
+	oidp = bsd_malloc(sizeof(struct sysctl_oid), M_SYSCTLOID, M_WAITOK|M_ZERO);
 	oidp->oid_parent = parent;
 	SLIST_NEXT(oidp, oid_link) = NULL;
 	oidp->oid_number = number;
@@ -493,7 +493,7 @@ sysctl_add_oid(struct sysctl_ctx_list *clist, struct sysctl_oid_list *parent,
 	oidp->oid_kind = CTLFLAG_DYN | kind;
 	if ((kind & CTLTYPE) == CTLTYPE_NODE) {
 		/* Allocate space for children */
-		SYSCTL_CHILDREN_SET(oidp, malloc(sizeof(struct sysctl_oid_list),
+		SYSCTL_CHILDREN_SET(oidp, bsd_malloc(sizeof(struct sysctl_oid_list),
 		    M_SYSCTLOID, M_WAITOK));
 		SLIST_INIT(SYSCTL_CHILDREN(oidp));
 		oidp->oid_arg2 = arg2;
@@ -527,7 +527,7 @@ sysctl_rename_oid(struct sysctl_oid *oidp, const char *name)
 	oldname = __DECONST(char *, oidp->oid_name);
 	oidp->oid_name = newname;
 	SYSCTL_XUNLOCK();
-	free(oldname, M_SYSCTLOID);
+	bsd_free(oldname, M_SYSCTLOID);
 }
 
 /*
@@ -857,11 +857,11 @@ sysctl_sysctl_name2oid(SYSCTL_HANDLER_ARGS)
 	if (req->newlen >= MAXPATHLEN)	/* XXX arbitrary, undocumented */
 		return (ENAMETOOLONG);
 
-	p = malloc(req->newlen+1, M_SYSCTL, M_WAITOK);
+	p = bsd_malloc(req->newlen+1, M_SYSCTL, M_WAITOK);
 
 	error = SYSCTL_IN(req, p, req->newlen);
 	if (error) {
-		free(p, M_SYSCTL);
+		bsd_free(p, M_SYSCTL);
 		return (error);
 	}
 
@@ -871,7 +871,7 @@ sysctl_sysctl_name2oid(SYSCTL_HANDLER_ARGS)
 	error = name2oid(p, oid, &len, &op);
 	SYSCTL_XUNLOCK();
 
-	free(p, M_SYSCTL);
+	bsd_free(p, M_SYSCTL);
 
 	if (error)
 		return (error);
@@ -1099,15 +1099,15 @@ sysctl_handle_string(SYSCTL_HANDLER_ARGS)
 	 */
 retry:
 	outlen = strlen((char *)arg1)+1;
-	tmparg = malloc(outlen, M_SYSCTLTMP, M_WAITOK);
+	tmparg = bsd_malloc(outlen, M_SYSCTLTMP, M_WAITOK);
 
 	if (strlcpy(tmparg, (char *)arg1, outlen) >= outlen) {
-		free(tmparg, M_SYSCTLTMP);
+		bsd_free(tmparg, M_SYSCTLTMP);
 		goto retry;
 	}
 
 	error = SYSCTL_OUT(req, tmparg, outlen);
-	free(tmparg, M_SYSCTLTMP);
+	bsd_free(tmparg, M_SYSCTLTMP);
 
 	if (error || !req->newptr)
 		return (error);

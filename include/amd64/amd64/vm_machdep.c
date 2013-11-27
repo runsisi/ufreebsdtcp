@@ -130,7 +130,7 @@ alloc_fpusave(int flags)
 	struct pcb *res;
 	struct savefpu_ymm *sf;
 
-	res = malloc(cpu_max_ext_state_size, M_DEVBUF, flags);
+	res = bsd_malloc(cpu_max_ext_state_size, M_DEVBUF, flags);
 	if (use_xsave) {
 		sf = (struct savefpu_ymm *)res;
 		bzero(&sf->sv_xstate.sx_hd, sizeof(sf->sv_xstate.sx_hd));

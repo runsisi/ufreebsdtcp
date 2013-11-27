@@ -430,7 +430,7 @@ ptrace_vm_entry(struct thread *td, struct proc *p, struct ptrace_vm_entry *pve)
 					error = ENAMETOOLONG;
 			}
 			if (freepath != NULL)
-				free(freepath, M_TEMP);
+				bsd_free(freepath, M_TEMP);
 		}
 	}
 
@@ -1167,7 +1167,7 @@ kern_ptrace(struct thread *td, int req, pid_t pid, void *addr, int data)
 		}
 		num = imin(p->p_numthreads, data);
 		PROC_UNLOCK(p);
-		buf = malloc(num * sizeof(lwpid_t), M_TEMP, M_WAITOK);
+		buf = bsd_malloc(num * sizeof(lwpid_t), M_TEMP, M_WAITOK);
 		tmp = 0;
 		PROC_LOCK(p);
 		FOREACH_THREAD_IN_PROC(p, td2) {
@@ -1177,7 +1177,7 @@ kern_ptrace(struct thread *td, int req, pid_t pid, void *addr, int data)
 		}
 		PROC_UNLOCK(p);
 		error = copyout(buf, addr, tmp * sizeof(lwpid_t));
-		free(buf, M_TEMP);
+		bsd_free(buf, M_TEMP);
 		if (!error)
 			td->td_retval[0] = tmp;
 		PROC_LOCK(p);

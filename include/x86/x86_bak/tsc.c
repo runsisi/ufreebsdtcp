@@ -460,7 +460,7 @@ test_tsc(void)
 	if ((!smp_tsc && !tsc_is_invariant) || vm_guest)
 		return (-100);
 	size = (mp_maxid + 1) * 3;
-	data = malloc(sizeof(*data) * size * N, M_TEMP, M_WAITOK);
+	data = bsd_malloc(sizeof(*data) * size * N, M_TEMP, M_WAITOK);
 	adj = 0;
 retry:
 	for (i = 0, tsc = data; i < N; i++, tsc += size)
@@ -474,7 +474,7 @@ retry:
 		    smp_no_rendevous_barrier, data);
 		goto retry;
 	}
-	free(data, M_TEMP);
+	bsd_free(data, M_TEMP);
 	if (bootverbose)
 		printf("SMP: %sed TSC synchronization test%s\n",
 		    smp_tsc ? "pass" : "fail", 
@@ -636,7 +636,7 @@ tsc_levels_changed(void *arg, int unit)
 
 	/* Get settings from the device and find the max frequency. */
 	count = 64;
-	levels = malloc(count * sizeof(*levels), M_TEMP, M_NOWAIT);
+	levels = bsd_malloc(count * sizeof(*levels), M_TEMP, M_NOWAIT);
 	if (levels == NULL)
 		return;
 	error = CPUFREQ_LEVELS(cf_dev, levels, &count);
@@ -645,7 +645,7 @@ tsc_levels_changed(void *arg, int unit)
 		set_cputicker(rdtsc, max_freq, 1);
 	} else
 		printf("tsc_levels_changed: no max freq found\n");
-	free(levels, M_TEMP);
+	bsd_free(levels, M_TEMP);
 }
 
 /*

@@ -1116,7 +1116,7 @@ in6_update_ifa(struct ifnet *ifp, struct in6_aliasreq *ifra,
 		 * RA, it is called under an interrupt context.  So, we should
 		 * call malloc with M_NOWAIT.
 		 */
-		ia = (struct in6_ifaddr *) malloc(sizeof(*ia), M_IFADDR,
+		ia = (struct in6_ifaddr *) bsd_malloc(sizeof(*ia), M_IFADDR,
 		    M_NOWAIT);
 		if (ia == NULL)
 			return (ENOBUFS);
@@ -2483,7 +2483,7 @@ in6_lltable_free(struct lltable *llt, struct llentry *lle)
 {
 	LLE_WUNLOCK(lle);
 	LLE_LOCK_DESTROY(lle);
-	free(lle, M_LLTABLE);
+	bsd_free(lle, M_LLTABLE);
 }
 
 static struct llentry *
@@ -2491,7 +2491,7 @@ in6_lltable_new(const struct sockaddr *l3addr, u_int flags)
 {
 	struct in6_llentry *lle;
 
-	lle = malloc(sizeof(struct in6_llentry), M_LLTABLE, M_NOWAIT | M_ZERO);
+	lle = bsd_malloc(sizeof(struct in6_llentry), M_LLTABLE, M_NOWAIT | M_ZERO);
 	if (lle == NULL)		/* NB: caller generates msg */
 		return NULL;
 
@@ -2732,15 +2732,15 @@ in6_domifattach(struct ifnet *ifp)
 {
 	struct in6_ifextra *ext;
 
-	ext = (struct in6_ifextra *)malloc(sizeof(*ext), M_IFADDR, M_WAITOK);
+	ext = (struct in6_ifextra *)bsd_malloc(sizeof(*ext), M_IFADDR, M_WAITOK);
 	bzero(ext, sizeof(*ext));
 
-	ext->in6_ifstat = (struct in6_ifstat *)malloc(sizeof(struct in6_ifstat),
+	ext->in6_ifstat = (struct in6_ifstat *)bsd_malloc(sizeof(struct in6_ifstat),
 	    M_IFADDR, M_WAITOK);
 	bzero(ext->in6_ifstat, sizeof(*ext->in6_ifstat));
 
 	ext->icmp6_ifstat =
-	    (struct icmp6_ifstat *)malloc(sizeof(struct icmp6_ifstat),
+	    (struct icmp6_ifstat *)bsd_malloc(sizeof(struct icmp6_ifstat),
 	    M_IFADDR, M_WAITOK);
 	bzero(ext->icmp6_ifstat, sizeof(*ext->icmp6_ifstat));
 
@@ -2767,9 +2767,9 @@ in6_domifdetach(struct ifnet *ifp, void *aux)
 	scope6_ifdetach(ext->scope6_id);
 	nd6_ifdetach(ext->nd_ifinfo);
 	lltable_free(ext->lltable);
-	free(ext->in6_ifstat, M_IFADDR);
-	free(ext->icmp6_ifstat, M_IFADDR);
-	free(ext, M_IFADDR);
+	bsd_free(ext->in6_ifstat, M_IFADDR);
+	bsd_free(ext->icmp6_ifstat, M_IFADDR);
+	bsd_free(ext, M_IFADDR);
 }
 
 /*
@@ -2824,9 +2824,9 @@ in6_sin_2_v4mapsin6_in_sock(struct sockaddr **nam)
 	struct sockaddr_in *sin_p;
 	struct sockaddr_in6 *sin6_p;
 
-	sin6_p = malloc(sizeof *sin6_p, M_SONAME, M_WAITOK);
+	sin6_p = bsd_malloc(sizeof *sin6_p, M_SONAME, M_WAITOK);
 	sin_p = (struct sockaddr_in *)*nam;
 	in6_sin_2_v4mapsin6(sin_p, sin6_p);
-	free(*nam, M_SONAME);
+	bsd_free(*nam, M_SONAME);
 	*nam = (struct sockaddr *)sin6_p;
 }

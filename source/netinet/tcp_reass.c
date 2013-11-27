@@ -214,7 +214,7 @@ tcp_reass(struct tcpcb *tp, struct tcphdr *th, int *tlenp, struct mbuf *m)
 		if ((s = tcp_log_addrs(&tp->t_inpcb->inp_inc, th, NULL, NULL))) {
 			log(LOG_DEBUG, "%s; %s: queue limit reached, "
 			    "segment dropped\n", s, __func__);
-			free(s, M_TCPLOG);
+			bsd_free(s, M_TCPLOG);
 		}
 		return (0);
 	}
@@ -236,7 +236,7 @@ tcp_reass(struct tcpcb *tp, struct tcphdr *th, int *tlenp, struct mbuf *m)
 			    NULL))) {
 				log(LOG_DEBUG, "%s; %s: global zone limit "
 				    "reached, segment dropped\n", s, __func__);
-				free(s, M_TCPLOG);
+				bsd_free(s, M_TCPLOG);
 			}
 			return (0);
 		} else {
@@ -247,7 +247,7 @@ tcp_reass(struct tcpcb *tp, struct tcphdr *th, int *tlenp, struct mbuf *m)
 				log(LOG_DEBUG,
 				    "%s; %s: global zone limit reached, using "
 				    "stack for missing segment\n", s, __func__);
-				free(s, M_TCPLOG);
+				bsd_free(s, M_TCPLOG);
 			}
 		}
 	}

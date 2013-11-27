@@ -260,7 +260,7 @@ RuleDelete(struct proxy_entry *entry)
 	if (entry->next != NULL)
 		entry->next->last = entry->last;
 
-	free(entry);
+	bsd_free(entry);
 }
 
 static int
@@ -843,7 +843,7 @@ LibAliasProxyRule(struct libalias *la, const char *cmd)
 	}
 
 /* Add to linked list */
-	proxy_entry = malloc(sizeof(struct proxy_entry));
+	proxy_entry = bsd_malloc(sizeof(struct proxy_entry));
 	if (proxy_entry == NULL) {
 		ret = -1;
 		goto getout;

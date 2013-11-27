@@ -407,7 +407,7 @@ kern_jail(struct thread *td, struct jail *j)
 	if (j->ip6s > 0)
 		return (EINVAL);
 #endif
-	u_path = malloc(tmplen, M_TEMP, M_WAITOK);
+	u_path = bsd_malloc(tmplen, M_TEMP, M_WAITOK);
 	u_hostname = u_path + MAXPATHLEN;
 	u_name = u_hostname + MAXHOSTNAMELEN;
 #ifdef INET
@@ -427,7 +427,7 @@ kern_jail(struct thread *td, struct jail *j)
 	error = copyinstr(j->path, u_path, MAXPATHLEN,
 	    &optiov[opt.uio_iovcnt].iov_len);
 	if (error) {
-		free(u_path, M_TEMP);
+		bsd_free(u_path, M_TEMP);
 		return (error);
 	}
 	opt.uio_iovcnt++;
@@ -438,7 +438,7 @@ kern_jail(struct thread *td, struct jail *j)
 	error = copyinstr(j->hostname, u_hostname, MAXHOSTNAMELEN,
 	    &optiov[opt.uio_iovcnt].iov_len);
 	if (error) {
-		free(u_path, M_TEMP);
+		bsd_free(u_path, M_TEMP);
 		return (error);
 	}
 	opt.uio_iovcnt++;
@@ -450,7 +450,7 @@ kern_jail(struct thread *td, struct jail *j)
 		error = copyinstr(j->jailname, u_name, MAXHOSTNAMELEN,
 		    &optiov[opt.uio_iovcnt].iov_len);
 		if (error) {
-			free(u_path, M_TEMP);
+			bsd_free(u_path, M_TEMP);
 			return (error);
 		}
 		opt.uio_iovcnt++;
@@ -466,7 +466,7 @@ kern_jail(struct thread *td, struct jail *j)
 	else {
 		error = copyin(j->ip4, u_ip4, optiov[opt.uio_iovcnt].iov_len);
 		if (error) {
-			free(u_path, M_TEMP);
+			bsd_free(u_path, M_TEMP);
 			return (error);
 		}
 	}
@@ -480,7 +480,7 @@ kern_jail(struct thread *td, struct jail *j)
 	optiov[opt.uio_iovcnt].iov_len = j->ip6s * sizeof(struct in6_addr);
 	error = copyin(j->ip6, u_ip6, optiov[opt.uio_iovcnt].iov_len);
 	if (error) {
-		free(u_path, M_TEMP);
+		bsd_free(u_path, M_TEMP);
 		return (error);
 	}
 	opt.uio_iovcnt++;
@@ -488,7 +488,7 @@ kern_jail(struct thread *td, struct jail *j)
 	KASSERT(opt.uio_iovcnt <= sizeof(optiov) / sizeof(optiov[0]),
 	    ("kern_jail: too many iovecs (%d)", opt.uio_iovcnt));
 	error = kern_jail_set(td, &opt, JAIL_CREATE | JAIL_ATTACH);
-	free(u_path, M_TEMP);
+	bsd_free(u_path, M_TEMP);
 	return (error);
 }
 
@@ -514,7 +514,7 @@ sys_jail_set(struct thread *td, struct jail_set_args *uap)
 	if (error)
 		return (error);
 	error = kern_jail_set(td, auio, uap->flags);
-	free(auio, M_IOV);
+	bsd_free(auio, M_IOV);
 	return (error);
 }
 
@@ -815,7 +815,7 @@ kern_jail_set(struct thread *td, struct uio *optuio, int flags)
 				vfs_opterror(opts, "too many IPv4 addresses");
 				goto done_errmsg;
 			}
-			ip4 = malloc(ip4s * sizeof(*ip4), M_PRISON, M_WAITOK);
+			ip4 = bsd_malloc(ip4s * sizeof(*ip4), M_PRISON, M_WAITOK);
 			bcopy(op, ip4, ip4s * sizeof(*ip4));
 			/*
 			 * IP addresses are all sorted but ip[0] to preserve
@@ -873,7 +873,7 @@ kern_jail_set(struct thread *td, struct uio *optuio, int flags)
 				vfs_opterror(opts, "too many IPv6 addresses");
 				goto done_errmsg;
 			}
-			ip6 = malloc(ip6s * sizeof(*ip6), M_PRISON, M_WAITOK);
+			ip6 = bsd_malloc(ip6s * sizeof(*ip6), M_PRISON, M_WAITOK);
 			bcopy(op, ip6, ip6s * sizeof(*ip6));
 			if (ip6s > 1)
 				qsort(ip6 + 1, ip6s - 1, sizeof(*ip6), qcmp_v6);
@@ -929,7 +929,7 @@ kern_jail_set(struct thread *td, struct uio *optuio, int flags)
 		vfslocked = NDHASGIANT(&nd);
 		root = nd.ni_vp;
 		NDFREE(&nd, NDF_ONLY_PNBUF);
-		g_path = malloc(MAXPATHLEN, M_TEMP, M_WAITOK);
+		g_path = bsd_malloc(MAXPATHLEN, M_TEMP, M_WAITOK);
 		strlcpy(g_path, path, MAXPATHLEN);
 		error = vn_path_to_global_path(td, root, g_path, MAXPATHLEN);
 		if (error == 0)
@@ -1186,7 +1186,7 @@ kern_jail_set(struct thread *td, struct uio *optuio, int flags)
 		ppr->pr_ref++;
 		ppr->pr_uref++;
 		mtx_unlock(&ppr->pr_mtx);
-		pr = malloc(sizeof(*pr), M_PRISON, M_WAITOK | M_ZERO);
+		pr = bsd_malloc(sizeof(*pr), M_PRISON, M_WAITOK | M_ZERO);
 		if (jid == 0) {
 			/* Find the next free jid. */
 			jid = lastprid + 1;
@@ -1204,7 +1204,7 @@ kern_jail_set(struct thread *td, struct uio *optuio, int flags)
 					error = EAGAIN;
 					vfs_opterror(opts,
 					    "no available jail IDs");
-					free(pr, M_PRISON);
+					bsd_free(pr, M_PRISON);
 					prison_deref(ppr, PD_DEREF |
 					    PD_DEUREF | PD_LIST_XLOCKED);
 					goto done_releroot;
@@ -1256,7 +1256,7 @@ kern_jail_set(struct thread *td, struct uio *optuio, int flags)
 				pr->pr_flags |= ppr->pr_flags & PR_IP4;
 				if (ppr->pr_ip4 != NULL) {
 					pr->pr_ip4s = ppr->pr_ip4s;
-					pr->pr_ip4 = malloc(pr->pr_ip4s *
+					pr->pr_ip4 = bsd_malloc(pr->pr_ip4s *
 					    sizeof(struct in_addr), M_PRISON,
 					    M_WAITOK);
 					bcopy(ppr->pr_ip4, pr->pr_ip4,
@@ -1272,7 +1272,7 @@ kern_jail_set(struct thread *td, struct uio *optuio, int flags)
 				pr->pr_flags |= ppr->pr_flags & PR_IP6;
 				if (ppr->pr_ip6 != NULL) {
 					pr->pr_ip6s = ppr->pr_ip6s;
-					pr->pr_ip6 = malloc(pr->pr_ip6s *
+					pr->pr_ip6 = bsd_malloc(pr->pr_ip6s *
 					    sizeof(struct in6_addr), M_PRISON,
 					    M_WAITOK);
 					bcopy(ppr->pr_ip6, pr->pr_ip6,
@@ -1564,7 +1564,7 @@ kern_jail_set(struct thread *td, struct uio *optuio, int flags)
 	redo_ip4 = 0;
 	if (pr_flags & PR_IP4_USER) {
 		pr->pr_flags |= PR_IP4;
-		free(pr->pr_ip4, M_PRISON);
+		bsd_free(pr->pr_ip4, M_PRISON);
 		pr->pr_ip4s = ip4s;
 		pr->pr_ip4 = ip4;
 		ip4 = NULL;
@@ -1586,7 +1586,7 @@ kern_jail_set(struct thread *td, struct uio *optuio, int flags)
 	redo_ip6 = 0;
 	if (pr_flags & PR_IP6_USER) {
 		pr->pr_flags |= PR_IP6;
-		free(pr->pr_ip6, M_PRISON);
+		bsd_free(pr->pr_ip6, M_PRISON);
 		pr->pr_ip6s = ip6s;
 		pr->pr_ip6 = ip6;
 		ip6 = NULL;
@@ -1738,7 +1738,7 @@ kern_jail_set(struct thread *td, struct uio *optuio, int flags)
 #ifdef INET
 	while (redo_ip4) {
 		ip4s = pr->pr_ip4s;
-		ip4 = malloc(ip4s * sizeof(*ip4), M_PRISON, M_WAITOK);
+		ip4 = bsd_malloc(ip4s * sizeof(*ip4), M_PRISON, M_WAITOK);
 		mtx_lock(&pr->pr_mtx);
 		redo_ip4 = 0;
 		FOREACH_PRISON_DESCENDANT_LOCKED(pr, tpr, descend) {
@@ -1761,7 +1761,7 @@ kern_jail_set(struct thread *td, struct uio *optuio, int flags)
 #ifdef INET6
 	while (redo_ip6) {
 		ip6s = pr->pr_ip6s;
-		ip6 = malloc(ip6s * sizeof(*ip6), M_PRISON, M_WAITOK);
+		ip6 = bsd_malloc(ip6s * sizeof(*ip6), M_PRISON, M_WAITOK);
 		mtx_lock(&pr->pr_mtx);
 		redo_ip6 = 0;
 		FOREACH_PRISON_DESCENDANT_LOCKED(pr, tpr, descend) {
@@ -1876,13 +1876,13 @@ kern_jail_set(struct thread *td, struct uio *optuio, int flags)
 	}
  done_free:
 #ifdef INET
-	free(ip4, M_PRISON);
+	bsd_free(ip4, M_PRISON);
 #endif
 #ifdef INET6
-	free(ip6, M_PRISON);
+	bsd_free(ip6, M_PRISON);
 #endif
 	if (g_path != NULL)
-		free(g_path, M_TEMP);
+		bsd_free(g_path, M_TEMP);
 	vfs_freeopts(opts);
 	return (error);
 }
@@ -1912,7 +1912,7 @@ sys_jail_get(struct thread *td, struct jail_get_args *uap)
 	if (error == 0)
 		error = copyout(auio->uio_iov, uap->iovp,
 		    uap->iovcnt * sizeof (struct iovec));
-	free(auio, M_IOV);
+	bsd_free(auio, M_IOV);
 	return (error);
 }
 
@@ -2595,10 +2595,10 @@ prison_deref(struct prison *pr, int flags)
 		}
 		mtx_destroy(&pr->pr_mtx);
 #ifdef INET
-		free(pr->pr_ip4, M_PRISON);
+		bsd_free(pr->pr_ip4, M_PRISON);
 #endif
 #ifdef INET6
-		free(pr->pr_ip6, M_PRISON);
+		bsd_free(pr->pr_ip6, M_PRISON);
 #endif
 		if (pr->pr_cpuset != NULL)
 			cpuset_rel(pr->pr_cpuset);
@@ -2606,7 +2606,7 @@ prison_deref(struct prison *pr, int flags)
 #ifdef RACCT
 		prison_racct_detach(pr);
 #endif
-		free(pr, M_PRISON);
+		bsd_free(pr, M_PRISON);
 
 		/* Removing a prison frees a reference on its parent. */
 		pr = ppr;
@@ -2679,7 +2679,7 @@ prison_restrict_ip4(struct prison *pr, struct in_addr *newip4)
 			 */
 			used = 1;
 			if (newip4 == NULL) {
-				newip4 = malloc(ppr->pr_ip4s * sizeof(*newip4),
+				newip4 = bsd_malloc(ppr->pr_ip4s * sizeof(*newip4),
 				    M_PRISON, M_NOWAIT);
 				if (newip4 != NULL)
 					used = 0;
@@ -2687,7 +2687,7 @@ prison_restrict_ip4(struct prison *pr, struct in_addr *newip4)
 			if (newip4 != NULL) {
 				bcopy(ppr->pr_ip4, newip4,
 				    ppr->pr_ip4s * sizeof(*newip4));
-				free(pr->pr_ip4, M_PRISON);
+				bsd_free(pr->pr_ip4, M_PRISON);
 				pr->pr_ip4 = newip4;
 				pr->pr_ip4s = ppr->pr_ip4s;
 			}
@@ -2698,7 +2698,7 @@ prison_restrict_ip4(struct prison *pr, struct in_addr *newip4)
 			bcopy(ppr->pr_ip4, pr->pr_ip4,
 			    pr->pr_ip4s * sizeof(*newip4));
 		else if (pr->pr_ip4 != NULL) {
-			free(pr->pr_ip4, M_PRISON);
+			bsd_free(pr->pr_ip4, M_PRISON);
 			pr->pr_ip4 = NULL;
 		}
 	} else if (pr->pr_ip4s > 0) {
@@ -2735,7 +2735,7 @@ prison_restrict_ip4(struct prison *pr, struct in_addr *newip4)
 		}
 		if (pr->pr_ip4s == 0) {
 			pr->pr_flags |= PR_IP4_DISABLE;
-			free(pr->pr_ip4, M_PRISON);
+			bsd_free(pr->pr_ip4, M_PRISON);
 			pr->pr_ip4 = NULL;
 		}
 	}
@@ -3018,7 +3018,7 @@ prison_restrict_ip6(struct prison *pr, struct in6_addr *newip6)
 			 */
 			used = 1;
 			if (newip6 == NULL) {
-				newip6 = malloc(ppr->pr_ip6s * sizeof(*newip6),
+				newip6 = bsd_malloc(ppr->pr_ip6s * sizeof(*newip6),
 				    M_PRISON, M_NOWAIT);
 				if (newip6 != NULL)
 					used = 0;
@@ -3026,7 +3026,7 @@ prison_restrict_ip6(struct prison *pr, struct in6_addr *newip6)
 			if (newip6 != NULL) {
 				bcopy(ppr->pr_ip6, newip6,
 				    ppr->pr_ip6s * sizeof(*newip6));
-				free(pr->pr_ip6, M_PRISON);
+				bsd_free(pr->pr_ip6, M_PRISON);
 				pr->pr_ip6 = newip6;
 				pr->pr_ip6s = ppr->pr_ip6s;
 			}
@@ -3037,7 +3037,7 @@ prison_restrict_ip6(struct prison *pr, struct in6_addr *newip6)
 			bcopy(ppr->pr_ip6, pr->pr_ip6,
 			    pr->pr_ip6s * sizeof(*newip6));
 		else if (pr->pr_ip6 != NULL) {
-			free(pr->pr_ip6, M_PRISON);
+			bsd_free(pr->pr_ip6, M_PRISON);
 			pr->pr_ip6 = NULL;
 		}
 	} else if (pr->pr_ip6s > 0) {
@@ -3076,7 +3076,7 @@ prison_restrict_ip6(struct prison *pr, struct in6_addr *newip6)
 		}
 		if (pr->pr_ip6s == 0) {
 			pr->pr_flags |= PR_IP6_DISABLE;
-			free(pr->pr_ip6, M_PRISON);
+			bsd_free(pr->pr_ip6, M_PRISON);
 			pr->pr_ip6 = NULL;
 		}
 	}
@@ -4043,7 +4043,7 @@ sysctl_jail_list(SYSCTL_HANDLER_ARGS)
 #endif
 	int descend, error;
 
-	xp = malloc(sizeof(*xp), M_TEMP, M_WAITOK);
+	xp = bsd_malloc(sizeof(*xp), M_TEMP, M_WAITOK);
 	pr = req->td->td_ucred->cr_prison;
 	error = 0;
 	sx_slock(&allprison_lock);
@@ -4057,7 +4057,7 @@ sysctl_jail_list(SYSCTL_HANDLER_ARGS)
 			if (ip4s < cpr->pr_ip4s) {
 				ip4s = cpr->pr_ip4s;
 				mtx_unlock(&cpr->pr_mtx);
-				ip4 = realloc(ip4, ip4s *
+				ip4 = bsd_realloc(ip4, ip4s *
 				    sizeof(struct in_addr), M_TEMP, M_WAITOK);
 				goto again;
 			}
@@ -4070,7 +4070,7 @@ sysctl_jail_list(SYSCTL_HANDLER_ARGS)
 			if (ip6s < cpr->pr_ip6s) {
 				ip6s = cpr->pr_ip6s;
 				mtx_unlock(&cpr->pr_mtx);
-				ip6 = realloc(ip6, ip6s *
+				ip6 = bsd_realloc(ip6, ip6s *
 				    sizeof(struct in6_addr), M_TEMP, M_WAITOK);
 				goto again;
 			}
@@ -4118,12 +4118,12 @@ sysctl_jail_list(SYSCTL_HANDLER_ARGS)
 #endif
 	}
 	sx_sunlock(&allprison_lock);
-	free(xp, M_TEMP);
+	bsd_free(xp, M_TEMP);
 #ifdef INET
-	free(ip4, M_TEMP);
+	bsd_free(ip4, M_TEMP);
 #endif
 #ifdef INET6
-	free(ip6, M_TEMP);
+	bsd_free(ip6, M_TEMP);
 #endif
 	return (error);
 }
@@ -4430,7 +4430,7 @@ prison_racct_find_locked(const char *name)
 	}
 
 	/* Add new prison_racct. */
-	prr = malloc(sizeof(*prr), M_PRISON_RACCT, M_ZERO | M_WAITOK);
+	prr = bsd_malloc(sizeof(*prr), M_PRISON_RACCT, M_ZERO | M_WAITOK);
 	racct_create(&prr->prr_racct);
 
 	strcpy(prr->prr_name, name);
@@ -4467,7 +4467,7 @@ prison_racct_free_locked(struct prison_racct *prr)
 	if (refcount_release(&prr->prr_refcount)) {
 		racct_destroy(&prr->prr_racct);
 		LIST_REMOVE(prr, prr_next);
-		free(prr, M_PRISON_RACCT);
+		bsd_free(prr, M_PRISON_RACCT);
 	}
 }
 

@@ -233,7 +233,7 @@ vnet_alloc(void)
 	struct vnet *vnet;
 
 	SDT_PROBE1(vnet, functions, vnet_alloc, entry, __LINE__);
-	vnet = malloc(sizeof(struct vnet), M_VNET, M_WAITOK | M_ZERO);
+	vnet = bsd_malloc(sizeof(struct vnet), M_VNET, M_WAITOK | M_ZERO);
 	vnet->vnet_magic_n = VNET_MAGIC_N;
 	SDT_PROBE2(vnet, functions, vnet_alloc, alloc, __LINE__, vnet);
 
@@ -241,7 +241,7 @@ vnet_alloc(void)
 	 * Allocate storage for virtualized global variables and copy in
 	 * initial values form our 'master' copy.
 	 */
-	vnet->vnet_data_mem = malloc(VNET_SIZE, M_VNET_DATA, M_WAITOK);
+	vnet->vnet_data_mem = bsd_malloc(VNET_SIZE, M_VNET_DATA, M_WAITOK);
 	memcpy(vnet->vnet_data_mem, (void *)VNET_START, VNET_BYTES);
 
 	/*
@@ -294,11 +294,11 @@ vnet_destroy(struct vnet *vnet)
 	/*
 	 * Release storage for the virtual network stack instance.
 	 */
-	free(vnet->vnet_data_mem, M_VNET_DATA);
+	bsd_free(vnet->vnet_data_mem, M_VNET_DATA);
 	vnet->vnet_data_mem = NULL;
 	vnet->vnet_data_base = 0;
 	vnet->vnet_magic_n = 0xdeadbeef;
-	free(vnet, M_VNET);
+	bsd_free(vnet, M_VNET);
 	SDT_PROBE1(vnet, functions, vnet_destroy, return, __LINE__);
 }
 
@@ -352,7 +352,7 @@ vnet_data_startup(void *dummy __unused)
 {
 	struct vnet_data_free *df;
 
-	df = malloc(sizeof(*df), M_VNET_DATA_FREE, M_WAITOK | M_ZERO);
+	df = bsd_malloc(sizeof(*df), M_VNET_DATA_FREE, M_WAITOK | M_ZERO);
 	df->vnd_start = (uintptr_t)&VNET_NAME(modspace);
 	df->vnd_len = VNET_MODMIN;
 	TAILQ_INSERT_HEAD(&vnet_data_free_head, df, vnd_link);
@@ -380,7 +380,7 @@ vnet_data_alloc(int size)
 		if (df->vnd_len == size) {
 			s = (void *)df->vnd_start;
 			TAILQ_REMOVE(&vnet_data_free_head, df, vnd_link);
-			free(df, M_VNET_DATA_FREE);
+			bsd_free(df, M_VNET_DATA_FREE);
 			break;
 		}
 		s = (void *)df->vnd_start;
@@ -426,7 +426,7 @@ vnet_data_free(void *start_arg, int size)
 				df->vnd_len += dn->vnd_len;
 				TAILQ_REMOVE(&vnet_data_free_head, dn,
 				    vnd_link);
-				free(dn, M_VNET_DATA_FREE);
+				bsd_free(dn, M_VNET_DATA_FREE);
 			}
 			sx_xunlock(&vnet_data_free_lock);
 			return;
@@ -438,7 +438,7 @@ vnet_data_free(void *start_arg, int size)
 			return;
 		}
 	}
-	dn = malloc(sizeof(*df), M_VNET_DATA_FREE, M_WAITOK | M_ZERO);
+	dn = bsd_malloc(sizeof(*df), M_VNET_DATA_FREE, M_WAITOK | M_ZERO);
 	dn->vnd_start = start;
 	dn->vnd_len = size;
 	if (df)
@@ -711,7 +711,7 @@ vnet_log_recursion(struct vnet *old_vnet, const char *old_fn, int line)
 		    (vnr->old_vnet == vnr->new_vnet) == (curvnet == old_vnet))
 			return;
 
-	vnr = malloc(sizeof(*vnr), M_VNET, M_NOWAIT | M_ZERO);
+	vnr = bsd_malloc(sizeof(*vnr), M_VNET, M_NOWAIT | M_ZERO);
 	if (vnr == NULL)
 		panic("%s: malloc failed", __func__);
 	vnr->prev_fn = old_fn;

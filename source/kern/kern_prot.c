@@ -297,7 +297,7 @@ sys_getgroups(struct thread *td, register struct getgroups_args *uap)
 			return (EINVAL);
 	} else
 		ngrp = td->td_ucred->cr_ngroups;
-	groups = malloc(ngrp * sizeof(*groups), M_TEMP, M_WAITOK);
+	groups = bsd_malloc(ngrp * sizeof(*groups), M_TEMP, M_WAITOK);
 	error = kern_getgroups(td, &ngrp, groups);
 	if (error)
 		goto out;
@@ -306,7 +306,7 @@ sys_getgroups(struct thread *td, register struct getgroups_args *uap)
 	if (error == 0)
 		td->td_retval[0] = ngrp;
 out:
-	free(groups, M_TEMP);
+	bsd_free(groups, M_TEMP);
 	return (error);
 }
 
@@ -345,8 +345,8 @@ sys_setsid(register struct thread *td, struct setsid_args *uap)
 	error = 0;
 	pgrp = NULL;
 
-	newpgrp = malloc(sizeof(struct pgrp), M_PGRP, M_WAITOK | M_ZERO);
-	newsess = malloc(sizeof(struct session), M_SESSION, M_WAITOK | M_ZERO);
+	newpgrp = bsd_malloc(sizeof(struct pgrp), M_PGRP, M_WAITOK | M_ZERO);
+	newsess = bsd_malloc(sizeof(struct session), M_SESSION, M_WAITOK | M_ZERO);
 
 	sx_xlock(&proctree_lock);
 
@@ -364,9 +364,9 @@ sys_setsid(register struct thread *td, struct setsid_args *uap)
 	sx_xunlock(&proctree_lock);
 
 	if (newpgrp != NULL)
-		free(newpgrp, M_PGRP);
+		bsd_free(newpgrp, M_PGRP);
 	if (newsess != NULL)
-		free(newsess, M_SESSION);
+		bsd_free(newsess, M_SESSION);
 
 	return (error);
 }
@@ -405,7 +405,7 @@ sys_setpgid(struct thread *td, register struct setpgid_args *uap)
 
 	error = 0;
 
-	newpgrp = malloc(sizeof(struct pgrp), M_PGRP, M_WAITOK | M_ZERO);
+	newpgrp = bsd_malloc(sizeof(struct pgrp), M_PGRP, M_WAITOK | M_ZERO);
 
 	sx_xlock(&proctree_lock);
 	if (uap->pid != 0 && uap->pid != curp->p_pid) {
@@ -469,7 +469,7 @@ done:
 	KASSERT((error == 0) || (newpgrp != NULL),
 	    ("setpgid failed and newpgrp is NULL"));
 	if (newpgrp != NULL)
-		free(newpgrp, M_PGRP);
+		bsd_free(newpgrp, M_PGRP);
 	return (error);
 }
 
@@ -814,13 +814,13 @@ sys_setgroups(struct thread *td, struct setgroups_args *uap)
 
 	if (uap->gidsetsize > ngroups_max + 1)
 		return (EINVAL);
-	groups = malloc(uap->gidsetsize * sizeof(gid_t), M_TEMP, M_WAITOK);
+	groups = bsd_malloc(uap->gidsetsize * sizeof(gid_t), M_TEMP, M_WAITOK);
 	error = copyin(uap->gidset, groups, uap->gidsetsize * sizeof(gid_t));
 	if (error)
 		goto out;
 	error = kern_setgroups(td, uap->gidsetsize, groups);
 out:
-	free(groups, M_TEMP);
+	bsd_free(groups, M_TEMP);
 	return (error);
 }
 
@@ -1806,7 +1806,7 @@ crget(void)
 {
 	register struct ucred *cr;
 
-	cr = malloc(sizeof(*cr), M_CRED, M_WAITOK | M_ZERO);
+	cr = bsd_malloc(sizeof(*cr), M_CRED, M_WAITOK | M_ZERO);
 	refcount_init(&cr->cr_ref, 1);
 #ifdef AUDIT
 	audit_cred_init(cr);
@@ -1861,8 +1861,8 @@ crfree(struct ucred *cr)
 #ifdef MAC
 		mac_cred_destroy(cr);
 #endif
-		free(cr->cr_groups, M_CRED);
-		free(cr, M_CRED);
+		bsd_free(cr->cr_groups, M_CRED);
+		bsd_free(cr, M_CRED);
 	}
 }
 
@@ -2005,9 +2005,9 @@ crextend(struct ucred *cr, int n)
 
 	/* Free the old array. */
 	if (cr->cr_groups)
-		free(cr->cr_groups, M_CRED);
+		bsd_free(cr->cr_groups, M_CRED);
 
-	cr->cr_groups = malloc(cnt * sizeof(gid_t), M_CRED, M_WAITOK | M_ZERO);
+	cr->cr_groups = bsd_malloc(cnt * sizeof(gid_t), M_CRED, M_WAITOK | M_ZERO);
 	cr->cr_agroups = cnt;
 }
 

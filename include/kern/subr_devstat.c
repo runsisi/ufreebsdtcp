@@ -545,8 +545,8 @@ devstat_alloc(void)
 		if (spp != NULL)
 			break;
 		mtx_unlock(&devstat_mutex);
-		spp2 = malloc(sizeof *spp, M_DEVSTAT, M_ZERO | M_WAITOK);
-		spp2->stat = malloc(PAGE_SIZE, M_DEVSTAT, M_ZERO | M_WAITOK);
+		spp2 = bsd_malloc(sizeof *spp, M_DEVSTAT, M_ZERO | M_WAITOK);
+		spp2->stat = bsd_malloc(PAGE_SIZE, M_DEVSTAT, M_ZERO | M_WAITOK);
 		spp2->nfree = statsperpage;
 
 		/*
@@ -579,8 +579,8 @@ devstat_alloc(void)
 	dsp->allocated = 1;
 	mtx_unlock(&devstat_mutex);
 	if (spp2 != NULL && spp2 != spp) {
-		free(spp2->stat, M_DEVSTAT);
-		free(spp2, M_DEVSTAT);
+		bsd_free(spp2->stat, M_DEVSTAT);
+		bsd_free(spp2, M_DEVSTAT);
 	}
 	return (dsp);
 }

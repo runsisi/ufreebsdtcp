@@ -82,7 +82,7 @@ tcp_lro_init(struct lro_ctrl *lc)
 
 	error = 0;
 	for (i = 0; i < LRO_ENTRIES; i++) {
-		le = (struct lro_entry *)malloc(sizeof(*le), M_DEVBUF,
+		le = (struct lro_entry *)bsd_malloc(sizeof(*le), M_DEVBUF,
 		    M_NOWAIT | M_ZERO);
                 if (le == NULL) {
 			if (i == 0)
@@ -104,7 +104,7 @@ tcp_lro_free(struct lro_ctrl *lc)
 	while (!SLIST_EMPTY(&lc->lro_free)) {
 		le = SLIST_FIRST(&lc->lro_free);
 		SLIST_REMOVE_HEAD(&lc->lro_free, next);
-		free(le, M_DEVBUF);
+		bsd_free(le, M_DEVBUF);
 	}
 }
 

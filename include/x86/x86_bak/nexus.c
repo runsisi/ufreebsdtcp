@@ -322,7 +322,7 @@ nexus_add_child(device_t bus, u_int order, const char *name, int unit)
 	device_t		child;
 	struct nexus_device	*ndev;
 
-	ndev = malloc(sizeof(struct nexus_device), M_NEXUSDEV, M_NOWAIT|M_ZERO);
+	ndev = bsd_malloc(sizeof(struct nexus_device), M_NEXUSDEV, M_NOWAIT|M_ZERO);
 	if (!ndev)
 		return(0);
 	resource_list_init(&ndev->nx_resources);

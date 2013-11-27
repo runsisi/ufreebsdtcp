@@ -188,13 +188,13 @@ memioctl(struct cdev *dev __unused, u_long cmd, caddr_t data, int flags,
 		nd = imin(mo->mo_arg[0], mem_range_softc.mr_ndesc);
 		if (nd > 0) {
 			md = (struct mem_range_desc *)
-				malloc(nd * sizeof(struct mem_range_desc),
+				bsd_malloc(nd * sizeof(struct mem_range_desc),
 				       M_MEMDESC, M_WAITOK);
 			error = mem_range_attr_get(md, &nd);
 			if (!error)
 				error = copyout(md, mo->mo_desc, 
 					nd * sizeof(struct mem_range_desc));
-			free(md, M_MEMDESC);
+			bsd_free(md, M_MEMDESC);
 		}
 		else
 			nd = mem_range_softc.mr_ndesc;
@@ -202,14 +202,14 @@ memioctl(struct cdev *dev __unused, u_long cmd, caddr_t data, int flags,
 		break;
 		
 	case MEMRANGE_SET:
-		md = (struct mem_range_desc *)malloc(sizeof(struct mem_range_desc),
+		md = (struct mem_range_desc *)bsd_malloc(sizeof(struct mem_range_desc),
 						    M_MEMDESC, M_WAITOK);
 		error = copyin(mo->mo_desc, md, sizeof(struct mem_range_desc));
 		/* clamp description string */
 		md->mr_owner[sizeof(md->mr_owner) - 1] = 0;
 		if (error == 0)
 			error = mem_range_attr_set(md, &mo->mo_arg[0]);
-		free(md, M_MEMDESC);
+		bsd_free(md, M_MEMDESC);
 		break;
 	}
 	return (error);

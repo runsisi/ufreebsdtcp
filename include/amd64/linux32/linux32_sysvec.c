@@ -286,7 +286,7 @@ elf_linux_fixup(register_t **stack_base, struct image_params *imgp)
 		AUXARGS_ENTRY_32(pos, AT_EXECFD, args->execfd);
 	AUXARGS_ENTRY_32(pos, AT_NULL, 0);
 
-	free(imgp->auxargs, M_TEMP);
+	bsd_free(imgp->auxargs, M_TEMP);
 	imgp->auxargs = NULL;
 
 	base--;

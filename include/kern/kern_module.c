@@ -163,7 +163,7 @@ module_register(const moduledata_t *data, linker_file_t container)
 		return (EEXIST);
 	}
 	namelen = strlen(data->name) + 1;
-	newmod = malloc(sizeof(struct module) + namelen, M_MODULE, M_WAITOK);
+	newmod = bsd_malloc(sizeof(struct module) + namelen, M_MODULE, M_WAITOK);
 	if (newmod == NULL) {
 		MOD_XUNLOCK;
 		return (ENOMEM);
@@ -210,7 +210,7 @@ module_release(module_t mod)
 		TAILQ_REMOVE(&modules, mod, link);
 		if (mod->file)
 			TAILQ_REMOVE(&mod->file->modules, mod, flink);
-		free(mod, M_MODULE);
+		bsd_free(mod, M_MODULE);
 	}
 }
 

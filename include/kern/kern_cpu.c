@@ -182,7 +182,7 @@ cpufreq_attach(device_t dev)
 
 	CF_DEBUG("initializing one-time data for %s\n",
 	    device_get_nameunit(dev));
-	sc->levels_buf = malloc(CF_MAX_LEVELS * sizeof(*sc->levels_buf),
+	sc->levels_buf = bsd_malloc(CF_MAX_LEVELS * sizeof(*sc->levels_buf),
 	    M_DEVBUF, M_WAITOK);
 	SYSCTL_ADD_PROC(&sc->sysctl_ctx,
 	    SYSCTL_CHILDREN(device_get_sysctl_tree(parent)),
@@ -224,14 +224,14 @@ cpufreq_detach(device_t dev)
 
 	while ((saved_freq = SLIST_FIRST(&sc->saved_freq)) != NULL) {
 		SLIST_REMOVE_HEAD(&sc->saved_freq, link);
-		free(saved_freq, M_TEMP);
+		bsd_free(saved_freq, M_TEMP);
 	}
 
 	/* Only clean up these resources when the last device is detaching. */
 	numdevs = devclass_get_count(cpufreq_dc);
 	if (numdevs == 1) {
 		CF_DEBUG("final shutdown for %s\n", device_get_nameunit(dev));
-		free(sc->levels_buf, M_DEVBUF);
+		bsd_free(sc->levels_buf, M_DEVBUF);
 	}
 
 	return (0);
@@ -376,7 +376,7 @@ skip:
 	    priority > sc->curr_priority) {
 		CF_DEBUG("saving level, freq %d prio %d\n",
 		    sc->curr_level.total_set.freq, sc->curr_priority);
-		curr_freq = malloc(sizeof(*curr_freq), M_TEMP, M_NOWAIT);
+		curr_freq = bsd_malloc(sizeof(*curr_freq), M_TEMP, M_NOWAIT);
 		if (curr_freq == NULL) {
 			error = ENOMEM;
 			goto out;
@@ -393,7 +393,7 @@ skip:
 		CF_DEBUG("resetting saved level\n");
 		sc->curr_level.total_set.freq = CPUFREQ_VAL_UNKNOWN;
 		SLIST_REMOVE_HEAD(&sc->saved_freq, link);
-		free(saved_freq, M_TEMP);
+		bsd_free(saved_freq, M_TEMP);
 	}
 
 out:
@@ -440,19 +440,19 @@ cf_get_method(device_t dev, struct cf_level *level)
 	 * match of settings against each level.
 	 */
 	count = CF_MAX_LEVELS;
-	levels = malloc(count * sizeof(*levels), M_TEMP, M_NOWAIT);
+	levels = bsd_malloc(count * sizeof(*levels), M_TEMP, M_NOWAIT);
 	if (levels == NULL)
 		return (ENOMEM);
 	error = CPUFREQ_LEVELS(sc->dev, levels, &count);
 	if (error) {
 		if (error == E2BIG)
 			printf("cpufreq: need to increase CF_MAX_LEVELS\n");
-		free(levels, M_TEMP);
+		bsd_free(levels, M_TEMP);
 		return (error);
 	}
 	error = device_get_children(device_get_parent(dev), &devs, &numdevs);
 	if (error) {
-		free(levels, M_TEMP);
+		bsd_free(levels, M_TEMP);
 		return (error);
 	}
 
@@ -477,7 +477,7 @@ cf_get_method(device_t dev, struct cf_level *level)
 			}
 		}
 	}
-	free(devs, M_TEMP);
+	bsd_free(devs, M_TEMP);
 	if (curr_set->freq != CPUFREQ_VAL_UNKNOWN) {
 		CF_DEBUG("get matched freq %d from drivers\n", curr_set->freq);
 		goto out;
@@ -509,7 +509,7 @@ out:
 
 	CF_MTX_UNLOCK(&sc->lock);
 	if (levels)
-		free(levels, M_TEMP);
+		bsd_free(levels, M_TEMP);
 	return (error);
 }
 
@@ -534,9 +534,9 @@ cf_levels_method(device_t dev, struct cf_level *levels, int *count)
 	error = device_get_children(device_get_parent(dev), &devs, &numdevs);
 	if (error)
 		return (error);
-	sets = malloc(MAX_SETTINGS * sizeof(*sets), M_TEMP, M_NOWAIT);
+	sets = bsd_malloc(MAX_SETTINGS * sizeof(*sets), M_TEMP, M_NOWAIT);
 	if (sets == NULL) {
-		free(devs, M_TEMP);
+		bsd_free(devs, M_TEMP);
 		return (ENOMEM);
 	}
 
@@ -571,7 +571,7 @@ cf_levels_method(device_t dev, struct cf_level *levels, int *count)
 			break;
 		case CPUFREQ_TYPE_RELATIVE:
 			CF_DEBUG("adding %d relative settings\n", set_count);
-			set_arr = malloc(sizeof(*set_arr), M_TEMP, M_NOWAIT);
+			set_arr = bsd_malloc(sizeof(*set_arr), M_TEMP, M_NOWAIT);
 			if (set_arr == NULL) {
 				error = ENOMEM;
 				goto out;
@@ -644,17 +644,17 @@ out:
 	/* Clear all levels since we regenerate them each time. */
 	while ((lev = TAILQ_FIRST(&sc->all_levels)) != NULL) {
 		TAILQ_REMOVE(&sc->all_levels, lev, link);
-		free(lev, M_TEMP);
+		bsd_free(lev, M_TEMP);
 	}
 	sc->all_count = 0;
 
 	CF_MTX_UNLOCK(&sc->lock);
 	while ((set_arr = TAILQ_FIRST(&rel_sets)) != NULL) {
 		TAILQ_REMOVE(&rel_sets, set_arr, link);
-		free(set_arr, M_TEMP);
+		bsd_free(set_arr, M_TEMP);
 	}
-	free(devs, M_TEMP);
-	free(sets, M_TEMP);
+	bsd_free(devs, M_TEMP);
+	bsd_free(sets, M_TEMP);
 	return (error);
 }
 
@@ -674,7 +674,7 @@ cpufreq_insert_abs(struct cpufreq_softc *sc, struct cf_setting *sets,
 
 	list = &sc->all_levels;
 	for (i = 0; i < count; i++) {
-		level = malloc(sizeof(*level), M_TEMP, M_NOWAIT | M_ZERO);
+		level = bsd_malloc(sizeof(*level), M_TEMP, M_NOWAIT | M_ZERO);
 		if (level == NULL)
 			return (ENOMEM);
 		level->abs_set = sets[i];
@@ -776,7 +776,7 @@ cpufreq_dup_set(struct cpufreq_softc *sc, struct cf_level *dup,
 	 * total frequency and power by the percentage specified in the
 	 * relative setting.
 	 */
-	fill = malloc(sizeof(*fill), M_TEMP, M_NOWAIT);
+	fill = bsd_malloc(sizeof(*fill), M_TEMP, M_NOWAIT);
 	if (fill == NULL)
 		return (NULL);
 	*fill = *dup;
@@ -848,7 +848,7 @@ cpufreq_dup_set(struct cpufreq_softc *sc, struct cf_level *dup,
 	if (itr == NULL) {
 		CF_DEBUG("dup set freeing new level %d (not optimal)\n",
 		    fill_set->freq);
-		free(fill, M_TEMP);
+		bsd_free(fill, M_TEMP);
 		fill = NULL;
 	}
 
@@ -906,7 +906,7 @@ cpufreq_curr_sysctl(SYSCTL_HANDLER_ARGS)
 
 out:
 	if (devs)
-		free(devs, M_TEMP);
+		bsd_free(devs, M_TEMP);
 	return (error);
 }
 
@@ -964,7 +964,7 @@ cpufreq_settings_sysctl(SYSCTL_HANDLER_ARGS)
 
 	/* Get settings from the device and generate the output string. */
 	set_count = MAX_SETTINGS;
-	sets = malloc(set_count * sizeof(*sets), M_TEMP, M_NOWAIT);
+	sets = bsd_malloc(set_count * sizeof(*sets), M_TEMP, M_NOWAIT);
 	if (sets == NULL) {
 		sbuf_delete(&sb);
 		return (ENOMEM);
@@ -982,7 +982,7 @@ cpufreq_settings_sysctl(SYSCTL_HANDLER_ARGS)
 	error = sysctl_handle_string(oidp, sbuf_data(&sb), sbuf_len(&sb), req);
 
 out:
-	free(sets, M_TEMP);
+	bsd_free(sets, M_TEMP);
 	sbuf_delete(&sb);
 	return (error);
 }
@@ -1048,7 +1048,7 @@ cpufreq_unregister(device_t dev)
 	}
 	if (cfcount <= 1)
 		device_delete_child(device_get_parent(cf_dev), cf_dev);
-	free(devs, M_TEMP);
+	bsd_free(devs, M_TEMP);
 
 	return (0);
 }

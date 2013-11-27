@@ -792,7 +792,7 @@ bpf_dtor(void *data)
 	knlist_destroy(&d->bd_sel.si_note);
 	callout_drain(&d->bd_callout);
 	bpf_freed(d);
-	free(d, M_BPF);
+	bsd_free(d, M_BPF);
 }
 
 /*
@@ -806,10 +806,10 @@ bpfopen(struct cdev *dev, int flags, int fmt, struct thread *td)
 	struct bpf_d *d;
 	int error, size;
 
-	d = malloc(sizeof(*d), M_BPF, M_WAITOK | M_ZERO);
+	d = bsd_malloc(sizeof(*d), M_BPF, M_WAITOK | M_ZERO);
 	error = devfs_set_cdevpriv(d, bpf_dtor);
 	if (error != 0) {
-		free(d, M_BPF);
+		bsd_free(d, M_BPF);
 		return (error);
 	}
 
@@ -1783,10 +1783,10 @@ bpf_setf(struct bpf_d *d, struct bpf_program *fp, u_long cmd)
 	size = flen * sizeof(*fp->bf_insns);
 	if (size > 0) {
 		/* We're setting up new filter.  Copy and check actual data. */
-		fcode = malloc(size, M_BPF, M_WAITOK);
+		fcode = bsd_malloc(size, M_BPF, M_WAITOK);
 		if (copyin(fp->bf_insns, fcode, size) != 0 ||
 		    !bpf_validate(fcode, flen)) {
-			free(fcode, M_BPF);
+			bsd_free(fcode, M_BPF);
 			return (EINVAL);
 		}
 #ifdef BPF_JITTER
@@ -1834,7 +1834,7 @@ bpf_setf(struct bpf_d *d, struct bpf_program *fp, u_long cmd)
 	if (d->bd_bif != NULL)
 		BPFIF_WUNLOCK(d->bd_bif);
 	if (old != NULL)
-		free(old, M_BPF);
+		bsd_free(old, M_BPF);
 #ifdef BPF_JITTER
 	if (ofunc != NULL)
 		bpf_destroy_jit_filter(ofunc);
@@ -2452,14 +2452,14 @@ bpf_freed(struct bpf_d *d)
 	 */
 	bpf_free(d);
 	if (d->bd_rfilter != NULL) {
-		free((caddr_t)d->bd_rfilter, M_BPF);
+		bsd_free((caddr_t)d->bd_rfilter, M_BPF);
 #ifdef BPF_JITTER
 		if (d->bd_bfilter != NULL)
 			bpf_destroy_jit_filter(d->bd_bfilter);
 #endif
 	}
 	if (d->bd_wfilter != NULL)
-		free((caddr_t)d->bd_wfilter, M_BPF);
+		bsd_free((caddr_t)d->bd_wfilter, M_BPF);
 	mtx_destroy(&d->bd_lock);
 }
 
@@ -2485,7 +2485,7 @@ bpfattach2(struct ifnet *ifp, u_int dlt, u_int hdrlen, struct bpf_if **driverp)
 {
 	struct bpf_if *bp;
 
-	bp = malloc(sizeof(*bp), M_BPF, M_NOWAIT | M_ZERO);
+	bp = bsd_malloc(sizeof(*bp), M_BPF, M_NOWAIT | M_ZERO);
 	if (bp == NULL)
 		panic("bpfattach");
 
@@ -2597,7 +2597,7 @@ bpf_ifdetach(void *arg __unused, struct ifnet *ifp)
 	BPF_UNLOCK();
 
 	rw_destroy(&bp->bif_lock);
-	free(bp, M_BPF);
+	bsd_free(bp, M_BPF);
 }
 
 /*
@@ -2791,11 +2791,11 @@ bpf_stats_sysctl(SYSCTL_HANDLER_ARGS)
 		return (SYSCTL_OUT(req, 0, bpf_bpfd_cnt * sizeof(*xbd)));
 	if (bpf_bpfd_cnt == 0)
 		return (SYSCTL_OUT(req, 0, 0));
-	xbdbuf = malloc(req->oldlen, M_BPF, M_WAITOK);
+	xbdbuf = bsd_malloc(req->oldlen, M_BPF, M_WAITOK);
 	BPF_LOCK();
 	if (req->oldlen < (bpf_bpfd_cnt * sizeof(*xbd))) {
 		BPF_UNLOCK();
-		free(xbdbuf, M_BPF);
+		bsd_free(xbdbuf, M_BPF);
 		return (ENOMEM);
 	}
 	index = 0;
@@ -2818,7 +2818,7 @@ bpf_stats_sysctl(SYSCTL_HANDLER_ARGS)
 	}
 	BPF_UNLOCK();
 	error = SYSCTL_OUT(req, xbdbuf, index * sizeof(*xbd));
-	free(xbdbuf, M_BPF);
+	bsd_free(xbdbuf, M_BPF);
 	return (error);
 }
 

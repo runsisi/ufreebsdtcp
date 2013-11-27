@@ -124,13 +124,13 @@ sysarch_ldt(struct thread *td, struct sysarch_args *uap, int uap_space)
 			return (EINVAL);
 		set_pcb_flags(td->td_pcb, PCB_FULL_IRET);
 		if (largs->descs != NULL) {
-			lp = malloc(largs->num * sizeof(struct
+			lp = bsd_malloc(largs->num * sizeof(struct
 			    user_segment_descriptor), M_TEMP, M_WAITOK);
 			error = copyin(largs->descs, lp, largs->num *
 			    sizeof(struct user_segment_descriptor));
 			if (error == 0)
 				error = amd64_set_ldt(td, largs, lp);
-			free(lp, M_TEMP);
+			bsd_free(lp, M_TEMP);
 		} else {
 			error = amd64_set_ldt(td, largs, NULL);
 		}
@@ -458,7 +458,7 @@ user_ldt_alloc(struct proc *p, int force)
 	if (!force && mdp->md_ldt != NULL)
 		return (mdp->md_ldt);
 	mtx_unlock(&dt_lock);
-	new_ldt = malloc(sizeof(struct proc_ldt), M_SUBPROC, M_WAITOK);
+	new_ldt = bsd_malloc(sizeof(struct proc_ldt), M_SUBPROC, M_WAITOK);
 	new_ldt->ldt_base = (caddr_t)kmem_alloc(kernel_map,
 	     max_ldt_segment * sizeof(struct user_segment_descriptor));
 	if (new_ldt->ldt_base == NULL) {
@@ -481,7 +481,7 @@ user_ldt_alloc(struct proc *p, int force)
 	if (pldt != NULL && !force) {
 		kmem_free(kernel_map, (vm_offset_t)new_ldt->ldt_base,
 		    max_ldt_segment * sizeof(struct user_segment_descriptor));
-		free(new_ldt, M_SUBPROC);
+		bsd_free(new_ldt, M_SUBPROC);
 		return (pldt);
 	}
 
@@ -526,7 +526,7 @@ user_ldt_derefl(struct proc_ldt *pldt)
 	if (--pldt->ldt_refcnt == 0) {
 		kmem_free(kernel_map, (vm_offset_t)pldt->ldt_base,
 		    max_ldt_segment * sizeof(struct user_segment_descriptor));
-		free(pldt, M_SUBPROC);
+		bsd_free(pldt, M_SUBPROC);
 	}
 }
 

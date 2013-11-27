@@ -104,10 +104,10 @@ edsc_clone_create(struct if_clone *ifc, int unit, caddr_t params)
 	/*
 	 * Allocate soft and ifnet structures.  Link each to the other.
 	 */
-	sc = malloc(sizeof(struct edsc_softc), M_EDSC, M_WAITOK | M_ZERO);
+	sc = bsd_malloc(sizeof(struct edsc_softc), M_EDSC, M_WAITOK | M_ZERO);
 	ifp = sc->sc_ifp = if_alloc(IFT_ETHER);
 	if (ifp == NULL) {
-		free(sc, M_EDSC);
+		bsd_free(sc, M_EDSC);
 		return (ENOSPC);
 	}
 
@@ -182,7 +182,7 @@ edsc_clone_destroy(struct ifnet *ifp)
 	 * Free memory occupied by ifnet and softc.
 	 */
 	if_free(ifp);
-	free(sc, M_EDSC);
+	bsd_free(sc, M_EDSC);
 }
 
 /*

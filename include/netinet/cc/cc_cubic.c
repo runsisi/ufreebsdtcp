@@ -195,7 +195,7 @@ cubic_cb_destroy(struct cc_var *ccv)
 {
 
 	if (ccv->cc_data != NULL)
-		free(ccv->cc_data, M_CUBIC);
+		bsd_free(ccv->cc_data, M_CUBIC);
 }
 
 static int
@@ -203,7 +203,7 @@ cubic_cb_init(struct cc_var *ccv)
 {
 	struct cubic *cubic_data;
 
-	cubic_data = malloc(sizeof(struct cubic), M_CUBIC, M_NOWAIT|M_ZERO);
+	cubic_data = bsd_malloc(sizeof(struct cubic), M_CUBIC, M_NOWAIT|M_ZERO);
 
 	if (cubic_data == NULL)
 		return (ENOMEM);

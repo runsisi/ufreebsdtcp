@@ -143,10 +143,10 @@ vfs_freeopt(struct vfsoptlist *opts, struct vfsopt *opt)
 {
 
 	TAILQ_REMOVE(opts, opt, link);
-	free(opt->name, M_MOUNT);
+	bsd_free(opt->name, M_MOUNT);
 	if (opt->value != NULL)
-		free(opt->value, M_MOUNT);
-	free(opt, M_MOUNT);
+		bsd_free(opt->value, M_MOUNT);
+	bsd_free(opt, M_MOUNT);
 }
 
 /* Release all resources related to the mount options. */
@@ -159,7 +159,7 @@ vfs_freeopts(struct vfsoptlist *opts)
 		opt = TAILQ_FIRST(opts);
 		vfs_freeopt(opts, opt);
 	}
-	free(opts, M_MOUNT);
+	bsd_free(opts, M_MOUNT);
 }
 
 void
@@ -265,7 +265,7 @@ vfs_buildopts(struct uio *auio, struct vfsoptlist **options)
 	unsigned int i, iovcnt;
 	int error;
 
-	opts = malloc(sizeof(struct vfsoptlist), M_MOUNT, M_WAITOK);
+	opts = bsd_malloc(sizeof(struct vfsoptlist), M_MOUNT, M_WAITOK);
 	TAILQ_INIT(opts);
 	memused = 0;
 	iovcnt = auio->uio_iovcnt;
@@ -284,8 +284,8 @@ vfs_buildopts(struct uio *auio, struct vfsoptlist **options)
 			goto bad;
 		}
 
-		opt = malloc(sizeof(struct vfsopt), M_MOUNT, M_WAITOK);
-		opt->name = malloc(namelen, M_MOUNT, M_WAITOK);
+		opt = bsd_malloc(sizeof(struct vfsopt), M_MOUNT, M_WAITOK);
+		opt->name = bsd_malloc(namelen, M_MOUNT, M_WAITOK);
 		opt->value = NULL;
 		opt->len = 0;
 		opt->pos = i / 2;
@@ -312,7 +312,7 @@ vfs_buildopts(struct uio *auio, struct vfsoptlist **options)
 		}
 		if (optlen != 0) {
 			opt->len = optlen;
-			opt->value = malloc(optlen, M_MOUNT, M_WAITOK);
+			opt->value = bsd_malloc(optlen, M_MOUNT, M_WAITOK);
 			if (auio->uio_segflg == UIO_SYSSPACE) {
 				bcopy(auio->uio_iov[i + 1].iov_base, opt->value,
 				    optlen);
@@ -346,10 +346,10 @@ vfs_mergeopts(struct vfsoptlist *toopts, struct vfsoptlist *oldopts)
 	struct vfsopt *opt, *new;
 
 	TAILQ_FOREACH(opt, oldopts, link) {
-		new = malloc(sizeof(struct vfsopt), M_MOUNT, M_WAITOK);
+		new = bsd_malloc(sizeof(struct vfsopt), M_MOUNT, M_WAITOK);
 		new->name = strdup(opt->name, M_MOUNT);
 		if (opt->len != 0) {
-			new->value = malloc(opt->len, M_MOUNT, M_WAITOK);
+			new->value = bsd_malloc(opt->len, M_MOUNT, M_WAITOK);
 			bcopy(opt->value, new->value, opt->len);
 		} else
 			new->value = NULL;
@@ -416,7 +416,7 @@ sys_nmount(td, uap)
 	}
 	error = vfs_donmount(td, flags, auio);
 
-	free(auio, M_IOV);
+	bsd_free(auio, M_IOV);
 	return (error);
 }
 
@@ -599,37 +599,37 @@ vfs_donmount(struct thread *td, uint64_t fsflags, struct uio *fsoptions)
 		else if (strcmp(opt->name, "noatime") == 0)
 			fsflags |= MNT_NOATIME;
 		else if (strcmp(opt->name, "atime") == 0) {
-			free(opt->name, M_MOUNT);
+			bsd_free(opt->name, M_MOUNT);
 			opt->name = strdup("nonoatime", M_MOUNT);
 		}
 		else if (strcmp(opt->name, "noclusterr") == 0)
 			fsflags |= MNT_NOCLUSTERR;
 		else if (strcmp(opt->name, "clusterr") == 0) {
-			free(opt->name, M_MOUNT);
+			bsd_free(opt->name, M_MOUNT);
 			opt->name = strdup("nonoclusterr", M_MOUNT);
 		}
 		else if (strcmp(opt->name, "noclusterw") == 0)
 			fsflags |= MNT_NOCLUSTERW;
 		else if (strcmp(opt->name, "clusterw") == 0) {
-			free(opt->name, M_MOUNT);
+			bsd_free(opt->name, M_MOUNT);
 			opt->name = strdup("nonoclusterw", M_MOUNT);
 		}
 		else if (strcmp(opt->name, "noexec") == 0)
 			fsflags |= MNT_NOEXEC;
 		else if (strcmp(opt->name, "exec") == 0) {
-			free(opt->name, M_MOUNT);
+			bsd_free(opt->name, M_MOUNT);
 			opt->name = strdup("nonoexec", M_MOUNT);
 		}
 		else if (strcmp(opt->name, "nosuid") == 0)
 			fsflags |= MNT_NOSUID;
 		else if (strcmp(opt->name, "suid") == 0) {
-			free(opt->name, M_MOUNT);
+			bsd_free(opt->name, M_MOUNT);
 			opt->name = strdup("nonosuid", M_MOUNT);
 		}
 		else if (strcmp(opt->name, "nosymfollow") == 0)
 			fsflags |= MNT_NOSYMFOLLOW;
 		else if (strcmp(opt->name, "symfollow") == 0) {
-			free(opt->name, M_MOUNT);
+			bsd_free(opt->name, M_MOUNT);
 			opt->name = strdup("nonosymfollow", M_MOUNT);
 		}
 		else if (strcmp(opt->name, "noro") == 0)
@@ -639,7 +639,7 @@ vfs_donmount(struct thread *td, uint64_t fsflags, struct uio *fsoptions)
 		else if (strcmp(opt->name, "ro") == 0)
 			fsflags |= MNT_RDONLY;
 		else if (strcmp(opt->name, "rdonly") == 0) {
-			free(opt->name, M_MOUNT);
+			bsd_free(opt->name, M_MOUNT);
 			opt->name = strdup("ro", M_MOUNT);
 			fsflags |= MNT_RDONLY;
 		}
@@ -728,17 +728,17 @@ sys_mount(td, uap)
 	 */
 	flags &= ~MNT_ROOTFS;
 
-	fstype = malloc(MFSNAMELEN, M_TEMP, M_WAITOK);
+	fstype = bsd_malloc(MFSNAMELEN, M_TEMP, M_WAITOK);
 	error = copyinstr(uap->type, fstype, MFSNAMELEN, NULL);
 	if (error) {
-		free(fstype, M_TEMP);
+		bsd_free(fstype, M_TEMP);
 		return (error);
 	}
 
 	AUDIT_ARG_TEXT(fstype);
 	mtx_lock(&Giant);
 	vfsp = vfs_byname_kld(fstype, td, &error);
-	free(fstype, M_TEMP);
+	bsd_free(fstype, M_TEMP);
 	if (vfsp == NULL) {
 		mtx_unlock(&Giant);
 		return (ENOENT);
@@ -1095,7 +1095,7 @@ vfs_domount(
 	NDFREE(&nd, NDF_ONLY_PNBUF);
 	vp = nd.ni_vp;
 	if ((fsflags & MNT_UPDATE) == 0) {
-		pathbuf = malloc(MNAMELEN, M_TEMP, M_WAITOK);
+		pathbuf = bsd_malloc(MNAMELEN, M_TEMP, M_WAITOK);
 		strcpy(pathbuf, fspath);
 		error = vn_path_to_global_path(td, vp, pathbuf, MNAMELEN);
 		/* debug.disablefullpath == 1 results in ENODEV */
@@ -1103,7 +1103,7 @@ vfs_domount(
 			error = vfs_domount_first(td, vfsp, pathbuf, vp,
 			    fsflags, optlist);
 		}
-		free(pathbuf, M_TEMP);
+		bsd_free(pathbuf, M_TEMP);
 	} else
 		error = vfs_domount_update(td, vp, fsflags, optlist);
 	mtx_unlock(&Giant);
@@ -1147,10 +1147,10 @@ sys_unmount(td, uap)
 			return (error);
 	}
 
-	pathbuf = malloc(MNAMELEN, M_TEMP, M_WAITOK);
+	pathbuf = bsd_malloc(MNAMELEN, M_TEMP, M_WAITOK);
 	error = copyinstr(uap->path, pathbuf, MNAMELEN, NULL);
 	if (error) {
-		free(pathbuf, M_TEMP);
+		bsd_free(pathbuf, M_TEMP);
 		return (error);
 	}
 	mtx_lock(&Giant);
@@ -1159,7 +1159,7 @@ sys_unmount(td, uap)
 		/* Decode the filesystem ID. */
 		if (sscanf(pathbuf, "FSID:%d:%d", &id0, &id1) != 2) {
 			mtx_unlock(&Giant);
-			free(pathbuf, M_TEMP);
+			bsd_free(pathbuf, M_TEMP);
 			return (EINVAL);
 		}
 
@@ -1193,7 +1193,7 @@ sys_unmount(td, uap)
 		}
 		mtx_unlock(&mountlist_mtx);
 	}
-	free(pathbuf, M_TEMP);
+	bsd_free(pathbuf, M_TEMP);
 	if (mp == NULL) {
 		/*
 		 * Previously we returned ENOENT for a nonexistent path and
@@ -1722,7 +1722,7 @@ __mnt_vnode_first(struct vnode **mvp, struct mount *mp)
 	}
 	MNT_REF(mp);
 	MNT_IUNLOCK(mp);
-	*mvp = (struct vnode *) malloc(sizeof(struct vnode),
+	*mvp = (struct vnode *) bsd_malloc(sizeof(struct vnode),
 				       M_VNODE_MARKER,
 				       M_WAITOK | M_ZERO);
 	MNT_ILOCK(mp);
@@ -1735,7 +1735,7 @@ __mnt_vnode_first(struct vnode **mvp, struct mount *mp)
 	/* Check if we are done */
 	if (vp == NULL) {
 		MNT_IUNLOCK(mp);
-		free(*mvp, M_VNODE_MARKER);
+		bsd_free(*mvp, M_VNODE_MARKER);
 		MNT_ILOCK(mp);
 		*mvp = NULL;
 		MNT_REL(mp);
@@ -1759,7 +1759,7 @@ __mnt_vnode_markerfree(struct vnode **mvp, struct mount *mp)
 	KASSERT((*mvp)->v_mount == mp, ("marker vnode mount list mismatch"));
 	TAILQ_REMOVE(&mp->mnt_nvnodelist, *mvp, v_nmntvnodes);
 	MNT_IUNLOCK(mp);
-	free(*mvp, M_VNODE_MARKER);
+	bsd_free(*mvp, M_VNODE_MARKER);
 	MNT_ILOCK(mp);
 	*mvp = NULL;
 	MNT_REL(mp);
@@ -1837,13 +1837,13 @@ mount_argf(struct mntarg *ma, const char *name, const char *fmt, ...)
 	int len;
 
 	if (ma == NULL) {
-		ma = malloc(sizeof *ma, M_MOUNT, M_WAITOK | M_ZERO);
+		ma = bsd_malloc(sizeof *ma, M_MOUNT, M_WAITOK | M_ZERO);
 		SLIST_INIT(&ma->list);
 	}
 	if (ma->error)
 		return (ma);
 
-	ma->v = realloc(ma->v, sizeof *ma->v * (ma->len + 2),
+	ma->v = bsd_realloc(ma->v, sizeof *ma->v * (ma->len + 2),
 	    M_MOUNT, M_WAITOK);
 	ma->v[ma->len].iov_base = (void *)(uintptr_t)name;
 	ma->v[ma->len].iov_len = strlen(name) + 1;
@@ -1855,7 +1855,7 @@ mount_argf(struct mntarg *ma, const char *name, const char *fmt, ...)
 	va_end(ap);
 	sbuf_finish(sb);
 	len = sbuf_len(sb) + 1;
-	maa = malloc(sizeof *maa + len, M_MOUNT, M_WAITOK | M_ZERO);
+	maa = bsd_malloc(sizeof *maa + len, M_MOUNT, M_WAITOK | M_ZERO);
 	SLIST_INSERT_HEAD(&ma->list, maa, next);
 	bcopy(sbuf_data(sb), maa + 1, len);
 	sbuf_delete(sb);
@@ -1879,12 +1879,12 @@ mount_argsu(struct mntarg *ma, const char *name, const void *val, int len)
 	if (val == NULL)
 		return (ma);
 	if (ma == NULL) {
-		ma = malloc(sizeof *ma, M_MOUNT, M_WAITOK | M_ZERO);
+		ma = bsd_malloc(sizeof *ma, M_MOUNT, M_WAITOK | M_ZERO);
 		SLIST_INIT(&ma->list);
 	}
 	if (ma->error)
 		return (ma);
-	maa = malloc(sizeof *maa + len, M_MOUNT, M_WAITOK | M_ZERO);
+	maa = bsd_malloc(sizeof *maa + len, M_MOUNT, M_WAITOK | M_ZERO);
 	SLIST_INSERT_HEAD(&ma->list, maa, next);
 	tbuf = (void *)(maa + 1);
 	ma->error = copyinstr(val, tbuf, len, NULL);
@@ -1901,13 +1901,13 @@ mount_arg(struct mntarg *ma, const char *name, const void *val, int len)
 {
 
 	if (ma == NULL) {
-		ma = malloc(sizeof *ma, M_MOUNT, M_WAITOK | M_ZERO);
+		ma = bsd_malloc(sizeof *ma, M_MOUNT, M_WAITOK | M_ZERO);
 		SLIST_INIT(&ma->list);
 	}
 	if (ma->error)
 		return (ma);
 
-	ma->v = realloc(ma->v, sizeof *ma->v * (ma->len + 2),
+	ma->v = bsd_realloc(ma->v, sizeof *ma->v * (ma->len + 2),
 	    M_MOUNT, M_WAITOK);
 	ma->v[ma->len].iov_base = (void *)(uintptr_t)name;
 	ma->v[ma->len].iov_len = strlen(name) + 1;
@@ -1933,10 +1933,10 @@ free_mntarg(struct mntarg *ma)
 	while (!SLIST_EMPTY(&ma->list)) {
 		maa = SLIST_FIRST(&ma->list);
 		SLIST_REMOVE_HEAD(&ma->list, next);
-		free(maa, M_MOUNT);
+		bsd_free(maa, M_MOUNT);
 	}
-	free(ma->v, M_MOUNT);
-	free(ma, M_MOUNT);
+	bsd_free(ma->v, M_MOUNT);
+	bsd_free(ma, M_MOUNT);
 }
 
 /*

@@ -109,10 +109,10 @@ static int
 protohandler(struct libalias *la, struct ip *pip, struct alias_data *ah)
 {
 
-	newpacket = malloc(PKTSIZE);
+	newpacket = bsd_malloc(PKTSIZE);
 	if (newpacket) {
 		AliasHandleIrcOut(la, pip, ah->lnk, ah->maxpktsize);
-		free(newpacket);
+		bsd_free(newpacket);
 	}
 	return (0);
 }

@@ -163,7 +163,7 @@ madt_setup_io(void)
 		panic("Using MADT but ACPI doesn't work");
 	}
 
-	ioapics = malloc(sizeof(*ioapics) * (MAX_APIC_ID + 1), M_MADT,
+	ioapics = bsd_malloc(sizeof(*ioapics) * (MAX_APIC_ID + 1), M_MADT,
 	    M_WAITOK | M_ZERO);
 
 	/* First, we run through adding I/O APIC's. */
@@ -197,7 +197,7 @@ madt_setup_io(void)
 	/* Finally, we throw the switch to enable the I/O APIC's. */
 	acpi_SetDefaultIntrModel(ACPI_INTR_APIC);
 
-	free(ioapics, M_MADT);
+	bsd_free(ioapics, M_MADT);
 	ioapics = NULL;
 
 	return (0);

@@ -523,7 +523,7 @@ ioapic_create(vm_paddr_t addr, int32_t apic_id, int intbase)
 
 	/* Determine the number of vectors and set the APIC ID. */
 	numintr = ((value & IOART_VER_MAXREDIR) >> MAXREDIRSHIFT) + 1;
-	io = malloc(sizeof(struct ioapic) +
+	io = bsd_malloc(sizeof(struct ioapic) +
 	    numintr * sizeof(struct ioapic_intsrc), M_IOAPIC, M_WAITOK);
 	io->io_pic = ioapic_template;
 	mtx_lock_spin(&icu_lock);

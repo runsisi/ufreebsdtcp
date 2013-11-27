@@ -307,7 +307,7 @@ chd_cb_destroy(struct cc_var *ccv)
 {
 
 	if (ccv->cc_data != NULL)
-		free(ccv->cc_data, M_CHD);
+		bsd_free(ccv->cc_data, M_CHD);
 }
 
 static int
@@ -315,7 +315,7 @@ chd_cb_init(struct cc_var *ccv)
 {
 	struct chd *chd_data;
 
-	chd_data = malloc(sizeof(struct chd), M_CHD, M_NOWAIT);
+	chd_data = bsd_malloc(sizeof(struct chd), M_CHD, M_NOWAIT);
 	if (chd_data == NULL)
 		return (ENOMEM);
 

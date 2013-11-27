@@ -172,7 +172,7 @@ vegas_cb_destroy(struct cc_var *ccv)
 {
 
 	if (ccv->cc_data != NULL)
-		free(ccv->cc_data, M_VEGAS);
+		bsd_free(ccv->cc_data, M_VEGAS);
 }
 
 static int
@@ -180,7 +180,7 @@ vegas_cb_init(struct cc_var *ccv)
 {
 	struct vegas *vegas_data;
 
-	vegas_data = malloc(sizeof(struct vegas), M_VEGAS, M_NOWAIT);
+	vegas_data = bsd_malloc(sizeof(struct vegas), M_VEGAS, M_NOWAIT);
 
 	if (vegas_data == NULL)
 		return (ENOMEM);

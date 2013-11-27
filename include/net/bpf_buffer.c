@@ -140,11 +140,11 @@ bpf_buffer_free(struct bpf_d *d)
 {
 
 	if (d->bd_sbuf != NULL)
-		free(d->bd_sbuf, M_BPF);
+		bsd_free(d->bd_sbuf, M_BPF);
 	if (d->bd_hbuf != NULL)
-		free(d->bd_hbuf, M_BPF);
+		bsd_free(d->bd_hbuf, M_BPF);
 	if (d->bd_fbuf != NULL)
-		free(d->bd_fbuf, M_BPF);
+		bsd_free(d->bd_fbuf, M_BPF);
 
 #ifdef INVARIANTS
 	d->bd_sbuf = d->bd_hbuf = d->bd_fbuf = (caddr_t)~0;
@@ -179,15 +179,15 @@ bpf_buffer_ioctl_sblen(struct bpf_d *d, u_int *i)
 		*i = size = BPF_MINBUFSIZE;
 
 	/* Allocate buffers immediately */
-	fbuf = (caddr_t)malloc(size, M_BPF, M_WAITOK);
-	sbuf = (caddr_t)malloc(size, M_BPF, M_WAITOK);
+	fbuf = (caddr_t)bsd_malloc(size, M_BPF, M_WAITOK);
+	sbuf = (caddr_t)bsd_malloc(size, M_BPF, M_WAITOK);
 
 	BPFD_LOCK(d);
 	if (d->bd_bif != NULL) {
 		/* Interface already attached, unable to change buffers */
 		BPFD_UNLOCK(d);
-		free(fbuf, M_BPF);
-		free(sbuf, M_BPF);
+		bsd_free(fbuf, M_BPF);
+		bsd_free(sbuf, M_BPF);
 		return (EINVAL);
 	}
 
@@ -196,9 +196,9 @@ bpf_buffer_ioctl_sblen(struct bpf_d *d, u_int *i)
 		    PRINET, "bd_hbuf", 0);
 	/* Free old buffers if set */
 	if (d->bd_fbuf != NULL)
-		free(d->bd_fbuf, M_BPF);
+		bsd_free(d->bd_fbuf, M_BPF);
 	if (d->bd_sbuf != NULL)
-		free(d->bd_sbuf, M_BPF);
+		bsd_free(d->bd_sbuf, M_BPF);
 
 	/* Fill in new data */
 	d->bd_bufsize = size;

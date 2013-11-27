@@ -82,10 +82,10 @@ disc_clone_create(struct if_clone *ifc, int unit, caddr_t params)
 	struct ifnet		*ifp;
 	struct disc_softc	*sc;
 
-	sc = malloc(sizeof(struct disc_softc), M_DISC, M_WAITOK | M_ZERO);
+	sc = bsd_malloc(sizeof(struct disc_softc), M_DISC, M_WAITOK | M_ZERO);
 	ifp = sc->sc_ifp = if_alloc(IFT_LOOP);
 	if (ifp == NULL) {
-		free(sc, M_DISC);
+		bsd_free(sc, M_DISC);
 		return (ENOSPC);
 	}
 
@@ -126,7 +126,7 @@ disc_clone_destroy(struct ifnet *ifp)
 	if_detach(ifp);
 	if_free(ifp);
 
-	free(sc, M_DISC);
+	bsd_free(sc, M_DISC);
 }
 
 static int

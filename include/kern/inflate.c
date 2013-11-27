@@ -550,7 +550,7 @@ huft_build(glbl, b, n, s, d, e, t, m)
 				l[h] = j;	/* set table size in stack */
 
 				/* allocate and link in new table */
-				if ((q = (struct huft *) malloc((z + 1) * sizeof(struct huft), M_GZIP, M_WAITOK)) ==
+				if ((q = (struct huft *) bsd_malloc((z + 1) * sizeof(struct huft), M_GZIP, M_WAITOK)) ==
 				    (struct huft *) NULL) {
 					if (h)
 						huft_free(glbl, u[0]);
@@ -628,7 +628,7 @@ huft_free(glbl, t)
 	p = t;
 	while (p != (struct huft *) NULL) {
 		q = (--p)->v.t;
-		free(p, M_GZIP);
+		bsd_free(p, M_GZIP);
 		p = q;
 	}
 	return 0;
@@ -1048,7 +1048,7 @@ inflate(glbl)
 	u_char		*p = NULL;
 
 	if (!glbl->gz_slide)
-		p = glbl->gz_slide = malloc(GZ_WSIZE, M_GZIP, M_WAITOK);
+		p = glbl->gz_slide = bsd_malloc(GZ_WSIZE, M_GZIP, M_WAITOK);
 #endif
 	if (!glbl->gz_slide)
 #ifdef _KERNEL
@@ -1068,7 +1068,7 @@ inflate(glbl)
 	}
 #ifdef _KERNEL
 	if (p == glbl->gz_slide) {
-		free(glbl->gz_slide, M_GZIP);
+		bsd_free(glbl->gz_slide, M_GZIP);
 		glbl->gz_slide = NULL;
 	}
 #endif

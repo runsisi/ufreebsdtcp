@@ -70,10 +70,10 @@ bpf_jitter(struct bpf_insn *fp, int nins)
 
 	/* Allocate the filter structure. */
 #ifdef _KERNEL
-	filter = (struct bpf_jit_filter *)malloc(sizeof(*filter),
+	filter = (struct bpf_jit_filter *)bsd_malloc(sizeof(*filter),
 	    M_BPFJIT, M_NOWAIT);
 #else
-	filter = (struct bpf_jit_filter *)malloc(sizeof(*filter));
+	filter = (struct bpf_jit_filter *)bsd_malloc(sizeof(*filter));
 #endif
 	if (filter == NULL)
 		return (NULL);
@@ -87,9 +87,9 @@ bpf_jitter(struct bpf_insn *fp, int nins)
 	/* Create the binary. */
 	if ((filter->func = bpf_jit_compile(fp, nins, &filter->size)) == NULL) {
 #ifdef _KERNEL
-		free(filter, M_BPFJIT);
+		bsd_free(filter, M_BPFJIT);
 #else
-		free(filter);
+		bsd_free(filter);
 #endif
 		return (NULL);
 	}
@@ -103,12 +103,12 @@ bpf_destroy_jit_filter(bpf_jit_filter *filter)
 
 #ifdef _KERNEL
 	if (filter->func != bpf_jit_accept_all)
-		free(filter->func, M_BPFJIT);
-	free(filter, M_BPFJIT);
+		bsd_free(filter->func, M_BPFJIT);
+	bsd_free(filter, M_BPFJIT);
 #else
 	if (filter->func != bpf_jit_accept_all)
 		munmap(filter->func, filter->size);
-	free(filter);
+	bsd_free(filter);
 #endif
 }
 

@@ -194,7 +194,7 @@ ktrace_init(void *dummy)
 	sx_init(&ktrace_sx, "ktrace_sx");
 	STAILQ_INIT(&ktr_free);
 	for (i = 0; i < ktr_requestpool; i++) {
-		req = malloc(sizeof(struct ktr_request), M_KTRACE, M_WAITOK);
+		req = bsd_malloc(sizeof(struct ktr_request), M_KTRACE, M_WAITOK);
 		STAILQ_INSERT_HEAD(&ktr_free, req, ktr_list);
 	}
 }
@@ -252,13 +252,13 @@ ktrace_resize_pool(u_int oldsize, u_int newsize)
 				break;
 			STAILQ_REMOVE_HEAD(&ktr_free, ktr_list);
 			ktr_requestpool--;
-			free(req, M_KTRACE);
+			bsd_free(req, M_KTRACE);
 		}
 	} else {
 		/* Grow pool up to newsize. */
 		STAILQ_INIT(&ktr_new);
 		while (bound-- > 0) {
-			req = malloc(sizeof(struct ktr_request), M_KTRACE,
+			req = bsd_malloc(sizeof(struct ktr_request), M_KTRACE,
 			    M_WAITOK);
 			STAILQ_INSERT_HEAD(&ktr_new, req, ktr_list);
 		}
@@ -407,7 +407,7 @@ ktr_freerequest_locked(struct ktr_request *req)
 
 	mtx_assert(&ktrace_mtx, MA_OWNED);
 	if (req->ktr_buffer != NULL)
-		free(req->ktr_buffer, M_KTRACE);
+		bsd_free(req->ktr_buffer, M_KTRACE);
 	STAILQ_INSERT_HEAD(&ktr_free, req, ktr_list);
 }
 
@@ -447,13 +447,13 @@ ktrsyscall(code, narg, args)
 
 	buflen = sizeof(register_t) * narg;
 	if (buflen > 0) {
-		buf = malloc(buflen, M_KTRACE, M_WAITOK);
+		buf = bsd_malloc(buflen, M_KTRACE, M_WAITOK);
 		bcopy(args, buf, buflen);
 	}
 	req = ktr_getrequest(KTR_SYSCALL);
 	if (req == NULL) {
 		if (buf != NULL)
-			free(buf, M_KTRACE);
+			bsd_free(buf, M_KTRACE);
 		return;
 	}
 	ktp = &req->ktr_data.ktr_syscall;
@@ -618,13 +618,13 @@ ktrnamei(path)
 
 	namelen = strlen(path);
 	if (namelen > 0) {
-		buf = malloc(namelen, M_KTRACE, M_WAITOK);
+		buf = bsd_malloc(namelen, M_KTRACE, M_WAITOK);
 		bcopy(path, buf, namelen);
 	}
 	req = ktr_getrequest(KTR_NAMEI);
 	if (req == NULL) {
 		if (buf != NULL)
-			free(buf, M_KTRACE);
+			bsd_free(buf, M_KTRACE);
 		return;
 	}
 	if (namelen > 0) {
@@ -651,16 +651,16 @@ ktrsysctl(name, namelen)
 	mib[1] = 1;
 	bcopy(name, mib + 2, namelen * sizeof(*name));
 	mibnamelen = 128;
-	mibname = malloc(mibnamelen, M_KTRACE, M_WAITOK);
+	mibname = bsd_malloc(mibnamelen, M_KTRACE, M_WAITOK);
 	error = kernel_sysctl(curthread, mib, namelen + 2, mibname, &mibnamelen,
 	    NULL, 0, &mibnamelen, 0);
 	if (error) {
-		free(mibname, M_KTRACE);
+		bsd_free(mibname, M_KTRACE);
 		return;
 	}
 	req = ktr_getrequest(KTR_SYSCTL);
 	if (req == NULL) {
-		free(mibname, M_KTRACE);
+		bsd_free(mibname, M_KTRACE);
 		return;
 	}
 	req->ktr_header.ktr_len = mibnamelen;
@@ -681,22 +681,22 @@ ktrgenio(fd, rw, uio, error)
 	char *buf;
 
 	if (error) {
-		free(uio, M_IOV);
+		bsd_free(uio, M_IOV);
 		return;
 	}
 	uio->uio_offset = 0;
 	uio->uio_rw = UIO_WRITE;
 	datalen = MIN(uio->uio_resid, ktr_geniosize);
-	buf = malloc(datalen, M_KTRACE, M_WAITOK);
+	buf = bsd_malloc(datalen, M_KTRACE, M_WAITOK);
 	error = uiomove(buf, datalen, uio);
-	free(uio, M_IOV);
+	bsd_free(uio, M_IOV);
 	if (error) {
-		free(buf, M_KTRACE);
+		bsd_free(buf, M_KTRACE);
 		return;
 	}
 	req = ktr_getrequest(KTR_GENIO);
 	if (req == NULL) {
-		free(buf, M_KTRACE);
+		bsd_free(buf, M_KTRACE);
 		return;
 	}
 	ktg = &req->ktr_data.ktr_genio;
@@ -766,11 +766,11 @@ ktrstruct(name, data, datalen)
 	if (!data)
 		datalen = 0;
 	buflen = strlen(name) + 1 + datalen;
-	buf = malloc(buflen, M_KTRACE, M_WAITOK);
+	buf = bsd_malloc(buflen, M_KTRACE, M_WAITOK);
 	strcpy(buf, name);
 	bcopy(data, buf + strlen(name) + 1, datalen);
 	if ((req = ktr_getrequest(KTR_STRUCT)) == NULL) {
-		free(buf, M_KTRACE);
+		bsd_free(buf, M_KTRACE);
 		return;
 	}
 	req->ktr_buffer = buf;
@@ -995,15 +995,15 @@ sys_utrace(td, uap)
 		return (0);
 	if (uap->len > KTR_USER_MAXLEN)
 		return (EINVAL);
-	cp = malloc(uap->len, M_KTRACE, M_WAITOK);
+	cp = bsd_malloc(uap->len, M_KTRACE, M_WAITOK);
 	error = copyin(uap->addr, cp, uap->len);
 	if (error) {
-		free(cp, M_KTRACE);
+		bsd_free(cp, M_KTRACE);
 		return (error);
 	}
 	req = ktr_getrequest(KTR_USER);
 	if (req == NULL) {
-		free(cp, M_KTRACE);
+		bsd_free(cp, M_KTRACE);
 		return (ENOMEM);
 	}
 	req->ktr_buffer = cp;

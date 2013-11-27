@@ -472,7 +472,7 @@ hash_alloc(struct uma_hash *hash)
 	if (oldsize)  {
 		hash->uh_hashsize = oldsize * 2;
 		alloc = sizeof(hash->uh_slab_hash[0]) * hash->uh_hashsize;
-		hash->uh_slab_hash = (struct slabhead *)malloc(alloc,
+		hash->uh_slab_hash = (struct slabhead *)bsd_malloc(alloc,
 		    M_UMAHASH, M_NOWAIT);
 	} else {
 		alloc = sizeof(hash->uh_slab_hash[0]) * UMA_HASH_SIZE_INIT;
@@ -552,7 +552,7 @@ hash_free(struct uma_hash *hash)
 		zone_free_item(hashzone,
 		    hash->uh_slab_hash, NULL, SKIP_NONE, ZFREE_STATFREE);
 	else
-		free(hash->uh_slab_hash, M_UMAHASH);
+		bsd_free(hash->uh_slab_hash, M_UMAHASH);
 }
 
 /*
@@ -1555,7 +1555,7 @@ zone_dtor(void *arg, int size, void *udata)
 		LIST_REMOVE(klink, kl_link);
 		if (klink == &zone->uz_klink)
 			continue;
-		free(klink, M_TEMP);
+		bsd_free(klink, M_TEMP);
 	}
 	/*
 	 * We only destroy kegs from non secondary zones.
@@ -1892,7 +1892,7 @@ uma_zsecond_add(uma_zone_t zone, uma_zone_t master)
 	int error;
 
 	error = 0;
-	klink = malloc(sizeof(*klink), M_TEMP, M_WAITOK | M_ZERO);
+	klink = bsd_malloc(sizeof(*klink), M_TEMP, M_WAITOK | M_ZERO);
 
 	zone_lock_pair(zone, master);
 	/*
@@ -1944,7 +1944,7 @@ uma_zsecond_add(uma_zone_t zone, uma_zone_t master)
 out:
 	zone_unlock_pair(zone, master);
 	if (klink != NULL)
-		free(klink, M_TEMP);
+		bsd_free(klink, M_TEMP);
 
 	return (error);
 }

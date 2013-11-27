@@ -78,7 +78,7 @@ busdma_bufalloc_create(const char *name, bus_size_t minimum_alignment,
 	int i;
 	bus_size_t cursize;
 
-	ba = malloc(sizeof(struct busdma_bufalloc), M_DEVBUF, 
+	ba = bsd_malloc(sizeof(struct busdma_bufalloc), M_DEVBUF, 
 	    M_ZERO | M_WAITOK);
 
 	ba->min_size = MAX(MIN_ZONE_BUFSIZE, minimum_alignment);
@@ -126,7 +126,7 @@ busdma_bufalloc_destroy(busdma_bufalloc_t ba)
 		uma_zdestroy(bz->umazone);
 	}
 
-	free(ba, M_DEVBUF);
+	bsd_free(ba, M_DEVBUF);
 }
 
 struct busdma_bufzone * 

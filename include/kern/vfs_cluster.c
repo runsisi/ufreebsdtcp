@@ -697,7 +697,7 @@ cluster_write_gb(struct vnode *vp, struct buf *bp, u_quad_t filesize,
 					for (bpp = buflist->bs_children;
 					     bpp < endbp; bpp++)
 						brelse(*bpp);
-					free(buflist, M_SEGMENT);
+					bsd_free(buflist, M_SEGMENT);
 					if (seqcount > 1) {
 						cluster_wbuild_wb(vp, 
 						    lblocksize, vp->v_cstart, 
@@ -710,7 +710,7 @@ cluster_write_gb(struct vnode *vp, struct buf *bp, u_quad_t filesize,
 					for (bpp = buflist->bs_children;
 					     bpp <= endbp; bpp++)
 						bdwrite(*bpp);
-					free(buflist, M_SEGMENT);
+					bsd_free(buflist, M_SEGMENT);
 					vp->v_lastw = lbn;
 					vp->v_lasta = bp->b_blkno;
 					return;
@@ -1043,7 +1043,7 @@ cluster_collectbufs(struct vnode *vp, struct buf *last_bp, int gbflags)
 	int i, len;
 
 	len = vp->v_lastw - vp->v_cstart + 1;
-	buflist = malloc(sizeof(struct buf *) * (len + 1) + sizeof(*buflist),
+	buflist = bsd_malloc(sizeof(struct buf *) * (len + 1) + sizeof(*buflist),
 	    M_SEGMENT, M_WAITOK);
 	buflist->bs_nchildren = 0;
 	buflist->bs_children = (struct buf **) (buflist + 1);

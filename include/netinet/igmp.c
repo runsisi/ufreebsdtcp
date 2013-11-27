@@ -567,7 +567,7 @@ igi_alloc_locked(/*const*/ struct ifnet *ifp)
 
 	IGMP_LOCK_ASSERT();
 
-	igi = malloc(sizeof(struct igmp_ifinfo), M_IGMP, M_NOWAIT|M_ZERO);
+	igi = bsd_malloc(sizeof(struct igmp_ifinfo), M_IGMP, M_NOWAIT|M_ZERO);
 	if (igi == NULL)
 		goto out;
 
@@ -690,7 +690,7 @@ igi_delete_locked(const struct ifnet *ifp)
 			    ("%s: there are dangling in_multi references",
 			    __func__));
 
-			free(igi, M_IGMP);
+			bsd_free(igi, M_IGMP);
 			return;
 		}
 	}

@@ -137,7 +137,7 @@ hhook_add_hook(struct hhook_head *hhh, struct hookinfo *hki, uint32_t flags)
 	if (hhh == NULL)
 		return (ENOENT);
 
-	hhk = malloc(sizeof(struct hhook), M_HHOOK,
+	hhk = bsd_malloc(sizeof(struct hhook), M_HHOOK,
 	    M_ZERO | ((flags & HHOOK_WAITOK) ? M_WAITOK : M_NOWAIT));
 
 	if (hhk == NULL)
@@ -161,7 +161,7 @@ hhook_add_hook(struct hhook_head *hhh, struct hookinfo *hki, uint32_t flags)
 		STAILQ_INSERT_TAIL(&hhh->hhh_hooks, hhk, hhk_next);
 		hhh->hhh_nhooks++;
 	} else
-		free(hhk, M_HHOOK);
+		bsd_free(hhk, M_HHOOK);
 
 	HHH_WUNLOCK(hhh);
 
@@ -197,7 +197,7 @@ tryagain:
 	 * nonetheless have to cope with - hence the complex goto logic.
 	 */
 	n_heads_to_hook = n_hhookheads;
-	heads_to_hook = malloc(n_heads_to_hook * sizeof(struct hhook_head *),
+	heads_to_hook = bsd_malloc(n_heads_to_hook * sizeof(struct hhook_head *),
 	    M_HHOOK, flags & HHOOK_WAITOK ? M_WAITOK : M_NOWAIT);
 	if (heads_to_hook == NULL)
 		return (ENOMEM);
@@ -219,7 +219,7 @@ tryagain:
 				 */
 				for (i--; i >= 0; i--)
 					refcount_release(&heads_to_hook[i]->hhh_refcount);
-				free(heads_to_hook, M_HHOOK);
+				bsd_free(heads_to_hook, M_HHOOK);
 				HHHLIST_UNLOCK();
 				goto tryagain;
 			}
@@ -233,7 +233,7 @@ tryagain:
 		refcount_release(&heads_to_hook[i]->hhh_refcount);
 	}
 
-	free(heads_to_hook, M_HHOOK);
+	bsd_free(heads_to_hook, M_HHOOK);
 
 	return (error);
 }
@@ -254,7 +254,7 @@ hhook_remove_hook(struct hhook_head *hhh, struct hookinfo *hki)
 		if (tmp->hhk_func == hki->hook_func &&
 		    tmp->hhk_udata == hki->hook_udata) {
 			STAILQ_REMOVE(&hhh->hhh_hooks, tmp, hhook, hhk_next);
-			free(tmp, M_HHOOK);
+			bsd_free(tmp, M_HHOOK);
 			hhh->hhh_nhooks--;
 			break;
 		}
@@ -301,7 +301,7 @@ hhook_head_register(int32_t hhook_type, int32_t hhook_id, struct hhook_head **hh
 		return (EEXIST);
 	}
 
-	tmphhh = malloc(sizeof(struct hhook_head), M_HHOOK,
+	tmphhh = bsd_malloc(sizeof(struct hhook_head), M_HHOOK,
 	    M_ZERO | ((flags & HHOOK_WAITOK) ? M_WAITOK : M_NOWAIT));
 
 	if (tmphhh == NULL)
@@ -352,10 +352,10 @@ hhook_head_destroy(struct hhook_head *hhh)
 #endif
 	HHH_WLOCK(hhh);
 	STAILQ_FOREACH_SAFE(tmp, &hhh->hhh_hooks, hhk_next, tmp2)
-		free(tmp, M_HHOOK);
+		bsd_free(tmp, M_HHOOK);
 	HHH_WUNLOCK(hhh);
 	HHH_LOCK_DESTROY(hhh);
-	free(hhh, M_HHOOK);
+	bsd_free(hhh, M_HHOOK);
 	n_hhookheads--;
 }
 

@@ -1002,7 +1002,7 @@ funsetown(struct sigio **sigiop)
 	}
 	SIGIO_UNLOCK();
 	crfree(sigio->sio_ucred);
-	free(sigio, M_SIGIO);
+	bsd_free(sigio, M_SIGIO);
 }
 
 /*
@@ -1060,7 +1060,7 @@ funsetownlst(struct sigiolst *sigiolst)
 		}
 		SIGIO_UNLOCK();
 		crfree(sigio->sio_ucred);
-		free(sigio, M_SIGIO);
+		bsd_free(sigio, M_SIGIO);
 		SIGIO_LOCK();
 	}
 	SIGIO_UNLOCK();
@@ -1088,7 +1088,7 @@ fsetown(pid_t pgid, struct sigio **sigiop)
 	ret = 0;
 
 	/* Allocate and fill in the new sigio out of locks. */
-	sigio = malloc(sizeof(struct sigio), M_SIGIO, M_WAITOK);
+	sigio = bsd_malloc(sizeof(struct sigio), M_SIGIO, M_WAITOK);
 	sigio->sio_pgid = pgid;
 	sigio->sio_ucred = crhold(curthread->td_ucred);
 	sigio->sio_myref = sigiop;
@@ -1170,7 +1170,7 @@ fsetown(pid_t pgid, struct sigio **sigiop)
 fail:
 	sx_sunlock(&proctree_lock);
 	crfree(sigio->sio_ucred);
-	free(sigio, M_SIGIO);
+	bsd_free(sigio, M_SIGIO);
 	return (ret);
 }
 
@@ -1482,11 +1482,11 @@ fdgrowtable(struct filedesc *fdp, int nfd)
 
 	/* allocate a new table and (if required) new bitmaps */
 	FILEDESC_XUNLOCK(fdp);
-	ntable = malloc((nnfiles * OFILESIZE) + sizeof(struct freetable),
+	ntable = bsd_malloc((nnfiles * OFILESIZE) + sizeof(struct freetable),
 	    M_FILEDESC, M_ZERO | M_WAITOK);
 	nfileflags = (char *)&ntable[nnfiles];
 	if (NDSLOTS(nnfiles) > NDSLOTS(onfiles))
-		nmap = malloc(NDSLOTS(nnfiles) * NDSLOTSIZE,
+		nmap = bsd_malloc(NDSLOTS(nnfiles) * NDSLOTSIZE,
 		    M_FILEDESC, M_ZERO | M_WAITOK);
 	else
 		nmap = NULL;
@@ -1499,9 +1499,9 @@ fdgrowtable(struct filedesc *fdp, int nfd)
 	onfiles = fdp->fd_nfiles;
 	if (onfiles >= nnfiles) {
 		/* we lost the race, but that's OK */
-		free(ntable, M_FILEDESC);
+		bsd_free(ntable, M_FILEDESC);
 		if (nmap != NULL)
-			free(nmap, M_FILEDESC);
+			bsd_free(nmap, M_FILEDESC);
 		return;
 	}
 	bcopy(fdp->fd_ofiles, ntable, onfiles * sizeof(*ntable));
@@ -1523,7 +1523,7 @@ fdgrowtable(struct filedesc *fdp, int nfd)
 	if (NDSLOTS(nnfiles) > NDSLOTS(onfiles)) {
 		bcopy(fdp->fd_map, nmap, NDSLOTS(onfiles) * sizeof(*nmap));
 		if (NDSLOTS(onfiles) > NDSLOTS(NDFILE))
-			free(fdp->fd_map, M_FILEDESC);
+			bsd_free(fdp->fd_map, M_FILEDESC);
 		fdp->fd_map = nmap;
 	}
 	fdp->fd_nfiles = nnfiles;
@@ -1749,7 +1749,7 @@ fdinit(struct filedesc *fdp)
 {
 	struct filedesc0 *newfdp;
 
-	newfdp = malloc(sizeof *newfdp, M_FILEDESC, M_WAITOK | M_ZERO);
+	newfdp = bsd_malloc(sizeof *newfdp, M_FILEDESC, M_WAITOK | M_ZERO);
 	FILEDESC_LOCK_INIT(&newfdp->fd_fd);
 	if (fdp != NULL) {
 		FILEDESC_XLOCK(fdp);
@@ -1807,9 +1807,9 @@ fddrop(struct filedesc *fdp)
 	fdp0 = (struct filedesc0 *)fdp;
 	while ((ft = SLIST_FIRST(&fdp0->fd_free)) != NULL) {
 		SLIST_REMOVE_HEAD(&fdp0->fd_free, ft_next);
-		free(ft->ft_table, M_FILEDESC);
+		bsd_free(ft->ft_table, M_FILEDESC);
 	}
-	free(fdp, M_FILEDESC);
+	bsd_free(fdp, M_FILEDESC);
 }
 
 /*
@@ -1989,7 +1989,7 @@ fdfree(struct thread *td)
 		td->td_proc->p_fdtol = NULL;
 		FILEDESC_XUNLOCK(fdp);
 		if (fdtol != NULL)
-			free(fdtol, M_FILEDESC_TO_LEADER);
+			bsd_free(fdtol, M_FILEDESC_TO_LEADER);
 	}
 	FILEDESC_XLOCK(fdp);
 	i = --fdp->fd_refcnt;
@@ -2015,9 +2015,9 @@ fdfree(struct thread *td)
 	mtx_unlock(&fdesc_mtx);
 
 	if (fdp->fd_nfiles > NDFILE)
-		free(fdp->fd_ofiles, M_FILEDESC);
+		bsd_free(fdp->fd_ofiles, M_FILEDESC);
 	if (NDSLOTS(fdp->fd_nfiles) > NDSLOTS(NDFILE))
-		free(fdp->fd_map, M_FILEDESC);
+		bsd_free(fdp->fd_map, M_FILEDESC);
 
 	fdp->fd_nfiles = 0;
 
@@ -2657,7 +2657,7 @@ _fdrop(struct file *fp, struct thread *td)
 		error = fo_close(fp, td);
 	atomic_subtract_int(&openfiles, 1);
 	crfree(fp->f_cred);
-	free(fp->f_advice, M_FADVISE);
+	bsd_free(fp->f_advice, M_FADVISE);
 	uma_zfree(file_zone, fp);
 
 	return (error);
@@ -2876,7 +2876,7 @@ filedesc_to_leader_alloc(struct filedesc_to_leader *old, struct filedesc *fdp, s
 {
 	struct filedesc_to_leader *fdtol;
 
-	fdtol = malloc(sizeof(struct filedesc_to_leader),
+	fdtol = bsd_malloc(sizeof(struct filedesc_to_leader),
 	       M_FILEDESC_TO_LEADER,
 	       M_WAITOK);
 	fdtol->fdl_refcount = 1;
@@ -3020,7 +3020,7 @@ export_vnode_for_osysctl(struct vnode *vp, int type,
 	VFS_UNLOCK_GIANT(vfslocked);
 	strlcpy(kif->kf_path, fullpath, sizeof(kif->kf_path));
 	if (freepath != NULL)
-		free(freepath, M_TEMP);
+		bsd_free(freepath, M_TEMP);
 	error = SYSCTL_OUT(req, kif, sizeof(*kif));
 	FILEDESC_SLOCK(fdp);
 	return (error);
@@ -3053,7 +3053,7 @@ sysctl_kern_proc_ofiledesc(SYSCTL_HANDLER_ARGS)
 	PROC_UNLOCK(p);
 	if (fdp == NULL)
 		return (ENOENT);
-	kif = malloc(sizeof(*kif), M_TEMP, M_WAITOK);
+	kif = bsd_malloc(sizeof(*kif), M_TEMP, M_WAITOK);
 	FILEDESC_SLOCK(fdp);
 	if (fdp->fd_cdir != NULL)
 		export_vnode_for_osysctl(fdp->fd_cdir, KF_FD_TYPE_CWD, kif,
@@ -3215,7 +3215,7 @@ sysctl_kern_proc_ofiledesc(SYSCTL_HANDLER_ARGS)
 			strlcpy(kif->kf_path, fullpath,
 			    sizeof(kif->kf_path));
 			if (freepath != NULL)
-				free(freepath, M_TEMP);
+				bsd_free(freepath, M_TEMP);
 			FILEDESC_SLOCK(fdp);
 		}
 		if (so != NULL) {
@@ -3224,12 +3224,12 @@ sysctl_kern_proc_ofiledesc(SYSCTL_HANDLER_ARGS)
 			if (so->so_proto->pr_usrreqs->pru_sockaddr(so, &sa)
 			    == 0 && sa->sa_len <= sizeof(kif->kf_sa_local)) {
 				bcopy(sa, &kif->kf_sa_local, sa->sa_len);
-				free(sa, M_SONAME);
+				bsd_free(sa, M_SONAME);
 			}
 			if (so->so_proto->pr_usrreqs->pru_peeraddr(so, &sa)
 			    == 0 && sa->sa_len <= sizeof(kif->kf_sa_peer)) {
 				bcopy(sa, &kif->kf_sa_peer, sa->sa_len);
-				free(sa, M_SONAME);
+				bsd_free(sa, M_SONAME);
 			}
 			kif->kf_sock_domain =
 			    so->so_proto->pr_domain->dom_family;
@@ -3250,7 +3250,7 @@ sysctl_kern_proc_ofiledesc(SYSCTL_HANDLER_ARGS)
 	}
 	FILEDESC_SUNLOCK(fdp);
 	fddrop(fdp);
-	free(kif, M_TEMP);
+	bsd_free(kif, M_TEMP);
 	return (0);
 }
 
@@ -3415,7 +3415,7 @@ kern_proc_filedesc_out(struct proc *p,  struct sbuf *sb, ssize_t maxlen)
 	}
 	fdp = fdhold(p);
 	PROC_UNLOCK(p);
-	efbuf = malloc(sizeof(*efbuf), M_TEMP, M_WAITOK);
+	efbuf = bsd_malloc(sizeof(*efbuf), M_TEMP, M_WAITOK);
 	efbuf->fdp = NULL;
 	efbuf->sb = sb;
 	efbuf->remainder = maxlen;
@@ -3555,7 +3555,7 @@ kern_proc_filedesc_out(struct proc *p,  struct sbuf *sb, ssize_t maxlen)
 	FILEDESC_SUNLOCK(fdp);
 	fddrop(fdp);
 fail:
-	free(efbuf, M_TEMP);
+	bsd_free(efbuf, M_TEMP);
 	return (error);
 }
 
@@ -3636,7 +3636,7 @@ fill_vnode_info(struct vnode *vp, struct kinfo_file *kif)
 		strlcpy(kif->kf_path, fullpath, sizeof(kif->kf_path));
 	}
 	if (freepath != NULL)
-		free(freepath, M_TEMP);
+		bsd_free(freepath, M_TEMP);
 
 	/*
 	 * Retrieve vnode attributes.
@@ -3704,12 +3704,12 @@ fill_socket_info(struct socket *so, struct kinfo_file *kif)
 	error = so->so_proto->pr_usrreqs->pru_sockaddr(so, &sa);
 	if (error == 0 && sa->sa_len <= sizeof(kif->kf_sa_local)) {
 		bcopy(sa, &kif->kf_sa_local, sa->sa_len);
-		free(sa, M_SONAME);
+		bsd_free(sa, M_SONAME);
 	}
 	error = so->so_proto->pr_usrreqs->pru_peeraddr(so, &sa);
 	if (error == 0 && sa->sa_len <= sizeof(kif->kf_sa_peer)) {
 		bcopy(sa, &kif->kf_sa_peer, sa->sa_len);
-		free(sa, M_SONAME);
+		bsd_free(sa, M_SONAME);
 	}
 	strncpy(kif->kf_path, so->so_proto->pr_domain->dom_name,
 	    sizeof(kif->kf_path));

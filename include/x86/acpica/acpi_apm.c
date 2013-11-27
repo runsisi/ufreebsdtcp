@@ -241,7 +241,7 @@ apm_create_clone(struct cdev *dev, struct acpi_softc *acpi_sc)
 {
 	struct apm_clone_data *clone;
 
-	clone = malloc(sizeof(*clone), M_APMDEV, M_WAITOK);
+	clone = bsd_malloc(sizeof(*clone), M_APMDEV, M_WAITOK);
 	clone->cdev = dev;
 	clone->acpi_sc = acpi_sc;
 	clone->notify_status = APM_EV_NONE;
@@ -300,7 +300,7 @@ apmclose(struct cdev *dev, int flag, int fmt, struct thread *td)
 	seldrain(&clone->sel_read);
 	knlist_destroy(&clone->sel_read.si_note);
 	ACPI_UNLOCK(acpi);
-	free(clone, M_APMDEV);
+	bsd_free(clone, M_APMDEV);
 	destroy_dev_sched(dev);
 	return (0);
 }

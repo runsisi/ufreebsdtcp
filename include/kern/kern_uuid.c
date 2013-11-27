@@ -203,10 +203,10 @@ sys_uuidgen(struct thread *td, struct uuidgen_args *uap)
 		return (EINVAL);
 
 	count = uap->count;
-	store = malloc(count * sizeof(struct uuid), M_TEMP, M_WAITOK);
+	store = bsd_malloc(count * sizeof(struct uuid), M_TEMP, M_WAITOK);
 	kern_uuidgen(store, count);
 	error = copyout(store, uap->store, count * sizeof(struct uuid));
-	free(store, M_TEMP);
+	bsd_free(store, M_TEMP);
 	return (error);
 }
 

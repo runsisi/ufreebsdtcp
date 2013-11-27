@@ -174,7 +174,7 @@ nd6_ifattach(struct ifnet *ifp)
 {
 	struct nd_ifinfo *nd;
 
-	nd = (struct nd_ifinfo *)malloc(sizeof(*nd), M_IP6NDP, M_WAITOK|M_ZERO);
+	nd = (struct nd_ifinfo *)bsd_malloc(sizeof(*nd), M_IP6NDP, M_WAITOK|M_ZERO);
 	nd->initialized = 1;
 
 	nd->chlim = IPV6_DEFHLIM;
@@ -216,7 +216,7 @@ void
 nd6_ifdetach(struct nd_ifinfo *nd)
 {
 
-	free(nd, M_IP6NDP);
+	bsd_free(nd, M_IP6NDP);
 }
 
 /*

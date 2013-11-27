@@ -584,10 +584,10 @@ bridge_clone_create(struct if_clone *ifc, int unit, caddr_t params)
 	int fb, retry;
 	unsigned long hostid;
 
-	sc = malloc(sizeof(*sc), M_DEVBUF, M_WAITOK|M_ZERO);
+	sc = bsd_malloc(sizeof(*sc), M_DEVBUF, M_WAITOK|M_ZERO);
 	ifp = sc->sc_ifp = if_alloc(IFT_ETHER);
 	if (ifp == NULL) {
-		free(sc, M_DEVBUF);
+		bsd_free(sc, M_DEVBUF);
 		return (ENOSPC);
 	}
 
@@ -702,7 +702,7 @@ bridge_clone_destroy(struct ifnet *ifp)
 	bridge_rtable_fini(sc);
 
 	BRIDGE_LOCK_DESTROY(sc);
-	free(sc, M_DEVBUF);
+	bsd_free(sc, M_DEVBUF);
 }
 
 /*
@@ -1003,7 +1003,7 @@ bridge_delete_member(struct bridge_softc *sc, struct bridge_iflist *bif,
 	}
 	bstp_destroy(&bif->bif_stp);	/* prepare to free */
 	BRIDGE_LOCK(sc);
-	free(bif, M_DEVBUF);
+	bsd_free(bif, M_DEVBUF);
 }
 
 /*
@@ -1020,7 +1020,7 @@ bridge_delete_span(struct bridge_softc *sc, struct bridge_iflist *bif)
 	    ("%s: not a span interface", __func__));
 
 	LIST_REMOVE(bif, bif_next);
-	free(bif, M_DEVBUF);
+	bsd_free(bif, M_DEVBUF);
 }
 
 static int
@@ -1111,7 +1111,7 @@ bridge_ioctl_add(struct bridge_softc *sc, void *arg)
 		return (EINVAL);
 	}
 
-	bif = malloc(sizeof(*bif), M_DEVBUF, M_NOWAIT|M_ZERO);
+	bif = bsd_malloc(sizeof(*bif), M_DEVBUF, M_NOWAIT|M_ZERO);
 	if (bif == NULL)
 		return (ENOMEM);
 
@@ -1156,7 +1156,7 @@ bridge_ioctl_add(struct bridge_softc *sc, void *arg)
 
 	if (error) {
 		bridge_delete_member(sc, bif, 0);
-		free(bif, M_DEVBUF);
+		bsd_free(bif, M_DEVBUF);
 	}
 	return (error);
 }
@@ -1298,7 +1298,7 @@ bridge_ioctl_gifs(struct bridge_softc *sc, void *arg)
 		return (0);
 	}
 	BRIDGE_UNLOCK(sc);
-	outbuf = malloc(buflen, M_TEMP, M_WAITOK | M_ZERO);
+	outbuf = bsd_malloc(buflen, M_TEMP, M_WAITOK | M_ZERO);
 	BRIDGE_LOCK(sc);
 
 	count = 0;
@@ -1338,7 +1338,7 @@ bridge_ioctl_gifs(struct bridge_softc *sc, void *arg)
 	bifc->ifbic_len = sizeof(breq) * count;
 	error = copyout(outbuf, bifc->ifbic_req, bifc->ifbic_len);
 	BRIDGE_LOCK(sc);
-	free(outbuf, M_TEMP);
+	bsd_free(outbuf, M_TEMP);
 	return (error);
 }
 
@@ -1360,7 +1360,7 @@ bridge_ioctl_rts(struct bridge_softc *sc, void *arg)
 	buflen = sizeof(bareq) * count;
 
 	BRIDGE_UNLOCK(sc);
-	outbuf = malloc(buflen, M_TEMP, M_WAITOK | M_ZERO);
+	outbuf = bsd_malloc(buflen, M_TEMP, M_WAITOK | M_ZERO);
 	BRIDGE_LOCK(sc);
 
 	count = 0;
@@ -1391,7 +1391,7 @@ out:
 	bac->ifbac_len = sizeof(bareq) * count;
 	error = copyout(outbuf, bac->ifbac_req, bac->ifbac_len);
 	BRIDGE_LOCK(sc);
-	free(outbuf, M_TEMP);
+	bsd_free(outbuf, M_TEMP);
 	return (error);
 }
 
@@ -1586,7 +1586,7 @@ bridge_ioctl_addspan(struct bridge_softc *sc, void *arg)
 			return (EINVAL);
 	}
 
-	bif = malloc(sizeof(*bif), M_DEVBUF, M_NOWAIT|M_ZERO);
+	bif = bsd_malloc(sizeof(*bif), M_DEVBUF, M_NOWAIT|M_ZERO);
 	if (bif == NULL)
 		return (ENOMEM);
 
@@ -1683,7 +1683,7 @@ bridge_ioctl_gifsstp(struct bridge_softc *sc, void *arg)
 	}
 
 	BRIDGE_UNLOCK(sc);
-	outbuf = malloc(buflen, M_TEMP, M_WAITOK | M_ZERO);
+	outbuf = bsd_malloc(buflen, M_TEMP, M_WAITOK | M_ZERO);
 	BRIDGE_LOCK(sc);
 
 	count = 0;
@@ -1715,7 +1715,7 @@ bridge_ioctl_gifsstp(struct bridge_softc *sc, void *arg)
 	bifstp->ifbpstp_len = sizeof(bpreq) * count;
 	error = copyout(outbuf, bifstp->ifbpstp_req, bifstp->ifbpstp_len);
 	BRIDGE_LOCK(sc);
-	free(outbuf, M_TEMP);
+	bsd_free(outbuf, M_TEMP);
 	return (error);
 }
 
@@ -2796,7 +2796,7 @@ bridge_rtable_init(struct bridge_softc *sc)
 {
 	int i;
 
-	sc->sc_rthash = malloc(sizeof(*sc->sc_rthash) * BRIDGE_RTHASH_SIZE,
+	sc->sc_rthash = bsd_malloc(sizeof(*sc->sc_rthash) * BRIDGE_RTHASH_SIZE,
 	    M_DEVBUF, M_NOWAIT);
 	if (sc->sc_rthash == NULL)
 		return (ENOMEM);
@@ -2822,7 +2822,7 @@ bridge_rtable_fini(struct bridge_softc *sc)
 
 	KASSERT(sc->sc_brtcnt == 0,
 	    ("%s: %d bridge routes referenced", __func__, sc->sc_brtcnt));
-	free(sc->sc_rthash, M_DEVBUF);
+	bsd_free(sc->sc_rthash, M_DEVBUF);
 }
 
 /*

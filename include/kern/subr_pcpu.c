@@ -118,7 +118,7 @@ dpcpu_startup(void *dummy __unused)
 {
 	struct dpcpu_free *df;
 
-	df = malloc(sizeof(*df), M_PCPU, M_WAITOK | M_ZERO);
+	df = bsd_malloc(sizeof(*df), M_PCPU, M_WAITOK | M_ZERO);
 	df->df_start = (uintptr_t)&DPCPU_NAME(modspace);
 	df->df_len = DPCPU_MODMIN;
 	TAILQ_INSERT_HEAD(&dpcpu_head, df, df_link);
@@ -146,7 +146,7 @@ dpcpu_alloc(int size)
 		if (df->df_len == size) {
 			s = (void *)df->df_start;
 			TAILQ_REMOVE(&dpcpu_head, df, df_link);
-			free(df, M_PCPU);
+			bsd_free(df, M_PCPU);
 			break;
 		}
 		s = (void *)df->df_start;
@@ -191,7 +191,7 @@ dpcpu_free(void *s, int size)
 			if (df->df_start + df->df_len == dn->df_start) {
 				df->df_len += dn->df_len;
 				TAILQ_REMOVE(&dpcpu_head, dn, df_link);
-				free(dn, M_PCPU);
+				bsd_free(dn, M_PCPU);
 			}
 			sx_xunlock(&dpcpu_lock);
 			return;
@@ -203,7 +203,7 @@ dpcpu_free(void *s, int size)
 			return;
 		}
 	}
-	dn = malloc(sizeof(*df), M_PCPU, M_WAITOK | M_ZERO);
+	dn = bsd_malloc(sizeof(*df), M_PCPU, M_WAITOK | M_ZERO);
 	dn->df_start = start;
 	dn->df_len = size;
 	if (df)

@@ -382,7 +382,7 @@ in_control(struct socket *so, u_long cmd, caddr_t data, struct ifnet *ifp,
 	case SIOCSIFDSTADDR:
 		if (ia == NULL) {
 			ia = (struct in_ifaddr *)
-				malloc(sizeof *ia, M_IFADDR, M_NOWAIT |
+				bsd_malloc(sizeof *ia, M_IFADDR, M_NOWAIT |
 				    M_ZERO);
 			if (ia == NULL) {
 				error = ENOBUFS;
@@ -1331,7 +1331,7 @@ in_lltable_free(struct lltable *llt, struct llentry *lle)
 {
 	LLE_WUNLOCK(lle);
 	LLE_LOCK_DESTROY(lle);
-	free(lle, M_LLTABLE);
+	bsd_free(lle, M_LLTABLE);
 }
 
 static struct llentry *
@@ -1339,7 +1339,7 @@ in_lltable_new(const struct sockaddr *l3addr, u_int flags)
 {
 	struct in_llentry *lle;
 
-	lle = malloc(sizeof(struct in_llentry), M_LLTABLE, M_DONTWAIT | M_ZERO);
+	lle = bsd_malloc(sizeof(struct in_llentry), M_LLTABLE, M_DONTWAIT | M_ZERO);
 	if (lle == NULL)		/* NB: caller generates msg */
 		return NULL;
 
@@ -1635,7 +1635,7 @@ in_domifattach(struct ifnet *ifp)
 	struct in_ifinfo *ii;
 	struct lltable *llt;
 
-	ii = malloc(sizeof(struct in_ifinfo), M_IFADDR, M_WAITOK|M_ZERO);
+	ii = bsd_malloc(sizeof(struct in_ifinfo), M_IFADDR, M_WAITOK|M_ZERO);
 
 	llt = lltable_init(ifp, AF_INET);
 	if (llt != NULL) {
@@ -1657,5 +1657,5 @@ in_domifdetach(struct ifnet *ifp, void *aux)
 
 	igmp_domifdetach(ifp);
 	lltable_free(ii->ii_llt);
-	free(ii, M_IFADDR);
+	bsd_free(ii, M_IFADDR);
 }

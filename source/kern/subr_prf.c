@@ -300,7 +300,7 @@ log_console(struct uio *uio)
 
 	pri = LOG_INFO | LOG_CONSOLE;
 	uio = cloneuio(uio);
-	consbuffer = malloc(CONSCHUNK, M_TEMP, M_WAITOK);
+	consbuffer = bsd_malloc(CONSCHUNK, M_TEMP, M_WAITOK);
 
 	nl = 0;
 	while (uio->uio_resid > 0) {
@@ -347,8 +347,8 @@ log_console(struct uio *uio)
 		msglogstr(consbuffer, pri, /*filter_cr*/ 1);
 	}
 	msgbuftrigger = 1;
-	free(uio, M_IOV);
-	free(consbuffer, M_TEMP);
+	bsd_free(uio, M_IOV);
+	bsd_free(consbuffer, M_TEMP);
 	return;
 }
 

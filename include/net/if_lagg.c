@@ -273,10 +273,10 @@ lagg_clone_create(struct if_clone *ifc, int unit, caddr_t params)
 	struct sysctl_oid *oid;
 	char num[14];			/* sufficient for 32 bits */
 
-	sc = malloc(sizeof(*sc), M_DEVBUF, M_WAITOK|M_ZERO);
+	sc = bsd_malloc(sizeof(*sc), M_DEVBUF, M_WAITOK|M_ZERO);
 	ifp = sc->sc_ifp = if_alloc(IFT_ETHER);
 	if (ifp == NULL) {
-		free(sc, M_DEVBUF);
+		bsd_free(sc, M_DEVBUF);
 		return (ENOSPC);
 	}
 
@@ -300,7 +300,7 @@ lagg_clone_create(struct if_clone *ifc, int unit, caddr_t params)
 			sc->sc_proto = lagg_protos[i].ti_proto;
 			if ((error = lagg_protos[i].ti_attach(sc)) != 0) {
 				if_free_type(ifp, IFT_ETHER);
-				free(sc, M_DEVBUF);
+				bsd_free(sc, M_DEVBUF);
 				return (error);
 			}
 			break;
@@ -382,7 +382,7 @@ lagg_clone_destroy(struct ifnet *ifp)
 
 	taskqueue_drain(taskqueue_swi, &sc->sc_lladdr_task);
 	LAGG_LOCK_DESTROY(sc);
-	free(sc, M_DEVBUF);
+	bsd_free(sc, M_DEVBUF);
 }
 
 static void
@@ -456,7 +456,7 @@ lagg_port_lladdr(struct lagg_port *lp, uint8_t *lladdr)
 	}
 
 	if (!pending) {
-		llq = malloc(sizeof(struct lagg_llq), M_DEVBUF, M_NOWAIT);
+		llq = bsd_malloc(sizeof(struct lagg_llq), M_DEVBUF, M_NOWAIT);
 		if (llq == NULL)	/* XXX what to do */
 			return;
 	}
@@ -504,7 +504,7 @@ lagg_port_setlladdr(void *arg, int pending)
 			    ifp->if_xname);
 
 		head = SLIST_NEXT(llq, llq_entries);
-		free(llq, M_DEVBUF);
+		bsd_free(llq, M_DEVBUF);
 	}
 }
 
@@ -571,7 +571,7 @@ lagg_port_create(struct lagg_softc *sc, struct ifnet *ifp)
 		return (EINVAL);
 	}
 
-	if ((lp = malloc(sizeof(struct lagg_port),
+	if ((lp = bsd_malloc(sizeof(struct lagg_port),
 	    M_DEVBUF, M_NOWAIT|M_ZERO)) == NULL)
 		return (ENOMEM);
 
@@ -580,7 +580,7 @@ lagg_port_create(struct lagg_softc *sc, struct ifnet *ifp)
 	SLIST_FOREACH(sc_ptr, &lagg_list, sc_entries) {
 		if (ifp == sc_ptr->sc_ifp) {
 			mtx_unlock(&lagg_list_mtx);
-			free(lp, M_DEVBUF);
+			bsd_free(lp, M_DEVBUF);
 			return (EINVAL);
 			/* XXX disable stacking for the moment, its untested */
 #ifdef LAGG_PORT_STACKING
@@ -588,7 +588,7 @@ lagg_port_create(struct lagg_softc *sc, struct ifnet *ifp)
 			if (lagg_port_checkstacking(sc_ptr) >=
 			    LAGG_MAX_STACKING) {
 				mtx_unlock(&lagg_list_mtx);
-				free(lp, M_DEVBUF);
+				bsd_free(lp, M_DEVBUF);
 				return (E2BIG);
 			}
 #endif
@@ -720,7 +720,7 @@ lagg_port_destroy(struct lagg_port *lp, int runpd)
 			if (llq->llq_ifp == ifp) {
 				SLIST_REMOVE(&sc->sc_llq_head, llq, lagg_llq,
 				    llq_entries);
-				free(llq, M_DEVBUF);
+				bsd_free(llq, M_DEVBUF);
 				break;	/* Only appears once */
 			}
 		}
@@ -729,7 +729,7 @@ lagg_port_destroy(struct lagg_port *lp, int runpd)
 	if (lp->lp_ifflags)
 		if_printf(ifp, "%s: lp_ifflags unclean\n", __func__);
 
-	free(lp, M_DEVBUF);
+	bsd_free(lp, M_DEVBUF);
 
 	/* Update lagg capabilities */
 	lagg_capabilities(sc);
@@ -948,7 +948,7 @@ lagg_ioctl(struct ifnet *ifp, u_long cmd, caddr_t data)
 		buflen = count * sizeof(struct lagg_reqport);
 		LAGG_RUNLOCK(sc);
 
-		outbuf = malloc(buflen, M_TEMP, M_WAITOK | M_ZERO);
+		outbuf = bsd_malloc(buflen, M_TEMP, M_WAITOK | M_ZERO);
 
 		LAGG_RLOCK(sc);
 		ra->ra_proto = sc->sc_proto;
@@ -972,7 +972,7 @@ lagg_ioctl(struct ifnet *ifp, u_long cmd, caddr_t data)
 		ra->ra_ports = count;
 		ra->ra_size = count * sizeof(rpbuf);
 		error = copyout(outbuf, ra->ra_port, ra->ra_size);
-		free(outbuf, M_TEMP);
+		bsd_free(outbuf, M_TEMP);
 		break;
 	case SIOCSLAGG:
 		error = priv_check(td, PRIV_NET_LAGG);
@@ -1187,7 +1187,7 @@ lagg_ether_cmdmulti(struct lagg_port *lp, int set)
 			error = if_addmulti(ifp, (struct sockaddr *)&sdl, &rifma);
 			if (error)
 				return (error);
-			mc = malloc(sizeof(struct lagg_mc), M_DEVBUF, M_NOWAIT);
+			mc = bsd_malloc(sizeof(struct lagg_mc), M_DEVBUF, M_NOWAIT);
 			if (mc == NULL)
 				return (ENOMEM);
 			mc->mc_ifma = rifma;
@@ -1197,7 +1197,7 @@ lagg_ether_cmdmulti(struct lagg_port *lp, int set)
 		while ((mc = SLIST_FIRST(&lp->lp_mc_head)) != NULL) {
 			SLIST_REMOVE(&lp->lp_mc_head, mc, lagg_mc, mc_entries);
 			if_delmulti_ifma(mc->mc_ifma);
-			free(mc, M_DEVBUF);
+			bsd_free(mc, M_DEVBUF);
 		}
 	}
 	return (0);
@@ -1719,7 +1719,7 @@ lagg_lb_attach(struct lagg_softc *sc)
 	struct lagg_port *lp;
 	struct lagg_lb *lb;
 
-	if ((lb = (struct lagg_lb *)malloc(sizeof(struct lagg_lb),
+	if ((lb = (struct lagg_lb *)bsd_malloc(sizeof(struct lagg_lb),
 	    M_DEVBUF, M_NOWAIT|M_ZERO)) == NULL)
 		return (ENOMEM);
 
@@ -1744,7 +1744,7 @@ lagg_lb_detach(struct lagg_softc *sc)
 {
 	struct lagg_lb *lb = (struct lagg_lb *)sc->sc_psc;
 	if (lb != NULL)
-		free(lb, M_DEVBUF);
+		bsd_free(lb, M_DEVBUF);
 	return (0);
 }
 

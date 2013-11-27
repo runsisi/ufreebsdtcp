@@ -226,7 +226,7 @@ sys_bind(td, uap)
 		return (error);
 
 	error = kern_bind(td, uap->s, sa);
-	free(sa, M_SONAME);
+	bsd_free(sa, M_SONAME);
 	return (error);
 }
 
@@ -336,7 +336,7 @@ accept1(td, uap, compat)
 	if (error)
 		fdclose(td->td_proc->p_fd, fp, td->td_retval[0], td);
 	fdrop(fp, td);
-	free(name, M_SONAME);
+	bsd_free(name, M_SONAME);
 	return (error);
 }
 
@@ -468,7 +468,7 @@ kern_accept(struct thread *td, int s, struct sockaddr **name,
 	}
 noconnection:
 	if (sa)
-		free(sa, M_SONAME);
+		bsd_free(sa, M_SONAME);
 
 	/*
 	 * close the new descriptor, assuming someone hasn't ripped it
@@ -533,7 +533,7 @@ sys_connect(td, uap)
 		return (error);
 
 	error = kern_connect(td, uap->s, sa);
-	free(sa, M_SONAME);
+	bsd_free(sa, M_SONAME);
 	return (error);
 }
 
@@ -740,7 +740,7 @@ sendit(td, s, mp, flags)
 
 bad:
 	if (to)
-		free(to, M_SONAME);
+		bsd_free(to, M_SONAME);
 	return (error);
 }
 
@@ -913,7 +913,7 @@ osendmsg(td, uap)
 	msg.msg_iov = iov;
 	msg.msg_flags = MSG_COMPAT;
 	error = sendit(td, uap->s, &msg, uap->flags);
-	free(iov, M_IOV);
+	bsd_free(iov, M_IOV);
 	return (error);
 }
 #endif
@@ -942,7 +942,7 @@ sys_sendmsg(td, uap)
 	msg.msg_flags = 0;
 #endif
 	error = sendit(td, uap->s, &msg, uap->flags);
-	free(iov, M_IOV);
+	bsd_free(iov, M_IOV);
 	return (error);
 }
 
@@ -1096,7 +1096,7 @@ out:
 		ktrsockaddr(fromsa);
 #endif
 	if (fromsa)
-		free(fromsa, M_SONAME);
+		bsd_free(fromsa, M_SONAME);
 
 	if (error == 0 && controlp != NULL)  
 		*controlp = control;
@@ -1233,7 +1233,7 @@ orecvmsg(td, uap)
 	if (msg.msg_controllen && error == 0)
 		error = copyout(&msg.msg_controllen,
 		    &uap->msg->msg_accrightslen, sizeof (int));
-	free(iov, M_IOV);
+	bsd_free(iov, M_IOV);
 	return (error);
 }
 #endif
@@ -1268,7 +1268,7 @@ sys_recvmsg(td, uap)
 		msg.msg_iov = uiov;
 		error = copyout(&msg, uap->msg, sizeof(msg));
 	}
-	free(iov, M_IOV);
+	bsd_free(iov, M_IOV);
 	return (error);
 }
 
@@ -1472,7 +1472,7 @@ getsockname1(td, uap, compat)
 #endif
 		error = copyout(sa, uap->asa, (u_int)len);
 	}
-	free(sa, M_SONAME);
+	bsd_free(sa, M_SONAME);
 	if (error == 0)
 		error = copyout(&len, uap->alen, sizeof(len));
 	return (error);
@@ -1513,7 +1513,7 @@ kern_getsockname(struct thread *td, int fd, struct sockaddr **sa,
 bad:
 	fdrop(fp, td);
 	if (error && *sa) {
-		free(*sa, M_SONAME);
+		bsd_free(*sa, M_SONAME);
 		*sa = NULL;
 	}
 	return (error);
@@ -1572,7 +1572,7 @@ getpeername1(td, uap, compat)
 #endif
 		error = copyout(sa, uap->asa, (u_int)len);
 	}
-	free(sa, M_SONAME);
+	bsd_free(sa, M_SONAME);
 	if (error == 0)
 		error = copyout(&len, uap->alen, sizeof(len));
 	return (error);
@@ -1616,7 +1616,7 @@ kern_getpeername(struct thread *td, int fd, struct sockaddr **sa,
 #endif
 bad:
 	if (error && *sa) {
-		free(*sa, M_SONAME);
+		bsd_free(*sa, M_SONAME);
 		*sa = NULL;
 	}
 done:
@@ -1699,10 +1699,10 @@ getsockaddr(namp, uaddr, len)
 		return (ENAMETOOLONG);
 	if (len < offsetof(struct sockaddr, sa_data[0]))
 		return (EINVAL);
-	sa = malloc(len, M_SONAME, M_WAITOK);
+	sa = bsd_malloc(len, M_SONAME, M_WAITOK);
 	error = copyin(uaddr, sa, len);
 	if (error) {
-		free(sa, M_SONAME);
+		bsd_free(sa, M_SONAME);
 	} else {
 #if defined(COMPAT_OLDSOCK) && BYTE_ORDER != BIG_ENDIAN
 		if (sa->sa_family == 0 && sa->sa_len < AF_MAX)
@@ -1800,9 +1800,9 @@ do_sendfile(struct thread *td, struct sendfile_args *uap, int compat)
 	error = kern_sendfile(td, uap, hdr_uio, trl_uio, compat);
 out:
 	if (hdr_uio)
-		free(hdr_uio, M_IOV);
+		bsd_free(hdr_uio, M_IOV);
 	if (trl_uio)
-		free(trl_uio, M_IOV);
+		bsd_free(trl_uio, M_IOV);
 	return (error);
 }
 
@@ -1921,7 +1921,7 @@ kern_sendfile(struct thread *td, struct sendfile_args *uap,
 		mnw = 1;
 
 	if (uap->flags & SF_SYNC) {
-		sfs = malloc(sizeof *sfs, M_TEMP, M_WAITOK | M_ZERO);
+		sfs = bsd_malloc(sizeof *sfs, M_TEMP, M_WAITOK | M_ZERO);
 		mtx_init(&sfs->mtx, "sendfile", NULL, MTX_DEF);
 		cv_init(&sfs->cv, "sendfile");
 	}
@@ -2308,7 +2308,7 @@ out:
 		KASSERT(sfs->count == 0, ("sendfile sync still busy"));
 		cv_destroy(&sfs->cv);
 		mtx_destroy(&sfs->mtx);
-		free(sfs, M_TEMP);
+		bsd_free(sfs, M_TEMP);
 	}
 
 	if (error == ERESTART)
@@ -2520,7 +2520,7 @@ sctp_bad:
 		fdrop(fp, td);
 sctp_bad2:
 	if (to)
-		free(to, M_SONAME);
+		bsd_free(to, M_SONAME);
 	return (error);
 #else  /* SCTP */
 	return (EOPNOTSUPP);
@@ -2641,13 +2641,13 @@ sys_sctp_generic_sendmsg_iov(td, uap)
 	}
 #endif /* KTRACE */
 sctp_bad:
-	free(iov, M_IOV);
+	bsd_free(iov, M_IOV);
 sctp_bad1:
 	if (fp)
 		fdrop(fp, td);
 sctp_bad2:
 	if (to)
-		free(to, M_SONAME);
+		bsd_free(to, M_SONAME);
 	return (error);
 #else  /* SCTP */
 	return (EOPNOTSUPP);
@@ -2798,7 +2798,7 @@ sys_sctp_generic_recvmsg(td, uap)
 		}
 	}
 out:
-	free(iov, M_IOV);
+	bsd_free(iov, M_IOV);
 out1:
 	if (fp) 
 		fdrop(fp, td);

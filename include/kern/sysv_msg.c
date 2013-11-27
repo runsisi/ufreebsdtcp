@@ -203,10 +203,10 @@ msginit()
 	TUNABLE_INT_FETCH("kern.ipc.msgmnb", &msginfo.msgmnb);
 	TUNABLE_INT_FETCH("kern.ipc.msgtql", &msginfo.msgtql);
 
-	msgpool = malloc(msginfo.msgmax, M_MSG, M_WAITOK);
-	msgmaps = malloc(sizeof(struct msgmap) * msginfo.msgseg, M_MSG, M_WAITOK);
-	msghdrs = malloc(sizeof(struct msg) * msginfo.msgtql, M_MSG, M_WAITOK);
-	msqids = malloc(sizeof(struct msqid_kernel) * msginfo.msgmni, M_MSG,
+	msgpool = bsd_malloc(msginfo.msgmax, M_MSG, M_WAITOK);
+	msgmaps = bsd_malloc(sizeof(struct msgmap) * msginfo.msgseg, M_MSG, M_WAITOK);
+	msghdrs = bsd_malloc(sizeof(struct msg) * msginfo.msgtql, M_MSG, M_WAITOK);
+	msqids = bsd_malloc(sizeof(struct msqid_kernel) * msginfo.msgmni, M_MSG,
 	    M_WAITOK);
 
 	/*
@@ -304,10 +304,10 @@ msgunload()
 	for (msqid = 0; msqid < msginfo.msgmni; msqid++)
 		mac_sysvmsq_destroy(&msqids[msqid]);
 #endif
-	free(msgpool, M_MSG);
-	free(msgmaps, M_MSG);
-	free(msghdrs, M_MSG);
-	free(msqids, M_MSG);
+	bsd_free(msgpool, M_MSG);
+	bsd_free(msgmaps, M_MSG);
+	bsd_free(msghdrs, M_MSG);
+	bsd_free(msqids, M_MSG);
 	mtx_destroy(&msq_mtx);
 	return (0);
 }

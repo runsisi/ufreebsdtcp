@@ -136,10 +136,10 @@ enc_clone_create(struct if_clone *ifc, int unit, caddr_t params)
 	struct ifnet *ifp;
 	struct enc_softc *sc;
 
-	sc = malloc(sizeof(*sc), M_DEVBUF, M_WAITOK|M_ZERO);
+	sc = bsd_malloc(sizeof(*sc), M_DEVBUF, M_WAITOK|M_ZERO);
 	ifp = sc->sc_ifp = if_alloc(IFT_ENC);
 	if (ifp == NULL) {
-		free(sc, M_DEVBUF);
+		bsd_free(sc, M_DEVBUF);
 		return (ENOSPC);
 	}
 

@@ -304,7 +304,7 @@ msi_create_source(void)
 	msi_last_irq++;
 	mtx_unlock(&msi_lock);
 
-	msi = malloc(sizeof(struct msi_intsrc), M_MSI, M_WAITOK | M_ZERO);
+	msi = bsd_malloc(sizeof(struct msi_intsrc), M_MSI, M_WAITOK | M_ZERO);
 	msi->msi_intsrc.is_pic = &msi_pic;
 	msi->msi_irq = irq;
 	intr_register_source(&msi->msi_intsrc);
@@ -325,7 +325,7 @@ msi_alloc(device_t dev, int count, int maxcount, int *irqs)
 		return (ENXIO);
 
 	if (count > 1)
-		mirqs = malloc(count * sizeof(*mirqs), M_MSI, M_WAITOK);
+		mirqs = bsd_malloc(count * sizeof(*mirqs), M_MSI, M_WAITOK);
 	else
 		mirqs = NULL;
 again:
@@ -354,7 +354,7 @@ again:
 		/* If we would exceed the max, give up. */
 		if (i + (count - cnt) > FIRST_MSI_INT + NUM_MSI_INTS) {
 			mtx_unlock(&msi_lock);
-			free(mirqs, M_MSI);
+			bsd_free(mirqs, M_MSI);
 			return (ENXIO);
 		}
 		mtx_unlock(&msi_lock);
@@ -375,7 +375,7 @@ again:
 	vector = apic_alloc_vectors(cpu, irqs, count, maxcount);
 	if (vector == 0) {
 		mtx_unlock(&msi_lock);
-		free(mirqs, M_MSI);
+		bsd_free(mirqs, M_MSI);
 		return (ENOSPC);
 	}
 
@@ -457,7 +457,7 @@ msi_release(int *irqs, int count)
 	first->msi_vector = 0;
 	first->msi_count = 0;
 	first->msi_maxcount = 0;
-	free(first->msi_irqs, M_MSI);
+	bsd_free(first->msi_irqs, M_MSI);
 	first->msi_irqs = NULL;
 
 	mtx_unlock(&msi_lock);

@@ -200,7 +200,7 @@ elf_set_add(struct elf_set_head *list, Elf_Addr start, Elf_Addr stop, Elf_Addr b
 {
 	struct elf_set *set, *iter;
 
-	set = malloc(sizeof(*set), M_LINKER, M_WAITOK);
+	set = bsd_malloc(sizeof(*set), M_LINKER, M_WAITOK);
 	set->es_start = start;
 	set->es_stop = stop;
 	set->es_base = base;
@@ -251,7 +251,7 @@ elf_set_delete(struct elf_set_head *list, Elf_Addr start)
 			break;
 		if (start == set->es_start) {
 			TAILQ_REMOVE(list, set, es_link);
-			free(set, M_LINKER);
+			bsd_free(set, M_LINKER);
 			return;
 		}
 	}
@@ -356,7 +356,7 @@ link_elf_link_common_finish(linker_file_t lf)
 #ifdef GDB
 	GDB_STATE(RT_ADD);
 	ef->gdb.l_addr = lf->address;
-	newfilename = malloc(strlen(lf->filename) + 1, M_LINKER, M_WAITOK);
+	newfilename = bsd_malloc(strlen(lf->filename) + 1, M_LINKER, M_WAITOK);
 	strcpy(newfilename, lf->filename);
 	ef->gdb.l_name = newfilename;
 	ef->gdb.l_ld = ef->dynamic;
@@ -778,7 +778,7 @@ link_elf_load_file(linker_class_t cls, const char* filename,
 	/*
 	 * Read the elf header from the file.
 	 */
-	firstpage = malloc(PAGE_SIZE, M_LINKER, M_WAITOK);
+	firstpage = bsd_malloc(PAGE_SIZE, M_LINKER, M_WAITOK);
 	hdr = (Elf_Ehdr *)firstpage;
 	error = vn_rdwr(UIO_READ, nd.ni_vp, firstpage, PAGE_SIZE, 0,
 	    UIO_SYSSPACE, IO_NODELOCKED, td->td_ucred, NOCRED,
@@ -911,7 +911,7 @@ link_elf_load_file(linker_class_t cls, const char* filename,
 		goto out;
 	}
 #else
-	ef->address = malloc(mapsize, M_LINKER, M_WAITOK);
+	ef->address = bsd_malloc(mapsize, M_LINKER, M_WAITOK);
 #endif
 	mapbase = ef->address;
 
@@ -996,7 +996,7 @@ link_elf_load_file(linker_class_t cls, const char* filename,
 	nbytes = hdr->e_shnum * hdr->e_shentsize;
 	if (nbytes == 0 || hdr->e_shoff == 0)
 		goto nosyms;
-	shdr = malloc(nbytes, M_LINKER, M_WAITOK | M_ZERO);
+	shdr = bsd_malloc(nbytes, M_LINKER, M_WAITOK | M_ZERO);
 	error = vn_rdwr(UIO_READ, nd.ni_vp,
 	    (caddr_t)shdr, nbytes, hdr->e_shoff,
 	    UIO_SYSSPACE, IO_NODELOCKED, td->td_ucred, NOCRED,
@@ -1015,9 +1015,9 @@ link_elf_load_file(linker_class_t cls, const char* filename,
 		goto nosyms;
 
 	symcnt = shdr[symtabindex].sh_size;
-	ef->symbase = malloc(symcnt, M_LINKER, M_WAITOK);
+	ef->symbase = bsd_malloc(symcnt, M_LINKER, M_WAITOK);
 	strcnt = shdr[symstrindex].sh_size;
-	ef->strbase = malloc(strcnt, M_LINKER, M_WAITOK);
+	ef->strbase = bsd_malloc(strcnt, M_LINKER, M_WAITOK);
 
 	error = vn_rdwr(UIO_READ, nd.ni_vp,
 	    ef->symbase, symcnt, shdr[symtabindex].sh_offset,
@@ -1051,9 +1051,9 @@ out:
 	if (error != 0 && lf != NULL)
 		linker_file_unload(lf, LINKER_UNLOAD_FORCE);
 	if (shdr != NULL)
-		free(shdr, M_LINKER);
+		bsd_free(shdr, M_LINKER);
 	if (firstpage != NULL)
-		free(firstpage, M_LINKER);
+		bsd_free(firstpage, M_LINKER);
 
 	return (error);
 }
@@ -1094,7 +1094,7 @@ link_elf_unload_file(linker_file_t file)
 #ifdef GDB
 	if (ef->gdb.l_ld != NULL) {
 		GDB_STATE(RT_DELETE);
-		free((void *)(uintptr_t)ef->gdb.l_name, M_LINKER);
+		bsd_free((void *)(uintptr_t)ef->gdb.l_name, M_LINKER);
 		link_elf_delete_gdb(&ef->gdb);
 		GDB_STATE(RT_CONSISTENT);
 	}
@@ -1116,18 +1116,18 @@ link_elf_unload_file(linker_file_t file)
 	}
 #else
 	if (ef->address != NULL)
-		free(ef->address, M_LINKER);
+		bsd_free(ef->address, M_LINKER);
 #endif
 	if (ef->symbase != NULL)
-		free(ef->symbase, M_LINKER);
+		bsd_free(ef->symbase, M_LINKER);
 	if (ef->strbase != NULL)
-		free(ef->strbase, M_LINKER);
+		bsd_free(ef->strbase, M_LINKER);
 	if (ef->ctftab != NULL)
-		free(ef->ctftab, M_LINKER);
+		bsd_free(ef->ctftab, M_LINKER);
 	if (ef->ctfoff != NULL)
-		free(ef->ctfoff, M_LINKER);
+		bsd_free(ef->ctfoff, M_LINKER);
 	if (ef->typoff != NULL)
-		free(ef->typoff, M_LINKER);
+		bsd_free(ef->typoff, M_LINKER);
 }
 
 static void
@@ -1390,7 +1390,7 @@ link_elf_lookup_set(linker_file_t lf, const char *name,
 	int len, error = 0, count;
 
 	len = strlen(name) + sizeof("__start_set_"); /* sizeof includes \0 */
-	setsym = malloc(len, M_LINKER, M_WAITOK);
+	setsym = bsd_malloc(len, M_LINKER, M_WAITOK);
 
 	/* get address of first entry */
 	snprintf(setsym, len, "%s%s", "__start_set_", name);
@@ -1428,7 +1428,7 @@ link_elf_lookup_set(linker_file_t lf, const char *name,
 		*countp = count;
 
 out:
-	free(setsym, M_LINKER);
+	bsd_free(setsym, M_LINKER);
 	return (error);
 }
 

@@ -119,15 +119,15 @@ osd_register(u_int type, osd_destructor_t destructor, osd_method_t *methods)
 	if (i == osd_nslots[type]) {
 		osd_nslots[type]++;
 		if (osd_nmethods[type] != 0)
-			osd_methods[type] = realloc(osd_methods[type],
+			osd_methods[type] = bsd_realloc(osd_methods[type],
 			    sizeof(osd_method_t) * osd_nslots[type] *
 			    osd_nmethods[type], M_OSD, M_WAITOK);
-		newptr = malloc(sizeof(osd_destructor_t) * osd_nslots[type],
+		newptr = bsd_malloc(sizeof(osd_destructor_t) * osd_nslots[type],
 		    M_OSD, M_WAITOK);
 		rm_wlock(&osd_object_lock[type]);
 		bcopy(osd_destructors[type], newptr,
 		    sizeof(osd_destructor_t) * i);
-		free(osd_destructors[type], M_OSD);
+		bsd_free(osd_destructors[type], M_OSD);
 		osd_destructors[type] = newptr;
 		rm_wunlock(&osd_object_lock[type]);
 		OSD_DEBUG("New slot allocated (type=%u, slot=%u).",
@@ -168,11 +168,11 @@ osd_deregister(u_int type, u_int slot)
 	osd_destructors[type][slot - 1] = NULL;
 	if (slot == osd_nslots[type]) {
 		osd_nslots[type]--;
-		osd_destructors[type] = realloc(osd_destructors[type],
+		osd_destructors[type] = bsd_realloc(osd_destructors[type],
 		    sizeof(osd_destructor_t) * osd_nslots[type], M_OSD,
 		    M_NOWAIT | M_ZERO);
 		if (osd_nmethods[type] != 0)
-			osd_methods[type] = realloc(osd_methods[type],
+			osd_methods[type] = bsd_realloc(osd_methods[type],
 			    sizeof(osd_method_t) * osd_nslots[type] *
 			    osd_nmethods[type], M_OSD, M_NOWAIT | M_ZERO);
 		/*
@@ -214,7 +214,7 @@ osd_set(u_int type, struct osd *osd, u_int slot, void *value)
 			 * First OSD for this object, so we need to allocate
 			 * space and put it onto the list.
 			 */
-			osd->osd_slots = malloc(sizeof(void *) * slot, M_OSD,
+			osd->osd_slots = bsd_malloc(sizeof(void *) * slot, M_OSD,
 			    M_NOWAIT | M_ZERO);
 			if (osd->osd_slots == NULL) {
 				rm_runlock(&osd_object_lock[type], &tracker);
@@ -232,7 +232,7 @@ osd_set(u_int type, struct osd *osd, u_int slot, void *value)
 			 * Too few slots allocated here, needs to extend
 			 * the array.
 			 */
-			newptr = realloc(osd->osd_slots, sizeof(void *) * slot,
+			newptr = bsd_realloc(osd->osd_slots, sizeof(void *) * slot,
 			    M_OSD, M_NOWAIT | M_ZERO);
 			if (newptr == NULL) {
 				rm_runlock(&osd_object_lock[type], &tracker);
@@ -317,12 +317,12 @@ do_osd_del(u_int type, struct osd *osd, u_int slot, int list_locked)
 		LIST_REMOVE(osd, osd_next);
 		if (!list_locked)
 			mtx_unlock(&osd_list_lock[type]);
-		free(osd->osd_slots, M_OSD);
+		bsd_free(osd->osd_slots, M_OSD);
 		osd->osd_slots = NULL;
 		osd->osd_nslots = 0;
 	} else if (slot == osd->osd_nslots) {
 		/* This was the last slot. */
-		osd->osd_slots = realloc(osd->osd_slots,
+		osd->osd_slots = bsd_realloc(osd->osd_slots,
 		    sizeof(void *) * (i + 1), M_OSD, M_NOWAIT | M_ZERO);
 		/*
 		 * We always reallocate to smaller size, so we assume it will

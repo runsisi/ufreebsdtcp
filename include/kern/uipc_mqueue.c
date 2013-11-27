@@ -1558,7 +1558,7 @@ mqueue_free(struct mqueue *mq)
 
 	while ((msg = TAILQ_FIRST(&mq->mq_msgq)) != NULL) {
 		TAILQ_REMOVE(&mq->mq_msgq, msg, msg_link);
-		free(msg, M_MQUEUEDATA);
+		bsd_free(msg, M_MQUEUEDATA);
 	}
 
 	mtx_destroy(&mq->mq_mutex);
@@ -1581,11 +1581,11 @@ mqueue_loadmsg(const char *msg_ptr, size_t msg_size, int msg_prio)
 	int error;
 
 	len = sizeof(struct mqueue_msg) + msg_size;
-	msg = malloc(len, M_MQUEUEDATA, M_WAITOK);
+	msg = bsd_malloc(len, M_MQUEUEDATA, M_WAITOK);
 	error = copyin(msg_ptr, ((char *)msg) + sizeof(struct mqueue_msg),
 	    msg_size);
 	if (error) {
-		free(msg, M_MQUEUEDATA);
+		bsd_free(msg, M_MQUEUEDATA);
 		msg = NULL;
 	} else {
 		msg->msg_size = msg_size;
@@ -1615,7 +1615,7 @@ mqueue_savemsg(struct mqueue_msg *msg, char *msg_ptr, int *msg_prio)
 static __inline void
 mqueue_freemsg(struct mqueue_msg *msg)
 {
-	free(msg, M_MQUEUEDATA);
+	bsd_free(msg, M_MQUEUEDATA);
 }
 
 /*

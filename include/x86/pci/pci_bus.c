@@ -454,7 +454,7 @@ legacy_pcib_identify(driver_t *driver, device_t parent)
 					if (legacy_get_pcibus(devs[i]) == busnum)
 						s = NULL;
 				}
-				free(devs, M_TEMP);
+				bsd_free(devs, M_TEMP);
 			}
 
 			if (s == NULL)

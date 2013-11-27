@@ -180,7 +180,7 @@ bpf_jit_compile(struct bpf_insn *prog, u_int nins, size_t *size)
 	/* Allocate the reference table for the jumps. */
 	if (fjmp) {
 #ifdef _KERNEL
-		stream.refs = malloc((nins + 1) * sizeof(u_int), M_BPFJIT,
+		stream.refs = bsd_malloc((nins + 1) * sizeof(u_int), M_BPFJIT,
 		    M_NOWAIT | M_ZERO);
 #else
 		stream.refs = calloc(nins + 1, sizeof(u_int));
@@ -602,7 +602,7 @@ bpf_jit_compile(struct bpf_insn *prog, u_int nins, size_t *size)
 
 		*size = stream.cur_ip;
 #ifdef _KERNEL
-		stream.ibuf = malloc(*size, M_BPFJIT, M_NOWAIT);
+		stream.ibuf = bsd_malloc(*size, M_BPFJIT, M_NOWAIT);
 		if (stream.ibuf == NULL)
 			break;
 #else
@@ -636,9 +636,9 @@ bpf_jit_compile(struct bpf_insn *prog, u_int nins, size_t *size)
 	 */
 	if (fjmp)
 #ifdef _KERNEL
-		free(stream.refs, M_BPFJIT);
+		bsd_free(stream.refs, M_BPFJIT);
 #else
-		free(stream.refs);
+		bsd_free(stream.refs);
 #endif
 
 #ifndef _KERNEL

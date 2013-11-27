@@ -864,7 +864,7 @@ idle_sysctl_available(SYSCTL_HANDLER_ARGS)
 	int error;
 	int i;
 
-	avail = malloc(256, M_TEMP, M_WAITOK);
+	avail = bsd_malloc(256, M_TEMP, M_WAITOK);
 	p = avail;
 	for (i = 0; idle_tbl[i].id_name != NULL; i++) {
 		if (strstr(idle_tbl[i].id_name, "mwait") &&
@@ -877,7 +877,7 @@ idle_sysctl_available(SYSCTL_HANDLER_ARGS)
 		    idle_tbl[i].id_name);
 	}
 	error = sysctl_handle_string(oidp, avail, 0, req);
-	free(avail, M_TEMP);
+	bsd_free(avail, M_TEMP);
 	return (error);
 }
 

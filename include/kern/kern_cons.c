@@ -523,7 +523,7 @@ constty_set(struct tty *tp)
 	KASSERT(tp != NULL, ("constty_set: NULL tp"));
 	if (consbuf == NULL) {
 		size = consmsgbuf_size;
-		consbuf = malloc(size, M_TTYCONS, M_WAITOK);
+		consbuf = bsd_malloc(size, M_TTYCONS, M_WAITOK);
 		msgbuf_init(&consmsgbuf, consbuf, size);
 		callout_init(&conscallout, 0);
 	}
@@ -545,7 +545,7 @@ constty_clear(void)
 	callout_stop(&conscallout);
 	while ((c = msgbuf_getchar(&consmsgbuf)) != -1)
 		cnputc(c);
-	free(consbuf, M_TTYCONS);
+	bsd_free(consbuf, M_TTYCONS);
 	consbuf = NULL;
 }
 

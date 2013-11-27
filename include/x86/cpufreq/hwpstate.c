@@ -441,7 +441,7 @@ hwpstate_get_info_from_acpi_perf(device_t dev, device_t perf_dev)
 	struct hwpstate_setting *hwpstate_set;
 	int count, error, i;
 
-	perf_set = malloc(MAX_SETTINGS * sizeof(*perf_set), M_TEMP, M_NOWAIT);
+	perf_set = bsd_malloc(MAX_SETTINGS * sizeof(*perf_set), M_TEMP, M_NOWAIT);
 	if (perf_set == NULL) {
 		HWPSTATE_DEBUG(dev, "nomem\n");
 		return (ENOMEM);
@@ -474,7 +474,7 @@ hwpstate_get_info_from_acpi_perf(device_t dev, device_t perf_dev)
 	}
 out:
 	if (perf_set)
-		free(perf_set, M_TEMP);
+		bsd_free(perf_set, M_TEMP);
 	return (error);
 }
 

@@ -102,7 +102,7 @@ ifmedia_removeall(ifm)
 	for (entry = LIST_FIRST(&ifm->ifm_list); entry;
 	     entry = LIST_FIRST(&ifm->ifm_list)) {
 		LIST_REMOVE(entry, ifm_list);
-		free(entry, M_IFADDR);
+		bsd_free(entry, M_IFADDR);
 	}
 }
 
@@ -130,7 +130,7 @@ ifmedia_add(ifm, mword, data, aux)
 	}
 #endif
 
-	entry = malloc(sizeof(*entry), M_IFADDR, M_NOWAIT);
+	entry = bsd_malloc(sizeof(*entry), M_IFADDR, M_NOWAIT);
 	if (entry == NULL)
 		panic("ifmedia_add: can't malloc entry");
 
@@ -306,7 +306,7 @@ ifmedia_ioctl(ifp, ifr, ifm, cmd)
 			return (EINVAL);
 
 		if (ifmr->ifm_count != 0) {
-			kptr = (int *)malloc(ifmr->ifm_count * sizeof(int),
+			kptr = (int *)bsd_malloc(ifmr->ifm_count * sizeof(int),
 			    M_TEMP, M_NOWAIT);
 
 			if (kptr == NULL)
@@ -342,7 +342,7 @@ ifmedia_ioctl(ifp, ifr, ifm, cmd)
 			error = sticky;
 
 		if (ifmr->ifm_count != 0)
-			free(kptr, M_TEMP);
+			bsd_free(kptr, M_TEMP);
 
 		ifmr->ifm_count = count;
 		break;

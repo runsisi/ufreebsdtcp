@@ -283,8 +283,8 @@ int	getenv_long(const char *name, long *data);
 int	getenv_ulong(const char *name, unsigned long *data);
 int	getenv_string(const char *name, char *data, int size);
 int	getenv_quad(const char *name, quad_t *data);
-int	setenv(const char *name, const char *value);
-int	unsetenv(const char *name);
+int	bsd_setenv(const char *name, const char *value);
+int	bsd_unsetenv(const char *name);
 int	testenv(const char *name);
 
 typedef uint64_t (cpu_tick_f)(void);

@@ -255,7 +255,7 @@ bus_dma_tag_create(bus_dma_tag_t parent, bus_size_t alignment,
 	/* Return a NULL tag on failure */
 	*dmat = NULL;
 
-	newtag = (bus_dma_tag_t)malloc(sizeof(*newtag), M_DEVBUF,
+	newtag = (bus_dma_tag_t)bsd_malloc(sizeof(*newtag), M_DEVBUF,
 	    M_ZERO | M_NOWAIT);
 	if (newtag == NULL) {
 		CTR4(KTR_BUSDMA, "%s returned tag %p tag flags 0x%x error %d",
@@ -321,7 +321,7 @@ bus_dma_tag_create(bus_dma_tag_t parent, bus_size_t alignment,
 		/* Must bounce */
 
 		if ((error = alloc_bounce_zone(newtag)) != 0) {
-			free(newtag, M_DEVBUF);
+			bsd_free(newtag, M_DEVBUF);
 			return (error);
 		}
 		bz = newtag->bounce_zone;
@@ -340,7 +340,7 @@ bus_dma_tag_create(bus_dma_tag_t parent, bus_size_t alignment,
 	}
 	
 	if (error != 0) {
-		free(newtag, M_DEVBUF);
+		bsd_free(newtag, M_DEVBUF);
 	} else {
 		*dmat = newtag;
 	}
@@ -372,8 +372,8 @@ bus_dma_tag_destroy(bus_dma_tag_t dmat)
 			atomic_subtract_int(&dmat->ref_count, 1);
 			if (dmat->ref_count == 0) {
 				if (dmat->segments != NULL)
-					free(dmat->segments, M_DEVBUF);
-				free(dmat, M_DEVBUF);
+					bsd_free(dmat->segments, M_DEVBUF);
+				bsd_free(dmat, M_DEVBUF);
 				/*
 				 * Last reference count, so
 				 * release our reference
@@ -401,7 +401,7 @@ bus_dmamap_create(bus_dma_tag_t dmat, int flags, bus_dmamap_t *mapp)
 	error = 0;
 
 	if (dmat->segments == NULL) {
-		dmat->segments = (bus_dma_segment_t *)malloc(
+		dmat->segments = (bus_dma_segment_t *)bsd_malloc(
 		    sizeof(bus_dma_segment_t) * dmat->nsegments, M_DEVBUF,
 		    M_NOWAIT);
 		if (dmat->segments == NULL) {
@@ -428,7 +428,7 @@ bus_dmamap_create(bus_dma_tag_t dmat, int flags, bus_dmamap_t *mapp)
 		}
 		bz = dmat->bounce_zone;
 
-		*mapp = (bus_dmamap_t)malloc(sizeof(**mapp), M_DEVBUF,
+		*mapp = (bus_dmamap_t)bsd_malloc(sizeof(**mapp), M_DEVBUF,
 					     M_NOWAIT | M_ZERO);
 		if (*mapp == NULL) {
 			CTR3(KTR_BUSDMA, "%s: tag %p error %d",
@@ -490,7 +490,7 @@ bus_dmamap_destroy(bus_dma_tag_t dmat, bus_dmamap_t map)
 		}
 		if (dmat->bounce_zone)
 			dmat->bounce_zone->map_count--;
-		free(map, M_DEVBUF);
+		bsd_free(map, M_DEVBUF);
 	}
 	dmat->map_count--;
 	CTR2(KTR_BUSDMA, "%s: tag %p error 0", __func__, dmat);
@@ -519,7 +519,7 @@ bus_dmamem_alloc(bus_dma_tag_t dmat, void** vaddr, int flags,
 	*mapp = NULL;
 
 	if (dmat->segments == NULL) {
-		dmat->segments = (bus_dma_segment_t *)malloc(
+		dmat->segments = (bus_dma_segment_t *)bsd_malloc(
 		    sizeof(bus_dma_segment_t) * dmat->nsegments, M_DEVBUF,
 		    mflags);
 		if (dmat->segments == NULL) {
@@ -547,7 +547,7 @@ bus_dmamem_alloc(bus_dma_tag_t dmat, void** vaddr, int flags,
 	   (dmat->alignment < dmat->maxsize) &&
 	    dmat->lowaddr >= ptoa((vm_paddr_t)Maxmem) &&
 	    attr == VM_MEMATTR_DEFAULT) {
-		*vaddr = malloc(dmat->maxsize, M_DEVBUF, mflags);
+		*vaddr = bsd_malloc(dmat->maxsize, M_DEVBUF, mflags);
 	} else if (dmat->nsegments >= btoc(dmat->maxsize) &&
 	    dmat->alignment <= PAGE_SIZE &&
 	    (dmat->boundary == 0 || dmat->boundary >= dmat->lowaddr)) {
@@ -588,7 +588,7 @@ bus_dmamem_free(bus_dma_tag_t dmat, void *vaddr, bus_dmamap_t map)
 	if (!(map == NULL || map == &contig_dmamap))
 		panic("bus_dmamem_free: Invalid map freed\n");
 	if (map == NULL)
-		free(vaddr, M_DEVBUF);
+		bsd_free(vaddr, M_DEVBUF);
 	else
 		kmem_free(kernel_map, (vm_offset_t)vaddr, dmat->maxsize);
 	CTR3(KTR_BUSDMA, "%s: tag %p flags 0x%x", __func__, dmat, dmat->flags);
@@ -985,7 +985,7 @@ alloc_bounce_zone(bus_dma_tag_t dmat)
 		}
 	}
 
-	if ((bz = (struct bounce_zone *)malloc(sizeof(*bz), M_DEVBUF,
+	if ((bz = (struct bounce_zone *)bsd_malloc(sizeof(*bz), M_DEVBUF,
 	    M_NOWAIT | M_ZERO)) == NULL)
 		return (ENOMEM);
 
@@ -1056,7 +1056,7 @@ alloc_bounce_pages(bus_dma_tag_t dmat, u_int numpages)
 	while (numpages > 0) {
 		struct bounce_page *bpage;
 
-		bpage = (struct bounce_page *)malloc(sizeof(*bpage), M_DEVBUF,
+		bpage = (struct bounce_page *)bsd_malloc(sizeof(*bpage), M_DEVBUF,
 						     M_NOWAIT | M_ZERO);
 
 		if (bpage == NULL)
@@ -1067,7 +1067,7 @@ alloc_bounce_pages(bus_dma_tag_t dmat, u_int numpages)
 							 PAGE_SIZE,
 							 0);
 		if (bpage->vaddr == 0) {
-			free(bpage, M_DEVBUF);
+			bsd_free(bpage, M_DEVBUF);
 			break;
 		}
 		bpage->busaddr = pmap_kextract(bpage->vaddr);

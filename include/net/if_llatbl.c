@@ -189,7 +189,7 @@ lltable_free(struct lltable *llt)
 	}
 	IF_AFDATA_WUNLOCK(llt->llt_ifp);
 
-	free(llt, M_LLTABLE);
+	bsd_free(llt, M_LLTABLE);
 }
 
 #if 0
@@ -247,7 +247,7 @@ lltable_init(struct ifnet *ifp, int af)
 	struct lltable *llt;
 	register int i;
 
-	llt = malloc(sizeof(struct lltable), M_LLTABLE, M_WAITOK);
+	llt = bsd_malloc(sizeof(struct lltable), M_LLTABLE, M_WAITOK);
 
 	llt->llt_af = af;
 	llt->llt_ifp = ifp;

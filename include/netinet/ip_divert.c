@@ -674,7 +674,7 @@ div_pcblist(SYSCTL_HANDLER_ARGS)
 	if (error)
 		return error;
 
-	inp_list = malloc(n * sizeof *inp_list, M_TEMP, M_WAITOK);
+	inp_list = bsd_malloc(n * sizeof *inp_list, M_TEMP, M_WAITOK);
 	if (inp_list == 0)
 		return ENOMEM;
 	
@@ -733,7 +733,7 @@ div_pcblist(SYSCTL_HANDLER_ARGS)
 		INP_INFO_RUNLOCK(&V_divcbinfo);
 		error = SYSCTL_OUT(req, &xig, sizeof xig);
 	}
-	free(inp_list, M_TEMP);
+	bsd_free(inp_list, M_TEMP);
 	return error;
 }
 

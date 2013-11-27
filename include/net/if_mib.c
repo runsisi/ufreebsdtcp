@@ -144,7 +144,7 @@ sysctl_ifdata(SYSCTL_HANDLER_ARGS) /* XXX bad syntax! */
 	case IFDATA_DRIVERNAME:
 		/* 20 is enough for 64bit ints */
 		dlen = strlen(ifp->if_dname) + 20 + 1;
-		if ((dbuf = malloc(dlen, M_TEMP, M_NOWAIT)) == NULL) {
+		if ((dbuf = bsd_malloc(dlen, M_TEMP, M_NOWAIT)) == NULL) {
 			error = ENOMEM;
 			goto out;
 		}
@@ -156,7 +156,7 @@ sysctl_ifdata(SYSCTL_HANDLER_ARGS) /* XXX bad syntax! */
 		error = SYSCTL_OUT(req, dbuf, strlen(dbuf) + 1);
 		if (error == 0 && req->newptr != NULL)
 			error = EPERM;
-		free(dbuf, M_TEMP);
+		bsd_free(dbuf, M_TEMP);
 		goto out;
 	}
 out:

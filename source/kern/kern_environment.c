@@ -105,7 +105,7 @@ sys_kenv(td, uap)
 			buflen = KENV_SIZE * (KENV_MNAMELEN +
 			    KENV_MVALLEN + 2);
 		if (uap->len > 0 && uap->value != NULL)
-			buffer = malloc(buflen, M_TEMP, M_WAITOK|M_ZERO);
+			buffer = bsd_malloc(buflen, M_TEMP, M_WAITOK|M_ZERO);
 		mtx_lock(&kenv_lock);
 		for (i = 0; kenvp[i] != NULL; i++) {
 			len = strlen(kenvp[i]) + 1;
@@ -123,7 +123,7 @@ sys_kenv(td, uap)
 		mtx_unlock(&kenv_lock);
 		if (buffer != NULL) {
 			error = copyout(buffer, uap->value, done);
-			free(buffer, M_TEMP);
+			bsd_free(buffer, M_TEMP);
 		}
 		td->td_retval[0] = ((done == needed) ? 0 : needed);
 		return (error);
@@ -143,7 +143,7 @@ sys_kenv(td, uap)
 		break;
 	}
 
-	name = malloc(KENV_MNAMELEN + 1, M_TEMP, M_WAITOK);
+	name = bsd_malloc(KENV_MNAMELEN + 1, M_TEMP, M_WAITOK);
 
 	error = copyinstr(uap->name, name, KENV_MNAMELEN + 1, NULL);
 	if (error)
@@ -178,18 +178,18 @@ sys_kenv(td, uap)
 		}
 		if (len > KENV_MVALLEN + 1)
 			len = KENV_MVALLEN + 1;
-		value = malloc(len, M_TEMP, M_WAITOK);
+		value = bsd_malloc(len, M_TEMP, M_WAITOK);
 		error = copyinstr(uap->value, value, len, NULL);
 		if (error) {
-			free(value, M_TEMP);
+			bsd_free(value, M_TEMP);
 			goto done;
 		}
 #ifdef MAC
 		error = mac_kenv_check_set(td->td_ucred, name, value);
 		if (error == 0)
 #endif
-			setenv(name, value);
-		free(value, M_TEMP);
+			bsd_setenv(name, value);
+		bsd_free(value, M_TEMP);
 		break;
 	case KENV_UNSET:
 #ifdef MAC
@@ -197,7 +197,7 @@ sys_kenv(td, uap)
 		if (error)
 			goto done;
 #endif
-		error = unsetenv(name);
+		error = bsd_unsetenv(name);
 		if (error)
 			error = ENOENT;
 		break;
@@ -206,7 +206,7 @@ sys_kenv(td, uap)
 		break;
 	}
 done:
-	free(name, M_TEMP);
+	bsd_free(name, M_TEMP);
 	return (error);
 }
 
@@ -228,7 +228,7 @@ init_dynamic_kenv(void *data __unused)
 	size_t len;
 	int i;
 
-	kenvp = malloc((KENV_SIZE + 1) * sizeof(char *), M_KENV,
+	kenvp = bsd_malloc((KENV_SIZE + 1) * sizeof(char *), M_KENV,
 		M_WAITOK | M_ZERO);
 	i = 0;
 	for (cp = kern_envp; cp != NULL; cp = kernenv_next(cp)) {
@@ -239,7 +239,7 @@ init_dynamic_kenv(void *data __unused)
 			continue;
 		}
 		if (i < KENV_SIZE) {
-			kenvp[i] = malloc(len, M_KENV, M_WAITOK);
+			kenvp[i] = bsd_malloc(len, M_KENV, M_WAITOK);
 			strcpy(kenvp[i++], cp);
 		} else
 			printf(
@@ -258,7 +258,7 @@ freeenv(char *env)
 {
 
 	if (dynamic_kenv)
-		free(env, M_KENV);
+		bsd_free(env, M_KENV);
 }
 
 /*
@@ -322,7 +322,7 @@ getenv(const char *name)
 			strcpy(buf, cp);
 			mtx_unlock(&kenv_lock);
 			len = strlen(buf) + 1;
-			ret = malloc(len, M_KENV, M_WAITOK);
+			ret = bsd_malloc(len, M_KENV, M_WAITOK);
 			strcpy(ret, buf);
 		} else {
 			mtx_unlock(&kenv_lock);
@@ -378,7 +378,7 @@ setenv_static(const char *name, const char *value)
  * Set an environment variable by name.
  */
 int
-setenv(const char *name, const char *value)
+bsd_setenv(const char *name, const char *value)
 {
 	char *buf, *cp, *oldenv;
 	int namelen, vallen, i;
@@ -394,7 +394,7 @@ setenv(const char *name, const char *value)
 	vallen = strlen(value) + 1;
 	if (vallen > KENV_MVALLEN + 1)
 		return (-1);
-	buf = malloc(namelen + vallen, M_KENV, M_WAITOK);
+	buf = bsd_malloc(namelen + vallen, M_KENV, M_WAITOK);
 	sprintf(buf, "%s=%s", name, value);
 
 	mtx_lock(&kenv_lock);
@@ -403,7 +403,7 @@ setenv(const char *name, const char *value)
 		oldenv = kenvp[i];
 		kenvp[i] = buf;
 		mtx_unlock(&kenv_lock);
-		free(oldenv, M_KENV);
+		bsd_free(oldenv, M_KENV);
 	} else {
 		/* We add the option if it wasn't found */
 		for (i = 0; (cp = kenvp[i]) != NULL; i++)
@@ -411,7 +411,7 @@ setenv(const char *name, const char *value)
 
 		/* Bounds checking */
 		if (i < 0 || i >= KENV_SIZE) {
-			free(buf, M_KENV);
+			bsd_free(buf, M_KENV);
 			mtx_unlock(&kenv_lock);
 			return (-1);
 		}
@@ -427,7 +427,7 @@ setenv(const char *name, const char *value)
  * Unset an environment variable string.
  */
 int
-unsetenv(const char *name)
+bsd_unsetenv(const char *name)
 {
 	char *cp, *oldenv;
 	int i, j;
@@ -442,7 +442,7 @@ unsetenv(const char *name)
 			kenvp[i++] = kenvp[j];
 		kenvp[i] = NULL;
 		mtx_unlock(&kenv_lock);
-		free(oldenv, M_KENV);
+		bsd_free(oldenv, M_KENV);
 		return (0);
 	}
 	mtx_unlock(&kenv_lock);

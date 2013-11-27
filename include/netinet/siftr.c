@@ -383,7 +383,7 @@ siftr_process_pkt(struct pkt_node * pkt_node)
 	/* If this flow hash hasn't been seen before or we have a collision. */
 	if (hash_node == NULL || !found_match) {
 		/* Create a new hash node to store the flow's counter. */
-		hash_node = malloc(sizeof(struct flow_hash_node),
+		hash_node = bsd_malloc(sizeof(struct flow_hash_node),
 		    M_SIFTR_HASHNODE, M_WAITOK);
 
 		if (hash_node != NULL) {
@@ -587,7 +587,7 @@ siftr_pkt_manager_thread(void *arg)
 		    pkt_node_temp) {
 			siftr_process_pkt(pkt_node);
 			STAILQ_REMOVE_HEAD(&tmp_pkt_queue, nodes);
-			free(pkt_node, M_SIFTR_PKTNODE);
+			bsd_free(pkt_node, M_SIFTR_PKTNODE);
 		}
 
 		KASSERT(STAILQ_EMPTY(&tmp_pkt_queue),
@@ -890,7 +890,7 @@ siftr_chkpkt(void *arg, struct mbuf **m, struct ifnet *ifp, int dir,
 		goto inp_unlock;
 	}
 
-	pn = malloc(sizeof(struct pkt_node), M_SIFTR_PKTNODE, M_NOWAIT|M_ZERO);
+	pn = bsd_malloc(sizeof(struct pkt_node), M_SIFTR_PKTNODE, M_NOWAIT|M_ZERO);
 
 	if (pn == NULL) {
 		if (dir == PFIL_IN)
@@ -1065,7 +1065,7 @@ siftr_chkpkt6(void *arg, struct mbuf **m, struct ifnet *ifp, int dir,
 		goto inp_unlock6;
 	}
 
-	pn = malloc(sizeof(struct pkt_node), M_SIFTR_PKTNODE, M_NOWAIT|M_ZERO);
+	pn = bsd_malloc(sizeof(struct pkt_node), M_SIFTR_PKTNODE, M_NOWAIT|M_ZERO);
 
 	if (pn == NULL) {
 		if (dir == PFIL_IN)
@@ -1388,7 +1388,7 @@ siftr_manage_ops(uint8_t action)
 				}
 #endif
 
-				free(counter, M_SIFTR_HASHNODE);
+				bsd_free(counter, M_SIFTR_HASHNODE);
 			}
 
 			LIST_INIT(counter_hash + i);

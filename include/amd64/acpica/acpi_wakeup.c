@@ -347,10 +347,10 @@ acpi_alloc_wakeup_handler(void)
 		contigfree(wakeaddr, 4 * PAGE_SIZE, M_DEVBUF);
 		return (NULL);
 	}
-	susppcbs = malloc(mp_ncpus * sizeof(*susppcbs), M_DEVBUF, M_WAITOK);
-	suspfpusave = malloc(mp_ncpus * sizeof(void *), M_DEVBUF, M_WAITOK);
+	susppcbs = bsd_malloc(mp_ncpus * sizeof(*susppcbs), M_DEVBUF, M_WAITOK);
+	suspfpusave = bsd_malloc(mp_ncpus * sizeof(void *), M_DEVBUF, M_WAITOK);
 	for (i = 0; i < mp_ncpus; i++) {
-		susppcbs[i] = malloc(sizeof(**susppcbs), M_DEVBUF, M_WAITOK);
+		susppcbs[i] = bsd_malloc(sizeof(**susppcbs), M_DEVBUF, M_WAITOK);
 		suspfpusave[i] = alloc_fpusave(M_WAITOK);
 	}
 

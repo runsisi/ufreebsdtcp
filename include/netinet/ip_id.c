@@ -145,24 +145,24 @@ ip_initid(void)
 	mtx_assert(&ip_id_mtx, MA_OWNED);
 
 	if (id_array != NULL) {
-		free(id_array, M_IPID);
-		free(id_bits, M_IPID);
+		bsd_free(id_array, M_IPID);
+		bsd_free(id_bits, M_IPID);
 	}
 	random_id_collisions = 0;
 	random_id_total = 0;
 	array_ptr = 0;
-	id_array = (u_int16_t *) malloc(array_size * sizeof(u_int16_t),
+	id_array = (u_int16_t *) bsd_malloc(array_size * sizeof(u_int16_t),
 	    M_IPID, M_NOWAIT | M_ZERO);
-	id_bits = (bitstr_t *) malloc(bitstr_size(65536), M_IPID,
+	id_bits = (bitstr_t *) bsd_malloc(bitstr_size(65536), M_IPID,
 	    M_NOWAIT | M_ZERO);
 	if (id_array == NULL || id_bits == NULL) {
 		/* Neither or both. */
 		if (id_array != NULL) {
-			free(id_array, M_IPID);
+			bsd_free(id_array, M_IPID);
 			id_array = NULL;
 		}
 		if (id_bits != NULL) {
-			free(id_bits, M_IPID);
+			bsd_free(id_bits, M_IPID);
 			id_bits = NULL;
 		}
 	}

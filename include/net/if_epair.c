@@ -303,7 +303,7 @@ epair_nh_drainedcpu(u_int cpuid)
 			EPAIR_REFCOUNT_ASSERT((int)sc->refcount >= 1,
 			    ("%s: ifp=%p sc->refcount not >= 1: %d",
 			    __func__, ifp, sc->refcount));
-			free(elm, M_EPAIR);
+			bsd_free(elm, M_EPAIR);
 		}
 		IFQ_UNLOCK(&ifp->if_snd);
 
@@ -345,7 +345,7 @@ epair_remove_ifp_from_draining(struct ifnet *ifp)
 				EPAIR_REFCOUNT_ASSERT((int)sc->refcount >= 1,
 				    ("%s: ifp=%p sc->refcount not >= 1: %d",
 				    __func__, ifp, sc->refcount));
-				free(elm, M_EPAIR);
+				bsd_free(elm, M_EPAIR);
 			}
 		}
 		EPAIR_UNLOCK(epair_dpcpu);
@@ -369,7 +369,7 @@ epair_add_ifp_for_draining(struct ifnet *ifp)
 	if (elm != NULL)
 		return (0);
 
-	elm = malloc(sizeof(struct epair_ifp_drain), M_EPAIR, M_NOWAIT|M_ZERO);
+	elm = bsd_malloc(sizeof(struct epair_ifp_drain), M_EPAIR, M_NOWAIT|M_ZERO);
 	if (elm == NULL)
 		return (ENOMEM);
 
@@ -766,22 +766,22 @@ epair_clone_create(struct if_clone *ifc, char *name, size_t len, caddr_t params)
 	*(dp+1) = '\0';
 
 	/* Allocate memory for both [ab] interfaces */
-	sca = malloc(sizeof(struct epair_softc), M_EPAIR, M_WAITOK | M_ZERO);
+	sca = bsd_malloc(sizeof(struct epair_softc), M_EPAIR, M_WAITOK | M_ZERO);
 	EPAIR_REFCOUNT_INIT(&sca->refcount, 1);
 	sca->ifp = if_alloc(IFT_ETHER);
 	if (sca->ifp == NULL) {
-		free(sca, M_EPAIR);
+		bsd_free(sca, M_EPAIR);
 		ifc_free_unit(ifc, unit);
 		return (ENOSPC);
 	}
 
-	scb = malloc(sizeof(struct epair_softc), M_EPAIR, M_WAITOK | M_ZERO);
+	scb = bsd_malloc(sizeof(struct epair_softc), M_EPAIR, M_WAITOK | M_ZERO);
 	EPAIR_REFCOUNT_INIT(&scb->refcount, 1);
 	scb->ifp = if_alloc(IFT_ETHER);
 	if (scb->ifp == NULL) {
-		free(scb, M_EPAIR);
+		bsd_free(scb, M_EPAIR);
 		if_free(sca->ifp);
-		free(sca, M_EPAIR);
+		bsd_free(sca, M_EPAIR);
 		ifc_free_unit(ifc, unit);
 		return (ENOSPC);
 	}
@@ -927,7 +927,7 @@ epair_clone_destroy(struct if_clone *ifc, struct ifnet *ifp)
 		    __func__, error);
 	if_free(oifp);
 	ifmedia_removeall(&scb->media);
-	free(scb, M_EPAIR);
+	bsd_free(scb, M_EPAIR);
 	CURVNET_RESTORE();
 
 	ether_ifdetach(ifp);
@@ -939,7 +939,7 @@ epair_clone_destroy(struct if_clone *ifc, struct ifnet *ifp)
 	    ("%s: ifp=%p sca->refcount!=1: %d", __func__, ifp, sca->refcount));
 	if_free(ifp);
 	ifmedia_removeall(&sca->media);
-	free(sca, M_EPAIR);
+	bsd_free(sca, M_EPAIR);
 	ifc_free_unit(ifc, unit);
 
 	return (0);

@@ -622,7 +622,7 @@ vm_phys_fictitious_reg_range(vm_paddr_t start, vm_paddr_t end,
 	} else
 #endif
 	{
-		fp = malloc(page_count * sizeof(struct vm_page), M_FICT_PAGES,
+		fp = bsd_malloc(page_count * sizeof(struct vm_page), M_FICT_PAGES,
 		    M_WAITOK | M_ZERO);
 #ifdef VM_PHYSSEG_DENSE
 		malloced = TRUE;
@@ -648,7 +648,7 @@ vm_phys_fictitious_reg_range(vm_paddr_t start, vm_paddr_t end,
 #ifdef VM_PHYSSEG_DENSE
 	if (malloced)
 #endif
-		free(fp, M_FICT_PAGES);
+		bsd_free(fp, M_FICT_PAGES);
 	return (EBUSY);
 }
 
@@ -677,7 +677,7 @@ vm_phys_fictitious_unreg_range(vm_paddr_t start, vm_paddr_t end)
 #ifdef VM_PHYSSEG_DENSE
 			if (pi < first_page || atop(end) >= vm_page_array_size)
 #endif
-				free(fp, M_FICT_PAGES);
+				bsd_free(fp, M_FICT_PAGES);
 			return;
 		}
 	}

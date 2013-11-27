@@ -1249,7 +1249,7 @@ sysctl_netisr_proto(SYSCTL_HANDLER_ARGS)
 
 	if (req->newptr != NULL)
 		return (EINVAL);
-	snp_array = malloc(sizeof(*snp_array) * NETISR_MAXPROT, M_TEMP,
+	snp_array = bsd_malloc(sizeof(*snp_array) * NETISR_MAXPROT, M_TEMP,
 	    M_ZERO | M_WAITOK);
 	counter = 0;
 	NETISR_RLOCK(&tracker);
@@ -1276,7 +1276,7 @@ sysctl_netisr_proto(SYSCTL_HANDLER_ARGS)
 	KASSERT(counter <= NETISR_MAXPROT,
 	    ("sysctl_netisr_proto: counter too big (%d)", counter));
 	error = SYSCTL_OUT(req, snp_array, sizeof(*snp_array) * counter);
-	free(snp_array, M_TEMP);
+	bsd_free(snp_array, M_TEMP);
 	return (error);
 }
 
@@ -1299,7 +1299,7 @@ sysctl_netisr_workstream(SYSCTL_HANDLER_ARGS)
 
 	if (req->newptr != NULL)
 		return (EINVAL);
-	snws_array = malloc(sizeof(*snws_array) * MAXCPU, M_TEMP,
+	snws_array = bsd_malloc(sizeof(*snws_array) * MAXCPU, M_TEMP,
 	    M_ZERO | M_WAITOK);
 	counter = 0;
 	NETISR_RLOCK(&tracker);
@@ -1327,7 +1327,7 @@ sysctl_netisr_workstream(SYSCTL_HANDLER_ARGS)
 	KASSERT(counter <= MAXCPU,
 	    ("sysctl_netisr_workstream: counter too big (%d)", counter));
 	error = SYSCTL_OUT(req, snws_array, sizeof(*snws_array) * counter);
-	free(snws_array, M_TEMP);
+	bsd_free(snws_array, M_TEMP);
 	return (error);
 }
 
@@ -1353,7 +1353,7 @@ sysctl_netisr_work(SYSCTL_HANDLER_ARGS)
 
 	if (req->newptr != NULL)
 		return (EINVAL);
-	snw_array = malloc(sizeof(*snw_array) * MAXCPU * NETISR_MAXPROT,
+	snw_array = bsd_malloc(sizeof(*snw_array) * MAXCPU * NETISR_MAXPROT,
 	    M_TEMP, M_ZERO | M_WAITOK);
 	counter = 0;
 	NETISR_RLOCK(&tracker);
@@ -1387,7 +1387,7 @@ sysctl_netisr_work(SYSCTL_HANDLER_ARGS)
 	    ("sysctl_netisr_work: counter too big (%d)", counter));
 	NETISR_RUNLOCK(&tracker);
 	error = SYSCTL_OUT(req, snw_array, sizeof(*snw_array) * counter);
-	free(snw_array, M_TEMP);
+	bsd_free(snw_array, M_TEMP);
 	return (error);
 }
 

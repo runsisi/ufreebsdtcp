@@ -303,7 +303,7 @@ rts_attach(struct socket *so, int proto, struct thread *td)
 	KASSERT(so->so_pcb == NULL, ("rts_attach: so_pcb != NULL"));
 
 	/* XXX */
-	rp = malloc(sizeof *rp, M_PCB, M_WAITOK | M_ZERO);
+	rp = bsd_malloc(sizeof *rp, M_PCB, M_WAITOK | M_ZERO);
 	if (rp == NULL)
 		return ENOBUFS;
 
@@ -322,7 +322,7 @@ rts_attach(struct socket *so, int proto, struct thread *td)
 	if (error) {
 		splx(s);
 		so->so_pcb = NULL;
-		free(rp, M_PCB);
+		bsd_free(rp, M_PCB);
 		return error;
 	}
 	RTSOCK_LOCK();
@@ -1180,9 +1180,9 @@ again:
 		if (rw->w_req) {
 			if (rw->w_tmemsize < len) {
 				if (rw->w_tmem)
-					free(rw->w_tmem, M_RTABLE);
+					bsd_free(rw->w_tmem, M_RTABLE);
 				rw->w_tmem = (caddr_t)
-					malloc(len, M_RTABLE, M_NOWAIT);
+					bsd_malloc(len, M_RTABLE, M_NOWAIT);
 				if (rw->w_tmem)
 					rw->w_tmemsize = len;
 			}
@@ -1889,7 +1889,7 @@ sysctl_rtsock(SYSCTL_HANDLER_ARGS)
 		break;
 	}
 	if (w.w_tmem)
-		free(w.w_tmem, M_RTABLE);
+		bsd_free(w.w_tmem, M_RTABLE);
 	return (error);
 }
 

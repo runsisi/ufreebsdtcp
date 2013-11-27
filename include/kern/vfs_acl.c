@@ -563,7 +563,7 @@ acl_alloc(int flags)
 {
 	struct acl *aclp;
 
-	aclp = malloc(sizeof(*aclp), M_ACL, flags);
+	aclp = bsd_malloc(sizeof(*aclp), M_ACL, flags);
 	aclp->acl_maxcnt = ACL_MAX_ENTRIES;
 
 	return (aclp);
@@ -573,5 +573,5 @@ void
 acl_free(struct acl *aclp)
 {
 
-	free(aclp, M_ACL);
+	bsd_free(aclp, M_ACL);
 }

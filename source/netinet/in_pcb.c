@@ -1253,7 +1253,7 @@ in_pcbdrop(struct inpcb *inp)
 		LIST_REMOVE(inp, inp_portlist);
 		if (LIST_FIRST(&phd->phd_pcblist) == NULL) {
 			LIST_REMOVE(phd, phd_hash);
-			free(phd, M_PCB);
+			bsd_free(phd, M_PCB);
 		}
 		INP_HASH_WUNLOCK(inp->inp_pcbinfo);
 		inp->inp_flags &= ~INP_INHASHLIST;
@@ -1272,7 +1272,7 @@ in_sockaddr(in_port_t port, struct in_addr *addr_p)
 {
 	struct sockaddr_in *sin;
 
-	sin = malloc(sizeof *sin, M_SONAME,
+	sin = bsd_malloc(sizeof *sin, M_SONAME,
 		M_WAITOK | M_ZERO);
 	sin->sin_family = AF_INET;
 	sin->sin_len = sizeof(*sin);
@@ -1917,7 +1917,7 @@ in_pcbinshash_internal(struct inpcb *inp, int do_pcbgroup_update)
 	 * If none exists, malloc one and tack it on.
 	 */
 	if (phd == NULL) {
-		phd = malloc(sizeof(struct inpcbport), M_PCB, M_NOWAIT);
+		phd = bsd_malloc(sizeof(struct inpcbport), M_PCB, M_NOWAIT);
 		if (phd == NULL) {
 			return (ENOBUFS); /* XXX */
 		}
@@ -2028,7 +2028,7 @@ in_pcbremlists(struct inpcb *inp)
 		LIST_REMOVE(inp, inp_portlist);
 		if (LIST_FIRST(&phd->phd_pcblist) == NULL) {
 			LIST_REMOVE(phd, phd_hash);
-			free(phd, M_PCB);
+			bsd_free(phd, M_PCB);
 		}
 		INP_HASH_WUNLOCK(pcbinfo);
 		inp->inp_flags &= ~INP_INHASHLIST;

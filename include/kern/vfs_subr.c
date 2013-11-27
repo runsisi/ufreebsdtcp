@@ -2781,7 +2781,7 @@ vfs_notify_upper(struct vnode *vp, int event)
 	if (TAILQ_EMPTY(&mp->mnt_uppers))
 		goto unlock;
 	MNT_IUNLOCK(mp);
-	mmp = malloc(sizeof(struct mount), M_TEMP, M_WAITOK | M_ZERO);
+	mmp = bsd_malloc(sizeof(struct mount), M_TEMP, M_WAITOK | M_ZERO);
 	mmp->mnt_op = &vgonel_vfsops;
 	mmp->mnt_kern_flag |= MNTK_MARKER;
 	MNT_ILOCK(mp);
@@ -2808,7 +2808,7 @@ vfs_notify_upper(struct vnode *vp, int event)
 		ump = TAILQ_NEXT(mmp, mnt_upper_link);
 		TAILQ_REMOVE(&mp->mnt_uppers, mmp, mnt_upper_link);
 	}
-	free(mmp, M_TEMP);
+	bsd_free(mmp, M_TEMP);
 	mp->mnt_kern_flag &= ~MNTK_VGONE_UPPER;
 	if ((mp->mnt_kern_flag & MNTK_VGONE_WAITER) != 0) {
 		mp->mnt_kern_flag &= ~MNTK_VGONE_WAITER;
@@ -3424,7 +3424,7 @@ sysctl_vnode(SYSCTL_HANDLER_ARGS)
 	error = sysctl_wire_old_buffer(req, 0);
 	if (error != 0)
 		return (error);
-	xvn = malloc(len, M_TEMP, M_ZERO | M_WAITOK);
+	xvn = bsd_malloc(len, M_TEMP, M_ZERO | M_WAITOK);
 	n = 0;
 	mtx_lock(&mountlist_mtx);
 	TAILQ_FOREACH(mp, &mountlist, mnt_list) {
@@ -3486,7 +3486,7 @@ sysctl_vnode(SYSCTL_HANDLER_ARGS)
 	mtx_unlock(&mountlist_mtx);
 
 	error = SYSCTL_OUT(req, xvn, n * sizeof *xvn);
-	free(xvn, M_TEMP);
+	bsd_free(xvn, M_TEMP);
 	return (error);
 }
 
@@ -4612,7 +4612,7 @@ vfs_read_dirent(struct vop_readdir_args *ap, struct dirent *dp, off_t off)
 	if (error) {
 		if (ap->a_ncookies != NULL) {
 			if (ap->a_cookies != NULL)
-				free(ap->a_cookies, M_TEMP);
+				bsd_free(ap->a_cookies, M_TEMP);
 			ap->a_cookies = NULL;
 			*ap->a_ncookies = 0;
 		}
@@ -4624,7 +4624,7 @@ vfs_read_dirent(struct vop_readdir_args *ap, struct dirent *dp, off_t off)
 	KASSERT(ap->a_cookies,
 	    ("NULL ap->a_cookies value with non-NULL ap->a_ncookies!"));
 
-	*ap->a_cookies = realloc(*ap->a_cookies,
+	*ap->a_cookies = bsd_realloc(*ap->a_cookies,
 	    (*ap->a_ncookies + 1) * sizeof(u_long), M_TEMP, M_WAITOK | M_ZERO);
 	(*ap->a_cookies)[*ap->a_ncookies] = off;
 	return (0);
@@ -4737,7 +4737,7 @@ __mnt_vnode_first_all(struct vnode **mvp, struct mount *mp)
 {
 	struct vnode *vp;
 
-	*mvp = malloc(sizeof(struct vnode), M_VNODE_MARKER, M_WAITOK | M_ZERO);
+	*mvp = bsd_malloc(sizeof(struct vnode), M_VNODE_MARKER, M_WAITOK | M_ZERO);
 	MNT_ILOCK(mp);
 	MNT_REF(mp);
 	(*mvp)->v_type = VMARKER;
@@ -4751,7 +4751,7 @@ __mnt_vnode_first_all(struct vnode **mvp, struct mount *mp)
 	if (vp == NULL) {
 		MNT_REL(mp);
 		MNT_IUNLOCK(mp);
-		free(*mvp, M_VNODE_MARKER);
+		bsd_free(*mvp, M_VNODE_MARKER);
 		*mvp = NULL;
 		return (NULL);
 	}
@@ -4778,7 +4778,7 @@ __mnt_vnode_markerfree_all(struct vnode **mvp, struct mount *mp)
 	TAILQ_REMOVE(&mp->mnt_nvnodelist, *mvp, v_nmntvnodes);
 	MNT_REL(mp);
 	MNT_IUNLOCK(mp);
-	free(*mvp, M_VNODE_MARKER);
+	bsd_free(*mvp, M_VNODE_MARKER);
 	*mvp = NULL;
 }
 
@@ -4795,7 +4795,7 @@ mnt_vnode_markerfree_active(struct vnode **mvp, struct mount *mp)
 	MNT_ILOCK(mp);
 	MNT_REL(mp);
 	MNT_IUNLOCK(mp);
-	free(*mvp, M_VNODE_MARKER);
+	bsd_free(*mvp, M_VNODE_MARKER);
 	*mvp = NULL;
 }
 
@@ -4869,7 +4869,7 @@ __mnt_vnode_first_active(struct vnode **mvp, struct mount *mp)
 {
 	struct vnode *vp;
 
-	*mvp = malloc(sizeof(struct vnode), M_VNODE_MARKER, M_WAITOK | M_ZERO);
+	*mvp = bsd_malloc(sizeof(struct vnode), M_VNODE_MARKER, M_WAITOK | M_ZERO);
 	MNT_ILOCK(mp);
 	MNT_REF(mp);
 	MNT_IUNLOCK(mp);

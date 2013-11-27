@@ -199,7 +199,7 @@ sglist_alloc(int nsegs, int mflags)
 {
 	struct sglist *sg;
 
-	sg = malloc(sizeof(struct sglist) + nsegs * sizeof(struct sglist_seg),
+	sg = bsd_malloc(sizeof(struct sglist) + nsegs * sizeof(struct sglist_seg),
 	    M_SGLIST, mflags);
 	if (sg == NULL)
 		return (NULL);
@@ -215,7 +215,7 @@ sglist_free(struct sglist *sg)
 {
 
 	if (refcount_release(&sg->sg_refs))
-		free(sg, M_SGLIST);
+		bsd_free(sg, M_SGLIST);
 }
 
 /*

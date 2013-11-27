@@ -391,7 +391,7 @@ set_rootvnode(void *arg, int npending)
 	}
 	FILEDESC_XUNLOCK(p->p_fd);
 
-	free(arg, M_TEMP);
+	bsd_free(arg, M_TEMP);
 }
 
 /*
@@ -403,7 +403,7 @@ firmware_mountroot(void *arg)
 {
 	struct task *setroot_task;
 
-	setroot_task = malloc(sizeof(struct task), M_TEMP, M_NOWAIT);
+	setroot_task = bsd_malloc(sizeof(struct task), M_TEMP, M_NOWAIT);
 	if (setroot_task != NULL) {
 		TASK_INIT(setroot_task, 0, set_rootvnode, setroot_task);
 		taskqueue_enqueue(firmware_tq, setroot_task);

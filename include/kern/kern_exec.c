@@ -889,7 +889,7 @@ exec_fail_dealloc:
 	if (imgp->object != NULL)
 		vm_object_deallocate(imgp->object);
 
-	free(imgp->freepath, M_TEMP);
+	bsd_free(imgp->freepath, M_TEMP);
 
 	if (error == 0) {
 		PROC_LOCK(p);
@@ -1223,7 +1223,7 @@ exec_free_args(struct image_args *args)
 		args->buf = NULL;
 	}
 	if (args->fname_buf != NULL) {
-		free(args->fname_buf, M_TEMP);
+		bsd_free(args->fname_buf, M_TEMP);
 		args->fname_buf = NULL;
 	}
 }
@@ -1468,7 +1468,7 @@ exec_register(execsw_arg)
 	if (execsw)
 		for (es = execsw; *es; es++)
 			count++;
-	newexecsw = malloc(count * sizeof(*es), M_TEMP, M_WAITOK);
+	newexecsw = bsd_malloc(count * sizeof(*es), M_TEMP, M_WAITOK);
 	if (newexecsw == NULL)
 		return (ENOMEM);
 	xs = newexecsw;
@@ -1478,7 +1478,7 @@ exec_register(execsw_arg)
 	*xs++ = execsw_arg;
 	*xs = NULL;
 	if (execsw)
-		free(execsw, M_TEMP);
+		bsd_free(execsw, M_TEMP);
 	execsw = newexecsw;
 	return (0);
 }
@@ -1502,7 +1502,7 @@ exec_unregister(execsw_arg)
 	for (es = execsw; *es; es++)
 		if (*es != execsw_arg)
 			count++;
-	newexecsw = malloc(count * sizeof(*es), M_TEMP, M_WAITOK);
+	newexecsw = bsd_malloc(count * sizeof(*es), M_TEMP, M_WAITOK);
 	if (newexecsw == NULL)
 		return (ENOMEM);
 	xs = newexecsw;
@@ -1511,7 +1511,7 @@ exec_unregister(execsw_arg)
 			*xs++ = *es;
 	*xs = NULL;
 	if (execsw)
-		free(execsw, M_TEMP);
+		bsd_free(execsw, M_TEMP);
 	execsw = newexecsw;
 	return (0);
 }

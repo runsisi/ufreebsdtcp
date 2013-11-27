@@ -457,7 +457,7 @@ sppp_alloc(u_char type, struct ifnet *ifp)
 {
 	struct sppp	*sp;
 
-        sp = malloc(sizeof(struct sppp), M_SPPP, M_WAITOK | M_ZERO);
+        sp = bsd_malloc(sizeof(struct sppp), M_SPPP, M_WAITOK | M_ZERO);
 	sp->pp_ifp = ifp;
 
 	return (sp);
@@ -467,7 +467,7 @@ static void
 sppp_free(void *com, u_char type)
 {
 
-	free(com, M_SPPP);
+	bsd_free(com, M_SPPP);
 }
 
 static int
@@ -1075,7 +1075,7 @@ sppp_attach(struct ifnet *ifp)
  	callout_init(&sp->ifstart_callout, CALLOUT_MPSAFE);
 	sp->if_start = ifp->if_start;
 	ifp->if_start = sppp_ifstart;
-	sp->pp_comp = malloc(sizeof(struct slcompress), M_TEMP, M_WAITOK);
+	sp->pp_comp = bsd_malloc(sizeof(struct slcompress), M_TEMP, M_WAITOK);
 	sl_compress_init(sp->pp_comp, -1);
 	sppp_lcp_init(sp);
 	sppp_ipcp_init(sp);
@@ -2307,7 +2307,7 @@ sppp_lcp_RCR(struct sppp *sp, struct lcp_header *h, int len)
 
 	len -= 4;
 	origlen = len;
-	buf = r = malloc (len, M_TEMP, M_NOWAIT);
+	buf = r = bsd_malloc (len, M_TEMP, M_NOWAIT);
 	if (! buf)
 		return (0);
 
@@ -2516,7 +2516,7 @@ sppp_lcp_RCR(struct sppp *sp, struct lcp_header *h, int len)
 			      h->ident, origlen, h+1);
 	}
 
-	free (buf, M_TEMP);
+	bsd_free (buf, M_TEMP);
 	return (rlen == 0);
 }
 
@@ -2531,7 +2531,7 @@ sppp_lcp_RCN_rej(struct sppp *sp, struct lcp_header *h, int len)
 	u_char *buf, *p;
 
 	len -= 4;
-	buf = malloc (len, M_TEMP, M_NOWAIT);
+	buf = bsd_malloc (len, M_TEMP, M_NOWAIT);
 	if (!buf)
 		return;
 
@@ -2580,7 +2580,7 @@ sppp_lcp_RCN_rej(struct sppp *sp, struct lcp_header *h, int len)
 	}
 	if (debug)
 		log(-1, "\n");
-	free (buf, M_TEMP);
+	bsd_free (buf, M_TEMP);
 	return;
 }
 
@@ -2596,7 +2596,7 @@ sppp_lcp_RCN_nak(struct sppp *sp, struct lcp_header *h, int len)
 	u_long magic;
 
 	len -= 4;
-	buf = malloc (len, M_TEMP, M_NOWAIT);
+	buf = bsd_malloc (len, M_TEMP, M_NOWAIT);
 	if (!buf)
 		return;
 
@@ -2661,7 +2661,7 @@ sppp_lcp_RCN_nak(struct sppp *sp, struct lcp_header *h, int len)
 	}
 	if (debug)
 		log(-1, "\n");
-	free (buf, M_TEMP);
+	bsd_free (buf, M_TEMP);
 	return;
 }
 
@@ -2980,7 +2980,7 @@ sppp_ipcp_RCR(struct sppp *sp, struct lcp_header *h, int len)
 	 * Make sure to allocate a buf that can at least hold a
 	 * conf-nak with an `address' option.  We might need it below.
 	 */
-	buf = r = malloc ((len < 6? 6: len), M_TEMP, M_NOWAIT);
+	buf = r = bsd_malloc ((len < 6? 6: len), M_TEMP, M_NOWAIT);
 	if (! buf)
 		return (0);
 
@@ -3166,7 +3166,7 @@ sppp_ipcp_RCR(struct sppp *sp, struct lcp_header *h, int len)
 			      h->ident, origlen, h+1);
 	}
 
-	free (buf, M_TEMP);
+	bsd_free (buf, M_TEMP);
 	return (rlen == 0);
 }
 
@@ -3182,7 +3182,7 @@ sppp_ipcp_RCN_rej(struct sppp *sp, struct lcp_header *h, int len)
 	int debug = ifp->if_flags & IFF_DEBUG;
 
 	len -= 4;
-	buf = malloc (len, M_TEMP, M_NOWAIT);
+	buf = bsd_malloc (len, M_TEMP, M_NOWAIT);
 	if (!buf)
 		return;
 
@@ -3211,7 +3211,7 @@ sppp_ipcp_RCN_rej(struct sppp *sp, struct lcp_header *h, int len)
 	}
 	if (debug)
 		log(-1, "\n");
-	free (buf, M_TEMP);
+	bsd_free (buf, M_TEMP);
 	return;
 }
 
@@ -3229,7 +3229,7 @@ sppp_ipcp_RCN_nak(struct sppp *sp, struct lcp_header *h, int len)
 	u_long wantaddr;
 
 	len -= 4;
-	buf = malloc (len, M_TEMP, M_NOWAIT);
+	buf = bsd_malloc (len, M_TEMP, M_NOWAIT);
 	if (!buf)
 		return;
 
@@ -3293,7 +3293,7 @@ sppp_ipcp_RCN_nak(struct sppp *sp, struct lcp_header *h, int len)
 	}
 	if (debug)
 		log(-1, "\n");
-	free (buf, M_TEMP);
+	bsd_free (buf, M_TEMP);
 	return;
 }
 
@@ -3527,7 +3527,7 @@ sppp_ipv6cp_RCR(struct sppp *sp, struct lcp_header *h, int len)
 	 * Make sure to allocate a buf that can at least hold a
 	 * conf-nak with an `address' option.  We might need it below.
 	 */
-	buf = r = malloc ((len < 6? 6: len), M_TEMP, M_NOWAIT);
+	buf = r = bsd_malloc ((len < 6? 6: len), M_TEMP, M_NOWAIT);
 	if (! buf)
 		return (0);
 
@@ -3665,7 +3665,7 @@ sppp_ipv6cp_RCR(struct sppp *sp, struct lcp_header *h, int len)
 	}
 
  end:
-	free (buf, M_TEMP);
+	bsd_free (buf, M_TEMP);
 	return (rlen == 0);
 }
 
@@ -3681,7 +3681,7 @@ sppp_ipv6cp_RCN_rej(struct sppp *sp, struct lcp_header *h, int len)
 	int debug = ifp->if_flags & IFF_DEBUG;
 
 	len -= 4;
-	buf = malloc (len, M_TEMP, M_NOWAIT);
+	buf = bsd_malloc (len, M_TEMP, M_NOWAIT);
 	if (!buf)
 		return;
 
@@ -3711,7 +3711,7 @@ sppp_ipv6cp_RCN_rej(struct sppp *sp, struct lcp_header *h, int len)
 	}
 	if (debug)
 		log(-1, "\n");
-	free (buf, M_TEMP);
+	bsd_free (buf, M_TEMP);
 	return;
 }
 
@@ -3729,7 +3729,7 @@ sppp_ipv6cp_RCN_nak(struct sppp *sp, struct lcp_header *h, int len)
 	char ip6buf[INET6_ADDRSTRLEN];
 
 	len -= 4;
-	buf = malloc (len, M_TEMP, M_NOWAIT);
+	buf = bsd_malloc (len, M_TEMP, M_NOWAIT);
 	if (!buf)
 		return;
 
@@ -3810,7 +3810,7 @@ sppp_ipv6cp_RCN_nak(struct sppp *sp, struct lcp_header *h, int len)
 	}
 	if (debug)
 		log(-1, "\n");
-	free (buf, M_TEMP);
+	bsd_free (buf, M_TEMP);
 	return;
 }
 static void
@@ -5124,7 +5124,7 @@ sppp_params(struct sppp *sp, u_long cmd, void *data)
 	struct spppreq *spr;
 	int rv = 0;
 
-	if ((spr = malloc(sizeof(struct spppreq), M_TEMP, M_NOWAIT)) == 0)
+	if ((spr = bsd_malloc(sizeof(struct spppreq), M_TEMP, M_NOWAIT)) == 0)
 		return (EAGAIN);
 	/*
 	 * ifr->ifr_data is supposed to point to a struct spppreq.
@@ -5266,7 +5266,7 @@ sppp_params(struct sppp *sp, u_long cmd, void *data)
 	}
 
  quit:
-	free(spr, M_TEMP);
+	bsd_free(spr, M_TEMP);
 
 	return (rv);
 }

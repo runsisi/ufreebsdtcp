@@ -1015,7 +1015,7 @@ vn_io_fault(struct file *fp, struct uio *uio, struct ucred *active_cred,
 out:
 	vm_fault_enable_pagefaults(save);
 	vn_rangelock_unlock(vp, rl_cookie);
-	free(uio_clone, M_IOV);
+	bsd_free(uio_clone, M_IOV);
 out_last:
 	foffset_unlock_uio(fp, uio, flags);
 	return (error);

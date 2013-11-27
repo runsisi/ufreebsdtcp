@@ -3476,7 +3476,7 @@ sodupsockaddr(const struct sockaddr *sa, int mflags)
 {
 	struct sockaddr *sa2;
 
-	sa2 = malloc(sa->sa_len, M_SONAME, mflags);
+	sa2 = bsd_malloc(sa->sa_len, M_SONAME, mflags);
 	if (sa2)
 		bcopy(sa, sa2, sa->sa_len);
 	return sa2;

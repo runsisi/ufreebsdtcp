@@ -84,7 +84,7 @@ accept_filt_add(struct accept_filter *filt)
 			} else {
 				p->accf_callback = filt->accf_callback;
 				ACCEPT_FILTER_UNLOCK();
-				free(filt, M_ACCF);
+				bsd_free(filt, M_ACCF);
 				return (0);
 			}
 		}
@@ -131,7 +131,7 @@ accept_filt_generic_mod_event(module_t mod, int event, void *data)
 
 	switch (event) {
 	case MOD_LOAD:
-		p = malloc(sizeof(*p), M_ACCF,
+		p = bsd_malloc(sizeof(*p), M_ACCF,
 		    M_WAITOK);
 		bcopy(accfp, p, sizeof(*p));
 		error = accept_filt_add(p);
@@ -169,7 +169,7 @@ do_getopt_accept_filter(struct socket *so, struct sockopt *sopt)
 	int error;
 
 	error = 0;
-	afap = malloc(sizeof(*afap), M_TEMP,
+	afap = bsd_malloc(sizeof(*afap), M_TEMP,
 	    M_WAITOK | M_ZERO);
 	SOCK_LOCK(so);
 	if ((so->so_options & SO_ACCEPTCONN) == 0) {
@@ -187,7 +187,7 @@ out:
 	SOCK_UNLOCK(so);
 	if (error == 0)
 		error = sooptcopyout(sopt, afap, sizeof(*afap));
-	free(afap, M_TEMP);
+	bsd_free(afap, M_TEMP);
 	return (error);
 }
 
@@ -215,8 +215,8 @@ do_setopt_accept_filter(struct socket *so, struct sockopt *sopt)
 				af->so_accept_filter->accf_destroy(so);
 			}
 			if (af->so_accept_filter_str != NULL)
-				free(af->so_accept_filter_str, M_ACCF);
-			free(af, M_ACCF);
+				bsd_free(af->so_accept_filter_str, M_ACCF);
+			bsd_free(af, M_ACCF);
 			so->so_accf = NULL;
 		}
 		so->so_options &= ~SO_ACCEPTFILTER;
@@ -228,18 +228,18 @@ do_setopt_accept_filter(struct socket *so, struct sockopt *sopt)
 	 * Pre-allocate any memory we may need later to avoid blocking at
 	 * untimely moments.  This does not optimize for invalid arguments.
 	 */
-	afap = malloc(sizeof(*afap), M_TEMP,
+	afap = bsd_malloc(sizeof(*afap), M_TEMP,
 	    M_WAITOK);
 	error = sooptcopyin(sopt, afap, sizeof *afap, sizeof *afap);
 	afap->af_name[sizeof(afap->af_name)-1] = '\0';
 	afap->af_arg[sizeof(afap->af_arg)-1] = '\0';
 	if (error) {
-		free(afap, M_TEMP);
+		bsd_free(afap, M_TEMP);
 		return (error);
 	}
 	afp = accept_filt_get(afap->af_name);
 	if (afp == NULL) {
-		free(afap, M_TEMP);
+		bsd_free(afap, M_TEMP);
 		return (ENOENT);
 	}
 	/*
@@ -248,11 +248,11 @@ do_setopt_accept_filter(struct socket *so, struct sockopt *sopt)
 	 * attached properly, 'newaf' is NULLed to avoid a free()
 	 * while in use.
 	 */
-	newaf = malloc(sizeof(*newaf), M_ACCF, M_WAITOK |
+	newaf = bsd_malloc(sizeof(*newaf), M_ACCF, M_WAITOK |
 	    M_ZERO);
 	if (afp->accf_create != NULL && afap->af_name[0] != '\0') {
 		int len = strlen(afap->af_name) + 1;
-		newaf->so_accept_filter_str = malloc(len, M_ACCF,
+		newaf->so_accept_filter_str = bsd_malloc(len, M_ACCF,
 		    M_WAITOK);
 		strcpy(newaf->so_accept_filter_str, afap->af_name);
 	}
@@ -289,10 +289,10 @@ out:
 	SOCK_UNLOCK(so);
 	if (newaf != NULL) {
 		if (newaf->so_accept_filter_str != NULL)
-			free(newaf->so_accept_filter_str, M_ACCF);
-		free(newaf, M_ACCF);
+			bsd_free(newaf->so_accept_filter_str, M_ACCF);
+		bsd_free(newaf, M_ACCF);
 	}
 	if (afap != NULL)
-		free(afap, M_TEMP);
+		bsd_free(afap, M_TEMP);
 	return (error);
 }

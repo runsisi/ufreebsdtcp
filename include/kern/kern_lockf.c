@@ -331,7 +331,7 @@ lf_alloc_lock(struct lock_owner *lo)
 {
 	struct lockf_entry *lf;
 
-	lf = malloc(sizeof(struct lockf_entry), M_LOCKF, M_WAITOK|M_ZERO);
+	lf = bsd_malloc(sizeof(struct lockf_entry), M_LOCKF, M_WAITOK|M_ZERO);
 
 #ifdef LOCKF_DEBUG
 	if (lockf_debug & 4)
@@ -381,7 +381,7 @@ lf_free_lock(struct lockf_entry *lock)
 				sx_xunlock(&lf_owner_graph_lock);
 			}
 			LIST_REMOVE(lo, lo_link);
-			free(lo, M_LOCKF);
+			bsd_free(lo, M_LOCKF);
 #ifdef LOCKF_DEBUG
 			if (lockf_debug & 4)
 				printf("Freed lock owner %p\n", lo);
@@ -397,7 +397,7 @@ lf_free_lock(struct lockf_entry *lock)
 	if (lockf_debug & 4)
 		printf("Freed lock %p\n", lock);
 #endif
-	free(lock, M_LOCKF);
+	bsd_free(lock, M_LOCKF);
 	return (1);
 }
 
@@ -497,7 +497,7 @@ lf_advlockasync(struct vop_advlockasync_args *ap, struct lockf **statep,
 		 * count which matches the new lockf_entry
 		 * structure created below.
 		 */
-		lo = malloc(sizeof(struct lock_owner), M_LOCKF,
+		lo = bsd_malloc(sizeof(struct lock_owner), M_LOCKF,
 		    M_WAITOK|M_ZERO);
 #ifdef LOCKF_DEBUG
 		if (lockf_debug & 4)
@@ -594,7 +594,7 @@ lf_advlockasync(struct vop_advlockasync_args *ap, struct lockf **statep,
 
 		VI_UNLOCK(vp);
 
-		ls = malloc(sizeof(struct lockf), M_LOCKF, M_WAITOK|M_ZERO);
+		ls = bsd_malloc(sizeof(struct lockf), M_LOCKF, M_WAITOK|M_ZERO);
 		sx_init(&ls->ls_lock, "ls_lock");
 		LIST_INIT(&ls->ls_active);
 		LIST_INIT(&ls->ls_pending);
@@ -615,7 +615,7 @@ lf_advlockasync(struct vop_advlockasync_args *ap, struct lockf **statep,
 			LIST_REMOVE(ls, ls_link);
 			sx_xunlock(&lf_lock_states_lock);
 			sx_destroy(&ls->ls_lock);
-			free(ls, M_LOCKF);
+			bsd_free(ls, M_LOCKF);
 			lf_free_lock(lock);
 			return (ENOENT);
 		}
@@ -631,7 +631,7 @@ lf_advlockasync(struct vop_advlockasync_args *ap, struct lockf **statep,
 			LIST_REMOVE(ls, ls_link);
 			sx_xunlock(&lf_lock_states_lock);
 			sx_destroy(&ls->ls_lock);
-			free(ls, M_LOCKF);
+			bsd_free(ls, M_LOCKF);
 		}
 	} else {
 		state->ls_threads++;
@@ -742,7 +742,7 @@ lf_advlockasync(struct vop_advlockasync_args *ap, struct lockf **statep,
 		LIST_REMOVE(freestate, ls_link);
 		sx_xunlock(&lf_lock_states_lock);
 		sx_destroy(&freestate->ls_lock);
-		free(freestate, M_LOCKF);
+		bsd_free(freestate, M_LOCKF);
 	}
 	return (error);
 }
@@ -832,7 +832,7 @@ lf_purgelocks(struct vnode *vp, struct lockf **statep)
 		LIST_REMOVE(state, ls_link);
 		sx_xunlock(&lf_lock_states_lock);
 		sx_destroy(&state->ls_lock);
-		free(state, M_LOCKF);
+		bsd_free(state, M_LOCKF);
 	} else {
 		VI_UNLOCK(vp);
 	}
@@ -867,7 +867,7 @@ static struct lockf_edge *
 lf_alloc_edge(void)
 {
 
-	return (malloc(sizeof(struct lockf_edge), M_LOCKF, M_WAITOK|M_ZERO));
+	return (bsd_malloc(sizeof(struct lockf_edge), M_LOCKF, M_WAITOK|M_ZERO));
 }
 
 /*
@@ -877,7 +877,7 @@ static void
 lf_free_edge(struct lockf_edge *e)
 {
 
-	free(e, M_LOCKF);
+	bsd_free(e, M_LOCKF);
 }
 
 
@@ -1882,7 +1882,7 @@ lf_iteratelocks_sysid(int sysid, lf_iterator *fn, void *arg)
 			if (lf->lf_owner->lo_sysid != sysid)
 				continue;
 
-			ldesc = malloc(sizeof(struct lockdesc), M_LOCKF,
+			ldesc = bsd_malloc(sizeof(struct lockdesc), M_LOCKF,
 			    M_WAITOK);
 			ldesc->vp = lf->lf_vnode;
 			vref(ldesc->vp);
@@ -1913,7 +1913,7 @@ lf_iteratelocks_sysid(int sysid, lf_iterator *fn, void *arg)
 		if (!error)
 			error = fn(ldesc->vp, &ldesc->fl, arg);
 		vrele(ldesc->vp);
-		free(ldesc, M_LOCKF);
+		bsd_free(ldesc, M_LOCKF);
 	}
 
 	return (error);
@@ -1948,7 +1948,7 @@ lf_iteratelocks_vnode(struct vnode *vp, lf_iterator *fn, void *arg)
 
 	sx_xlock(&ls->ls_lock);
 	LIST_FOREACH(lf, &ls->ls_active, lf_link) {
-		ldesc = malloc(sizeof(struct lockdesc), M_LOCKF,
+		ldesc = bsd_malloc(sizeof(struct lockdesc), M_LOCKF,
 		    M_WAITOK);
 		ldesc->vp = lf->lf_vnode;
 		vref(ldesc->vp);
@@ -1981,7 +1981,7 @@ lf_iteratelocks_vnode(struct vnode *vp, lf_iterator *fn, void *arg)
 		if (!error)
 			error = fn(ldesc->vp, &ldesc->fl, arg);
 		vrele(ldesc->vp);
-		free(ldesc, M_LOCKF);
+		bsd_free(ldesc, M_LOCKF);
 	}
 
 	return (error);
@@ -2342,7 +2342,7 @@ graph_add_edge(struct owner_graph *g, struct owner_vertex *x,
 	}
 #endif
 
-	e = malloc(sizeof(struct owner_edge), M_LOCKF, M_WAITOK);
+	e = bsd_malloc(sizeof(struct owner_edge), M_LOCKF, M_WAITOK);
 
 	LIST_INSERT_HEAD(&x->v_outedges, e, e_outlink);
 	LIST_INSERT_HEAD(&y->v_inedges, e, e_inlink);
@@ -2383,7 +2383,7 @@ graph_remove_edge(struct owner_graph *g, struct owner_vertex *x,
 #endif
 		LIST_REMOVE(e, e_outlink);
 		LIST_REMOVE(e, e_inlink);
-		free(e, M_LOCKF);
+		bsd_free(e, M_LOCKF);
 	}
 }
 
@@ -2398,13 +2398,13 @@ graph_alloc_vertex(struct owner_graph *g, struct lock_owner *lo)
 
 	sx_assert(&lf_owner_graph_lock, SX_XLOCKED);
 
-	v = malloc(sizeof(struct owner_vertex), M_LOCKF, M_WAITOK);
+	v = bsd_malloc(sizeof(struct owner_vertex), M_LOCKF, M_WAITOK);
 	if (g->g_size == g->g_space) {
-		g->g_vertices = realloc(g->g_vertices,
+		g->g_vertices = bsd_realloc(g->g_vertices,
 		    2 * g->g_space * sizeof(struct owner_vertex *),
 		    M_LOCKF, M_WAITOK);
-		free(g->g_indexbuf, M_LOCKF);
-		g->g_indexbuf = malloc(2 * g->g_space * sizeof(int),
+		bsd_free(g->g_indexbuf, M_LOCKF);
+		g->g_indexbuf = bsd_malloc(2 * g->g_space * sizeof(int),
 		    M_LOCKF, M_WAITOK);
 		g->g_space = 2 * g->g_space;
 	}
@@ -2442,18 +2442,18 @@ graph_free_vertex(struct owner_graph *g, struct owner_vertex *v)
 	}
 	g->g_size--;
 
-	free(v, M_LOCKF);
+	bsd_free(v, M_LOCKF);
 }
 
 static struct owner_graph *
 graph_init(struct owner_graph *g)
 {
 
-	g->g_vertices = malloc(10 * sizeof(struct owner_vertex *),
+	g->g_vertices = bsd_malloc(10 * sizeof(struct owner_vertex *),
 	    M_LOCKF, M_WAITOK);
 	g->g_size = 0;
 	g->g_space = 10;
-	g->g_indexbuf = malloc(g->g_space * sizeof(int), M_LOCKF, M_WAITOK);
+	g->g_indexbuf = bsd_malloc(g->g_space * sizeof(int), M_LOCKF, M_WAITOK);
 	g->g_gen = 0;
 
 	return (g);

@@ -368,7 +368,7 @@ uipc_accept(struct socket *so, struct sockaddr **nam)
 	unp = sotounpcb(so);
 	KASSERT(unp != NULL, ("uipc_accept: unp == NULL"));
 
-	*nam = malloc(sizeof(struct sockaddr_un), M_SONAME, M_WAITOK);
+	*nam = bsd_malloc(sizeof(struct sockaddr_un), M_SONAME, M_WAITOK);
 	UNP_LINK_RLOCK();
 	unp2 = unp->unp_conn;
 	if (unp2 != NULL && unp2->unp_addr != NULL) {
@@ -491,7 +491,7 @@ uipc_bind(struct socket *so, struct sockaddr *nam, struct thread *td)
 	unp->unp_flags |= UNP_BINDING;
 	UNP_PCB_UNLOCK(unp);
 
-	buf = malloc(namelen + 1, M_TEMP, M_WAITOK);
+	buf = bsd_malloc(namelen + 1, M_TEMP, M_WAITOK);
 	bcopy(soun->sun_path, buf, namelen);
 	buf[namelen] = 0;
 
@@ -552,7 +552,7 @@ restart:
 	VOP_UNLOCK(vp, 0);
 	vn_finished_write(mp);
 	VFS_UNLOCK_GIANT(vfslocked);
-	free(buf, M_TEMP);
+	bsd_free(buf, M_TEMP);
 	return (0);
 
 error:
@@ -560,7 +560,7 @@ error:
 	UNP_PCB_LOCK(unp);
 	unp->unp_flags &= ~UNP_BINDING;
 	UNP_PCB_UNLOCK(unp);
-	free(buf, M_TEMP);
+	bsd_free(buf, M_TEMP);
 	return (error);
 }
 
@@ -668,7 +668,7 @@ uipc_detach(struct socket *so)
 	unp->unp_refcount--;
 	freeunp = (unp->unp_refcount == 0);
 	if (saved_unp_addr != NULL)
-		free(saved_unp_addr, M_SONAME);
+		bsd_free(saved_unp_addr, M_SONAME);
 	if (freeunp) {
 		UNP_PCB_LOCK_DESTROY(unp);
 		uma_zfree(unp_zone, unp);
@@ -742,7 +742,7 @@ uipc_peeraddr(struct socket *so, struct sockaddr **nam)
 	unp = sotounpcb(so);
 	KASSERT(unp != NULL, ("uipc_peeraddr: unp == NULL"));
 
-	*nam = malloc(sizeof(struct sockaddr_un), M_SONAME, M_WAITOK);
+	*nam = bsd_malloc(sizeof(struct sockaddr_un), M_SONAME, M_WAITOK);
 	UNP_LINK_RLOCK();
 	/*
 	 * XXX: It seems that this test always fails even when connection is
@@ -1074,7 +1074,7 @@ uipc_sockaddr(struct socket *so, struct sockaddr **nam)
 	unp = sotounpcb(so);
 	KASSERT(unp != NULL, ("uipc_sockaddr: unp == NULL"));
 
-	*nam = malloc(sizeof(struct sockaddr_un), M_SONAME, M_WAITOK);
+	*nam = bsd_malloc(sizeof(struct sockaddr_un), M_SONAME, M_WAITOK);
 	UNP_PCB_LOCK(unp);
 	if (unp->unp_addr != NULL)
 		sa = (struct sockaddr *) unp->unp_addr;
@@ -1273,7 +1273,7 @@ unp_connect(struct socket *so, struct sockaddr *nam, struct thread *td)
 	unp->unp_flags |= UNP_CONNECTING;
 	UNP_PCB_UNLOCK(unp);
 
-	sa = malloc(sizeof(struct sockaddr_un), M_SONAME, M_WAITOK);
+	sa = bsd_malloc(sizeof(struct sockaddr_un), M_SONAME, M_WAITOK);
 	NDINIT(&nd, LOOKUP, MPSAFE | FOLLOW | LOCKSHARED | LOCKLEAF,
 	    UIO_SYSSPACE, buf, td);
 	error = namei(&nd);
@@ -1392,7 +1392,7 @@ bad:
 	if (vp != NULL)
 		vput(vp);
 	VFS_UNLOCK_GIANT(vfslocked);
-	free(sa, M_SONAME);
+	bsd_free(sa, M_SONAME);
 	UNP_LINK_WLOCK();
 	UNP_PCB_LOCK(unp);
 	unp->unp_flags &= ~UNP_CONNECTING;
@@ -1524,7 +1524,7 @@ unp_pcblist(SYSCTL_HANDLER_ARGS)
 	/*
 	 * OK, now we're committed to doing something.
 	 */
-	xug = malloc(sizeof(*xug), M_TEMP, M_WAITOK);
+	xug = bsd_malloc(sizeof(*xug), M_TEMP, M_WAITOK);
 	UNP_LIST_LOCK();
 	gencnt = unp_gencnt;
 	n = unp_count;
@@ -1536,11 +1536,11 @@ unp_pcblist(SYSCTL_HANDLER_ARGS)
 	xug->xug_sogen = so_gencnt;
 	error = SYSCTL_OUT(req, xug, sizeof *xug);
 	if (error) {
-		free(xug, M_TEMP);
+		bsd_free(xug, M_TEMP);
 		return (error);
 	}
 
-	unp_list = malloc(n * sizeof *unp_list, M_TEMP, M_WAITOK);
+	unp_list = bsd_malloc(n * sizeof *unp_list, M_TEMP, M_WAITOK);
 
 	UNP_LIST_LOCK();
 	for (unp = LIST_FIRST(head), i = 0; unp && i < n;
@@ -1561,7 +1561,7 @@ unp_pcblist(SYSCTL_HANDLER_ARGS)
 	n = i;			/* In case we lost some during malloc. */
 
 	error = 0;
-	xu = malloc(sizeof(*xu), M_TEMP, M_WAITOK | M_ZERO);
+	xu = bsd_malloc(sizeof(*xu), M_TEMP, M_WAITOK | M_ZERO);
 	for (i = 0; i < n; i++) {
 		unp = unp_list[i];
 		UNP_PCB_LOCK(unp);
@@ -1594,7 +1594,7 @@ unp_pcblist(SYSCTL_HANDLER_ARGS)
 			}
 		}
 	}
-	free(xu, M_TEMP);
+	bsd_free(xu, M_TEMP);
 	if (!error) {
 		/*
 		 * Give the user an updated idea of our state.  If the
@@ -1607,8 +1607,8 @@ unp_pcblist(SYSCTL_HANDLER_ARGS)
 		xug->xug_count = unp_count;
 		error = SYSCTL_OUT(req, xug, sizeof *xug);
 	}
-	free(unp_list, M_TEMP);
-	free(xug, M_TEMP);
+	bsd_free(unp_list, M_TEMP);
+	bsd_free(xug, M_TEMP);
 	return (error);
 }
 
@@ -2022,7 +2022,7 @@ unp_discard(struct file *fp)
 	struct unp_defer *dr;
 
 	if (unp_externalize_fp(fp)) {
-		dr = malloc(sizeof(*dr), M_TEMP, M_WAITOK);
+		dr = bsd_malloc(sizeof(*dr), M_TEMP, M_WAITOK);
 		dr->ud_fp = fp;
 		UNP_DEFERRED_LOCK();
 		SLIST_INSERT_HEAD(&unp_defers, dr, ud_link);
@@ -2053,7 +2053,7 @@ unp_process_defers(void *arg __unused, int pending)
 		while ((dr = SLIST_FIRST(&drl)) != NULL) {
 			SLIST_REMOVE_HEAD(&drl, ud_link);
 			closef(dr->ud_fp, NULL);
-			free(dr, M_TEMP);
+			bsd_free(dr, M_TEMP);
 			count++;
 		}
 		atomic_add_int(&unp_defers_count, -count);
@@ -2206,7 +2206,7 @@ unp_gc(__unused void *arg, int pending)
 	/*
 	 * Allocate space for a local list of dead unpcbs.
 	 */
-	unref = malloc(unp_unreachable * sizeof(struct file *),
+	unref = bsd_malloc(unp_unreachable * sizeof(struct file *),
 	    M_TEMP, M_WAITOK);
 
 	/*
@@ -2250,7 +2250,7 @@ unp_gc(__unused void *arg, int pending)
 	for (i = 0; i < total; i++)
 		fdrop(unref[i], NULL);
 	unp_recycled += total;
-	free(unref, M_TEMP);
+	bsd_free(unref, M_TEMP);
 }
 
 static void

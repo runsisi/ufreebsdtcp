@@ -527,7 +527,7 @@ lacp_port_create(struct lagg_port *lgp)
 		return (error);
 	}
 
-	lp = malloc(sizeof(struct lacp_port),
+	lp = bsd_malloc(sizeof(struct lacp_port),
 	    M_DEVBUF, M_NOWAIT|M_ZERO);
 	if (lp == NULL)
 		return (ENOMEM);
@@ -576,7 +576,7 @@ lacp_port_destroy(struct lagg_port *lgp)
 
 	LIST_REMOVE(lp, lp_next);
 	LACP_UNLOCK(lsc);
-	free(lp, M_DEVBUF);
+	bsd_free(lp, M_DEVBUF);
 }
 
 void
@@ -732,7 +732,7 @@ lacp_attach(struct lagg_softc *sc)
 {
 	struct lacp_softc *lsc;
 
-	lsc = malloc(sizeof(struct lacp_softc),
+	lsc = bsd_malloc(sizeof(struct lacp_softc),
 	    M_DEVBUF, M_NOWAIT|M_ZERO);
 	if (lsc == NULL)
 		return (ENOMEM);
@@ -771,7 +771,7 @@ lacp_detach(struct lagg_softc *sc)
 	callout_drain(&lsc->lsc_callout);
 
 	LACP_LOCK_DESTROY(lsc);
-	free(lsc, M_DEVBUF);
+	bsd_free(lsc, M_DEVBUF);
 	return (0);
 }
 
@@ -1075,7 +1075,7 @@ lacp_aggregator_delref(struct lacp_softc *lsc, struct lacp_aggregator *la)
 
 	TAILQ_REMOVE(&lsc->lsc_aggregators, la, la_q);
 
-	free(la, M_DEVBUF);
+	bsd_free(la, M_DEVBUF);
 }
 
 /*
@@ -1087,7 +1087,7 @@ lacp_aggregator_get(struct lacp_softc *lsc, struct lacp_port *lp)
 {
 	struct lacp_aggregator *la;
 
-	la = malloc(sizeof(*la), M_DEVBUF, M_NOWAIT);
+	la = bsd_malloc(sizeof(*la), M_DEVBUF, M_NOWAIT);
 	if (la) {
 		la->la_refcnt = 1;
 		la->la_nports = 0;

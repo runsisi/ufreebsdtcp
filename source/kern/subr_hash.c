@@ -62,10 +62,10 @@ hashinit_flags(int elements, struct malloc_type *type, u_long *hashmask,
 	hashsize >>= 1;
 
 	if (flags & HASH_NOWAIT)
-		hashtbl = malloc((u_long)hashsize * sizeof(*hashtbl),
+		hashtbl = bsd_malloc((u_long)hashsize * sizeof(*hashtbl),
 		    type, M_NOWAIT);
 	else
-		hashtbl = malloc((u_long)hashsize * sizeof(*hashtbl),
+		hashtbl = bsd_malloc((u_long)hashsize * sizeof(*hashtbl),
 		    type, M_WAITOK);
 
 	if (hashtbl != NULL) {
@@ -94,7 +94,7 @@ hashdestroy(void *vhashtbl, struct malloc_type *type, u_long hashmask)
 	hashtbl = vhashtbl;
 	for (hp = hashtbl; hp <= &hashtbl[hashmask]; hp++)
 		KASSERT(LIST_EMPTY(hp), ("%s: hash not empty", __func__));
-	free(hashtbl, type);
+	bsd_free(hashtbl, type);
 }
 
 static const int primes[] = { 1, 13, 31, 61, 127, 251, 509, 761, 1021, 1531,
@@ -120,7 +120,7 @@ phashinit(int elements, struct malloc_type *type, u_long *nentries)
 		hashsize = primes[i];
 	}
 	hashsize = primes[i - 1];
-	hashtbl = malloc((u_long)hashsize * sizeof(*hashtbl), type, M_WAITOK);
+	hashtbl = bsd_malloc((u_long)hashsize * sizeof(*hashtbl), type, M_WAITOK);
 	for (i = 0; i < hashsize; i++)
 		LIST_INIT(&hashtbl[i]);
 	*nentries = hashsize;

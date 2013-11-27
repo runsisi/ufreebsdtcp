@@ -258,11 +258,11 @@ device_sysctl_handler(SYSCTL_HANDLER_ARGS)
 		value = dev->driver ? dev->driver->name : "";
 		break;
 	case DEVICE_SYSCTL_LOCATION:
-		value = buf = malloc(1024, M_BUS, M_WAITOK | M_ZERO);
+		value = buf = bsd_malloc(1024, M_BUS, M_WAITOK | M_ZERO);
 		bus_child_location_str(dev, buf, 1024);
 		break;
 	case DEVICE_SYSCTL_PNPINFO:
-		value = buf = malloc(1024, M_BUS, M_WAITOK | M_ZERO);
+		value = buf = bsd_malloc(1024, M_BUS, M_WAITOK | M_ZERO);
 		bus_child_pnpinfo_str(dev, buf, 1024);
 		break;
 	case DEVICE_SYSCTL_PARENT:
@@ -273,7 +273,7 @@ device_sysctl_handler(SYSCTL_HANDLER_ARGS)
 	}
 	error = SYSCTL_OUT(req, value, strlen(value));
 	if (buf != NULL)
-		free(buf, M_BUS);
+		bsd_free(buf, M_BUS);
 	return (error);
 }
 
@@ -471,8 +471,8 @@ devread(struct cdev *dev, struct uio *uio, int ioflag)
 	devsoftc.queued--;
 	mtx_unlock(&devsoftc.mtx);
 	rv = uiomove(n1->dei_data, strlen(n1->dei_data), uio);
-	free(n1->dei_data, M_BUS);
-	free(n1, M_BUS);
+	bsd_free(n1->dei_data, M_BUS);
+	bsd_free(n1, M_BUS);
 	return (rv);
 }
 
@@ -549,23 +549,23 @@ devctl_queue_data_f(char *data, int flags)
 		goto out;
 	if (devctl_queue_length == 0)
 		goto out;
-	n1 = malloc(sizeof(*n1), M_BUS, flags);
+	n1 = bsd_malloc(sizeof(*n1), M_BUS, flags);
 	if (n1 == NULL)
 		goto out;
 	n1->dei_data = data;
 	mtx_lock(&devsoftc.mtx);
 	if (devctl_queue_length == 0) {
 		mtx_unlock(&devsoftc.mtx);
-		free(n1->dei_data, M_BUS);
-		free(n1, M_BUS);
+		bsd_free(n1->dei_data, M_BUS);
+		bsd_free(n1, M_BUS);
 		return;
 	}
 	/* Leave at least one spot in the queue... */
 	while (devsoftc.queued > devctl_queue_length - 1) {
 		n2 = TAILQ_FIRST(&devsoftc.devq);
 		TAILQ_REMOVE(&devsoftc.devq, n2, dei_link);
-		free(n2->dei_data, M_BUS);
-		free(n2, M_BUS);
+		bsd_free(n2->dei_data, M_BUS);
+		bsd_free(n2, M_BUS);
 		devsoftc.queued--;
 	}
 	TAILQ_INSERT_TAIL(&devsoftc.devq, n1, dei_link);
@@ -585,7 +585,7 @@ out:
 	 * We have to free data on all error paths since the caller
 	 * assumes it will be free'd when this item is dequeued.
 	 */
-	free(data, M_BUS);
+	bsd_free(data, M_BUS);
 	return;
 }
 
@@ -619,7 +619,7 @@ devctl_notify_f(const char *system, const char *subsystem, const char *type,
 	if (data != NULL)
 		len += strlen(data);
 	len += 3;	/* '!', '\n', and NUL */
-	msg = malloc(len, M_BUS, flags);
+	msg = bsd_malloc(len, M_BUS, flags);
 	if (msg == NULL)
 		return;		/* Drop it on the floor */
 	if (data != NULL)
@@ -663,19 +663,19 @@ devaddq(const char *type, const char *what, device_t dev)
 
 	if (!devctl_queue_length)/* Rare race, but lost races safely discard */
 		return;
-	data = malloc(1024, M_BUS, M_NOWAIT);
+	data = bsd_malloc(1024, M_BUS, M_NOWAIT);
 	if (data == NULL)
 		goto bad;
 
 	/* get the bus specific location of this device */
-	loc = malloc(1024, M_BUS, M_NOWAIT);
+	loc = bsd_malloc(1024, M_BUS, M_NOWAIT);
 	if (loc == NULL)
 		goto bad;
 	*loc = '\0';
 	bus_child_location_str(dev, loc, 1024);
 
 	/* Get the bus specific pnp info of this device */
-	pnp = malloc(1024, M_BUS, M_NOWAIT);
+	pnp = bsd_malloc(1024, M_BUS, M_NOWAIT);
 	if (pnp == NULL)
 		goto bad;
 	*pnp = '\0';
@@ -689,14 +689,14 @@ devaddq(const char *type, const char *what, device_t dev)
 	/* String it all together. */
 	snprintf(data, 1024, "%s%s at %s %s on %s\n", type, what, loc, pnp,
 	  parstr);
-	free(loc, M_BUS);
-	free(pnp, M_BUS);
+	bsd_free(loc, M_BUS);
+	bsd_free(pnp, M_BUS);
 	devctl_queue_data(data);
 	return;
 bad:
-	free(pnp, M_BUS);
-	free(loc, M_BUS);
-	free(data, M_BUS);
+	bsd_free(pnp, M_BUS);
+	bsd_free(loc, M_BUS);
+	bsd_free(data, M_BUS);
 	return;
 }
 
@@ -751,8 +751,8 @@ sysctl_devctl_disable(SYSCTL_HANDLER_ARGS)
 		while (!TAILQ_EMPTY(&devsoftc.devq)) {
 			n1 = TAILQ_FIRST(&devsoftc.devq);
 			TAILQ_REMOVE(&devsoftc.devq, n1, dei_link);
-			free(n1->dei_data, M_BUS);
-			free(n1, M_BUS);
+			bsd_free(n1->dei_data, M_BUS);
+			bsd_free(n1, M_BUS);
 		}
 		devsoftc.queued = 0;
 		devctl_queue_length = 0;
@@ -780,8 +780,8 @@ sysctl_devctl_queue(SYSCTL_HANDLER_ARGS)
 	while (devsoftc.queued > devctl_queue_length) {
 		n1 = TAILQ_FIRST(&devsoftc.devq);
 		TAILQ_REMOVE(&devsoftc.devq, n1, dei_link);
-		free(n1->dei_data, M_BUS);
-		free(n1, M_BUS);
+		bsd_free(n1->dei_data, M_BUS);
+		bsd_free(n1, M_BUS);
 		devsoftc.queued--;
 	}
 	mtx_unlock(&devsoftc.mtx);
@@ -924,7 +924,7 @@ devclass_find_internal(const char *classname, const char *parentname,
 
 	if (create && !dc) {
 		PDEBUG(("creating %s", classname));
-		dc = malloc(sizeof(struct devclass) + strlen(classname) + 1,
+		dc = bsd_malloc(sizeof(struct devclass) + strlen(classname) + 1,
 		    M_BUS, M_NOWAIT | M_ZERO);
 		if (!dc)
 			return (NULL);
@@ -1052,7 +1052,7 @@ devclass_add_driver(devclass_t dc, driver_t *driver, int pass, devclass_t *dcp)
 	if (pass <= BUS_PASS_ROOT)
 		return (EINVAL);
 
-	dl = malloc(sizeof *dl, M_BUS, M_NOWAIT|M_ZERO);
+	dl = bsd_malloc(sizeof *dl, M_BUS, M_NOWAIT|M_ZERO);
 	if (!dl)
 		return (ENOMEM);
 
@@ -1204,7 +1204,7 @@ devclass_delete_driver(devclass_t busclass, driver_t *driver)
 		return (error);
 
 	TAILQ_REMOVE(&busclass->drivers, dl, link);
-	free(dl, M_BUS);
+	bsd_free(dl, M_BUS);
 
 	/* XXX: kobj_mtx */
 	driver->refs--;
@@ -1370,7 +1370,7 @@ devclass_get_devices(devclass_t dc, device_t **devlistp, int *devcountp)
 	device_t *list;
 
 	count = devclass_get_count(dc);
-	list = malloc(count * sizeof(device_t), M_TEMP, M_NOWAIT|M_ZERO);
+	list = bsd_malloc(count * sizeof(device_t), M_TEMP, M_NOWAIT|M_ZERO);
 	if (!list)
 		return (ENOMEM);
 
@@ -1414,7 +1414,7 @@ devclass_get_drivers(devclass_t dc, driver_t ***listp, int *countp)
 	count = 0;
 	TAILQ_FOREACH(dl, &dc->drivers, link)
 		count++;
-	list = malloc(count * sizeof(driver_t *), M_TEMP, M_NOWAIT);
+	list = bsd_malloc(count * sizeof(driver_t *), M_TEMP, M_NOWAIT);
 	if (list == NULL)
 		return (ENOMEM);
 
@@ -1586,7 +1586,7 @@ devclass_alloc_unit(devclass_t dc, device_t dev, int *unitp)
 
 		oldlist = dc->devices;
 		newsize = roundup((unit + 1), MINALLOCSIZE / sizeof(device_t));
-		newlist = malloc(sizeof(device_t) * newsize, M_BUS, M_NOWAIT);
+		newlist = bsd_malloc(sizeof(device_t) * newsize, M_BUS, M_NOWAIT);
 		if (!newlist)
 			return (ENOMEM);
 		if (oldlist != NULL)
@@ -1596,7 +1596,7 @@ devclass_alloc_unit(devclass_t dc, device_t dev, int *unitp)
 		dc->devices = newlist;
 		dc->maxunit = newsize;
 		if (oldlist != NULL)
-			free(oldlist, M_BUS);
+			bsd_free(oldlist, M_BUS);
 	}
 	PDEBUG(("now: unit %d in devclass %s", unit, DEVCLANAME(dc)));
 
@@ -1630,12 +1630,12 @@ devclass_add_device(devclass_t dc, device_t dev)
 	buflen = snprintf(NULL, 0, "%s%d$", dc->name, INT_MAX);
 	if (buflen < 0)
 		return (ENOMEM);
-	dev->nameunit = malloc(buflen, M_BUS, M_NOWAIT|M_ZERO);
+	dev->nameunit = bsd_malloc(buflen, M_BUS, M_NOWAIT|M_ZERO);
 	if (!dev->nameunit)
 		return (ENOMEM);
 
 	if ((error = devclass_alloc_unit(dc, dev, &dev->unit)) != 0) {
-		free(dev->nameunit, M_BUS);
+		bsd_free(dev->nameunit, M_BUS);
 		dev->nameunit = NULL;
 		return (error);
 	}
@@ -1672,7 +1672,7 @@ devclass_delete_device(devclass_t dc, device_t dev)
 	if (dev->flags & DF_WILDCARD)
 		dev->unit = -1;
 	dev->devclass = NULL;
-	free(dev->nameunit, M_BUS);
+	bsd_free(dev->nameunit, M_BUS);
 	dev->nameunit = NULL;
 
 	return (0);
@@ -1709,7 +1709,7 @@ make_device(device_t parent, const char *name, int unit)
 		dc = NULL;
 	}
 
-	dev = malloc(sizeof(struct device), M_BUS, M_NOWAIT|M_ZERO);
+	dev = bsd_malloc(sizeof(struct device), M_BUS, M_NOWAIT|M_ZERO);
 	if (!dev)
 		return (NULL);
 
@@ -2188,7 +2188,7 @@ device_get_children(device_t dev, device_t **devlistp, int *devcountp)
 		return (0);
 	}
 
-	list = malloc(count * sizeof(device_t), M_TEMP, M_NOWAIT|M_ZERO);
+	list = bsd_malloc(count * sizeof(device_t), M_TEMP, M_NOWAIT|M_ZERO);
 	if (!list)
 		return (ENOMEM);
 
@@ -2328,13 +2328,13 @@ static void
 device_set_desc_internal(device_t dev, const char* desc, int copy)
 {
 	if (dev->desc && (dev->flags & DF_DESCMALLOCED)) {
-		free(dev->desc, M_BUS);
+		bsd_free(dev->desc, M_BUS);
 		dev->flags &= ~DF_DESCMALLOCED;
 		dev->desc = NULL;
 	}
 
 	if (copy && desc) {
-		dev->desc = malloc(strlen(desc) + 1, M_BUS, M_NOWAIT);
+		dev->desc = bsd_malloc(strlen(desc) + 1, M_BUS, M_NOWAIT);
 		if (dev->desc) {
 			strcpy(dev->desc, desc);
 			dev->flags |= DF_DESCMALLOCED;
@@ -2403,7 +2403,7 @@ void
 device_set_softc(device_t dev, void *softc)
 {
 	if (dev->softc && !(dev->flags & DF_EXTERNALSOFTC))
-		free(dev->softc, M_BUS_SC);
+		bsd_free(dev->softc, M_BUS_SC);
 	dev->softc = softc;
 	if (dev->softc)
 		dev->flags |= DF_EXTERNALSOFTC;
@@ -2420,7 +2420,7 @@ device_set_softc(device_t dev, void *softc)
 void
 device_free_softc(void *softc)
 {
-	free(softc, M_BUS_SC);
+	bsd_free(softc, M_BUS_SC);
 }
 
 /**
@@ -2630,7 +2630,7 @@ device_set_driver(device_t dev, driver_t *driver)
 		return (0);
 
 	if (dev->softc && !(dev->flags & DF_EXTERNALSOFTC)) {
-		free(dev->softc, M_BUS_SC);
+		bsd_free(dev->softc, M_BUS_SC);
 		dev->softc = NULL;
 	}
 	device_set_desc(dev, NULL);
@@ -2639,7 +2639,7 @@ device_set_driver(device_t dev, driver_t *driver)
 	if (driver) {
 		kobj_init((kobj_t) dev, (kobj_class_t) driver);
 		if (!(dev->flags & DF_EXTERNALSOFTC) && driver->size > 0) {
-			dev->softc = malloc(driver->size, M_BUS_SC,
+			dev->softc = bsd_malloc(driver->size, M_BUS_SC,
 			    M_NOWAIT | M_ZERO);
 			if (!dev->softc) {
 				kobj_delete((kobj_t) dev, NULL);
@@ -2941,7 +2941,7 @@ resource_list_free(struct resource_list *rl)
 		if (rle->res)
 			panic("resource_list_free: resource entry is busy");
 		STAILQ_REMOVE_HEAD(rl, link);
-		free(rle, M_BUS);
+		bsd_free(rle, M_BUS);
 	}
 }
 
@@ -2994,7 +2994,7 @@ resource_list_add(struct resource_list *rl, int type, int rid,
 
 	rle = resource_list_find(rl, type, rid);
 	if (!rle) {
-		rle = malloc(sizeof(struct resource_list_entry), M_BUS,
+		rle = bsd_malloc(sizeof(struct resource_list_entry), M_BUS,
 		    M_NOWAIT);
 		if (!rle)
 			panic("resource_list_add: can't record entry");
@@ -3104,7 +3104,7 @@ resource_list_delete(struct resource_list *rl, int type, int rid)
 		if (rle->res != NULL)
 			panic("resource_list_delete: resource has not been released");
 		STAILQ_REMOVE(rl, rle, resource_list_entry, link);
-		free(rle, M_BUS);
+		bsd_free(rle, M_BUS);
 	}
 }
 
@@ -3412,7 +3412,7 @@ resource_list_purge(struct resource_list *rl)
 			bus_release_resource(rman_get_device(rle->res),
 			    rle->type, rle->rid, rle->res);
 		STAILQ_REMOVE_HEAD(rl, link);
-		free(rle, M_BUS);
+		bsd_free(rle, M_BUS);
 	}
 }
 

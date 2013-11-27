@@ -234,7 +234,7 @@ sys_readv(struct thread *td, struct readv_args *uap)
 	if (error)
 		return (error);
 	error = kern_readv(td, uap->fd, auio);
-	free(auio, M_IOV);
+	bsd_free(auio, M_IOV);
 	return (error);
 }
 
@@ -273,7 +273,7 @@ sys_preadv(struct thread *td, struct preadv_args *uap)
 	if (error)
 		return (error);
 	error = kern_preadv(td, uap->fd, auio, uap->offset);
-	free(auio, M_IOV);
+	bsd_free(auio, M_IOV);
 	return (error);
 }
 
@@ -443,7 +443,7 @@ sys_writev(struct thread *td, struct writev_args *uap)
 	if (error)
 		return (error);
 	error = kern_writev(td, uap->fd, auio);
-	free(auio, M_IOV);
+	bsd_free(auio, M_IOV);
 	return (error);
 }
 
@@ -482,7 +482,7 @@ sys_pwritev(struct thread *td, struct pwritev_args *uap)
 	if (error)
 		return (error);
 	error = kern_pwritev(td, uap->fd, auio, uap->offset);
-	free(auio, M_IOV);
+	bsd_free(auio, M_IOV);
 	return (error);
 }
 
@@ -671,14 +671,14 @@ sys_ioctl(struct thread *td, struct ioctl_args *uap)
 			data = (void *)&arg;
 			size = 0;
 		} else
-			data = malloc((u_long)size, M_IOCTLOPS, M_WAITOK);
+			data = bsd_malloc((u_long)size, M_IOCTLOPS, M_WAITOK);
 	} else
 		data = (void *)&uap->data;
 	if (com & IOC_IN) {
 		error = copyin(uap->data, data, (u_int)size);
 		if (error) {
 			if (size > 0)
-				free(data, M_IOCTLOPS);
+				bsd_free(data, M_IOCTLOPS);
 			return (error);
 		}
 	} else if (com & IOC_OUT) {
@@ -695,7 +695,7 @@ sys_ioctl(struct thread *td, struct ioctl_args *uap)
 		error = copyout(data, uap->data, (u_int)size);
 
 	if (size > 0)
-		free(data, M_IOCTLOPS);
+		bsd_free(data, M_IOCTLOPS);
 	return (error);
 }
 
@@ -942,7 +942,7 @@ kern_select(struct thread *td, int nd, fd_set *fd_in, fd_set *fd_ou,
 	if (nbufbytes <= sizeof s_selbits)
 		selbits = &s_selbits[0];
 	else
-		selbits = malloc(nbufbytes, M_SELECT, M_WAITOK);
+		selbits = bsd_malloc(nbufbytes, M_SELECT, M_WAITOK);
 
 	/*
 	 * Assign pointers into the bit buffers and fetch the input bits.
@@ -1057,7 +1057,7 @@ done:
 #undef putbits
 	}
 	if (selbits != &s_selbits[0])
-		free(selbits, M_SELECT);
+		bsd_free(selbits, M_SELECT);
 
 	return (error);
 }
@@ -1265,7 +1265,7 @@ sys_poll(td, uap)
 		return (EINVAL);
 	ni = nfds * sizeof(struct pollfd);
 	if (ni > sizeof(smallbits))
-		bits = malloc(ni, M_TEMP, M_WAITOK);
+		bits = bsd_malloc(ni, M_TEMP, M_WAITOK);
 	else
 		bits = smallbits;
 	error = copyin(uap->fds, bits, ni);
@@ -1322,7 +1322,7 @@ done:
 	}
 out:
 	if (ni > sizeof(smallbits))
-		free(bits, M_TEMP);
+		bsd_free(bits, M_TEMP);
 	return (error);
 }
 
@@ -1689,7 +1689,7 @@ seltdinit(struct thread *td)
 
 	if ((stp = td->td_sel) != NULL)
 		goto out;
-	td->td_sel = stp = malloc(sizeof(*stp), M_SELECT, M_WAITOK|M_ZERO);
+	td->td_sel = stp = bsd_malloc(sizeof(*stp), M_SELECT, M_WAITOK|M_ZERO);
 	mtx_init(&stp->st_mtx, "sellck", NULL, MTX_DEF);
 	cv_init(&stp->st_wait, "select");
 out:
@@ -1739,7 +1739,7 @@ seltdfini(struct thread *td)
 	if (stp->st_free2)
 		uma_zfree(selfd_zone, stp->st_free2);
 	td->td_sel = NULL;
-	free(stp, M_SELECT);
+	bsd_free(stp, M_SELECT);
 }
 
 /*

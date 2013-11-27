@@ -309,7 +309,7 @@ m_tag_free_default(struct m_tag *t)
 	if (t->m_tag_id == PACKET_TAG_MACLABEL)
 		mac_mbuf_tag_destroy(t);
 #endif
-	free(t, M_PACKET_TAGS);
+	bsd_free(t, M_PACKET_TAGS);
 }
 
 /* Get a packet tag structure along with specified data following. */
@@ -321,7 +321,7 @@ m_tag_alloc(uint32_t cookie, int type, int len, int wait)
 	MBUF_CHECKSLEEP(wait);
 	if (len < 0)
 		return NULL;
-	t = malloc(len + sizeof(struct m_tag), M_PACKET_TAGS, wait);
+	t = bsd_malloc(len + sizeof(struct m_tag), M_PACKET_TAGS, wait);
 	if (t == NULL)
 		return NULL;
 	m_tag_setup(t, cookie, type, len);

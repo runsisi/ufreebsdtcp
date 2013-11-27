@@ -1244,7 +1244,7 @@ ether_resolvemulti(struct ifnet *ifp, struct sockaddr **llsa,
 		sin = (struct sockaddr_in *)sa;
 		if (!IN_MULTICAST(ntohl(sin->sin_addr.s_addr)))
 			return EADDRNOTAVAIL;
-		sdl = malloc(sizeof *sdl, M_IFMADDR,
+		sdl = bsd_malloc(sizeof *sdl, M_IFMADDR,
 		       M_NOWAIT|M_ZERO);
 		if (sdl == NULL)
 			return ENOMEM;
@@ -1273,7 +1273,7 @@ ether_resolvemulti(struct ifnet *ifp, struct sockaddr **llsa,
 		}
 		if (!IN6_IS_ADDR_MULTICAST(&sin6->sin6_addr))
 			return EADDRNOTAVAIL;
-		sdl = malloc(sizeof *sdl, M_IFMADDR,
+		sdl = bsd_malloc(sizeof *sdl, M_IFMADDR,
 		       M_NOWAIT|M_ZERO);
 		if (sdl == NULL)
 			return (ENOMEM);
@@ -1302,7 +1302,7 @@ ether_alloc(u_char type, struct ifnet *ifp)
 {
 	struct arpcom	*ac;
 	
-	ac = malloc(sizeof(struct arpcom), M_ARPCOM, M_WAITOK | M_ZERO);
+	ac = bsd_malloc(sizeof(struct arpcom), M_ARPCOM, M_WAITOK | M_ZERO);
 	ac->ac_ifp = ifp;
 
 	return (ac);
@@ -1312,7 +1312,7 @@ static void
 ether_free(void *com, u_char type)
 {
 
-	free(com, M_ARPCOM);
+	bsd_free(com, M_ARPCOM);
 }
 
 static int

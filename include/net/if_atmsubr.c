@@ -463,7 +463,7 @@ atm_alloc(u_char type, struct ifnet *ifp)
 {
 	struct ifatm	*ifatm;
 
-	ifatm = malloc(sizeof(struct ifatm), M_IFATM, M_WAITOK | M_ZERO);
+	ifatm = bsd_malloc(sizeof(struct ifatm), M_IFATM, M_WAITOK | M_ZERO);
 	ifatm->ifp = ifp;
 
 	return (ifatm);
@@ -473,7 +473,7 @@ static void
 atm_free(void *com, u_char type)
 {
 
-	free(com, M_IFATM);
+	bsd_free(com, M_IFATM);
 }
 
 static int

@@ -1165,14 +1165,14 @@ kern_alternate_path(struct thread *td, const char *prefix, const char *path,
 	size_t len, sz;
 	int error;
 
-	buf = (char *) malloc(MAXPATHLEN, M_TEMP, M_WAITOK);
+	buf = (char *) bsd_malloc(MAXPATHLEN, M_TEMP, M_WAITOK);
 	*pathbuf = buf;
 
 	/* Copy the prefix into the new pathname as a starting point. */
 	len = strlcpy(buf, prefix, MAXPATHLEN);
 	if (len >= MAXPATHLEN) {
 		*pathbuf = NULL;
-		free(buf, M_TEMP);
+		bsd_free(buf, M_TEMP);
 		return (EINVAL);
 	}
 	sz = MAXPATHLEN - len;
@@ -1186,7 +1186,7 @@ kern_alternate_path(struct thread *td, const char *prefix, const char *path,
 
 	if (error) {
 		*pathbuf = NULL;
-		free(buf, M_TEMP);
+		bsd_free(buf, M_TEMP);
 		return (error);
 	}
 

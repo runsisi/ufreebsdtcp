@@ -373,7 +373,7 @@ mptable_setup_io(void)
 
 	/* First, we count individual items and allocate arrays. */
 	mptable_count_items();
-	busses = malloc((mptable_maxbusid + 1) * sizeof(bus_datum), M_MPTABLE,
+	busses = bsd_malloc((mptable_maxbusid + 1) * sizeof(bus_datum), M_MPTABLE,
 	    M_WAITOK);
 	for (i = 0; i <= mptable_maxbusid; i++)
 		busses[i].bus_type = NOBUS;

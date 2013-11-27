@@ -316,7 +316,7 @@ encap_attach(int af, int proto, const struct sockaddr *sp,
 		return (NULL);
 	}
 
-	ep = malloc(sizeof(*ep), M_NETADDR, M_NOWAIT);	/*XXX*/
+	ep = bsd_malloc(sizeof(*ep), M_NETADDR, M_NOWAIT);	/*XXX*/
 	if (ep == NULL) {
 		mtx_unlock(&encapmtx);
 		return (NULL);
@@ -348,7 +348,7 @@ encap_attach_func(int af, int proto,
 	if (!func)
 		return (NULL);
 
-	ep = malloc(sizeof(*ep), M_NETADDR, M_NOWAIT);	/*XXX*/
+	ep = bsd_malloc(sizeof(*ep), M_NETADDR, M_NOWAIT);	/*XXX*/
 	if (ep == NULL)
 		return (NULL);
 	bzero(ep, sizeof(*ep));
@@ -376,7 +376,7 @@ encap_detach(const struct encaptab *cookie)
 		if (p == ep) {
 			LIST_REMOVE(p, chain);
 			mtx_unlock(&encapmtx);
-			free(p, M_NETADDR);	/*XXX*/
+			bsd_free(p, M_NETADDR);	/*XXX*/
 			return 0;
 		}
 	}

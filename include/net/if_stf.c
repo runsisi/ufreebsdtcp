@@ -226,10 +226,10 @@ stf_clone_create(struct if_clone *ifc, char *name, size_t len, caddr_t params)
 	if (err != 0)
 		return (err);
 
-	sc = malloc(sizeof(struct stf_softc), M_STF, M_WAITOK | M_ZERO);
+	sc = bsd_malloc(sizeof(struct stf_softc), M_STF, M_WAITOK | M_ZERO);
 	ifp = STF2IFP(sc) = if_alloc(IFT_STF);
 	if (ifp == NULL) {
-		free(sc, M_STF);
+		bsd_free(sc, M_STF);
 		ifc_free_unit(ifc, unit);
 		return (ENOSPC);
 	}
@@ -249,7 +249,7 @@ stf_clone_create(struct if_clone *ifc, char *name, size_t len, caddr_t params)
 	    stf_encapcheck, &in_stf_protosw, sc);
 	if (sc->encap_cookie == NULL) {
 		if_printf(ifp, "attach failed\n");
-		free(sc, M_STF);
+		bsd_free(sc, M_STF);
 		ifc_free_unit(ifc, unit);
 		return (ENOMEM);
 	}
@@ -276,7 +276,7 @@ stf_clone_destroy(struct if_clone *ifc, struct ifnet *ifp)
 	if_detach(ifp);
 	if_free(ifp);
 
-	free(sc, M_STF);
+	bsd_free(sc, M_STF);
 	ifc_free_unit(ifc, STFUNIT);
 
 	return (0);

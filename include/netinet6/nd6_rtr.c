@@ -597,7 +597,7 @@ defrtrlist_del(struct nd_defrouter *dr)
 	if (deldr)
 		defrouter_select();
 
-	free(dr, M_IP6NDP);
+	bsd_free(dr, M_IP6NDP);
 }
 
 /*
@@ -782,7 +782,7 @@ defrtrlist_update(struct nd_defrouter *new)
 		return (NULL);
 	}
 
-	n = (struct nd_defrouter *)malloc(sizeof(*n), M_IP6NDP, M_NOWAIT);
+	n = (struct nd_defrouter *)bsd_malloc(sizeof(*n), M_IP6NDP, M_NOWAIT);
 	if (n == NULL) {
 		splx(s);
 		return (NULL);
@@ -833,7 +833,7 @@ pfxrtr_add(struct nd_prefix *pr, struct nd_defrouter *dr)
 {
 	struct nd_pfxrouter *new;
 
-	new = (struct nd_pfxrouter *)malloc(sizeof(*new), M_IP6NDP, M_NOWAIT);
+	new = (struct nd_pfxrouter *)bsd_malloc(sizeof(*new), M_IP6NDP, M_NOWAIT);
 	if (new == NULL)
 		return;
 	bzero(new, sizeof(*new));
@@ -848,7 +848,7 @@ static void
 pfxrtr_del(struct nd_pfxrouter *pfr)
 {
 	LIST_REMOVE(pfr, pfr_entry);
-	free(pfr, M_IP6NDP);
+	bsd_free(pfr, M_IP6NDP);
 }
 
 struct nd_prefix *
@@ -877,7 +877,7 @@ nd6_prelist_add(struct nd_prefixctl *pr, struct nd_defrouter *dr,
 	int i, s;
 	char ip6buf[INET6_ADDRSTRLEN];
 
-	new = (struct nd_prefix *)malloc(sizeof(*new), M_IP6NDP, M_NOWAIT);
+	new = (struct nd_prefix *)bsd_malloc(sizeof(*new), M_IP6NDP, M_NOWAIT);
 	if (new == NULL)
 		return(ENOMEM);
 	bzero(new, sizeof(*new));
@@ -888,7 +888,7 @@ nd6_prelist_add(struct nd_prefixctl *pr, struct nd_defrouter *dr,
 	new->ndpr_pltime = pr->ndpr_pltime;
 	new->ndpr_flags = pr->ndpr_flags;
 	if ((error = in6_init_prefix_ltimes(new)) != 0) {
-		free(new, M_IP6NDP);
+		bsd_free(new, M_IP6NDP);
 		return(error);
 	}
 	new->ndpr_lastupdate = time_second;
@@ -963,11 +963,11 @@ prelist_remove(struct nd_prefix *pr)
 
 	/* free list of routers that adversed the prefix */
 	LIST_FOREACH_SAFE(pfr, &pr->ndpr_advrtrs, pfr_entry, next) {
-		free(pfr, M_IP6NDP);
+		bsd_free(pfr, M_IP6NDP);
 	}
 	splx(s);
 
-	free(pr, M_IP6NDP);
+	bsd_free(pr, M_IP6NDP);
 
 	pfxlist_onlink_check();
 }

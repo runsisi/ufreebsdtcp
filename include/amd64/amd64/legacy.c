@@ -158,7 +158,7 @@ legacy_add_child(device_t bus, u_int order, const char *name, int unit)
 	device_t child;
 	struct legacy_device *atdev;
 
-	atdev = malloc(sizeof(struct legacy_device), M_LEGACYDEV,
+	atdev = bsd_malloc(sizeof(struct legacy_device), M_LEGACYDEV,
 	    M_NOWAIT | M_ZERO);
 	if (atdev == NULL)
 		return(NULL);
@@ -168,7 +168,7 @@ legacy_add_child(device_t bus, u_int order, const char *name, int unit)
 
 	child = device_add_child_ordered(bus, order, name, unit);
 	if (child == NULL)
-		free(atdev, M_LEGACYDEV);
+		bsd_free(atdev, M_LEGACYDEV);
 	else
 		/* should we free this in legacy_child_detached? */
 		device_set_ivars(child, atdev);
@@ -299,7 +299,7 @@ cpu_add_child(device_t bus, u_int order, const char *name, int unit)
 	device_t child;
 	struct pcpu *pc;
 
-	if ((cd = malloc(sizeof(*cd), M_DEVBUF, M_NOWAIT | M_ZERO)) == NULL)
+	if ((cd = bsd_malloc(sizeof(*cd), M_DEVBUF, M_NOWAIT | M_ZERO)) == NULL)
 		return (NULL);
 
 	resource_list_init(&cd->cd_rl);
@@ -311,7 +311,7 @@ cpu_add_child(device_t bus, u_int order, const char *name, int unit)
 		pc->pc_device = child;
 		device_set_ivars(child, cd);
 	} else
-		free(cd, M_DEVBUF);
+		bsd_free(cd, M_DEVBUF);
 	return (child);
 }
 

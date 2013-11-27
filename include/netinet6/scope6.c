@@ -89,7 +89,7 @@ scope6_ifattach(struct ifnet *ifp)
 {
 	struct scope6_id *sid;
 
-	sid = (struct scope6_id *)malloc(sizeof(*sid), M_IFADDR, M_WAITOK);
+	sid = (struct scope6_id *)bsd_malloc(sizeof(*sid), M_IFADDR, M_WAITOK);
 	bzero(sid, sizeof(*sid));
 
 	/*
@@ -111,7 +111,7 @@ void
 scope6_ifdetach(struct scope6_id *sid)
 {
 
-	free(sid, M_IFADDR);
+	bsd_free(sid, M_IFADDR);
 }
 
 int

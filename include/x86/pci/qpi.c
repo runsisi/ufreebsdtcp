@@ -124,7 +124,7 @@ qpi_probe_pcib(device_t dev, int bus)
 	if (child == NULL)
 		panic("%s: failed to add pci bus %d", device_get_nameunit(dev),
 		    bus);
-	qdev = malloc(sizeof(struct qpi_device), M_QPI, M_WAITOK);
+	qdev = bsd_malloc(sizeof(struct qpi_device), M_QPI, M_WAITOK);
 	qdev->qd_pcibus = bus;
 	device_set_ivars(child, qdev);
 	return (0);

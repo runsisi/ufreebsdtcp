@@ -133,7 +133,7 @@ in_pcbgroup_init(struct inpcbinfo *pcbinfo, u_int hashfields,
 	numpcbgroups = mp_ncpus;
 
 	pcbinfo->ipi_hashfields = hashfields;
-	pcbinfo->ipi_pcbgroups = malloc(numpcbgroups *
+	pcbinfo->ipi_pcbgroups = bsd_malloc(numpcbgroups *
 	    sizeof(*pcbinfo->ipi_pcbgroups), M_PCB, M_WAITOK | M_ZERO);
 	pcbinfo->ipi_npcbgroups = numpcbgroups;
 	pcbinfo->ipi_wildbase = hashinit(hash_nelements, M_PCB,
@@ -171,7 +171,7 @@ in_pcbgroup_destroy(struct inpcbinfo *pcbinfo)
 		    pcbgroup->ipg_hashmask);
 	}
 	hashdestroy(pcbinfo->ipi_wildbase, M_PCB, pcbinfo->ipi_wildmask);
-	free(pcbinfo->ipi_pcbgroups, M_PCB);
+	bsd_free(pcbinfo->ipi_pcbgroups, M_PCB);
 	pcbinfo->ipi_pcbgroups = NULL;
 	pcbinfo->ipi_npcbgroups = 0;
 	pcbinfo->ipi_hashfields = 0;

@@ -147,8 +147,8 @@ zbuf_free(struct zbuf *zb)
 		if (zb->zb_pages[i] != NULL)
 			zbuf_sfbuf_free(zb->zb_pages[i]);
 	}
-	free(zb->zb_pages, M_BPF);
-	free(zb, M_BPF);
+	bsd_free(zb->zb_pages, M_BPF);
+	bsd_free(zb, M_BPF);
 }
 
 /*
@@ -213,11 +213,11 @@ zbuf_setup(struct thread *td, vm_offset_t uaddr, size_t len,
 	 * Allocate the buffer and set up each page with is own sf_buf.
 	 */
 	error = 0;
-	zb = malloc(sizeof(*zb), M_BPF, M_ZERO | M_WAITOK);
+	zb = bsd_malloc(sizeof(*zb), M_BPF, M_ZERO | M_WAITOK);
 	zb->zb_uaddr = uaddr;
 	zb->zb_size = len;
 	zb->zb_numpages = len / PAGE_SIZE;
-	zb->zb_pages = malloc(sizeof(struct sf_buf *) *
+	zb->zb_pages = bsd_malloc(sizeof(struct sf_buf *) *
 	    zb->zb_numpages, M_BPF, M_ZERO | M_WAITOK);
 	map = &td->td_proc->p_vmspace->vm_map;
 	for (i = 0; i < zb->zb_numpages; i++) {

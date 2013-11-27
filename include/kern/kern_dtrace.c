@@ -59,7 +59,7 @@ static void
 kdtrace_proc_ctor(void *arg __unused, struct proc *p)
 {
 
-	p->p_dtrace = malloc(KDTRACE_PROC_SIZE, M_KDTRACE, M_WAITOK|M_ZERO);
+	p->p_dtrace = bsd_malloc(KDTRACE_PROC_SIZE, M_KDTRACE, M_WAITOK|M_ZERO);
 }
 
 static void
@@ -67,7 +67,7 @@ kdtrace_proc_dtor(void *arg __unused, struct proc *p)
 {
 
 	if (p->p_dtrace != NULL) {
-		free(p->p_dtrace, M_KDTRACE);
+		bsd_free(p->p_dtrace, M_KDTRACE);
 		p->p_dtrace = NULL;
 	}
 }
@@ -84,7 +84,7 @@ static void
 kdtrace_thread_ctor(void *arg __unused, struct thread *td)
 {
 
-	td->td_dtrace = malloc(KDTRACE_THREAD_SIZE, M_KDTRACE, M_WAITOK|M_ZERO);
+	td->td_dtrace = bsd_malloc(KDTRACE_THREAD_SIZE, M_KDTRACE, M_WAITOK|M_ZERO);
 }
 
 static void
@@ -92,7 +92,7 @@ kdtrace_thread_dtor(void *arg __unused, struct thread *td)
 {
 
 	if (td->td_dtrace != NULL) {
-		free(td->td_dtrace, M_KDTRACE);
+		bsd_free(td->td_dtrace, M_KDTRACE);
 		td->td_dtrace = NULL;
 	}
 }

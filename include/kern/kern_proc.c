@@ -612,7 +612,7 @@ pgdelete(pgrp)
 	}
 
 	mtx_destroy(&pgrp->pg_mtx);
-	free(pgrp, M_PGRP);
+	bsd_free(pgrp, M_PGRP);
 	sess_release(savesess);
 }
 
@@ -732,7 +732,7 @@ sess_release(struct session *s)
 			tty_rel_sess(s->s_ttyp, s);
 		}
 		mtx_destroy(&s->s_mtx);
-		free(s, M_SESSION);
+		bsd_free(s, M_SESSION);
 	}
 }
 
@@ -1038,7 +1038,7 @@ struct pstats *
 pstats_alloc(void)
 {
 
-	return (malloc(sizeof(struct pstats), M_SUBPROC, M_ZERO|M_WAITOK));
+	return (bsd_malloc(sizeof(struct pstats), M_SUBPROC, M_ZERO|M_WAITOK));
 }
 
 /*
@@ -1058,7 +1058,7 @@ void
 pstats_free(struct pstats *ps)
 {
 
-	free(ps, M_SUBPROC);
+	bsd_free(ps, M_SUBPROC);
 }
 
 static struct proc *
@@ -1443,7 +1443,7 @@ pargs_alloc(int len)
 {
 	struct pargs *pa;
 
-	pa = malloc(sizeof(struct pargs) + len, M_PARGS,
+	pa = bsd_malloc(sizeof(struct pargs) + len, M_PARGS,
 		M_WAITOK);
 	refcount_init(&pa->ar_ref, 1);
 	pa->ar_length = len;
@@ -1454,7 +1454,7 @@ static void
 pargs_free(struct pargs *pa)
 {
 
-	free(pa, M_PARGS);
+	bsd_free(pa, M_PARGS);
 }
 
 void
@@ -1585,7 +1585,7 @@ get_proc_vector32(struct thread *td, struct proc *p, char ***proc_vectorp,
 		KASSERT(0, ("Wrong proc vector type: %d", type));
 		return (EINVAL);
 	}
-	proc_vector32 = malloc(size, M_TEMP, M_WAITOK);
+	proc_vector32 = bsd_malloc(size, M_TEMP, M_WAITOK);
 	error = proc_read_mem(td, p, vptr, proc_vector32, size);
 	if (error != 0)
 		goto done;
@@ -1594,13 +1594,13 @@ get_proc_vector32(struct thread *td, struct proc *p, char ***proc_vectorp,
 		*vsizep = vsize;
 		return (0);
 	}
-	proc_vector = malloc(vsize * sizeof(char *), M_TEMP, M_WAITOK);
+	proc_vector = bsd_malloc(vsize * sizeof(char *), M_TEMP, M_WAITOK);
 	for (i = 0; i < (int)vsize; i++)
 		proc_vector[i] = PTRIN(proc_vector32[i]);
 	*proc_vectorp = proc_vector;
 	*vsizep = vsize;
 done:
-	free(proc_vector32, M_TEMP);
+	bsd_free(proc_vector32, M_TEMP);
 	return (error);
 }
 #endif
@@ -1682,12 +1682,12 @@ get_proc_vector(struct thread *td, struct proc *p, char ***proc_vectorp,
 		KASSERT(0, ("Wrong proc vector type: %d", type));
 		return (EINVAL); /* In case we are built without INVARIANTS. */
 	}
-	proc_vector = malloc(size, M_TEMP, M_WAITOK);
+	proc_vector = bsd_malloc(size, M_TEMP, M_WAITOK);
 	if (proc_vector == NULL)
 		return (ENOMEM);
 	error = proc_read_mem(td, p, vptr, proc_vector, size);
 	if (error != 0) {
-		free(proc_vector, M_TEMP);
+		bsd_free(proc_vector, M_TEMP);
 		return (error);
 	}
 	*proc_vectorp = proc_vector;
@@ -1742,7 +1742,7 @@ get_ps_strings(struct thread *td, struct proc *p, struct sbuf *sb,
 		done += len + 1;
 	}
 done:
-	free(proc_vector, M_TEMP);
+	bsd_free(proc_vector, M_TEMP);
 	return (error);
 }
 
@@ -1776,7 +1776,7 @@ proc_getauxv(struct thread *td, struct proc *p, struct sbuf *sb)
 #endif
 			size = vsize * sizeof(Elf_Auxinfo);
 		error = sbuf_bcat(sb, auxv, size);
-		free(auxv, M_TEMP);
+		bsd_free(auxv, M_TEMP);
 	}
 	return (error);
 }
@@ -1947,7 +1947,7 @@ sysctl_kern_proc_pathname(SYSCTL_HANDLER_ARGS)
 	if (error)
 		return (error);
 	error = SYSCTL_OUT(req, retbuf, strlen(retbuf) + 1);
-	free(freebuf, M_TEMP);
+	bsd_free(freebuf, M_TEMP);
 	return (error);
 }
 
@@ -2002,7 +2002,7 @@ sysctl_kern_proc_ovmmap(SYSCTL_HANDLER_ARGS)
 		PRELE(p);
 		return (ESRCH);
 	}
-	kve = malloc(sizeof(*kve), M_TEMP, M_WAITOK);
+	kve = bsd_malloc(sizeof(*kve), M_TEMP, M_WAITOK);
 
 	map = &p->p_vmspace->vm_map;	/* XXXRW: More locking required? */
 	vm_map_lock_read(map);
@@ -2124,7 +2124,7 @@ sysctl_kern_proc_ovmmap(SYSCTL_HANDLER_ARGS)
 
 		strlcpy(kve->kve_path, fullpath, sizeof(kve->kve_path));
 		if (freepath != NULL)
-			free(freepath, M_TEMP);
+			bsd_free(freepath, M_TEMP);
 
 		error = SYSCTL_OUT(req, kve, sizeof(*kve));
 		vm_map_lock_read(map);
@@ -2138,7 +2138,7 @@ sysctl_kern_proc_ovmmap(SYSCTL_HANDLER_ARGS)
 	vm_map_unlock_read(map);
 	vmspace_free(vm);
 	PRELE(p);
-	free(kve, M_TEMP);
+	bsd_free(kve, M_TEMP);
 	return (error);
 }
 #endif	/* COMPAT_FREEBSD7 */
@@ -2173,7 +2173,7 @@ kern_proc_vmmap_out(struct proc *p, struct sbuf *sb)
 		PRELE(p);
 		return (ESRCH);
 	}
-	kve = malloc(sizeof(*kve), M_TEMP, M_WAITOK);
+	kve = bsd_malloc(sizeof(*kve), M_TEMP, M_WAITOK);
 
 	error = 0;
 	map = &vm->vm_map;	/* XXXRW: More locking required? */
@@ -2310,7 +2310,7 @@ kern_proc_vmmap_out(struct proc *p, struct sbuf *sb)
 
 		strlcpy(kve->kve_path, fullpath, sizeof(kve->kve_path));
 		if (freepath != NULL)
-			free(freepath, M_TEMP);
+			bsd_free(freepath, M_TEMP);
 
 		/* Pack record size down */
 		kve->kve_structsize = offsetof(struct kinfo_vmentry, kve_path) +
@@ -2329,7 +2329,7 @@ kern_proc_vmmap_out(struct proc *p, struct sbuf *sb)
 	vm_map_unlock_read(map);
 	vmspace_free(vm);
 	PRELE(p);
-	free(kve, M_TEMP);
+	bsd_free(kve, M_TEMP);
 	return (error);
 }
 
@@ -2370,7 +2370,7 @@ sysctl_kern_proc_kstack(SYSCTL_HANDLER_ARGS)
 	if (error != 0)
 		return (error);
 
-	kkstp = malloc(sizeof(*kkstp), M_TEMP, M_WAITOK);
+	kkstp = bsd_malloc(sizeof(*kkstp), M_TEMP, M_WAITOK);
 	st = stack_create();
 
 	lwpidarray = NULL;
@@ -2379,12 +2379,12 @@ sysctl_kern_proc_kstack(SYSCTL_HANDLER_ARGS)
 repeat:
 	if (numthreads < p->p_numthreads) {
 		if (lwpidarray != NULL) {
-			free(lwpidarray, M_TEMP);
+			bsd_free(lwpidarray, M_TEMP);
 			lwpidarray = NULL;
 		}
 		numthreads = p->p_numthreads;
 		PROC_UNLOCK(p);
-		lwpidarray = malloc(sizeof(*lwpidarray) * numthreads, M_TEMP,
+		lwpidarray = bsd_malloc(sizeof(*lwpidarray) * numthreads, M_TEMP,
 		    M_WAITOK | M_ZERO);
 		PROC_LOCK(p);
 		goto repeat;
@@ -2438,9 +2438,9 @@ repeat:
 	_PRELE(p);
 	PROC_UNLOCK(p);
 	if (lwpidarray != NULL)
-		free(lwpidarray, M_TEMP);
+		bsd_free(lwpidarray, M_TEMP);
 	stack_destroy(st);
-	free(kkstp, M_TEMP);
+	bsd_free(kkstp, M_TEMP);
 	return (error);
 }
 #endif

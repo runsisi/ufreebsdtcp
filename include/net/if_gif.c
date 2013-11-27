@@ -160,11 +160,11 @@ gif_clone_create(ifc, unit, params)
 {
 	struct gif_softc *sc;
 
-	sc = malloc(sizeof(struct gif_softc), M_GIF, M_WAITOK | M_ZERO);
+	sc = bsd_malloc(sizeof(struct gif_softc), M_GIF, M_WAITOK | M_ZERO);
 	sc->gif_fibnum = curthread->td_proc->p_fibnum;
 	GIF2IFP(sc) = if_alloc(IFT_GIF);
 	if (GIF2IFP(sc) == NULL) {
-		free(sc, M_GIF);
+		bsd_free(sc, M_GIF);
 		return (ENOSPC);
 	}
 
@@ -234,7 +234,7 @@ gif_clone_destroy(ifp)
 
 	GIF_LOCK_DESTROY(sc);
 
-	free(sc, M_GIF);
+	bsd_free(sc, M_GIF);
 }
 
 static void
@@ -952,12 +952,12 @@ gif_set_tunnel(ifp, src, dst)
 		}
 
 	osrc = sc->gif_psrc;
-	sa = (struct sockaddr *)malloc(src->sa_len, M_IFADDR, M_WAITOK);
+	sa = (struct sockaddr *)bsd_malloc(src->sa_len, M_IFADDR, M_WAITOK);
 	bcopy((caddr_t)src, (caddr_t)sa, src->sa_len);
 	sc->gif_psrc = sa;
 
 	odst = sc->gif_pdst;
-	sa = (struct sockaddr *)malloc(dst->sa_len, M_IFADDR, M_WAITOK);
+	sa = (struct sockaddr *)bsd_malloc(dst->sa_len, M_IFADDR, M_WAITOK);
 	bcopy((caddr_t)dst, (caddr_t)sa, dst->sa_len);
 	sc->gif_pdst = sa;
 
@@ -985,17 +985,17 @@ gif_set_tunnel(ifp, src, dst)
 	}
 	if (error) {
 		/* rollback */
-		free((caddr_t)sc->gif_psrc, M_IFADDR);
-		free((caddr_t)sc->gif_pdst, M_IFADDR);
+		bsd_free((caddr_t)sc->gif_psrc, M_IFADDR);
+		bsd_free((caddr_t)sc->gif_pdst, M_IFADDR);
 		sc->gif_psrc = osrc;
 		sc->gif_pdst = odst;
 		goto bad;
 	}
 
 	if (osrc)
-		free((caddr_t)osrc, M_IFADDR);
+		bsd_free((caddr_t)osrc, M_IFADDR);
 	if (odst)
-		free((caddr_t)odst, M_IFADDR);
+		bsd_free((caddr_t)odst, M_IFADDR);
 
  bad:
 	if (sc->gif_psrc && sc->gif_pdst)
@@ -1013,11 +1013,11 @@ gif_delete_tunnel(ifp)
 	struct gif_softc *sc = ifp->if_softc;
 
 	if (sc->gif_psrc) {
-		free((caddr_t)sc->gif_psrc, M_IFADDR);
+		bsd_free((caddr_t)sc->gif_psrc, M_IFADDR);
 		sc->gif_psrc = NULL;
 	}
 	if (sc->gif_pdst) {
-		free((caddr_t)sc->gif_pdst, M_IFADDR);
+		bsd_free((caddr_t)sc->gif_pdst, M_IFADDR);
 		sc->gif_pdst = NULL;
 	}
 	/* it is safe to detach from both */

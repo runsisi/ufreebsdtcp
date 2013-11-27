@@ -641,7 +641,7 @@ amd64_mrinit(struct mem_range_softc *sc)
 		nmdesc += MTRR_N64K + MTRR_N16K + MTRR_N4K;
 	}
 
-	sc->mr_desc = malloc(nmdesc * sizeof(struct mem_range_desc), M_MEMDESC,
+	sc->mr_desc = bsd_malloc(nmdesc * sizeof(struct mem_range_desc), M_MEMDESC,
 	    M_WAITOK | M_ZERO);
 	sc->mr_ndesc = nmdesc;
 

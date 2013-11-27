@@ -976,7 +976,7 @@ sys_cpuset_getaffinity(struct thread *td, struct cpuset_getaffinity_args *uap)
 	    uap->cpusetsize > CPU_MAXSIZE / NBBY)
 		return (ERANGE);
 	size = uap->cpusetsize;
-	mask = malloc(size, M_TEMP, M_WAITOK | M_ZERO);
+	mask = bsd_malloc(size, M_TEMP, M_WAITOK | M_ZERO);
 	error = cpuset_which(uap->which, uap->id, &p, &ttd, &set);
 	if (error)
 		goto out;
@@ -1038,7 +1038,7 @@ sys_cpuset_getaffinity(struct thread *td, struct cpuset_getaffinity_args *uap)
 	if (error == 0)
 		error = copyout(mask, uap->mask, size);
 out:
-	free(mask, M_TEMP);
+	bsd_free(mask, M_TEMP);
 	return (error);
 }
 
@@ -1064,7 +1064,7 @@ sys_cpuset_setaffinity(struct thread *td, struct cpuset_setaffinity_args *uap)
 	if (uap->cpusetsize < sizeof(cpuset_t) ||
 	    uap->cpusetsize > CPU_MAXSIZE / NBBY)
 		return (ERANGE);
-	mask = malloc(uap->cpusetsize, M_TEMP, M_WAITOK | M_ZERO);
+	mask = bsd_malloc(uap->cpusetsize, M_TEMP, M_WAITOK | M_ZERO);
 	error = copyin(uap->mask, mask, uap->cpusetsize);
 	if (error)
 		goto out;
@@ -1144,7 +1144,7 @@ sys_cpuset_setaffinity(struct thread *td, struct cpuset_setaffinity_args *uap)
 		break;
 	}
 out:
-	free(mask, M_TEMP);
+	bsd_free(mask, M_TEMP);
 	return (error);
 }
 

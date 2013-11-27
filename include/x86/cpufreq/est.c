@@ -1055,7 +1055,7 @@ est_detach(device_t dev)
 
 	sc = device_get_softc(dev);
 	if (sc->acpi_settings || sc->msr_settings)
-		free(sc->freq_list, M_DEVBUF);
+		bsd_free(sc->freq_list, M_DEVBUF);
 	return (0);
 }
 
@@ -1108,7 +1108,7 @@ est_acpi_info(device_t dev, freq_info **freqs)
 	/* Fetch settings from acpi_perf. */
 	sc = device_get_softc(dev);
 	table = NULL;
-	sets = malloc(MAX_SETTINGS * sizeof(*sets), M_TEMP, M_NOWAIT);
+	sets = bsd_malloc(MAX_SETTINGS * sizeof(*sets), M_TEMP, M_NOWAIT);
 	if (sets == NULL)
 		return (ENOMEM);
 	count = MAX_SETTINGS;
@@ -1117,7 +1117,7 @@ est_acpi_info(device_t dev, freq_info **freqs)
 		goto out;
 
 	/* Parse settings into our local table format. */
-	table = malloc((count + 1) * sizeof(freq_info), M_DEVBUF, M_NOWAIT);
+	table = bsd_malloc((count + 1) * sizeof(freq_info), M_DEVBUF, M_NOWAIT);
 	if (table == NULL) {
 		error = ENOMEM;
 		goto out;
@@ -1154,9 +1154,9 @@ est_acpi_info(device_t dev, freq_info **freqs)
 
 out:
 	if (sets)
-		free(sets, M_TEMP);
+		bsd_free(sets, M_TEMP);
 	if (error && table)
-		free(table, M_DEVBUF);
+		bsd_free(table, M_DEVBUF);
 	return (error);
 }
 
@@ -1234,7 +1234,7 @@ est_msr_info(device_t dev, uint64_t msr, freq_info **freqs)
 
 	/* Fill out a new freq table containing just the high and low freqs. */
 	sc = device_get_softc(dev);
-	fp = malloc(sizeof(freq_info) * 3, M_DEVBUF, M_WAITOK | M_ZERO);
+	fp = bsd_malloc(sizeof(freq_info) * 3, M_DEVBUF, M_WAITOK | M_ZERO);
 
 	/* First, the high frequency. */
 	volts = id & 0xff;

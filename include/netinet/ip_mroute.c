@@ -763,7 +763,7 @@ X_ip_mrouter_done(void)
 		expire_mfc(rt);
 	}
     }
-    free(V_mfchashtbl, M_MRTABLE);
+    bsd_free(V_mfchashtbl, M_MRTABLE);
     V_mfchashtbl = NULL;
 
     bzero(V_nexpire, sizeof(V_nexpire[0]) * mfchashsize);
@@ -1038,11 +1038,11 @@ expire_mfc(struct mfc *rt)
 	TAILQ_FOREACH_SAFE(rte, &rt->mfc_stall, rte_link, nrte) {
 		m_freem(rte->m);
 		TAILQ_REMOVE(&rt->mfc_stall, rte, rte_link);
-		free(rte, M_MRTABLE);
+		bsd_free(rte, M_MRTABLE);
 	}
 
 	LIST_REMOVE(rt, mfc_hash);
-	free(rt, M_MRTABLE);
+	bsd_free(rt, M_MRTABLE);
 }
 
 /*
@@ -1102,7 +1102,7 @@ add_mfc(struct mfcctl2 *mfccp)
 			m_freem(rte->m);
 			TAILQ_REMOVE(&rt->mfc_stall, rte, rte_link);
 			rt->mfc_nstall--;
-			free(rte, M_MRTABLE);
+			bsd_free(rte, M_MRTABLE);
 		}
 	}
     }
@@ -1124,7 +1124,7 @@ add_mfc(struct mfcctl2 *mfccp)
 	}
 
 	if (rt == NULL) {		/* no upcall, so make a new entry */
-	    rt = (struct mfc *)malloc(sizeof(*rt), M_MRTABLE, M_NOWAIT);
+	    rt = (struct mfc *)bsd_malloc(sizeof(*rt), M_MRTABLE, M_NOWAIT);
 	    if (rt == NULL) {
 		MFC_UNLOCK();
 		VIF_UNLOCK();
@@ -1180,7 +1180,7 @@ del_mfc(struct mfcctl2 *mfccp)
     rt->mfc_bw_meter = NULL;
 
     LIST_REMOVE(rt, mfc_hash);
-    free(rt, M_MRTABLE);
+    bsd_free(rt, M_MRTABLE);
 
     MFC_UNLOCK();
 
@@ -1298,7 +1298,7 @@ X_ip_mforward(struct ip *ip, struct ifnet *ifp, struct mbuf *m,
 	 * just going to fail anyway.  Make sure to pullup the header so
 	 * that other people can't step on it.
 	 */
-	rte = (struct rtdetq *)malloc((sizeof *rte), M_MRTABLE,
+	rte = (struct rtdetq *)bsd_malloc((sizeof *rte), M_MRTABLE,
 	    M_NOWAIT|M_ZERO);
 	if (rte == NULL) {
 	    MFC_UNLOCK();
@@ -1310,7 +1310,7 @@ X_ip_mforward(struct ip *ip, struct ifnet *ifp, struct mbuf *m,
 	if (mb0 && (M_HASCL(mb0) || mb0->m_len < hlen))
 	    mb0 = m_pullup(mb0, hlen);
 	if (mb0 == NULL) {
-	    free(rte, M_MRTABLE);
+	    bsd_free(rte, M_MRTABLE);
 	    MFC_UNLOCK();
 	    VIF_UNLOCK();
 	    return ENOBUFS;
@@ -1342,7 +1342,7 @@ X_ip_mforward(struct ip *ip, struct ifnet *ifp, struct mbuf *m,
 		goto non_fatal;
 
 	    /* no upcall, so make a new entry */
-	    rt = (struct mfc *)malloc(sizeof(*rt), M_MRTABLE, M_NOWAIT);
+	    rt = (struct mfc *)bsd_malloc(sizeof(*rt), M_MRTABLE, M_NOWAIT);
 	    if (rt == NULL)
 		goto fail;
 
@@ -1368,9 +1368,9 @@ X_ip_mforward(struct ip *ip, struct ifnet *ifp, struct mbuf *m,
 		CTR0(KTR_IPMF, "ip_mforward: socket queue full");
 		MRTSTAT_INC(mrts_upq_sockfull);
 fail1:
-		free(rt, M_MRTABLE);
+		bsd_free(rt, M_MRTABLE);
 fail:
-		free(rte, M_MRTABLE);
+		bsd_free(rte, M_MRTABLE);
 		m_freem(mb0);
 		MFC_UNLOCK();
 		VIF_UNLOCK();
@@ -1411,7 +1411,7 @@ fail:
 	    if (rt->mfc_nstall > MAX_UPQ) {
 		MRTSTAT_INC(mrts_upq_ovflw);
 non_fatal:
-		free(rte, M_MRTABLE);
+		bsd_free(rte, M_MRTABLE);
 		m_freem(mb0);
 		MFC_UNLOCK();
 		VIF_UNLOCK();
@@ -1465,7 +1465,7 @@ expire_upcalls(void *arg)
 		    struct bw_meter *x = rt->mfc_bw_meter;
 
 		    rt->mfc_bw_meter = x->bm_mfc_next;
-		    free(x, M_BWMETER);
+		    bsd_free(x, M_BWMETER);
 		}
 
 		MRTSTAT_INC(mrts_cache_cleanups);
@@ -1811,7 +1811,7 @@ add_bw_upcall(struct bw_upcall *req)
     }
 
     /* Allocate the new bw_meter entry */
-    x = (struct bw_meter *)malloc(sizeof(*x), M_BWMETER, M_NOWAIT);
+    x = (struct bw_meter *)bsd_malloc(sizeof(*x), M_BWMETER, M_NOWAIT);
     if (x == NULL) {
 	MFC_UNLOCK();
 	return ENOBUFS;
@@ -1847,7 +1847,7 @@ free_bw_list(struct bw_meter *list)
 
 	list = list->bm_mfc_next;
 	unschedule_bw_meter(x);
-	free(x, M_BWMETER);
+	bsd_free(x, M_BWMETER);
     }
 }
 
@@ -1906,7 +1906,7 @@ del_bw_upcall(struct bw_upcall *req)
 	    unschedule_bw_meter(x);
 	    MFC_UNLOCK();
 	    /* Free the bw_meter entry */
-	    free(x, M_BWMETER);
+	    bsd_free(x, M_BWMETER);
 	    return 0;
 	} else {
 	    MFC_UNLOCK();
