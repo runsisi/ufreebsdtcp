@@ -70,10 +70,10 @@ typedef	__pid_t		pid_t;
  * Open/fcntl flags begin with O_; kernel-internal flags begin with F.
  */
 /* open-only flags */
-#define	O_RDONLY	0x0000		/* open for reading only */
-#define	O_WRONLY	0x0001		/* open for writing only */
-#define	O_RDWR		0x0002		/* open for reading and writing */
-#define	O_ACCMODE	0x0003		/* mask for above modes */
+//#define	O_RDONLY	0x0000		/* open for reading only */
+//#define	O_WRONLY	0x0001		/* open for writing only */
+//#define	O_RDWR		0x0002		/* open for reading and writing */
+//#define	O_ACCMODE	0x0003		/* mask for above modes */
 
 /*
  * Kernel encoding of open mode; separate read and write bits that are
@@ -87,27 +87,27 @@ typedef	__pid_t		pid_t;
 #define	FREAD		0x0001
 #define	FWRITE		0x0002
 #endif
-#define	O_NONBLOCK	0x0004		/* no delay */
-#define	O_APPEND	0x0008		/* set append mode */
+//#define	O_NONBLOCK	0x0004		/* no delay */
+//#define	O_APPEND	0x0008		/* set append mode */
 #if __BSD_VISIBLE
 #define	O_SHLOCK	0x0010		/* open with shared file lock */
 #define	O_EXLOCK	0x0020		/* open with exclusive file lock */
-#define	O_ASYNC		0x0040		/* signal pgrp when data ready */
-#define	O_FSYNC		0x0080		/* synchronous writes */
+//#define	O_ASYNC		0x0040		/* signal pgrp when data ready */
+//#define	O_FSYNC		0x0080		/* synchronous writes */
 #endif
-#define	O_SYNC		0x0080		/* POSIX synonym for O_FSYNC */
+//#define	O_SYNC		0x0080		/* POSIX synonym for O_FSYNC */
 #if __BSD_VISIBLE
 #define	O_NOFOLLOW	0x0100		/* don't follow symlinks */
 #endif
-#define	O_CREAT		0x0200		/* create if nonexistent */
-#define	O_TRUNC		0x0400		/* truncate to zero length */
-#define	O_EXCL		0x0800		/* error if already exists */
+//#define	O_CREAT		0x0200		/* create if nonexistent */
+//#define	O_TRUNC		0x0400		/* truncate to zero length */
+//#define	O_EXCL		0x0800		/* error if already exists */
 #ifdef _KERNEL
 #define	FHASLOCK	0x4000		/* descriptor holds advisory lock */
 #endif
 
 /* Defined by POSIX 1003.1; BSD default, but must be distinct from O_RDONLY. */
-#define	O_NOCTTY	0x8000		/* don't assign controlling terminal */
+//#define	O_NOCTTY	0x8000		/* don't assign controlling terminal */
 
 #if __BSD_VISIBLE
 /* Attempt to bypass buffer cache */
@@ -168,7 +168,7 @@ typedef	__pid_t		pid_t;
 #define	FASYNC		O_ASYNC		/* kernel/compat */
 #define	FFSYNC		O_FSYNC		/* kernel */
 #define	FNONBLOCK	O_NONBLOCK	/* kernel */
-#define	FNDELAY		O_NONBLOCK	/* compat */
+//#define	FNDELAY		O_NONBLOCK	/* compat */
 #define	O_NDELAY	O_NONBLOCK	/* compat */
 #endif
 
@@ -195,10 +195,10 @@ typedef	__pid_t		pid_t;
 /*
  * Miscellaneous flags for the *at() syscalls.
  */
-#define	AT_EACCESS		0x100	/* Check access using effective user and group ID */
-#define	AT_SYMLINK_NOFOLLOW	0x200   /* Do not follow symbolic links */
+//#define	AT_EACCESS		0x100	/* Check access using effective user and group ID */
+//#define	AT_SYMLINK_NOFOLLOW	0x200   /* Do not follow symbolic links */
 #define	AT_SYMLINK_FOLLOW	0x400	/* Follow symbolic link */
-#define	AT_REMOVEDIR		0x800	/* Remove directory instead of file */
+//#define	AT_REMOVEDIR		0x800	/* Remove directory instead of file */
 #endif
 
 /*
@@ -212,8 +212,8 @@ typedef	__pid_t		pid_t;
 #define	F_GETFL		3		/* get file status flags */
 #define	F_SETFL		4		/* set file status flags */
 #if __BSD_VISIBLE || __XSI_VISIBLE || __POSIX_VISIBLE >= 200112
-#define	F_GETOWN	5		/* get SIGIO/SIGURG proc/pgrp */
-#define	F_SETOWN	6		/* set SIGIO/SIGURG proc/pgrp */
+//#define	F_GETOWN	5		/* get SIGIO/SIGURG proc/pgrp */
+//#define	F_SETOWN	6		/* set SIGIO/SIGURG proc/pgrp */
 #endif
 #if __BSD_VISIBLE
 #define	F_OGETLK	7		/* get record locking information */
@@ -221,9 +221,9 @@ typedef	__pid_t		pid_t;
 #define	F_OSETLKW	9		/* F_SETLK; wait if blocked */
 #define	F_DUP2FD	10		/* duplicate file descriptor to arg */
 #endif
-#define	F_GETLK		11		/* get record locking information */
-#define	F_SETLK		12		/* set record locking information */
-#define	F_SETLKW	13		/* F_SETLK; wait if blocked */
+//#define	F_GETLK		11		/* get record locking information */
+//#define	F_SETLK		12		/* set record locking information */
+//#define	F_SETLKW	13		/* F_SETLK; wait if blocked */
 #if __BSD_VISIBLE
 #define	F_SETLK_REMOTE	14		/* debugging support for remote locks */
 #define	F_READAHEAD	15		/* read ahead */
@@ -240,9 +240,9 @@ typedef	__pid_t		pid_t;
 #define	FD_CLOEXEC	1		/* close-on-exec flag */
 
 /* record locking flags (F_GETLK, F_SETLK, F_SETLKW) */
-#define	F_RDLCK		1		/* shared or read lock */
+//#define	F_RDLCK		1		/* shared or read lock */
 #define	F_UNLCK		2		/* unlock */
-#define	F_WRLCK		3		/* exclusive or write lock */
+//#define	F_WRLCK		3		/* exclusive or write lock */
 #if __BSD_VISIBLE
 #define	F_UNLCKSYS	4		/* purge locks for a given system ID */ 
 #define	F_CANCEL	5		/* cancel an async lock request */
@@ -259,14 +259,14 @@ typedef	__pid_t		pid_t;
  * Advisory file segment locking data type -
  * information passed to system by user
  */
-struct flock {
-	off_t	l_start;	/* starting offset */
-	off_t	l_len;		/* len = 0 means until end of file */
-	pid_t	l_pid;		/* lock owner */
-	short	l_type;		/* lock type: read/write, etc. */
-	short	l_whence;	/* type of l_start */
-	int	l_sysid;	/* remote system id or zero for local */
-};
+//struct flock {
+//	off_t	l_start;	/* starting offset */
+//	off_t	l_len;		/* len = 0 means until end of file */
+//	pid_t	l_pid;		/* lock owner */
+//	short	l_type;		/* lock type: read/write, etc. */
+//	short	l_whence;	/* type of l_start */
+//	int	l_sysid;	/* remote system id or zero for local */
+//};
 
 #if __BSD_VISIBLE
 /*
@@ -284,10 +284,10 @@ struct __oflock {
 
 #if __BSD_VISIBLE
 /* lock operations for flock(2) */
-#define	LOCK_SH		0x01		/* shared file lock */
-#define	LOCK_EX		0x02		/* exclusive file lock */
-#define	LOCK_NB		0x04		/* don't block when locking */
-#define	LOCK_UN		0x08		/* unlock file */
+//#define	LOCK_SH		0x01		/* shared file lock */
+//#define	LOCK_EX		0x02		/* exclusive file lock */
+//#define	LOCK_NB		0x04		/* don't block when locking */
+//#define	LOCK_UN		0x08		/* unlock file */
 #endif
 
 #if __POSIX_VISIBLE >= 200112
