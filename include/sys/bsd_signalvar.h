@@ -175,6 +175,10 @@ typedef void __osiginfohandler_t(int, osiginfo_t *, void *);
 #define	SIG2OSIG(sig, osig)	(osig = (sig).__bits[0])
 #define	OSIG2SIG(osig, sig)	SIGEMPTYSET(sig); (sig).__bits[0] = osig
 
+// runsisi AT hust.edu.cn @2013/11/27
+//#define __bits __val
+// ---------------------- @2013/11/27
+
 static __inline int
 __sigisempty(sigset_t *set)
 {
@@ -274,6 +278,10 @@ sigsetmasked(sigset_t *set, sigset_t *mask)
 	}
 	return (1);
 }
+
+// runsisi AT hust.edu.cn @2013/11/27
+//#undef __bits
+// ---------------------- @2013/11/27
 
 #define	ksiginfo_init(ksi)			\
 do {						\

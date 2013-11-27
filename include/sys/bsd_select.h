@@ -39,7 +39,7 @@
 #include <sys/_bsd_timeval.h>
 #include <sys/bsd_timespec.h>
 
-typedef	unsigned long	__fd_mask;
+//typedef	unsigned long	__fd_mask;
 #if __BSD_VISIBLE
 typedef	__fd_mask	fd_mask;
 #endif
@@ -61,36 +61,38 @@ typedef	__sigset_t	sigset_t;
 
 #define	_NFDBITS	(sizeof(__fd_mask) * 8)	/* bits per mask */
 #if __BSD_VISIBLE
-#define	NFDBITS		_NFDBITS
+//#define	NFDBITS		_NFDBITS
 #endif
 
 #ifndef _howmany
 #define	_howmany(x, y)	(((x) + ((y) - 1)) / (y))
 #endif
 
-typedef	struct fd_set {
-	__fd_mask	__fds_bits[_howmany(FD_SETSIZE, _NFDBITS)];
-} fd_set;
+//typedef	struct fd_set {
+//	__fd_mask	__fds_bits[_howmany(FD_SETSIZE, _NFDBITS)];
+//} fd_set;
 #if __BSD_VISIBLE
 #define	fds_bits	__fds_bits
 #endif
 
 #define	__fdset_mask(n)	((__fd_mask)1 << ((n) % _NFDBITS))
-#define	FD_CLR(n, p)	((p)->__fds_bits[(n)/_NFDBITS] &= ~__fdset_mask(n))
+//#define	FD_CLR(n, p)	((p)->__fds_bits[(n)/_NFDBITS] &= ~__fdset_mask(n))
 #if __BSD_VISIBLE
 #define	FD_COPY(f, t)	(void)(*(t) = *(f))
 #endif
+#if 0	// runsisi AT hust.edu.cn @2013/11/27
 #define	FD_ISSET(n, p)	(((p)->__fds_bits[(n)/_NFDBITS] & __fdset_mask(n)) != 0)
 #define	FD_SET(n, p)	((p)->__fds_bits[(n)/_NFDBITS] |= __fdset_mask(n))
 #define	FD_ZERO(p) do {					\
-	fd_set *_p;					\
-	__size_t _n;					\
-							\
-	_p = (p);					\
-	_n = _howmany(FD_SETSIZE, _NFDBITS);		\
-	while (_n > 0)					\
-		_p->__fds_bits[--_n] = 0;		\
+    fd_set *_p;					\
+    __size_t _n;					\
+                            \
+    _p = (p);					\
+    _n = _howmany(FD_SETSIZE, _NFDBITS);		\
+    while (_n > 0)					\
+        _p->__fds_bits[--_n] = 0;		\
 } while (0)
+#endif 	// ---------------------- @2013/11/27
 
 #ifndef _KERNEL
 

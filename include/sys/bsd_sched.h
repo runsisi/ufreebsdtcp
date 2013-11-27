@@ -211,9 +211,9 @@ void schedinit(void);
 //#define SCHED_OTHER     2
 //#define SCHED_RR        3
 
-struct sched_param {
-        int     sched_priority;
-};
+//struct sched_param {
+//        int     sched_priority;
+//};
 
 /*
  * POSIX scheduling declarations for userland.

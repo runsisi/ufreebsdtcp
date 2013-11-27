@@ -61,10 +61,10 @@ extern "C" {
  * strict namespaces.
  */
 #if __BSD_VISIBLE
-#define	LITTLE_ENDIAN	_LITTLE_ENDIAN
-#define	BIG_ENDIAN	_BIG_ENDIAN
-#define	PDP_ENDIAN	_PDP_ENDIAN
-#define	BYTE_ORDER	_BYTE_ORDER
+//#define	LITTLE_ENDIAN	_LITTLE_ENDIAN
+//#define	BIG_ENDIAN	_BIG_ENDIAN
+//#define	PDP_ENDIAN	_PDP_ENDIAN
+//#define	BYTE_ORDER	_BYTE_ORDER
 #endif
 
 #if defined(__GNUCLIKE_ASM) && defined(__GNUCLIKE_BUILTIN_CONSTANT_P)

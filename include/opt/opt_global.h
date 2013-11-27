@@ -18,16 +18,12 @@
 #undef _SVID_SOURCE
 #undef _ATFILE_SOURCE
 
-#undef _SYS_CDEFS_H_
-//#undef _SYS_ERRNO_H_
-
 #undef _ASM_GENERIC_ERRNO_H
-#undef _TIME_H
 #undef _SIGSET_H_types
 
-#undef __unused
 #undef __nonnull
+#undef __size_t
 
-#define _KERNEL 1
-#define VIMAGE  1
+#define _KERNEL     1
+#define VIMAGE      1
 // ---------------------- @2013/11/26

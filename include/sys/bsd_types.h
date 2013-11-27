@@ -102,7 +102,7 @@ typedef	__clockid_t	clockid_t;
 #endif
 
 typedef	__critical_t	critical_t;	/* Critical section value */
-typedef	__int64_t	daddr_t;	/* disk address */
+//typedef	__int64_t	daddr_t;	/* disk address */
 
 #ifndef _DEV_T_DECLARED
 typedef	__dev_t		dev_t;		/* device number or struct cdev */
@@ -288,9 +288,9 @@ typedef	_Bool	bool;
  * change the meanings of bits 0-15 or waste time and space shifting
  * bits 16-31 for devices that don't use them.
  */
-#define	major(x)	((int)(((u_int)(x) >> 8)&0xff))	/* major number */
-#define	minor(x)	((int)((x)&0xffff00ff))		/* minor number */
-#define	makedev(x,y)	((dev_t)(((x) << 8) | (y)))	/* create dev_t */
+//#define	major(x)	((int)(((u_int)(x) >> 8)&0xff))	/* major number */
+//#define	minor(x)	((int)((x)&0xffff00ff))		/* minor number */
+//#define	makedev(x,y)	((dev_t)(((x) << 8) | (y)))	/* create dev_t */
 
 /*
  * These declarations belong elsewhere, but are repeated here and in
