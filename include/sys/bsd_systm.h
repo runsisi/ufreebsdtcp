@@ -188,19 +188,19 @@ int	kvprintf(char const *, void (*)(int, void*), void *, int,
 	    __va_list) __printflike(1, 0);
 void	log(int, const char *, ...) __printflike(2, 3);
 void	log_console(struct uio *);
-int	printf(const char *, ...) __printflike(1, 2);
-int	snprintf(char *, size_t, const char *, ...) __printflike(3, 4);
-int	sprintf(char *buf, const char *, ...) __printflike(2, 3);
+//int	printf(const char *, ...) __printflike(1, 2);
+//int	snprintf(char *, size_t, const char *, ...) __printflike(3, 4);
+//int	sprintf(char *buf, const char *, ...) __printflike(2, 3);
 int	uprintf(const char *, ...) __printflike(1, 2);
 //int	vprintf(const char *, __va_list) __printflike(1, 0);
 //int	vsnprintf(char *, size_t, const char *, __va_list) __printflike(3, 0);
 int	vsnrprintf(char *, size_t, int, const char *, __va_list) __printflike(4, 0);
 //int	vsprintf(char *buf, const char *, __va_list) __printflike(2, 0);
 int	ttyprintf(struct tty *, const char *, ...) __printflike(2, 3);
-int	sscanf(const char *, char const *, ...) __bsd_nonnull(1) __bsd_nonnull(2);
+//int	sscanf(const char *, char const *, ...) __bsd_nonnull(1) __bsd_nonnull(2);
 //int	vsscanf(const char *, char const *, __va_list) __bsd_nonnull(1) __bsd_nonnull(2);
-long	strtol(const char *, char **, int) __bsd_nonnull(1);
-u_long	strtoul(const char *, char **, int) __bsd_nonnull(1);
+//long	strtol(const char *, char **, int) __bsd_nonnull(1);
+//u_long	strtoul(const char *, char **, int) __bsd_nonnull(1);
 //quad_t	strtoq(const char *, char **, int) __bsd_nonnull(1);
 //u_quad_t strtouq(const char *, char **, int) __bsd_nonnull(1);
 void	tprintf(struct proc *p, int pri, const char *, ...) __printflike(3, 4);
@@ -212,11 +212,11 @@ void	hexdump(const void *ptr, int length, const char *hdr, int flags);
 #define	HD_OMIT_CHARS	(1 << 18)
 
 #define ovbcopy(f, t, l) bcopy((f), (t), (l))
-void	bcopy(const void *from, void *to, size_t len) __bsd_nonnull(1) __bsd_nonnull(2);
-void	bzero(void *buf, size_t len) __bsd_nonnull(1);
+//void	bcopy(const void *from, void *to, size_t len) __bsd_nonnull(1) __bsd_nonnull(2);
+//void	bzero(void *buf, size_t len) __bsd_nonnull(1);
 
-void	*memcpy(void *to, const void *from, size_t len) __bsd_nonnull(1) __bsd_nonnull(2);
-void	*memmove(void *dest, const void *src, size_t n) __bsd_nonnull(1) __bsd_nonnull(2);
+//void	*memcpy(void *to, const void *from, size_t len) __bsd_nonnull(1) __bsd_nonnull(2);
+//void	*memmove(void *dest, const void *src, size_t n) __bsd_nonnull(1) __bsd_nonnull(2);
 
 int	copystr(const void * __restrict kfaddr, void * __restrict kdaddr,
 	    size_t len, size_t * __restrict lencopied)
