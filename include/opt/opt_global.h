@@ -18,6 +18,7 @@
 #undef _POSIX_C_SOURCE
 #undef _XOPEN_SOURCE
 
+#undef __linux__
 #define __FreeBSD__
 
 #define _KERNEL     1
