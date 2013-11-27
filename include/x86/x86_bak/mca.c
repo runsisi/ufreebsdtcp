@@ -244,7 +244,7 @@ mca_error_mmtype(uint16_t mca_error)
 }
 
 /* Dump details about a single machine check. */
-static void __nonnull(1)
+static void __bsd_nonnull(1)
 mca_log(const struct mca_record *rec)
 {
 	uint16_t mca_error;
@@ -380,7 +380,7 @@ mca_log(const struct mca_record *rec)
 		printf("MCA: Misc 0x%llx\n", (long long)rec->mr_misc);
 }
 
-static int __nonnull(2)
+static int __bsd_nonnull(2)
 mca_check_status(int bank, struct mca_record *rec)
 {
 	uint64_t status;
@@ -447,7 +447,7 @@ mca_refill(void *context, int pending)
 	mca_fill_freelist();
 }
 
-static void __nonnull(2)
+static void __bsd_nonnull(2)
 mca_record_entry(enum scan_mode mode, const struct mca_record *record)
 {
 	struct mca_internal *rec;

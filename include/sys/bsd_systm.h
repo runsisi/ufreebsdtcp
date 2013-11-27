@@ -197,12 +197,12 @@ int	uprintf(const char *, ...) __printflike(1, 2);
 int	vsnrprintf(char *, size_t, int, const char *, __va_list) __printflike(4, 0);
 //int	vsprintf(char *buf, const char *, __va_list) __printflike(2, 0);
 int	ttyprintf(struct tty *, const char *, ...) __printflike(2, 3);
-int	sscanf(const char *, char const *, ...) __nonnull(1) __nonnull(2);
-//int	vsscanf(const char *, char const *, __va_list) __nonnull(1) __nonnull(2);
-long	strtol(const char *, char **, int) __nonnull(1);
-u_long	strtoul(const char *, char **, int) __nonnull(1);
-//quad_t	strtoq(const char *, char **, int) __nonnull(1);
-//u_quad_t strtouq(const char *, char **, int) __nonnull(1);
+int	sscanf(const char *, char const *, ...) __bsd_nonnull(1) __bsd_nonnull(2);
+//int	vsscanf(const char *, char const *, __va_list) __bsd_nonnull(1) __bsd_nonnull(2);
+long	strtol(const char *, char **, int) __bsd_nonnull(1);
+u_long	strtoul(const char *, char **, int) __bsd_nonnull(1);
+//quad_t	strtoq(const char *, char **, int) __bsd_nonnull(1);
+//u_quad_t strtouq(const char *, char **, int) __bsd_nonnull(1);
 void	tprintf(struct proc *p, int pri, const char *, ...) __printflike(3, 4);
 void	hexdump(const void *ptr, int length, const char *hdr, int flags);
 #define	HD_COLUMN_MASK	0xff
@@ -212,26 +212,26 @@ void	hexdump(const void *ptr, int length, const char *hdr, int flags);
 #define	HD_OMIT_CHARS	(1 << 18)
 
 #define ovbcopy(f, t, l) bcopy((f), (t), (l))
-void	bcopy(const void *from, void *to, size_t len) __nonnull(1) __nonnull(2);
-void	bzero(void *buf, size_t len) __nonnull(1);
+void	bcopy(const void *from, void *to, size_t len) __bsd_nonnull(1) __bsd_nonnull(2);
+void	bzero(void *buf, size_t len) __bsd_nonnull(1);
 
-void	*memcpy(void *to, const void *from, size_t len) __nonnull(1) __nonnull(2);
-void	*memmove(void *dest, const void *src, size_t n) __nonnull(1) __nonnull(2);
+void	*memcpy(void *to, const void *from, size_t len) __bsd_nonnull(1) __bsd_nonnull(2);
+void	*memmove(void *dest, const void *src, size_t n) __bsd_nonnull(1) __bsd_nonnull(2);
 
 int	copystr(const void * __restrict kfaddr, void * __restrict kdaddr,
 	    size_t len, size_t * __restrict lencopied)
-	    __nonnull(1) __nonnull(2);
+	    __bsd_nonnull(1) __bsd_nonnull(2);
 int	copyinstr(const void * __restrict udaddr, void * __restrict kaddr,
 	    size_t len, size_t * __restrict lencopied)
-	    __nonnull(1) __nonnull(2);
+	    __bsd_nonnull(1) __bsd_nonnull(2);
 int	copyin(const void * __restrict udaddr, void * __restrict kaddr,
-	    size_t len) __nonnull(1) __nonnull(2);
+	    size_t len) __bsd_nonnull(1) __bsd_nonnull(2);
 int	copyin_nofault(const void * __restrict udaddr, void * __restrict kaddr,
-	    size_t len) __nonnull(1) __nonnull(2);
+	    size_t len) __bsd_nonnull(1) __bsd_nonnull(2);
 int	copyout(const void * __restrict kaddr, void * __restrict udaddr,
-	    size_t len) __nonnull(1) __nonnull(2);
+	    size_t len) __bsd_nonnull(1) __bsd_nonnull(2);
 int	copyout_nofault(const void * __restrict kaddr, void * __restrict udaddr,
-	    size_t len) __nonnull(1) __nonnull(2);
+	    size_t len) __bsd_nonnull(1) __bsd_nonnull(2);
 
 int	fubyte(const void *base);
 long	fuword(const void *base);
@@ -345,16 +345,16 @@ static __inline void		splx(intrmask_t ipl __unused)	{ return; }
  * less often.
  */
 int	_sleep(void *chan, struct lock_object *lock, int pri, const char *wmesg,
-	    int timo) __nonnull(1);
+	    int timo) __bsd_nonnull(1);
 #define	msleep(chan, mtx, pri, wmesg, timo)				\
 	_sleep((chan), &(mtx)->lock_object, (pri), (wmesg), (timo))
 int	msleep_spin(void *chan, struct mtx *mtx, const char *wmesg, int timo)
-	    __nonnull(1);
+	    __bsd_nonnull(1);
 //int	pause(const char *wmesg, int timo);
 #define	tsleep(chan, pri, wmesg, timo)					\
 	_sleep((chan), NULL, (pri), (wmesg), (timo))
-void	wakeup(void *chan) __nonnull(1);
-void	wakeup_one(void *chan) __nonnull(1);
+void	wakeup(void *chan) __bsd_nonnull(1);
+void	wakeup_one(void *chan) __bsd_nonnull(1);
 
 /*
  * Common `struct cdev *' stuff are declared here to avoid #include poisoning

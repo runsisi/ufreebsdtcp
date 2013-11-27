@@ -12,6 +12,6 @@
 #include <sys/bsd_errno.h>
 #undef _KERNEL
 
-#define _ASM_GENERIC_ERRNO_H
+//#define _ASM_GENERIC_ERRNO_H
 
 #endif /* OPT_PRE_GLOBAL_H_ */

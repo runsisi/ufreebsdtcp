@@ -7,9 +7,8 @@
 #endif 	// ---------------------- @2013/11/18
 
 // runsisi AT hust.edu.cn @2013/11/26
-#undef _ASM_GENERIC_ERRNO_H
+//#undef _ASM_GENERIC_ERRNO_H
 
-#undef __nonnull
 #undef __size_t
 
 #undef _ANSI_SOURCE
