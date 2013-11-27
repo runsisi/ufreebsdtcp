@@ -85,6 +85,7 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/netinet/ip_output.c 253281 2013-07-12 18:5
 //#include <security/mac/mac_framework.h>
 
 VNET_DEFINE(u_short, ip_id);
+extern int brs_ip_output(struct mbuf *m, int vcid);
 
 #ifdef MBUF_STRESS_TEST
 static int mbuf_frag_size = 0;
@@ -116,570 +117,108 @@ int
 ip_output(struct mbuf *m, struct mbuf *opt, struct route *ro, int flags,
     struct ip_moptions *imo, struct inpcb *inp)
 {
-	struct ip *ip;
-	struct ifnet *ifp = NULL;	/* keep compiler happy */
-	struct mbuf *m0;
-	int hlen = sizeof (struct ip);
-	int mtu;
-	int n;	/* scratchpad */
-	int error = 0;
-	struct sockaddr_in *dst;
-	struct in_ifaddr *ia;
-	int isbroadcast, sw_csum;
-	struct route iproute;
-	struct rtentry *rte;	/* cache for ro->ro_rt */
-	struct in_addr odst;
-	struct m_tag *fwd_tag = NULL;
-#ifdef IPSEC
-	int no_route_but_check_spd = 0;
-#endif
-	M_ASSERTPKTHDR(m);
+    struct ip *ip;
+    int hlen = sizeof (struct ip);
+    int error = 0;
+    int sw_csum;
+    struct route iproute;
 
-	if (inp != NULL) {
-		INP_LOCK_ASSERT(inp);
-		M_SETFIB(m, inp->inp_inc.inc_fibnum);
-		if (inp->inp_flags & (INP_HW_FLOWID|INP_SW_FLOWID)) {
-			m->m_pkthdr.flowid = inp->inp_flowid;
-			m->m_flags |= M_FLOWID;
-		}
-	}
+    M_ASSERTPKTHDR(m);
 
-	if (ro == NULL) {
-		ro = &iproute;
-		bzero(ro, sizeof (*ro));
-	}
+    if (inp != NULL) {
+        INP_LOCK_ASSERT(inp);
+        M_SETFIB(m, inp->inp_inc.inc_fibnum);
+        if (inp->inp_flags & (INP_HW_FLOWID|INP_SW_FLOWID)) {
+            m->m_pkthdr.flowid = inp->inp_flowid;
+            m->m_flags |= M_FLOWID;
+        }
+    }
+
+    if (ro == NULL) {
+        ro = &iproute;
+        bzero(ro, sizeof (*ro));
+    }
 
 #ifdef FLOWTABLE
-	if (ro->ro_rt == NULL) {
-		struct flentry *fle;
-			
-		/*
-		 * The flow table returns route entries valid for up to 30
-		 * seconds; we rely on the remainder of ip_output() taking no
-		 * longer than that long for the stability of ro_rt. The
-		 * flow ID assignment must have happened before this point.
-		 */
-		fle = flowtable_lookup_mbuf(V_ip_ft, m, AF_INET);
-		if (fle != NULL)
-			flow_to_route(fle, ro);
-	}
+    if (ro->ro_rt == NULL) {
+        struct flentry *fle;
+
+        /*
+         * The flow table returns route entries valid for up to 30
+         * seconds; we rely on the remainder of ip_output() taking no
+         * longer than that long for the stability of ro_rt. The
+         * flow ID assignment must have happened before this point.
+         */
+        fle = flowtable_lookup_mbuf(V_ip_ft, m, AF_INET);
+        if (fle != NULL)
+            flow_to_route(fle, ro);
+    }
 #endif
 
-	if (opt) {
-		int len = 0;
-		m = ip_insertoptions(m, opt, &len);
-		if (len != 0)
-			hlen = len; /* ip->ip_hl is updated above */
-	}
-	ip = mtod(m, struct ip *);
+    if (opt) {
+        int len = 0;
+        m = ip_insertoptions(m, opt, &len);
+        if (len != 0)
+            hlen = len; /* ip->ip_hl is updated above */
+    }
+    ip = mtod(m, struct ip *);
 
-	/*
-	 * Fill in IP header.  If we are not allowing fragmentation,
-	 * then the ip_id field is meaningless, but we don't set it
-	 * to zero.  Doing so causes various problems when devices along
-	 * the path (routers, load balancers, firewalls, etc.) illegally
-	 * disable DF on our packet.  Note that a 16-bit counter
-	 * will wrap around in less than 10 seconds at 100 Mbit/s on a
-	 * medium with MTU 1500.  See Steven M. Bellovin, "A Technique
-	 * for Counting NATted Hosts", Proc. IMW'02, available at
-	 * <http://www.cs.columbia.edu/~smb/papers/fnat.pdf>.
-	 */
-	if ((flags & (IP_FORWARDING|IP_RAWOUTPUT)) == 0) {
-		ip->ip_v = IPVERSION;
-		ip->ip_hl = hlen >> 2;
-		ip->ip_id = ip_newid();
-		IPSTAT_INC(ips_localout);
-	} else {
-		/* Header already set, fetch hlen from there */
-		hlen = ip->ip_hl << 2;
-	}
+    /*
+     * Fill in IP header.  If we are not allowing fragmentation,
+     * then the ip_id field is meaningless, but we don't set it
+     * to zero.  Doing so causes various problems when devices along
+     * the path (routers, load balancers, firewalls, etc.) illegally
+     * disable DF on our packet.  Note that a 16-bit counter
+     * will wrap around in less than 10 seconds at 100 Mbit/s on a
+     * medium with MTU 1500.  See Steven M. Bellovin, "A Technique
+     * for Counting NATted Hosts", Proc. IMW'02, available at
+     * <http://www.cs.columbia.edu/~smb/papers/fnat.pdf>.
+     */
+    if ((flags & (IP_FORWARDING|IP_RAWOUTPUT)) == 0) {
+        ip->ip_v = IPVERSION;
+        ip->ip_hl = hlen >> 2;
+        #if 0	// runsisi AT hust.edu.cn @2013/11/13
+        ip->ip_id = ip_newid();
+        IPSTAT_INC(ips_localout);
+        #endif  // ---------------------- @2013/11/13
+    } else {
+        /* Header already set, fetch hlen from there */
+        hlen = ip->ip_hl << 2;
+    }
 
-again:
-	dst = (struct sockaddr_in *)&ro->ro_dst;
-	ia = NULL;
-	/*
-	 * If there is a cached route,
-	 * check that it is to the same destination
-	 * and is still up.  If not, free it and try again.
-	 * The address family should also be checked in case of sharing the
-	 * cache with IPv6.
-	 */
-	rte = ro->ro_rt;
-	if (rte && ((rte->rt_flags & RTF_UP) == 0 ||
-		    rte->rt_ifp == NULL ||
-		    !RT_LINK_IS_UP(rte->rt_ifp) ||
-			  dst->sin_family != AF_INET ||
-			  dst->sin_addr.s_addr != ip->ip_dst.s_addr)) {
-		RO_RTFREE(ro);
-		ro->ro_lle = NULL;
-		rte = NULL;
-	}
-	if (rte == NULL && fwd_tag == NULL) {
-		bzero(dst, sizeof(*dst));
-		dst->sin_family = AF_INET;
-		dst->sin_len = sizeof(*dst);
-		dst->sin_addr = ip->ip_dst;
-	}
-	/*
-	 * If routing to interface only, short circuit routing lookup.
-	 * The use of an all-ones broadcast address implies this; an
-	 * interface is specified by the broadcast address of an interface,
-	 * or the destination address of a ptp interface.
-	 */
-	if (flags & IP_SENDONES) {
-		if ((ia = ifatoia(ifa_ifwithbroadaddr(sintosa(dst)))) == NULL &&
-		    (ia = ifatoia(ifa_ifwithdstaddr(sintosa(dst)))) == NULL) {
-			IPSTAT_INC(ips_noroute);
-			error = ENETUNREACH;
-			goto bad;
-		}
-		ip->ip_dst.s_addr = INADDR_BROADCAST;
-		dst->sin_addr = ip->ip_dst;
-		ifp = ia->ia_ifp;
-		ip->ip_ttl = 1;
-		isbroadcast = 1;
-	} else if (flags & IP_ROUTETOIF) {
-		if ((ia = ifatoia(ifa_ifwithdstaddr(sintosa(dst)))) == NULL &&
-		    (ia = ifatoia(ifa_ifwithnet(sintosa(dst), 0))) == NULL) {
-			IPSTAT_INC(ips_noroute);
-			error = ENETUNREACH;
-			goto bad;
-		}
-		ifp = ia->ia_ifp;
-		ip->ip_ttl = 1;
-		isbroadcast = in_broadcast(dst->sin_addr, ifp);
-	} else if (IN_MULTICAST(ntohl(ip->ip_dst.s_addr)) &&
-	    imo != NULL && imo->imo_multicast_ifp != NULL) {
-		/*
-		 * Bypass the normal routing lookup for multicast
-		 * packets if the interface is specified.
-		 */
-		ifp = imo->imo_multicast_ifp;
-		IFP_TO_IA(ifp, ia);
-		isbroadcast = 0;	/* fool gcc */
-	} else {
-		/*
-		 * We want to do any cloning requested by the link layer,
-		 * as this is probably required in all cases for correct
-		 * operation (as it is for ARP).
-		 */
-		if (rte == NULL) {
-#ifdef RADIX_MPATH
-			rtalloc_mpath_fib(ro,
-			    ntohl(ip->ip_src.s_addr ^ ip->ip_dst.s_addr),
-			    inp ? inp->inp_inc.inc_fibnum : M_GETFIB(m));
-#else
-			in_rtalloc_ign(ro, 0,
-			    inp ? inp->inp_inc.inc_fibnum : M_GETFIB(m));
-#endif
-			rte = ro->ro_rt;
-		}
-		if (rte == NULL ||
-		    rte->rt_ifp == NULL ||
-		    !RT_LINK_IS_UP(rte->rt_ifp)) {
-#ifdef IPSEC
-			/*
-			 * There is no route for this packet, but it is
-			 * possible that a matching SPD entry exists.
-			 */
-			no_route_but_check_spd = 1;
-			mtu = 0; /* Silence GCC warning. */
-			goto sendit;
-#endif
-			IPSTAT_INC(ips_noroute);
-			error = EHOSTUNREACH;
-			goto bad;
-		}
-		ia = ifatoia(rte->rt_ifa);
-		ifa_ref(&ia->ia_ifa);
-		ifp = rte->rt_ifp;
-		rte->rt_rmx.rmx_pksent++;
-		if (rte->rt_flags & RTF_GATEWAY)
-			dst = (struct sockaddr_in *)rte->rt_gateway;
-		if (rte->rt_flags & RTF_HOST)
-			isbroadcast = (rte->rt_flags & RTF_BROADCAST);
-		else
-			isbroadcast = in_broadcast(dst->sin_addr, ifp);
-	}
-	/*
-	 * Calculate MTU.  If we have a route that is up, use that,
-	 * otherwise use the interface's MTU.
-	 */
-	if (rte != NULL && (rte->rt_flags & (RTF_UP|RTF_HOST))) {
-		/*
-		 * This case can happen if the user changed the MTU
-		 * of an interface after enabling IP on it.  Because
-		 * most netifs don't keep track of routes pointing to
-		 * them, there is no way for one to update all its
-		 * routes when the MTU is changed.
-		 */
-		if (rte->rt_rmx.rmx_mtu > ifp->if_mtu)
-			rte->rt_rmx.rmx_mtu = ifp->if_mtu;
-		mtu = rte->rt_rmx.rmx_mtu;
-	} else {
-		mtu = ifp->if_mtu;
-	}
-	/* Catch a possible divide by zero later. */
-	KASSERT(mtu > 0, ("%s: mtu %d <= 0, rte=%p (rt_flags=0x%08x) ifp=%p",
-	    __func__, mtu, rte, (rte != NULL) ? rte->rt_flags : 0, ifp));
-	if (IN_MULTICAST(ntohl(ip->ip_dst.s_addr))) {
-		m->m_flags |= M_MCAST;
-		/*
-		 * IP destination address is multicast.  Make sure "dst"
-		 * still points to the address in "ro".  (It may have been
-		 * changed to point to a gateway address, above.)
-		 */
-		dst = (struct sockaddr_in *)&ro->ro_dst;
-		/*
-		 * See if the caller provided any multicast options
-		 */
-		if (imo != NULL) {
-			ip->ip_ttl = imo->imo_multicast_ttl;
-			if (imo->imo_multicast_vif != -1)
-				ip->ip_src.s_addr =
-				    ip_mcast_src ?
-				    ip_mcast_src(imo->imo_multicast_vif) :
-				    INADDR_ANY;
-		} else
-			ip->ip_ttl = IP_DEFAULT_MULTICAST_TTL;
-		/*
-		 * Confirm that the outgoing interface supports multicast.
-		 */
-		if ((imo == NULL) || (imo->imo_multicast_vif == -1)) {
-			if ((ifp->if_flags & IFF_MULTICAST) == 0) {
-				IPSTAT_INC(ips_noroute);
-				error = ENETUNREACH;
-				goto bad;
-			}
-		}
-		/*
-		 * If source address not specified yet, use address
-		 * of outgoing interface.
-		 */
-		if (ip->ip_src.s_addr == INADDR_ANY) {
-			/* Interface may have no addresses. */
-			if (ia != NULL)
-				ip->ip_src = IA_SIN(ia)->sin_addr;
-		}
+    /* 127/8 must not appear on wire - RFC1122. */
+    if ((ntohl(ip->ip_dst.s_addr) >> IN_CLASSA_NSHIFT) == IN_LOOPBACKNET ||
+        (ntohl(ip->ip_src.s_addr) >> IN_CLASSA_NSHIFT) == IN_LOOPBACKNET) {
+        /*if ((ifp->if_flags & IFF_LOOPBACK) == 0)*/ {
+            #if 0	// runsisi AT hust.edu.cn @2013/11/13
+            IPSTAT_INC(ips_badaddr);
+            #endif 	// ---------------------- @2013/11/13
+            error = EADDRNOTAVAIL;
+            goto bad;
+        }
+    }
 
-		if ((imo == NULL && in_mcast_loop) ||
-		    (imo && imo->imo_multicast_loop)) {
-			/*
-			 * Loop back multicast datagram if not expressly
-			 * forbidden to do so, even if we are not a member
-			 * of the group; ip_input() will filter it later,
-			 * thus deferring a hash lookup and mutex acquisition
-			 * at the expense of a cheap copy using m_copym().
-			 */
-			ip_mloopback(ifp, m, dst, hlen);
-		} else {
-			/*
-			 * If we are acting as a multicast router, perform
-			 * multicast forwarding as if the packet had just
-			 * arrived on the interface to which we are about
-			 * to send.  The multicast forwarding function
-			 * recursively calls this function, using the
-			 * IP_FORWARDING flag to prevent infinite recursion.
-			 *
-			 * Multicasts that are looped back by ip_mloopback(),
-			 * above, will be forwarded by the ip_input() routine,
-			 * if necessary.
-			 */
-			if (V_ip_mrouter && (flags & IP_FORWARDING) == 0) {
-				/*
-				 * If rsvp daemon is not running, do not
-				 * set ip_moptions. This ensures that the packet
-				 * is multicast and not just sent down one link
-				 * as prescribed by rsvpd.
-				 */
-				if (!V_rsvp_on)
-					imo = NULL;
-				if (ip_mforward &&
-				    ip_mforward(ip, ifp, m, imo) != 0) {
-					m_freem(m);
-					goto done;
-				}
-			}
-		}
-
-		/*
-		 * Multicasts with a time-to-live of zero may be looped-
-		 * back, above, but must not be transmitted on a network.
-		 * Also, multicasts addressed to the loopback interface
-		 * are not sent -- the above call to ip_mloopback() will
-		 * loop back a copy. ip_input() will drop the copy if
-		 * this host does not belong to the destination group on
-		 * the loopback interface.
-		 */
-		if (ip->ip_ttl == 0 || ifp->if_flags & IFF_LOOPBACK) {
-			m_freem(m);
-			goto done;
-		}
-
-		goto sendit;
-	}
-
-	/*
-	 * If the source address is not specified yet, use the address
-	 * of the outoing interface.
-	 */
-	if (ip->ip_src.s_addr == INADDR_ANY) {
-		/* Interface may have no addresses. */
-		if (ia != NULL) {
-			ip->ip_src = IA_SIN(ia)->sin_addr;
-		}
-	}
-
-	/*
-	 * Verify that we have any chance at all of being able to queue the
-	 * packet or packet fragments, unless ALTQ is enabled on the given
-	 * interface in which case packetdrop should be done by queueing.
-	 */
-	n = ip->ip_len / mtu + 1; /* how many fragments ? */
-	if (
-#ifdef ALTQ
-	    (!ALTQ_IS_ENABLED(&ifp->if_snd)) &&
-#endif /* ALTQ */
-	    (ifp->if_snd.ifq_len + n) >= ifp->if_snd.ifq_maxlen ) {
-		error = ENOBUFS;
-		IPSTAT_INC(ips_odropped);
-		ifp->if_snd.ifq_drops += n;
-		goto bad;
-	}
-
-	/*
-	 * Look for broadcast address and
-	 * verify user is allowed to send
-	 * such a packet.
-	 */
-	if (isbroadcast) {
-		if ((ifp->if_flags & IFF_BROADCAST) == 0) {
-			error = EADDRNOTAVAIL;
-			goto bad;
-		}
-		if ((flags & IP_ALLOWBROADCAST) == 0) {
-			error = EACCES;
-			goto bad;
-		}
-		/* don't allow broadcast messages to be fragmented */
-		if (ip->ip_len > mtu) {
-			error = EMSGSIZE;
-			goto bad;
-		}
-		m->m_flags |= M_BCAST;
-	} else {
-		m->m_flags &= ~M_BCAST;
-	}
-
-sendit:
-#ifdef IPSEC
-	switch(ip_ipsec_output(&m, inp, &flags, &error)) {
-	case 1:
-		goto bad;
-	case -1:
-		goto done;
-	case 0:
-	default:
-		break;	/* Continue with packet processing. */
-	}
-	/*
-	 * Check if there was a route for this packet; return error if not.
-	 */
-	if (no_route_but_check_spd) {
-		IPSTAT_INC(ips_noroute);
-		error = EHOSTUNREACH;
-		goto bad;
-	}
-	/* Update variables that are affected by ipsec4_output(). */
-	ip = mtod(m, struct ip *);
-	hlen = ip->ip_hl << 2;
-#endif /* IPSEC */
-
-	/* Jump over all PFIL processing if hooks are not active. */
-	if (!PFIL_HOOKED(&V_inet_pfil_hook))
-		goto passout;
-
-	/* Run through list of hooks for output packets. */
-	odst.s_addr = ip->ip_dst.s_addr;
-	error = pfil_run_hooks(&V_inet_pfil_hook, &m, ifp, PFIL_OUT, inp);
-	if (error != 0 || m == NULL)
-		goto done;
-
-	ip = mtod(m, struct ip *);
-
-	/* See if destination IP address was changed by packet filter. */
-	if (odst.s_addr != ip->ip_dst.s_addr) {
-		m->m_flags |= M_SKIP_FIREWALL;
-		/* If destination is now ourself drop to ip_input(). */
-		if (in_localip(ip->ip_dst)) {
-			m->m_flags |= M_FASTFWD_OURS;
-			if (m->m_pkthdr.rcvif == NULL)
-				m->m_pkthdr.rcvif = V_loif;
-			if (m->m_pkthdr.csum_flags & CSUM_DELAY_DATA) {
-				m->m_pkthdr.csum_flags |=
-				    CSUM_DATA_VALID | CSUM_PSEUDO_HDR;
-				m->m_pkthdr.csum_data = 0xffff;
-			}
-			m->m_pkthdr.csum_flags |=
-			    CSUM_IP_CHECKED | CSUM_IP_VALID;
+    m->m_pkthdr.csum_flags |= CSUM_IP;
+    sw_csum = m->m_pkthdr.csum_flags /*& ~ifp->if_hwassist*/;
+    if (sw_csum & CSUM_DELAY_DATA) {
+        in_delayed_cksum(m);
+        sw_csum &= ~CSUM_DELAY_DATA;
+    }
 #ifdef SCTP
-			if (m->m_pkthdr.csum_flags & CSUM_SCTP)
-				m->m_pkthdr.csum_flags |= CSUM_SCTP_VALID;
+    if (sw_csum & CSUM_SCTP) {
+        sctp_delayed_cksum(m, (uint32_t)(ip->ip_hl << 2));
+        sw_csum &= ~CSUM_SCTP;
+    }
 #endif
-			error = netisr_queue(NETISR_IP, m);
-			goto done;
-		} else {
-			if (ia != NULL)
-				ifa_free(&ia->ia_ifa);
-			goto again;	/* Redo the routing table lookup. */
-		}
-	}
+    m->m_pkthdr.csum_flags &= 0/*ifp->if_hwassist*/;
 
-	/* See if local, if yes, send it to netisr with IP_FASTFWD_OURS. */
-	if (m->m_flags & M_FASTFWD_OURS) {
-		if (m->m_pkthdr.rcvif == NULL)
-			m->m_pkthdr.rcvif = V_loif;
-		if (m->m_pkthdr.csum_flags & CSUM_DELAY_DATA) {
-			m->m_pkthdr.csum_flags |=
-			    CSUM_DATA_VALID | CSUM_PSEUDO_HDR;
-			m->m_pkthdr.csum_data = 0xffff;
-		}
-#ifdef SCTP
-		if (m->m_pkthdr.csum_flags & CSUM_SCTP)
-			m->m_pkthdr.csum_flags |= CSUM_SCTP_VALID;
-#endif
-		m->m_pkthdr.csum_flags |=
-			    CSUM_IP_CHECKED | CSUM_IP_VALID;
-
-		error = netisr_queue(NETISR_IP, m);
-		goto done;
-	}
-	/* Or forward to some other address? */
-	if ((m->m_flags & M_IP_NEXTHOP) &&
-	    (fwd_tag = m_tag_find(m, PACKET_TAG_IPFORWARD, NULL)) != NULL) {
-		dst = (struct sockaddr_in *)&ro->ro_dst;
-		bcopy((fwd_tag+1), dst, sizeof(struct sockaddr_in));
-		m->m_flags |= M_SKIP_FIREWALL;
-		m->m_flags &= ~M_IP_NEXTHOP;
-		m_tag_delete(m, fwd_tag);
-		if (ia != NULL)
-			ifa_free(&ia->ia_ifa);
-		goto again;
-	}
-
-passout:
-	/* 127/8 must not appear on wire - RFC1122. */
-	if ((ntohl(ip->ip_dst.s_addr) >> IN_CLASSA_NSHIFT) == IN_LOOPBACKNET ||
-	    (ntohl(ip->ip_src.s_addr) >> IN_CLASSA_NSHIFT) == IN_LOOPBACKNET) {
-		if ((ifp->if_flags & IFF_LOOPBACK) == 0) {
-			IPSTAT_INC(ips_badaddr);
-			error = EADDRNOTAVAIL;
-			goto bad;
-		}
-	}
-
-	m->m_pkthdr.csum_flags |= CSUM_IP;
-	sw_csum = m->m_pkthdr.csum_flags & ~ifp->if_hwassist;
-	if (sw_csum & CSUM_DELAY_DATA) {
-		in_delayed_cksum(m);
-		sw_csum &= ~CSUM_DELAY_DATA;
-	}
-#ifdef SCTP
-	if (sw_csum & CSUM_SCTP) {
-		sctp_delayed_cksum(m, (uint32_t)(ip->ip_hl << 2));
-		sw_csum &= ~CSUM_SCTP;
-	}
-#endif
-	m->m_pkthdr.csum_flags &= ifp->if_hwassist;
-
-	/*
-	 * If small enough for interface, or the interface will take
-	 * care of the fragmentation for us, we can just send directly.
-	 */
-	if (ip->ip_len <= mtu ||
-	    (m->m_pkthdr.csum_flags & ifp->if_hwassist & CSUM_TSO) != 0 ||
-	    ((ip->ip_off & IP_DF) == 0 && (ifp->if_hwassist & CSUM_FRAGMENT))) {
-		ip->ip_len = htons(ip->ip_len);
-		ip->ip_off = htons(ip->ip_off);
-		ip->ip_sum = 0;
-		if (sw_csum & CSUM_DELAY_IP)
-			ip->ip_sum = in_cksum(m, hlen);
-
-		/*
-		 * Record statistics for this interface address.
-		 * With CSUM_TSO the byte/packet count will be slightly
-		 * incorrect because we count the IP+TCP headers only
-		 * once instead of for every generated packet.
-		 */
-		if (!(flags & IP_FORWARDING) && ia) {
-			if (m->m_pkthdr.csum_flags & CSUM_TSO)
-				ia->ia_ifa.if_opackets +=
-				    m->m_pkthdr.len / m->m_pkthdr.tso_segsz;
-			else
-				ia->ia_ifa.if_opackets++;
-			ia->ia_ifa.if_obytes += m->m_pkthdr.len;
-		}
-#ifdef MBUF_STRESS_TEST
-		if (mbuf_frag_size && m->m_pkthdr.len > mbuf_frag_size)
-			m = m_fragment(m, M_DONTWAIT, mbuf_frag_size);
-#endif
-		/*
-		 * Reset layer specific mbuf flags
-		 * to avoid confusing lower layers.
-		 */
-		m->m_flags &= ~(M_PROTOFLAGS);
-		error = (*ifp->if_output)(ifp, m,
-		    		(struct sockaddr *)dst, ro);
-		goto done;
-	}
-
-	/* Balk when DF bit is set or the interface didn't support TSO. */
-	if ((ip->ip_off & IP_DF) || (m->m_pkthdr.csum_flags & CSUM_TSO)) {
-		error = EMSGSIZE;
-		IPSTAT_INC(ips_cantfrag);
-		goto bad;
-	}
-
-	/*
-	 * Too large for interface; fragment if possible. If successful,
-	 * on return, m will point to a list of packets to be sent.
-	 */
-	error = ip_fragment(ip, &m, mtu, ifp->if_hwassist, sw_csum);
-	if (error)
-		goto bad;
-	for (; m; m = m0) {
-		m0 = m->m_nextpkt;
-		m->m_nextpkt = 0;
-		if (error == 0) {
-			/* Record statistics for this interface address. */
-			if (ia != NULL) {
-				ia->ia_ifa.if_opackets++;
-				ia->ia_ifa.if_obytes += m->m_pkthdr.len;
-			}
-			/*
-			 * Reset layer specific mbuf flags
-			 * to avoid confusing upper layers.
-			 */
-			m->m_flags &= ~(M_PROTOFLAGS);
-
-			error = (*ifp->if_output)(ifp, m,
-			    (struct sockaddr *)dst, ro);
-		} else
-			m_freem(m);
-	}
-
-	if (error == 0)
-		IPSTAT_INC(ips_fragmented);
+    error = brs_ip_output(m, m->m_fibnum);
 
 done:
-	if (ro == &iproute)
-		RO_RTFREE(ro);
-	if (ia != NULL)
-		ifa_free(&ia->ia_ifa);
-	return (error);
+    return (error);
 bad:
-	m_freem(m);
-	goto done;
+    m_freem(m);
+    goto done;
 }
 
 /*
@@ -931,6 +470,7 @@ ip_ctloutput(struct socket *so, struct sockopt *sopt)
 	switch (sopt->sopt_dir) {
 	case SOPT_SET:
 		switch (sopt->sopt_name) {
+        #if 0	// runsisi AT hust.edu.cn @2013/11/07
 		case IP_OPTIONS:
 #ifdef notyet
 		case IP_RETOPTS:
@@ -958,6 +498,7 @@ ip_ctloutput(struct socket *so, struct sockopt *sopt)
 			INP_WUNLOCK(inp);
 			return (error);
 		}
+        #endif 	// ---------------------- @2013/11/07
 
 		case IP_BINDANY:
 			if (sopt->sopt_td != NULL) {
@@ -1049,7 +590,8 @@ ip_ctloutput(struct socket *so, struct sockopt *sopt)
 			break;
 #undef OPTSET
 
-		/*
+        #if 0	// runsisi AT hust.edu.cn @2013/11/07
+        /*
 		 * Multicast socket options are processed by the in_mcast
 		 * module.
 		 */
@@ -1072,6 +614,7 @@ ip_ctloutput(struct socket *so, struct sockopt *sopt)
 		case MCAST_UNBLOCK_SOURCE:
 			error = inp_setmoptions(inp, sopt);
 			break;
+        #endif 	// ---------------------- @2013/11/07
 
 		case IP_PORTRANGE:
 			error = sooptcopyin(sopt, &optval, sizeof optval,
@@ -1220,7 +763,8 @@ ip_ctloutput(struct socket *so, struct sockopt *sopt)
 			error = sooptcopyout(sopt, &optval, sizeof optval);
 			break;
 
-		/*
+        #if 0	// runsisi AT hust.edu.cn @2013/11/07
+        /*
 		 * Multicast socket options are processed by the in_mcast
 		 * module.
 		 */
@@ -1231,6 +775,7 @@ ip_ctloutput(struct socket *so, struct sockopt *sopt)
 		case IP_MSFILTER:
 			error = inp_getmoptions(inp, sopt);
 			break;
+        #endif 	// ---------------------- @2013/11/07
 
 #ifdef IPSEC
 		case IP_IPSEC_POLICY:

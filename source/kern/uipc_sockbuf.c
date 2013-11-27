@@ -124,12 +124,15 @@ int
 sbwait(struct sockbuf *sb)
 {
 
-	SOCKBUF_LOCK_ASSERT(sb);
+    #if 0	// runsisi AT hust.edu.cn @2013/11/06
+    SOCKBUF_LOCK_ASSERT(sb);
 
 	sb->sb_flags |= SB_WAIT;
 	return (msleep(&sb->sb_cc, &sb->sb_mtx,
 	    (sb->sb_flags & SB_NOINTR) ? PSOCK : PSOCK | PCATCH, "sbwait",
 	    sb->sb_timeo));
+    #endif 	// ---------------------- @2013/11/06
+    return 0;
 }
 
 int
@@ -139,6 +142,7 @@ sblock(struct sockbuf *sb, int flags)
 	KASSERT((flags & SBL_VALID) == flags,
 	    ("sblock: flags invalid (0x%x)", flags));
 
+    #if 0	// runsisi AT hust.edu.cn @2013/11/08
 	if (flags & SBL_WAIT) {
 		if ((sb->sb_flags & SB_NOINTR) ||
 		    (flags & SBL_NOINTR)) {
@@ -151,13 +155,17 @@ sblock(struct sockbuf *sb, int flags)
 			return (EWOULDBLOCK);
 		return (0);
 	}
+    #endif 	// ---------------------- @2013/11/08
+    return 0;
 }
 
 void
 sbunlock(struct sockbuf *sb)
 {
 
-	sx_xunlock(&sb->sb_sx);
+    #if 0	// runsisi AT hust.edu.cn @2013/11/08
+    sx_xunlock(&sb->sb_sx);
+    #endif 	// ---------------------- @2013/11/08
 }
 
 /*
@@ -175,6 +183,7 @@ sbunlock(struct sockbuf *sb)
 void
 sowakeup(struct socket *so, struct sockbuf *sb)
 {
+    #if 0	// runsisi AT hust.edu.cn @2013/11/06
 	int ret;
 
 	SOCKBUF_LOCK_ASSERT(sb);
@@ -204,6 +213,24 @@ sowakeup(struct socket *so, struct sockbuf *sb)
 	if ((so->so_state & SS_ASYNC) && so->so_sigio != NULL)
 		pgsigio(&so->so_sigio, SIGIO, 0);
 	mtx_assert(SOCKBUF_MTX(sb), MA_NOTOWNED);
+    #endif 	// ---------------------- @2013/11/06
+
+    // runsisi AT hust.edu.cn @2013/11/13
+    /*
+     * Only readable/writable events are emitted from here,
+     * data/accept/connected/disconnected/error events are specialized,
+     * TODO: socantrcvmore/socantsendmore will also call this, fixed it
+     */
+    if (&so->so_rcv == sb)
+    {
+        soasyncnotify(so, SN_READ);
+    }
+    else /*if (&so->so_snd == sb)*/ /* other branch is not possible:) */
+    {
+        soasyncnotify(so, SN_WRITE);
+    }
+
+    // ---------------------- @2013/11/13
 }
 
 /*
@@ -240,7 +267,7 @@ sowakeup(struct socket *so, struct sockbuf *sb)
 int
 soreserve(struct socket *so, u_long sndcc, u_long rcvcc)
 {
-	struct thread *td = curthread;
+	struct thread *td = NULL; //curthread;
 
 	SOCKBUF_LOCK(&so->so_snd);
 	SOCKBUF_LOCK(&so->so_rcv);
@@ -308,7 +335,7 @@ sbreserve_locked(struct sockbuf *sb, u_long cc, struct socket *so,
 		PROC_UNLOCK(td->td_proc);
 	} else
 		sbsize_limit = RLIM_INFINITY;
-	if (!chgsbsize(so->so_cred->cr_uidinfo, &sb->sb_hiwat, cc,
+	if (!chgsbsize(NULL /*so->so_cred->cr_uidinfo*/, &sb->sb_hiwat, cc,
 	    sbsize_limit))
 		return (0);
 	sb->sb_mbmax = min(cc * sb_efficiency, sb_max);
@@ -337,7 +364,7 @@ sbrelease_internal(struct sockbuf *sb, struct socket *so)
 {
 
 	sbflush_internal(sb);
-	(void)chgsbsize(so->so_cred->cr_uidinfo, &sb->sb_hiwat, 0,
+	(void)chgsbsize(NULL/*so->so_cred->cr_uidinfo*/, &sb->sb_hiwat, 0,
 	    RLIM_INFINITY);
 	sb->sb_mbmax = 0;
 }

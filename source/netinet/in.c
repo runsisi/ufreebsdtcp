@@ -95,6 +95,7 @@ VNET_DECLARE(struct arpstat, arpstat);  /* ARP statistics, see if_arp.h */
 int
 in_localaddr(struct in_addr in)
 {
+    #if 0	// runsisi AT hust.edu.cn @2013/11/06
 	register u_long i = ntohl(in.s_addr);
 	register struct in_ifaddr *ia;
 
@@ -106,6 +107,7 @@ in_localaddr(struct in_addr in)
 		}
 	}
 	IN_IFADDR_RUNLOCK();
+    #endif 	// ---------------------- @2013/11/06
 	return (0);
 }
 
@@ -116,6 +118,7 @@ in_localaddr(struct in_addr in)
 int
 in_localip(struct in_addr in)
 {
+    #if 0	// runsisi AT hust.edu.cn @2013/11/06
 	struct in_ifaddr *ia;
 
 	IN_IFADDR_RLOCK();
@@ -126,6 +129,7 @@ in_localip(struct in_addr in)
 		}
 	}
 	IN_IFADDR_RUNLOCK();
+	#endif 	// ---------------------- @2013/11/06
 	return (0);
 }
 

@@ -401,6 +401,7 @@ save_rte(struct mbuf *m, u_char *option, struct in_addr dst)
 struct mbuf *
 ip_srcroute(struct mbuf *m0)
 {
+    #if 0	// runsisi AT hust.edu.cn @2013/11/05
 	struct in_addr *p, *q;
 	struct mbuf *m;
 	struct ipopt_tag *opts;
@@ -450,6 +451,9 @@ ip_srcroute(struct mbuf *m0)
 	*q = opts->ip_srcrt.dst;
 	m_tag_delete(m0, (struct m_tag *)opts);
 	return (m);
+    #endif 	// ---------------------- @2013/11/05
+
+    return NULL;
 }
 
 /*

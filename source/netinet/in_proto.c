@@ -113,6 +113,7 @@ extern	struct domain inetdomain;
 }
 
 struct protosw inetsw[] = {
+#if 0	// runsisi AT hust.edu.cn @2013/11/04
 {
 	.pr_type =		0,
 	.pr_domain =		&inetdomain,
@@ -139,6 +140,7 @@ struct protosw inetsw[] = {
 #endif
 	.pr_usrreqs =		&udp_usrreqs
 },
+#endif 	// ---------------------- @2013/11/04
 {
 	.pr_type =		SOCK_STREAM,
 	.pr_domain =		&inetdomain,
@@ -155,6 +157,7 @@ struct protosw inetsw[] = {
 	.pr_drain =		tcp_drain,
 	.pr_usrreqs =		&tcp_usrreqs
 },
+#if 0	// runsisi AT hust.edu.cn @2013/11/04
 #ifdef SCTP
 { 
 	.pr_type =		SOCK_SEQPACKET,
@@ -333,16 +336,20 @@ IPPROTOSPACER,
 #endif
 	.pr_usrreqs =		&rip_usrreqs
 },
+#endif 	// ---------------------- @2013/11/04
 };
 
+#if 0	// runsisi AT hust.edu.cn @2013/11/04
 extern int in_inithead(void **, int);
 extern int in_detachhead(void **, int);
+#endif 	// ---------------------- @2013/11/04
 
 struct domain inetdomain = {
 	.dom_family =		AF_INET,
 	.dom_name =		"internet",
 	.dom_protosw =		inetsw,
 	.dom_protoswNPROTOSW =	&inetsw[sizeof(inetsw)/sizeof(inetsw[0])],
+#if 0	// runsisi AT hust.edu.cn @2013/11/04
 #ifdef RADIX_MPATH
 	.dom_rtattach =		rn4_mpath_inithead,
 #else
@@ -355,6 +362,7 @@ struct domain inetdomain = {
 	.dom_maxrtkey =		sizeof(struct sockaddr_in),
 	.dom_ifattach =		in_domifattach,
 	.dom_ifdetach =		in_domifdetach
+#endif 	// ---------------------- @2013/11/04
 };
 
 VNET_DOMAIN_SET(inet);

@@ -137,6 +137,7 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/kern/uipc_socket.c 253035 2013-07-08 13:24
 #include <sys/bsd_jail.h>
 #include <sys/bsd_syslog.h>
 #include <netinet/in.h>
+#include <netinet/in_pcb.h>
 
 #include <net/vnet.h>
 
@@ -268,8 +269,10 @@ socket_init(void *tag)
         socket_zone = uma_zcreate("socket", sizeof(struct socket), NULL, NULL,
             NULL, NULL, UMA_ALIGN_PTR, UMA_ZONE_NOFREE);
         uma_zone_set_max(socket_zone, maxsockets);
+        #if 0	// runsisi AT hust.edu.cn @2013/11/06
         EVENTHANDLER_REGISTER(maxsockets_change, socket_zone_change, NULL,
                 EVENTHANDLER_PRI_FIRST);
+        #endif 	// ---------------------- @2013/11/06
 }
 SYSINIT(socket, SI_SUB_PROTO_DOMAININIT, SI_ORDER_ANY, socket_init, NULL);
 
@@ -382,15 +385,17 @@ sodealloc(struct socket *so)
 #endif
 	mtx_unlock(&so_global_mtx);
 	if (so->so_rcv.sb_hiwat)
-		(void)chgsbsize(so->so_cred->cr_uidinfo,
+        (void)chgsbsize(NULL /*so->so_cred->cr_uidinfo*/,
 		    &so->so_rcv.sb_hiwat, 0, RLIM_INFINITY);
 	if (so->so_snd.sb_hiwat)
-		(void)chgsbsize(so->so_cred->cr_uidinfo,
+        (void)chgsbsize(NULL /*so->so_cred->cr_uidinfo*/,
 		    &so->so_snd.sb_hiwat, 0, RLIM_INFINITY);
 #ifdef INET
+    #if 0	// runsisi AT hust.edu.cn @2013/11/10
 	/* remove acccept filter if one is present. */
 	if (so->so_accf != NULL)
 		do_setopt_accept_filter(so, NULL);
+    #endif 	// ---------------------- @2013/11/10
 #endif
 #ifdef MAC
 	mac_socket_destroy(so);
@@ -429,7 +434,10 @@ socreate(int dom, struct socket **aso, int type, int proto,
 
 	if (prp->pr_type != type)
 		return (EPROTOTYPE);
-	so = soalloc(CRED_TO_VNET(cred));
+    #if 0	// runsisi AT hust.edu.cn @2013/11/20
+    so = soalloc(CRED_TO_VNET(cred));
+    #endif 	// ---------------------- @2013/11/20
+    so = soalloc(curvnet);
 	if (so == NULL)
 		return (ENOBUFS);
 
@@ -440,7 +448,7 @@ socreate(int dom, struct socket **aso, int type, int proto,
 	if ((prp->pr_domain->dom_family == PF_INET) ||
 	    (prp->pr_domain->dom_family == PF_INET6) ||
 	    (prp->pr_domain->dom_family == PF_ROUTE))
-		so->so_fibnum = td->td_proc->p_fibnum;
+		so->so_fibnum = 0; //td->td_proc->p_fibnum;
 	else
 		so->so_fibnum = 0;
 	so->so_proto = prp;
@@ -511,6 +519,26 @@ sonewconn(struct socket *head, int connstatus)
 		    __func__, head->so_pcb);
 		return (NULL);
 	}
+
+	// runsisi AT hust.edu.cn @2013/11/14
+	/*
+	 * sock descriptor is unavailable right now, so we have to init some
+	 * fields manually here
+	 */
+	so->so_fd = 0;  /* will be set in ps_accept */
+	so->so_otype = head->so_otype;
+	so->so_aoid = head->so_aoid;
+	so->so_appaoid = head->so_appaoid;
+
+	if (socreateq(so))
+	{
+	    sodealloc(so);
+        log(LOG_DEBUG, "%s: pcb %p: socreateq() failed\n",
+            __func__, head->so_pcb);
+        return (NULL);
+	}
+    // ---------------------- @2013/11/14
+
 	if ((head->so_options & SO_ACCEPTFILTER) != 0)
 		connstatus = 0;
 	so->so_head = head;
@@ -590,8 +618,18 @@ sonewconn(struct socket *head, int connstatus)
 	}
 	ACCEPT_UNLOCK();
 	if (connstatus) {
-		sorwakeup(head);
-		wakeup_one(&head->so_timeo);
+        #if 0   // runsisi AT hust.edu.cn @2013/11/06
+	    sorwakeup(head);
+        wakeup_one(&head->so_timeo);
+        #endif 	// ---------------------- @2013/11/06
+        #if 0	// runsisi AT hust.edu.cn @2013/11/17
+        /* we have to defer this notification, coz app need to know vcid and
+         * vcid is set outsize of this function
+         */
+        // runsisi AT hust.edu.cn @2013/11/13
+        soasyncnotify(head, SAN_ACCEPT);
+        // ---------------------- @2013/11/13
+        #endif 	// ---------------------- @2013/11/17
 	}
 	return (so);
 }
@@ -737,8 +775,15 @@ sofree(struct socket *so)
 	 */
 	sbdestroy(&so->so_snd, so);
 	sbdestroy(&so->so_rcv, so);
-	seldrain(&so->so_snd.sb_sel);
-	seldrain(&so->so_rcv.sb_sel);
+    #if 0	// runsisi AT hust.edu.cn @2013/11/06
+    seldrain(&so->so_snd.sb_sel);
+    seldrain(&so->so_rcv.sb_sel);
+    #endif  // ---------------------- @2013/11/06
+
+    // runsisi AT hust.edu.cn @2013/11/14
+    sodelq(so);
+    // ---------------------- @2013/11/14
+
 	knlist_destroy(&so->so_rcv.sb_sel.si_note);
 	knlist_destroy(&so->so_snd.sb_sel.si_note);
 	sodealloc(so);
@@ -760,7 +805,9 @@ soclose(struct socket *so)
 	KASSERT(!(so->so_state & SS_NOFDREF), ("soclose: SS_NOFDREF on enter"));
 
 	CURVNET_SET(so->so_vnet);
+    #if 0	// runsisi AT hust.edu.cn @2013/11/06
 	funsetown(&so->so_sigio);
+    #endif 	// ---------------------- @2013/11/06
 	if (so->so_state & SS_ISCONNECTED) {
 		if ((so->so_state & SS_ISDISCONNECTING) == 0) {
 			error = sodisconnect(so);
@@ -775,10 +822,12 @@ soclose(struct socket *so)
 			    (so->so_state & SS_NBIO))
 				goto drop;
 			while (so->so_state & SS_ISCONNECTED) {
+                #if 0	// runsisi AT hust.edu.cn @2013/11/08
 				error = tsleep(&so->so_timeo,
 				    PSOCK | PCATCH, "soclos", so->so_linger * hz);
 				if (error)
 					break;
+                #endif 	// ---------------------- @2013/11/08
 			}
 		}
 	}
@@ -1394,8 +1443,18 @@ restart:
 release:
 	sbunlock(&so->so_snd);
 out:
-	if (top != NULL)
-		m_freem(top);
+    #if 0	// runsisi AT hust.edu.cn @2013/11/22
+    if (top != NULL)
+        m_freem(top);
+    #endif 	// ---------------------- @2013/11/22
+    // runsisi AT hust.edu.cn @2013/11/22
+    /* if we can not send because of send space shortage, then we must not
+     * free it, we have leave it in dps send queue, then let the dps notify
+     * the user app that brs is too busy now
+     */
+    if (top != NULL && error != EWOULDBLOCK)
+        m_freem(top);
+    // ---------------------- @2013/11/22
 	if (control != NULL)
 		m_freem(control);
 	return (error);
@@ -2388,14 +2447,86 @@ soshutdown(struct socket *so, int how)
 		sorflush(so);
 	if (how != SHUT_RD) {
 		error = (*pr->pr_usrreqs->pru_shutdown)(so);
+        #if 0	// runsisi AT hust.edu.cn @2013/11/06
 		wakeup(&so->so_timeo);
+        #endif 	// ---------------------- @2013/11/06
 		CURVNET_RESTORE();
 		return (error);
 	}
+    #if 0	// runsisi AT hust.edu.cn @2013/11/06
 	wakeup(&so->so_timeo);
+    #endif 	// ---------------------- @2013/11/06
 	CURVNET_RESTORE();
 	return (0);
 }
+
+// runsisi AT hust.edu.cn @2013/11/20
+int
+bsd_sogetsockname(struct socket *so, struct sockaddr **sa,
+        socklen_t *alen)
+{
+    socklen_t len;
+    int error;
+
+    if (*alen < 0)
+        return (EINVAL);
+
+    *sa = NULL;
+    CURVNET_SET(so->so_vnet);
+    error = (*so->so_proto->pr_usrreqs->pru_sockaddr)(so, sa);
+    CURVNET_RESTORE();
+    if (error)
+        goto bad;
+    if (*sa == NULL)
+        len = 0;
+    else
+        len = MIN(*alen, (*sa)->sa_len);
+    *alen = len;
+bad:
+    if (error && *sa)
+    {
+        bsd_free(*sa, M_SONAME);
+        *sa = NULL;
+    }
+    return (error);
+}
+
+int
+bsd_sogetpeername(struct socket *so, struct sockaddr **sa,
+        socklen_t *alen)
+{
+    socklen_t len;
+    int error;
+
+    if (*alen < 0)
+        return (EINVAL);
+
+    if ((so->so_state & (SS_ISCONNECTED|SS_ISCONFIRMING)) == 0)
+    {
+        error = ENOTCONN;
+        goto done;
+    }
+    *sa = NULL;
+    CURVNET_SET(so->so_vnet);
+    error = (*so->so_proto->pr_usrreqs->pru_peeraddr)(so, sa);
+    CURVNET_RESTORE();
+    if (error)
+        goto bad;
+    if (*sa == NULL)
+        len = 0;
+    else
+        len = MIN(*alen, (*sa)->sa_len);
+    *alen = len;
+bad:
+    if (error && *sa)
+    {
+        bsd_free(*sa, M_SONAME);
+        *sa = NULL;
+    }
+done:
+    return (error);
+}
+// ---------------------- @2013/11/20
 
 void
 sorflush(struct socket *so)
@@ -2518,11 +2649,13 @@ sosetopt(struct socket *so, struct sockopt *sopt)
 	} else {
 		switch (sopt->sopt_name) {
 #ifdef INET
+        #if 0	// runsisi AT hust.edu.cn @2013/11/08
 		case SO_ACCEPTFILTER:
 			error = do_setopt_accept_filter(so, sopt);
 			if (error)
 				goto bad;
 			break;
+        #endif 	// ---------------------- @2013/11/08
 #endif
 		case SO_LINGER:
 			error = sooptcopyin(sopt, &l, sizeof l, sizeof l);
@@ -2563,6 +2696,7 @@ sosetopt(struct socket *so, struct sockopt *sopt)
 			SOCK_UNLOCK(so);
 			break;
 
+        #if 0	// runsisi AT hust.edu.cn @2013/11/08
 		case SO_SETFIB:
 			error = sooptcopyin(sopt, &optval, sizeof optval,
 					    sizeof optval);
@@ -2580,6 +2714,7 @@ sosetopt(struct socket *so, struct sockopt *sopt)
 			else
 				so->so_fibnum = 0;
 			break;
+        #endif 	// ---------------------- @2013/11/08
 
 		case SO_USER_COOKIE:
 			error = sooptcopyin(sopt, &val32, sizeof val32,
@@ -2612,7 +2747,7 @@ sosetopt(struct socket *so, struct sockopt *sopt)
 			case SO_RCVBUF:
 				if (sbreserve(sopt->sopt_name == SO_SNDBUF ?
 				    &so->so_snd : &so->so_rcv, (u_long)optval,
-				    so, curthread) == 0) {
+				    so, NULL /*curthread*/) == 0) {
 					error = ENOBUFS;
 					goto bad;
 				}
@@ -2761,9 +2896,11 @@ sogetopt(struct socket *so, struct sockopt *sopt)
 	} else {
 		switch (sopt->sopt_name) {
 #ifdef INET
+        #if 0	// runsisi AT hust.edu.cn @2013/11/08
 		case SO_ACCEPTFILTER:
 			error = do_getopt_accept_filter(so, sopt);
 			break;
+        #endif 	// ---------------------- @2013/11/08
 #endif
 		case SO_LINGER:
 			SOCK_LOCK(so);
@@ -3017,9 +3154,11 @@ void
 sohasoutofband(struct socket *so)
 {
 
-	if (so->so_sigio != NULL)
-		pgsigio(&so->so_sigio, SIGURG, 0);
-	selwakeuppri(&so->so_rcv.sb_sel, PSOCK);
+    #if 0	// runsisi AT hust.edu.cn @2013/11/08
+    if (so->so_sigio != NULL)
+        pgsigio(&so->so_sigio, SIGURG, 0);
+    selwakeuppri(&so->so_rcv.sb_sel, PSOCK);
+    #endif 	// ---------------------- @2013/11/08
 }
 
 int
@@ -3063,6 +3202,7 @@ sopoll_generic(struct socket *so, int events, struct ucred *active_cred,
 		}
 	}
 
+    #if 0	// runsisi AT hust.edu.cn @2013/11/08
 	if (revents == 0) {
 		if (events & (POLLIN | POLLPRI | POLLRDNORM | POLLRDBAND)) {
 			selrecord(td, &so->so_rcv.sb_sel);
@@ -3074,12 +3214,14 @@ sopoll_generic(struct socket *so, int events, struct ucred *active_cred,
 			so->so_snd.sb_flags |= SB_SEL;
 		}
 	}
+    #endif 	// ---------------------- @2013/11/08
 
 	SOCKBUF_UNLOCK(&so->so_rcv);
 	SOCKBUF_UNLOCK(&so->so_snd);
 	return (revents);
 }
 
+#if 0 // runsisi AT hust.edu.cn @2013/10/31
 int
 soo_kqfilter(struct file *fp, struct knote *kn)
 {
@@ -3108,6 +3250,7 @@ soo_kqfilter(struct file *fp, struct knote *kn)
 	SOCKBUF_UNLOCK(sb);
 	return (0);
 }
+#endif // ------- @2013/10/31
 
 /*
  * Some routines that return EOPNOTSUPP for entry points that are not
@@ -3387,6 +3530,9 @@ soisconnected(struct socket *so)
 {
 	struct socket *head;	
 	int ret;
+    // runsisi AT hust.edu.cn @2013/11/17
+    struct inpcb *linp = NULL, *inp = NULL;
+    // ---------------------- @2013/11/17
 
 restart:
 	ACCEPT_LOCK();
@@ -3404,8 +3550,17 @@ restart:
 			head->so_qlen++;
 			so->so_qstate |= SQ_COMP;
 			ACCEPT_UNLOCK();
+            #if 0   // runsisi AT hust.edu.cn @2013/11/06
+			/* accept notification is specialized */
 			sorwakeup(head);
 			wakeup_one(&head->so_timeo);
+            #endif 	// ---------------------- @2013/11/06
+            // runsisi AT hust.edu.cn @2013/11/11
+            linp = sotoinpcb(head);
+            inp = sotoinpcb(so);
+            linp->inp_inc.inc_fibnum = inp->inp_inc.inc_fibnum;
+            soasyncnotify(head, SN_ACCEPT);
+            // ---------------------- @2013/11/11
 		} else {
 			ACCEPT_UNLOCK();
 			soupcall_set(so, SO_RCV,
@@ -3424,9 +3579,30 @@ restart:
 	}
 	SOCK_UNLOCK(so);
 	ACCEPT_UNLOCK();
-	wakeup(&so->so_timeo);
+    #if 0	// runsisi AT hust.edu.cn @2013/11/08
+	/* connected notification is specialized */
+    wakeup(&so->so_timeo);
 	sorwakeup(so);
 	sowwakeup(so);
+    #endif  // ---------------------- @2013/11/08
+    // runsisi AT hust.edu.cn @2013/11/13
+	/*
+	 * we may notify user that we have a passive connection here, as you
+	 * can see, freebsd do this in sonewconn, we must deferred to here, coz
+	 * vcid is set after sonewconn
+	 */
+	if (head == NULL)
+	{
+	    soasyncnotify(so, SN_CONNECTED);
+	}
+	else
+	{
+	    linp = sotoinpcb(head);
+	    inp = sotoinpcb(so);
+	    linp->inp_inc.inc_fibnum = inp->inp_inc.inc_fibnum;
+	    soasyncnotify(head, SN_ACCEPT);
+	}
+    // ---------------------- @2013/11/13
 }
 
 void
@@ -3441,11 +3617,15 @@ soisdisconnecting(struct socket *so)
 	so->so_state &= ~SS_ISCONNECTING;
 	so->so_state |= SS_ISDISCONNECTING;
 	so->so_rcv.sb_state |= SBS_CANTRCVMORE;
+    #if 0	// runsisi AT hust.edu.cn @2013/11/13
 	sorwakeup_locked(so);
+    #endif 	// ---------------------- @2013/11/13
 	SOCKBUF_LOCK(&so->so_snd);
 	so->so_snd.sb_state |= SBS_CANTSENDMORE;
+    #if 0   // runsisi AT hust.edu.cn @2013/11/08
 	sowwakeup_locked(so);
 	wakeup(&so->so_timeo);
+    #endif 	// ---------------------- @2013/11/08
 }
 
 void
@@ -3460,12 +3640,27 @@ soisdisconnected(struct socket *so)
 	so->so_state &= ~(SS_ISCONNECTING|SS_ISCONNECTED|SS_ISDISCONNECTING);
 	so->so_state |= SS_ISDISCONNECTED;
 	so->so_rcv.sb_state |= SBS_CANTRCVMORE;
-	sorwakeup_locked(so);
+    #if 0	// runsisi AT hust.edu.cn @2013/11/13
+    sorwakeup_locked(so);
+    #endif 	// ---------------------- @2013/11/13
 	SOCKBUF_LOCK(&so->so_snd);
 	so->so_snd.sb_state |= SBS_CANTSENDMORE;
 	sbdrop_locked(&so->so_snd, so->so_snd.sb_cc);
+    #if 0   // runsisi AT hust.edu.cn @2013/11/08
 	sowwakeup_locked(so);
-	wakeup(&so->so_timeo);
+    wakeup(&so->so_timeo);
+    #endif 	// ---------------------- @2013/11/08
+
+    // runsisi AT hust.edu.cn @2013/11/13
+    /*
+     * notify app that we are disconnected, if the peer initiated the
+     * abortive close, then report
+     */
+    if (so->so_error)
+    {
+        soasyncnotify(so, SN_DISCONNECTED);
+    }
+    // ---------------------- @2013/11/13
 }
 
 /*

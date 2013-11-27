@@ -118,7 +118,9 @@ tcp_trace(short act, short ostate, struct tcpcb *tp, void *ipgen,
 #endif
 	    AF_INET;
 #ifdef INET
-	td->td_time = iptime();
+    #if 0	// runsisi AT hust.edu.cn @2013/11/05
+    td->td_time = iptime();
+    #endif 	// ---------------------- @2013/11/05
 #endif
 	td->td_act = act;
 	td->td_ostate = ostate;

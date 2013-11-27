@@ -139,11 +139,13 @@ SYSCTL_INT(_net_inet_tcp, OID_AUTO, per_cpu_timers, CTLFLAG_RW,
 void
 tcp_slowtimo(void)
 {
-	VNET_ITERATOR_DECL(vnet_iter);
+    #if 0	// runsisi AT hust.edu.cn @2013/11/20
+    VNET_ITERATOR_DECL(vnet_iter);
+    #endif 	// ---------------------- @2013/11/20
 
 	VNET_LIST_RLOCK_NOSLEEP();
-	VNET_FOREACH(vnet_iter) {
-		CURVNET_SET(vnet_iter);
+	/*VNET_FOREACH(vnet_iter)*/ {
+		CURVNET_SET(curvnet/*vnet_iter*/);
 		INP_INFO_WLOCK(&V_tcbinfo);
 		(void) tcp_tw_2msl_scan(0);
 		INP_INFO_WUNLOCK(&V_tcbinfo);
@@ -271,9 +273,9 @@ tcp_timer_2msl(void *xtp)
 		tp = tcp_close(tp);             
 	} else {
 		if (tp->t_state != TCPS_TIME_WAIT &&
-		   ticks - tp->t_rcvtime <= TP_MAXIDLE(tp))
+		   V_ticks - tp->t_rcvtime <= TP_MAXIDLE(tp))
 		       callout_reset_on(&tp->t_timers->tt_2msl,
-			   TP_KEEPINTVL(tp), tcp_timer_2msl, tp, INP_CPU(inp));
+			   TP_KEEPINTVL(tp), tcp_timer_2msl, tp, 0/*INP_CPU(inp)*/);
 	       else
 		       tp = tcp_close(tp);
        }
@@ -340,7 +342,7 @@ tcp_timer_keep(void *xtp)
 		goto dropit;
 	if ((always_keepalive || inp->inp_socket->so_options & SO_KEEPALIVE) &&
 	    tp->t_state <= TCPS_CLOSING) {
-		if (ticks - tp->t_rcvtime >= TP_KEEPIDLE(tp) + TP_MAXIDLE(tp))
+		if (V_ticks - tp->t_rcvtime >= TP_KEEPIDLE(tp) + TP_MAXIDLE(tp))
 			goto dropit;
 		/*
 		 * Send a packet designed to force a response
@@ -363,10 +365,10 @@ tcp_timer_keep(void *xtp)
 			bsd_free(t_template, M_TEMP);
 		}
 		callout_reset_on(&tp->t_timers->tt_keep, TP_KEEPINTVL(tp),
-		    tcp_timer_keep, tp, INP_CPU(inp));
+		    tcp_timer_keep, tp, 0/*INP_CPU(inp)*/);
 	} else
 		callout_reset_on(&tp->t_timers->tt_keep, TP_KEEPIDLE(tp),
-		    tcp_timer_keep, tp, INP_CPU(inp));
+		    tcp_timer_keep, tp, 0/*INP_CPU(inp)*/);
 
 #ifdef TCPDEBUG
 	if (inp->inp_socket->so_options & SO_DEBUG)
@@ -447,8 +449,8 @@ tcp_timer_persist(void *xtp)
 	 * backoff that we would use if retransmitting.
 	 */
 	if (tp->t_rxtshift == TCP_MAXRXTSHIFT &&
-	    (ticks - tp->t_rcvtime >= tcp_maxpersistidle ||
-	     ticks - tp->t_rcvtime >= TCP_REXMTVAL(tp) * tcp_totbackoff)) {
+	    (V_ticks - tp->t_rcvtime >= tcp_maxpersistidle ||
+	     V_ticks - tp->t_rcvtime >= TCP_REXMTVAL(tp) * tcp_totbackoff)) {
 		TCPSTAT_INC(tcps_persistdrop);
 		tp = tcp_drop(tp, ETIMEDOUT);
 		goto out;
@@ -582,7 +584,7 @@ tcp_timer_rexmt(void * xtp)
 			tp->t_flags |= TF_WASCRECOVERY;
 		else
 			tp->t_flags &= ~TF_WASCRECOVERY;
-		tp->t_badrxtwin = ticks + (tp->t_srtt >> (TCP_RTT_SHIFT + 1));
+		tp->t_badrxtwin = V_ticks + (tp->t_srtt >> (TCP_RTT_SHIFT + 1));
 		tp->t_flags |= TF_PREVVALID;
 	} else
 		tp->t_flags &= ~TF_PREVVALID;
@@ -650,8 +652,10 @@ tcp_timer_activate(struct tcpcb *tp, int timer_type, u_int delta)
 {
 	struct callout *t_callout;
 	void *f_callout;
-	struct inpcb *inp = tp->t_inpcb;
-	int cpu = INP_CPU(inp);
+    #if 0	// runsisi AT hust.edu.cn @2013/11/06
+    struct inpcb *inp = tp->t_inpcb;
+    #endif 	// ---------------------- @2013/11/06
+	int cpu = 0;    //INP_CPU(inp);
 
 #ifdef TCP_OFFLOAD
 	if (tp->t_flags & TF_TOE)
@@ -725,14 +729,14 @@ tcp_timer_to_xtimer(struct tcpcb *tp, struct tcp_timer *timer, struct xtcp_timer
 	if (timer == NULL)
 		return;
 	if (callout_active(&timer->tt_delack))
-		xtimer->tt_delack = ticks_to_msecs(timer->tt_delack.c_time - ticks);
+		xtimer->tt_delack = ticks_to_msecs(timer->tt_delack.c_time - V_ticks);
 	if (callout_active(&timer->tt_rexmt))
-		xtimer->tt_rexmt = ticks_to_msecs(timer->tt_rexmt.c_time - ticks);
+		xtimer->tt_rexmt = ticks_to_msecs(timer->tt_rexmt.c_time - V_ticks);
 	if (callout_active(&timer->tt_persist))
-		xtimer->tt_persist = ticks_to_msecs(timer->tt_persist.c_time - ticks);
+		xtimer->tt_persist = ticks_to_msecs(timer->tt_persist.c_time - V_ticks);
 	if (callout_active(&timer->tt_keep))
-		xtimer->tt_keep = ticks_to_msecs(timer->tt_keep.c_time - ticks);
+		xtimer->tt_keep = ticks_to_msecs(timer->tt_keep.c_time - V_ticks);
 	if (callout_active(&timer->tt_2msl))
-		xtimer->tt_2msl = ticks_to_msecs(timer->tt_2msl.c_time - ticks);
-	xtimer->t_rcvtime = ticks_to_msecs(ticks - tp->t_rcvtime);
+		xtimer->tt_2msl = ticks_to_msecs(timer->tt_2msl.c_time - V_ticks);
+	xtimer->t_rcvtime = ticks_to_msecs(V_ticks - tp->t_rcvtime);
 }

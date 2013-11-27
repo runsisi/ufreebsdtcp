@@ -270,7 +270,7 @@ tcp_usr_bind(struct socket *so, struct sockaddr *nam, struct thread *td)
 	tp = intotcpcb(inp);
 	TCPDEBUG1();
 	INP_HASH_WLOCK(&V_tcbinfo);
-	error = in_pcbbind(inp, nam, td->td_ucred);
+	error = in_pcbbind(inp, nam, NULL/*td->td_ucred*/);
 	INP_HASH_WUNLOCK(&V_tcbinfo);
 out:
 	TCPDEBUG2(PRU_BIND);
@@ -364,7 +364,7 @@ tcp_usr_listen(struct socket *so, int backlog, struct thread *td)
 	error = solisten_proto_check(so);
 	INP_HASH_WLOCK(&V_tcbinfo);
 	if (error == 0 && inp->inp_lport == 0)
-		error = in_pcbbind(inp, (struct sockaddr *)0, td->td_ucred);
+		error = in_pcbbind(inp, (struct sockaddr *)0, NULL/*td->td_ucred*/);
 	INP_HASH_WUNLOCK(&V_tcbinfo);
 	if (error == 0) {
 		tp->t_state = TCPS_LISTEN;
@@ -453,8 +453,10 @@ tcp_usr_connect(struct socket *so, struct sockaddr *nam, struct thread *td)
 	if (sinp->sin_family == AF_INET
 	    && IN_MULTICAST(ntohl(sinp->sin_addr.s_addr)))
 		return (EAFNOSUPPORT);
-	if ((error = prison_remote_ip4(td->td_ucred, &sinp->sin_addr)) != 0)
-		return (error);
+    #if 0	// runsisi AT hust.edu.cn @2013/11/08
+    if ((error = prison_remote_ip4(NULL/*td->td_ucred*/, &sinp->sin_addr)) != 0)
+        return (error);
+    #endif 	// ---------------------- @2013/11/08
 
 	TCPDEBUG0;
 	inp = sotoinpcb(so);
@@ -1117,7 +1119,7 @@ tcp_connect(struct tcpcb *tp, struct sockaddr *nam, struct thread *td)
 	INP_HASH_WLOCK(&V_tcbinfo);
 
 	if (inp->inp_lport == 0) {
-		error = in_pcbbind(inp, (struct sockaddr *)0, td->td_ucred);
+		error = in_pcbbind(inp, (struct sockaddr *)0, NULL/*td->td_ucred*/);
 		if (error)
 			goto out;
 	}
@@ -1130,7 +1132,7 @@ tcp_connect(struct tcpcb *tp, struct sockaddr *nam, struct thread *td)
 	laddr = inp->inp_laddr;
 	lport = inp->inp_lport;
 	error = in_pcbconnect_setup(inp, nam, &laddr.s_addr, &lport,
-	    &inp->inp_faddr.s_addr, &inp->inp_fport, &oinp, td->td_ucred);
+	    &inp->inp_faddr.s_addr, &inp->inp_fport, &oinp, NULL/*td->td_ucred*/);
 	if (error && oinp == NULL)
 		goto out;
 	if (oinp) {
@@ -1262,7 +1264,7 @@ tcp_fill_info(struct tcpcb *tp, struct tcp_info *ti)
 	}
 
 	ti->tcpi_rto = tp->t_rxtcur * tick;
-	ti->tcpi_last_data_recv = (long)(ticks - (int)tp->t_rcvtime) * tick;
+	ti->tcpi_last_data_recv = (long)(V_ticks - (int)tp->t_rcvtime) * tick;
 	ti->tcpi_rtt = ((u_int64_t)tp->t_srtt * tick) >> TCP_RTT_SHIFT;
 	ti->tcpi_rttvar = ((u_int64_t)tp->t_rttvar * tick) >> TCP_RTTVAR_SHIFT;
 

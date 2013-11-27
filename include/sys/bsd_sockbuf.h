@@ -37,7 +37,13 @@
 #include <sys/_bsd_mutex.h>
 #include <sys/_bsd_sx.h>
 
+#if 0	// runsisi AT hust.edu.cn @2013/11/25
 #define	SB_MAX		(2*1024*1024)	/* default for max chars in sockbuf */
+#endif 	// ---------------------- @2013/11/25
+
+// runsisi AT hust.edu.cn @2013/11/25
+#define SB_MAX      (8*1024*1024)   /* default for max chars in sockbuf */
+// ---------------------- @2013/11/25
 
 /*
  * Constants for sb_flags field of struct sockbuf.
@@ -56,6 +62,18 @@
 #define	SBS_CANTSENDMORE	0x0010	/* can't send more data to peer */
 #define	SBS_CANTRCVMORE		0x0020	/* can't receive more data from peer */
 #define	SBS_RCVATMARK		0x0040	/* at mark on input */
+
+// runsisi AT hust.edu.cn @2013/11/13
+#define SN_READ         0x01        /* asynchronous readable notification */
+#define SN_WRITE        0x02        /* asynchronous writable notification */
+#define SN_ACCEPT       0x04        /* listen sock can accept */
+#define SN_CONNECTED    0x08        /* active connect succeeded */
+#define SN_DISCONNECTED 0x10        /* tcp connection aborted/finished */
+#define SN_ERROR        0x20        /* something bad happened */
+
+#define SQT_RCV     0x01        /* dps queue type for socket receive */
+#define SQT_SND     0x02        /* dps queue type for socket send */
+// ---------------------- @2013/11/13
 
 struct mbuf;
 struct sockaddr;
@@ -157,6 +175,10 @@ void	sbtoxsockbuf(struct sockbuf *sb, struct xsockbuf *xsb);
 int	sbwait(struct sockbuf *sb);
 int	sblock(struct sockbuf *sb, int flags);
 void	sbunlock(struct sockbuf *sb);
+// runsisi AT hust.edu.cn @2013/11/16
+int     soappendstreamtorcvq(struct socket *so, struct mbuf *m);
+int     soappendstreamtorcvq_locked(struct socket *so, struct mbuf *m);
+// ---------------------- @2013/11/16
 
 /*
  * How much space is there in a socket buffer (so->so_snd or so->so_rcv)?

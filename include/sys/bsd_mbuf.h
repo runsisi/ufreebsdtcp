@@ -93,7 +93,12 @@ struct m_hdr {
 	int		 mh_len;	/* amount of data in this mbuf */
 	int		 mh_flags;	/* flags; see below */
 	short		 mh_type;	/* type of data in this mbuf */
+    #if 0	// runsisi AT hust.edu.cn @2013/11/17
 	uint8_t          pad[M_HDR_PAD];/* word align                  */
+    #endif 	// ---------------------- @2013/11/17
+    // runsisi AT hust.edu.cn @2013/11/17
+    short   mh_fibnum;  /* used for vcid, vcid must not great than MAX_SHORT */
+    // ---------------------- @2013/11/17
 };
 
 /*
@@ -167,6 +172,9 @@ struct mbuf {
 #define	m_data		m_hdr.mh_data
 #define	m_type		m_hdr.mh_type
 #define	m_flags		m_hdr.mh_flags
+// runsisi AT hust.edu.cn @2013/11/17
+#define m_fibnum    m_hdr.mh_fibnum
+// ---------------------- @2013/11/17
 #define	m_nextpkt	m_hdr.mh_nextpkt
 #define	m_act		m_nextpkt
 #define	m_pkthdr	M_dat.MH.MH_pkthdr
@@ -420,6 +428,10 @@ static __inline void		 m_chtype(struct mbuf *m, short new_type);
 void				 mb_free_ext(struct mbuf *);
 static __inline struct mbuf	*m_last(struct mbuf *m);
 int				 m_pkthdr_init(struct mbuf *m, int how);
+// runsisi AT hust.edu.cn @2013/11/06
+extern struct mbuf *m_get_internal(uma_zone_t zone, void *arg, int how);
+extern void m_free_internal(uma_zone_t zone, struct mbuf *m);
+// ---------------------- @2013/11/06
 
 static __inline int
 m_gettype(int size)
@@ -515,7 +527,13 @@ m_get(int how, short type)
 
 	args.flags = 0;
 	args.type = type;
-	return ((struct mbuf *)(uma_zalloc_arg(zone_mbuf, &args, how)));
+    #if 0	// runsisi AT hust.edu.cn @2013/11/04
+    return ((struct mbuf *)(uma_zalloc_arg(zone_mbuf, &args, how)));
+    #endif 	// ---------------------- @2013/11/04
+
+    // runsisi AT hust.edu.cn @2013/11/04
+    return m_get_internal(zone_mbuf, &args, how);
+    // ---------------------- @2013/11/04
 }
 
 /*
@@ -529,10 +547,17 @@ m_getclr(int how, short type)
 
 	args.flags = 0;
 	args.type = type;
-	m = uma_zalloc_arg(zone_mbuf, &args, how);
-	if (m != NULL)
-		bzero(m->m_data, MLEN);
-	return (m);
+    #if 0	// runsisi AT hust.edu.cn @2013/11/04
+    m = uma_zalloc_arg(zone_mbuf, &args, how);
+    if (m != NULL)
+        bzero(m->m_data, MLEN);
+    return (m);
+    #endif 	// ---------------------- @2013/11/04
+
+    // runsisi AT hust.edu.cn @2013/11/04
+    m = (struct mbuf *)m_get_internal(zone_mbuf, &args, how);
+    return m;
+    // ---------------------- @2013/11/04
 }
 
 static __inline struct mbuf *
@@ -542,8 +567,20 @@ m_gethdr(int how, short type)
 
 	args.flags = M_PKTHDR;
 	args.type = type;
-	return ((struct mbuf *)(uma_zalloc_arg(zone_mbuf, &args, how)));
+    #if 0	// runsisi AT hust.edu.cn @2013/11/04
+    return ((struct mbuf *)(uma_zalloc_arg(zone_mbuf, &args, how)));
+    #endif 	// ---------------------- @2013/11/04
+
+    // runsisi AT hust.edu.cn @2013/11/04
+    return (struct mbuf *)m_get_internal(zone_mbuf, &args, how);
+    // ---------------------- @2013/11/04
 }
+
+/*
+ * TODO: Presently i only handle the case that mbuf length (including the
+ * mbuf header) is less than 2048 bytes, both jumbo frame and mbuf chain
+ * are not implemented
+ */
 
 static __inline struct mbuf *
 m_getcl(int how, short type, int flags)
@@ -603,10 +640,16 @@ m_free(struct mbuf *m)
 {
 	struct mbuf *n = m->m_next;
 
-	if (m->m_flags & M_EXT)
-		mb_free_ext(m);
-	else if ((m->m_flags & M_NOFREE) == 0)
-		uma_zfree(zone_mbuf, m);
+    #if 0	// runsisi AT hust.edu.cn @2013/11/04
+    if (m->m_flags & M_EXT)
+        mb_free_ext(m);
+    else if ((m->m_flags & M_NOFREE) == 0)
+        uma_zfree(zone_mbuf, m);
+    #endif 	// ---------------------- @2013/11/04
+
+    // runsisi AT hust.edu.cn @2013/11/04
+    m_free_internal(zone_mbuf, m);
+    // ---------------------- @2013/11/04
 	return (n);
 }
 
@@ -1063,6 +1106,7 @@ m_tag_find(struct mbuf *m, int type, struct m_tag *start)
 	    m_tag_locate(m, MTAG_ABI_COMPAT, type, start));
 }
 
+#if 0	// runsisi AT hust.edu.cn @2013/11/17
 /* XXX temporary FIB methods probably eventually use tags.*/
 #define M_FIBSHIFT    28
 #define M_FIBMASK	0x0F
@@ -1074,6 +1118,15 @@ m_tag_find(struct mbuf *m, int type, struct m_tag *start)
 #define M_SETFIB(_m, _fib) do {						\
 	_m->m_flags &= ~M_FIB;					   	\
 	_m->m_flags |= (((_fib) << M_FIBSHIFT) & M_FIB);  \
+} while (0)
+#endif 	// ---------------------- @2013/11/17
+
+/* get the fib from an mbuf and if it is not set, return the default */
+#define M_GETFIB(_m) \
+    ((_m)->m_fibnum)
+
+#define M_SETFIB(_m, _fib) do {                     \
+    (_m)->m_fibnum = (_fib);                      \
 } while (0)
 
 #endif /* _KERNEL */

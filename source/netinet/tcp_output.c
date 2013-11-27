@@ -87,7 +87,7 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/netinet/tcp_output.c 252835 2013-07-05 20:
 
 //#include <security/mac/mac_framework.h>
 
-VNET_DEFINE(int, path_mtu_discovery) = 1;
+VNET_DEFINE(int, path_mtu_discovery) = 0; //1;
 SYSCTL_VNET_INT(_net_inet_tcp, OID_AUTO, path_mtu_discovery, CTLFLAG_RW,
 	&VNET_NAME(path_mtu_discovery), 1,
 	"Enable Path MTU Discovery");
@@ -98,7 +98,7 @@ SYSCTL_VNET_INT(_net_inet_tcp, OID_AUTO, tso, CTLFLAG_RW,
 	&VNET_NAME(tcp_do_tso), 0,
 	"Enable TCP Segmentation Offload");
 
-VNET_DEFINE(int, tcp_sendspace) = 1024*32;
+VNET_DEFINE(int, tcp_sendspace) = 1024*1024*4;    //1024*32;
 #define	V_tcp_sendspace	VNET(tcp_sendspace)
 SYSCTL_VNET_INT(_net_inet_tcp, TCPCTL_SENDSPACE, sendspace, CTLFLAG_RW,
 	&VNET_NAME(tcp_sendspace), 0, "Initial send socket buffer size");
@@ -121,6 +121,7 @@ SYSCTL_VNET_INT(_net_inet_tcp, OID_AUTO, sendbuf_max, CTLFLAG_RW,
 	&VNET_NAME(tcp_autosndbuf_max), 0,
 	"Max size of automatic send buffer");
 
+extern int brs_ip_output(struct mbuf *m, int vcid);
 static void inline	hhook_run_tcp_est_out(struct tcpcb *tp,
 			    struct tcphdr *th, struct tcpopt *to,
 			    long len, int tso);
@@ -206,7 +207,7 @@ tcp_output(struct tcpcb *tp)
 	 * to send, then transmit; otherwise, investigate further.
 	 */
 	idle = (tp->t_flags & TF_LASTIDLE) || (tp->snd_max == tp->snd_una);
-	if (idle && ticks - tp->t_rcvtime >= tp->t_rxtcur)
+	if (idle && V_ticks - tp->t_rcvtime >= tp->t_rxtcur)
 		cc_after_idle(tp);
 	tp->t_flags &= ~TF_LASTIDLE;
 	if (idle) {
@@ -463,7 +464,7 @@ after_sack_rexmit:
 		    sendwin >= (so->so_snd.sb_cc - (tp->snd_nxt - tp->snd_una))) {
 			if (!sbreserve_locked(&so->so_snd,
 			    min(so->so_snd.sb_hiwat + V_tcp_autosndbuf_inc,
-			     V_tcp_autosndbuf_max), so, curthread))
+			     V_tcp_autosndbuf_max), so, NULL /*curthread*/))
 				so->so_snd.sb_flags &= ~SB_AUTOSIZE;
 		}
 	}
@@ -1284,7 +1285,9 @@ timer:
 
 	if (error == EMSGSIZE && ro.ro_rt != NULL)
 		mtu = ro.ro_rt->rt_rmx.rmx_mtu;
-	RO_RTFREE(&ro);
+    #if 0	// runsisi AT hust.edu.cn @2013/11/06
+    RO_RTFREE(&ro);
+    #endif 	// ---------------------- @2013/11/06
     }
 #endif /* INET */
 	if (error) {

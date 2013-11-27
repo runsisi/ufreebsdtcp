@@ -122,8 +122,8 @@ tcp_reass_init(void)
 	/* Set the zone limit and read back the effective value. */
 	V_tcp_reass_maxseg = uma_zone_set_max(V_tcp_reass_zone,
 	    V_tcp_reass_maxseg);
-	EVENTHANDLER_REGISTER(nmbclusters_change,
-	    tcp_reass_zone_change, NULL, EVENTHANDLER_PRI_ANY);
+//	EVENTHANDLER_REGISTER(nmbclusters_change,
+//	    tcp_reass_zone_change, NULL, EVENTHANDLER_PRI_ANY);
 }
 
 #ifdef VIMAGE
@@ -276,7 +276,8 @@ tcp_reass(struct tcpcb *tp, struct tcphdr *th, int *tlenp, struct mbuf *m)
 				TCPSTAT_INC(tcps_rcvduppack);
 				TCPSTAT_ADD(tcps_rcvdupbyte, *tlenp);
 				m_freem(m);
-				uma_zfree(V_tcp_reass_zone, te);
+				uma_zfree(V_tcp_reass_zone, te);    /* runsisi: think twice, if we reached
+				                                       here, te can not be on stack:) */
 				tp->t_segqlen--;
 				/*
 				 * Try to present any queued data
@@ -284,7 +285,7 @@ tcp_reass(struct tcpcb *tp, struct tcphdr *th, int *tlenp, struct mbuf *m)
 				 * This is needed after the 3-WHS
 				 * completes.
 				 */
-				goto present;	/* ??? */
+				goto present;	/* ??? */           /* runsisi: think the pre-established data */
 			}
 			m_adj(m, i);
 			*tlenp -= i;
@@ -350,7 +351,20 @@ present:
 		if (so->so_rcv.sb_state & SBS_CANTRCVMORE)
 			m_freem(q->tqe_m);
 		else
-			sbappendstream_locked(&so->so_rcv, q->tqe_m);
+            #if 0	// runsisi AT hust.edu.cn @2013/11/16
+            sbappendstream_locked(&so->so_rcv, q->tqe_m);
+            #endif 	// ---------------------- @2013/11/16
+        // runsisi AT hust.edu.cn @2013/11/16
+		{
+            if (q->tqe_th->th_flags & TH_FIN)
+            {
+                /* i think a assertion put here is neccesary:) */
+                KASSERT(nq == NULL, ("%s: have data after fin seg"));
+                q->tqe_m->m_flags |= M_EOR;
+            }
+            soappendstreamtorcvq_locked(so, q->tqe_m);
+        }
+        // ---------------------- @2013/11/16
 		if (q != &tqs)
 			uma_zfree(V_tcp_reass_zone, q);
 		tp->t_segqlen--;

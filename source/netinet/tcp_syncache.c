@@ -352,7 +352,7 @@ syncache_insert(struct syncache *sc, struct syncache_head *sch)
 
 	/* Reinitialize the bucket row's timer. */
 	if (sch->sch_length == 1)
-		sch->sch_nextc = ticks + INT_MAX;
+		sch->sch_nextc = V_ticks + INT_MAX;
 	syncache_timeout(sc, sch, 1);
 
 	SCH_UNLOCK(sch);
@@ -390,13 +390,13 @@ syncache_drop(struct syncache *sc, struct syncache_head *sch)
 static void
 syncache_timeout(struct syncache *sc, struct syncache_head *sch, int docallout)
 {
-	sc->sc_rxttime = ticks +
+	sc->sc_rxttime = V_ticks +
 		TCPTV_RTOBASE * (tcp_backoff[sc->sc_rxmits]);
 	sc->sc_rxmits++;
 	if (TSTMP_LT(sc->sc_rxttime, sch->sch_nextc)) {
 		sch->sch_nextc = sc->sc_rxttime;
 		if (docallout)
-			callout_reset(&sch->sch_timer, sch->sch_nextc - ticks,
+			callout_reset(&sch->sch_timer, sch->sch_nextc - V_ticks,
 			    syncache_timer, (void *)sch);
 	}
 }
@@ -411,7 +411,7 @@ syncache_timer(void *xsch)
 {
 	struct syncache_head *sch = (struct syncache_head *)xsch;
 	struct syncache *sc, *nsc;
-	int tick = ticks;
+	int tick = V_ticks;
 	char *s;
 
 	CURVNET_SET(sch->sch_vnet);
@@ -681,7 +681,7 @@ syncache_socket(struct syncache *sc, struct socket *lso, struct mbuf *m)
 #endif
 
 	inp = sotoinpcb(so);
-	inp->inp_inc.inc_fibnum = so->so_fibnum;
+	inp->inp_inc.inc_fibnum = sc->sc_inc.inc_fibnum;    //so->so_fibnum;
 	INP_WLOCK(inp);
 	INP_HASH_WLOCK(&V_tcbinfo);
 
@@ -799,7 +799,7 @@ syncache_socket(struct syncache *sc, struct socket *lso, struct mbuf *m)
 		if (inp->inp_laddr.s_addr == INADDR_ANY)
 			inp->inp_laddr = sc->sc_inc.inc_laddr;
 		if ((error = in_pcbconnect_mbuf(inp, (struct sockaddr *)&sin,
-		    thread0.td_ucred, m)) != 0) {
+		    /*thread0.td_ucred*/ NULL, m)) != 0) {
 			inp->inp_laddr = laddr;
 			if ((s = tcp_log_addrs(&sc->sc_inc, NULL, NULL, NULL))) {
 				log(LOG_DEBUG, "%s; %s: in_pcbconnect failed "
@@ -1231,6 +1231,9 @@ _syncache_add(struct in_conninfo *inc, struct tcpopt *to, struct tcphdr *th,
 	win = imax(win, 0);
 	win = imin(win, TCP_MAXWIN);
 	sc->sc_wnd = win;
+    // runsisi AT hust.edu.cn @2013/11/17
+    sc->sc_inc.inc_fibnum = brs_get_vcid(m);
+    // ---------------------- @2013/11/17
 
 	if (V_tcp_do_rfc1323) {
 		/*

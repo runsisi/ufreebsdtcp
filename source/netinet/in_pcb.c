@@ -277,7 +277,7 @@ in_pcballoc(struct socket *so, struct inpcbinfo *pcbinfo)
 	bzero(inp, inp_zero_size);
 	inp->inp_pcbinfo = pcbinfo;
 	inp->inp_socket = so;
-	inp->inp_cred = crhold(so->so_cred);
+	inp->inp_cred = NULL; //crhold(so->so_cred);
 	inp->inp_inc.inc_fibnum = so->so_fibnum;
 #ifdef MAC
 	error = mac_inpcb_init(inp, M_NOWAIT);
@@ -395,7 +395,7 @@ in_pcb_lport(struct inpcb *inp, struct in_addr *laddrp, u_short *lportp,
 	 * ipport_tick() allows it.
 	 */
 	if (V_ipport_randomized &&
-		(!V_ipport_stoprandom || pcbinfo == &V_udbinfo))
+		(!V_ipport_stoprandom/* || pcbinfo == &V_udbinfo*/))
 		dorandom = 1;
 	else
 		dorandom = 0;
@@ -406,7 +406,7 @@ in_pcb_lport(struct inpcb *inp, struct in_addr *laddrp, u_short *lportp,
 	if (first == last)
 		dorandom = 0;
 	/* Make sure to not include UDP packets in the count. */
-	if (pcbinfo != &V_udbinfo)
+	/*if (pcbinfo != &V_udbinfo)*/
 		V_ipport_tcpallocs++;
 	/*
 	 * Instead of having two loops further down counting up or down
@@ -513,8 +513,11 @@ in_pcbbind_setup(struct inpcb *inp, struct sockaddr *nam, in_addr_t *laddrp,
 	INP_LOCK_ASSERT(inp);
 	INP_HASH_LOCK_ASSERT(pcbinfo);
 
+    #if 0	// runsisi AT hust.edu.cn @2013/11/05
 	if (BSD_TAILQ_EMPTY(&V_in_ifaddrhead)) /* XXX broken! */
 		return (EADDRNOTAVAIL);
+    #endif 	// ---------------------- @2013/11/05
+
 	laddr.s_addr = *laddrp;
 	if (nam != NULL && laddr.s_addr != INADDR_ANY)
 		return (EINVAL);
@@ -593,9 +596,9 @@ in_pcbbind_setup(struct inpcb *inp, struct sockaddr *nam, in_addr_t *laddrp,
 				     ntohl(t->inp_faddr.s_addr) == INADDR_ANY) &&
 				    (ntohl(sin->sin_addr.s_addr) != INADDR_ANY ||
 				     ntohl(t->inp_laddr.s_addr) != INADDR_ANY ||
-				     (t->inp_flags2 & INP_REUSEPORT) == 0) &&
+				     (t->inp_flags2 & INP_REUSEPORT) == 0)/* &&
 				    (inp->inp_cred->cr_uid !=
-				     t->inp_cred->cr_uid))
+				     t->inp_cred->cr_uid)*/)
 					return (EADDRINUSE);
 			}
 			t = in_pcblookup_local(pcbinfo, sin->sin_addr,
@@ -700,6 +703,10 @@ static int
 in_pcbladdr(struct inpcb *inp, struct in_addr *faddr, struct in_addr *laddr,
     struct ucred *cred)
 {
+    // TODO: 根据 faddr 选择 laddr, nas 中具有此类需求的只有 ndmp, 暂时不处理
+    return 0;
+
+    #if 0 // runsisi AT hust.edu.cn @2013/10/24
 	struct ifaddr *ifa;
 	struct sockaddr *sa;
 	struct sockaddr_in *sin;
@@ -914,6 +921,7 @@ done:
 	if (sro.ro_rt != NULL)
 		RTFREE(sro.ro_rt);
 	return (error);
+    #endif // -------
 }
 
 /*
@@ -937,7 +945,7 @@ in_pcbconnect_setup(struct inpcb *inp, struct sockaddr *nam,
     struct inpcb **oinpp, struct ucred *cred)
 {
 	struct sockaddr_in *sin = (struct sockaddr_in *)nam;
-	struct in_ifaddr *ia;
+//	struct in_ifaddr *ia;
 	struct inpcb *oinp;
 	struct in_addr laddr, faddr;
 	u_short lport, fport;
@@ -963,31 +971,36 @@ in_pcbconnect_setup(struct inpcb *inp, struct sockaddr *nam,
 	faddr = sin->sin_addr;
 	fport = sin->sin_port;
 
-	if (!BSD_TAILQ_EMPTY(&V_in_ifaddrhead)) {
-		/*
-		 * If the destination address is INADDR_ANY,
-		 * use the primary local address.
-		 * If the supplied address is INADDR_BROADCAST,
-		 * and the primary interface supports broadcast,
-		 * choose the broadcast address for that interface.
-		 */
-		if (faddr.s_addr == INADDR_ANY) {
-			IN_IFADDR_RLOCK();
-			faddr =
-			    IA_SIN(BSD_TAILQ_FIRST(&V_in_ifaddrhead))->sin_addr;
-			IN_IFADDR_RUNLOCK();
-			if (cred != NULL &&
-			    (error = prison_get_ip4(cred, &faddr)) != 0)
-				return (error);
-		} else if (faddr.s_addr == (u_long)INADDR_BROADCAST) {
-			IN_IFADDR_RLOCK();
-			if (BSD_TAILQ_FIRST(&V_in_ifaddrhead)->ia_ifp->if_flags &
-			    IFF_BROADCAST)
-				faddr = satosin(&BSD_TAILQ_FIRST(
-				    &V_in_ifaddrhead)->ia_broadaddr)->sin_addr;
-			IN_IFADDR_RUNLOCK();
-		}
+	// TODO: 暂时不考虑目的地址为 BSD_INADDR_ANY, INADDR_BROADCAST 的情况, 直接返回错误
+	if (faddr.s_addr == INADDR_ANY || faddr.s_addr == (u_long)INADDR_BROADCAST)
+	{
+	    return EINVAL;
 	}
+//	if (!BSD_TAILQ_EMPTY(&V_in_ifaddrhead)) {
+//		/*
+//		 * If the destination address is INADDR_ANY,
+//		 * use the primary local address.
+//		 * If the supplied address is INADDR_BROADCAST,
+//		 * and the primary interface supports broadcast,
+//		 * choose the broadcast address for that interface.
+//		 */
+//		if (faddr.s_addr == INADDR_ANY) {
+//			IN_IFADDR_RLOCK();
+//			faddr =
+//			    IA_SIN(BSD_TAILQ_FIRST(&V_in_ifaddrhead))->sin_addr;
+//			IN_IFADDR_RUNLOCK();
+//			if (cred != NULL &&
+//			    (error = prison_get_ip4(cred, &faddr)) != 0)
+//				return (error);
+//		} else if (faddr.s_addr == (u_long)INADDR_BROADCAST) {
+//			IN_IFADDR_RLOCK();
+//			if (BSD_TAILQ_FIRST(&V_in_ifaddrhead)->ia_ifp->if_flags &
+//			    IFF_BROADCAST)
+//				faddr = satosin(&BSD_TAILQ_FIRST(
+//				    &V_in_ifaddrhead)->ia_broadaddr)->sin_addr;
+//			IN_IFADDR_RUNLOCK();
+//		}
+//	}
 	if (laddr.s_addr == INADDR_ANY) {
 		error = in_pcbladdr(inp, &faddr, &laddr, cred);
 		/*
@@ -995,31 +1008,32 @@ in_pcbconnect_setup(struct inpcb *inp, struct sockaddr *nam,
 		 * interface has been set as a multicast option, prefer the
 		 * address of that interface as our source address.
 		 */
-		if (IN_MULTICAST(ntohl(faddr.s_addr)) &&
-		    inp->inp_moptions != NULL) {
-			struct ip_moptions *imo;
-			struct ifnet *ifp;
-
-			imo = inp->inp_moptions;
-			if (imo->imo_multicast_ifp != NULL) {
-				ifp = imo->imo_multicast_ifp;
-				IN_IFADDR_RLOCK();
-				BSD_TAILQ_FOREACH(ia, &V_in_ifaddrhead, ia_link) {
-					if ((ia->ia_ifp == ifp) &&
-					    (cred == NULL ||
-					    prison_check_ip4(cred,
-					    &ia->ia_addr.sin_addr) == 0))
-						break;
-				}
-				if (ia == NULL)
-					error = EADDRNOTAVAIL;
-				else {
-					laddr = ia->ia_addr.sin_addr;
-					error = 0;
-				}
-				IN_IFADDR_RUNLOCK();
-			}
-		}
+		// TODO: 暂时不考虑多播的情况
+//		if (IN_MULTICAST(ntohl(faddr.s_addr)) &&
+//		    inp->inp_moptions != NULL) {
+//			struct ip_moptions *imo;
+//			struct ifnet *ifp;
+//
+//			imo = inp->inp_moptions;
+//			if (imo->imo_multicast_ifp != NULL) {
+//				ifp = imo->imo_multicast_ifp;
+//				IN_IFADDR_RLOCK();
+//				BSD_TAILQ_FOREACH(ia, &V_in_ifaddrhead, ia_link) {
+//					if ((ia->ia_ifp == ifp) &&
+//					    (cred == NULL ||
+//					    prison_check_ip4(cred,
+//					    &ia->ia_addr.sin_addr) == 0))
+//						break;
+//				}
+//				if (ia == NULL)
+//					error = EADDRNOTAVAIL;
+//				else {
+//					laddr = ia->ia_addr.sin_addr;
+//					error = 0;
+//				}
+//				IN_IFADDR_RUNLOCK();
+//			}
+//		}
 		if (error)
 			return (error);
 	}
@@ -1207,8 +1221,8 @@ in_pcbfree(struct inpcb *inp)
 	if (inp->inp_options)
 		(void)m_free(inp->inp_options);
 #ifdef INET
-	if (inp->inp_moptions != NULL)
-		inp_freemoptions(inp->inp_moptions);
+//	if (inp->inp_moptions != NULL)
+//		inp_freemoptions(inp->inp_moptions);
 #endif
 	inp->inp_vflag = 0;
 	inp->inp_flags2 |= INP_FREED;
@@ -1346,6 +1360,7 @@ in_pcbnotifyall(struct inpcbinfo *pcbinfo, struct in_addr faddr, int errno,
 	INP_INFO_WUNLOCK(pcbinfo);
 }
 
+#if 0	// runsisi AT hust.edu.cn @2013/11/05
 void
 in_pcbpurgeif0(struct inpcbinfo *pcbinfo, struct ifnet *ifp)
 {
@@ -1385,6 +1400,7 @@ in_pcbpurgeif0(struct inpcbinfo *pcbinfo, struct ifnet *ifp)
 	}
 	INP_INFO_RUNLOCK(pcbinfo);
 }
+#endif 	// ---------------------- @2013/11/05
 
 /*
  * Lookup a PCB based on the local address and port.  Caller must hold the
@@ -1428,9 +1444,9 @@ in_pcblookup_local(struct inpcbinfo *pcbinfo, struct in_addr laddr,
 				/*
 				 * Found?
 				 */
-				if (cred == NULL ||
+				/*if (cred == NULL ||
 				    prison_equal_ip4(cred->cr_prison,
-					inp->inp_cred->cr_prison))
+					inp->inp_cred->cr_prison))*/
 					return (inp);
 			}
 		}
@@ -1461,10 +1477,10 @@ in_pcblookup_local(struct inpcbinfo *pcbinfo, struct in_addr laddr,
 			 */
 			BSD_LIST_FOREACH(inp, &phd->phd_pcblist, inp_portlist) {
 				wildcard = 0;
-				if (cred != NULL &&
+				/*if (cred != NULL &&
 				    !prison_equal_ip4(inp->inp_cred->cr_prison,
 					cred->cr_prison))
-					continue;
+					continue;*/
 #ifdef INET6
 				/* XXX inp locking */
 				if ((inp->inp_vflag & INP_IPV4) == 0)

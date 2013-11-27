@@ -60,15 +60,40 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/kern/uipc_domain.c 253035 2013-07-08 13:24
  * See DOMAIN_SET(9) for details on its use.
  */
 
+/*
+ * For completeness, we have to add a sysuninit linker set here,
+ * for now, our ao never exits, so:)
+ */
+
 static void domaininit(void *);
+#if 0	// runsisi AT hust.edu.cn @2013/11/20
 SYSINIT(domain, SI_SUB_PROTO_DOMAININIT, SI_ORDER_ANY, domaininit, NULL);
+#endif 	// ---------------------- @2013/11/20
+// runsisi AT hust.edu.cn @2013/11/20
+VNET_SYSINIT(domain, SI_SUB_PROTO_DOMAININIT,
+        SI_ORDER_ANY, domaininit, NULL);
+// ---------------------- @2013/11/20
 
 static void domainfinalize(void *);
+#if 0	// runsisi AT hust.edu.cn @2013/11/20
 SYSINIT(domainfin, SI_SUB_PROTO_IFATTACHDOMAIN, SI_ORDER_FIRST, domainfinalize,
     NULL);
+#endif 	// ---------------------- @2013/11/20
+// runsisi AT hust.edu.cn @2013/11/20
+VNET_SYSINIT(domainfin, SI_SUB_PROTO_IFATTACHDOMAIN,
+        SI_ORDER_FIRST, domainfinalize, NULL);
+// ---------------------- @2013/11/20
 
+#if 0	// runsisi AT hust.edu.cn @2013/11/20
 static struct callout pffast_callout;
 static struct callout pfslow_callout;
+#endif 	// ---------------------- @2013/11/20
+// runsisi AT hust.edu.cn @2013/11/20
+static VNET_DEFINE(struct callout, pffast_callout);
+#define V_pffast_callout    VNET(pffast_callout)
+static VNET_DEFINE(struct callout, pfslow_callout);
+#define V_pfslow_callout    VNET(pfslow_callout)
+// ---------------------- @2013/11/20
 
 static void	pffasttimo(void *);
 static void	pfslowtimo(void *);
@@ -247,8 +272,8 @@ domaininit(void *dummy)
 	if (max_linkhdr < 16)		/* XXX */
 		max_linkhdr = 16;
 
-	callout_init(&pffast_callout, CALLOUT_MPSAFE);
-	callout_init(&pfslow_callout, CALLOUT_MPSAFE);
+	callout_init(&V_pffast_callout, CALLOUT_MPSAFE);
+	callout_init(&V_pfslow_callout, CALLOUT_MPSAFE);
 
 	mtx_lock(&dom_mtx);
 	KASSERT(domain_init_status == 0, ("domaininit called too late!"));
@@ -266,8 +291,8 @@ domainfinalize(void *dummy)
 	domain_init_status = 2;
 	mtx_unlock(&dom_mtx);	
 
-	callout_reset(&pffast_callout, 1, pffasttimo, NULL);
-	callout_reset(&pfslow_callout, 1, pfslowtimo, NULL);
+    callout_reset(&V_pffast_callout, 1, pffasttimo, NULL);
+    callout_reset(&V_pfslow_callout, 1, pfslowtimo, NULL);
 }
 
 struct protosw *
@@ -499,7 +524,7 @@ pfslowtimo(void *arg)
 		for (pr = dp->dom_protosw; pr < dp->dom_protoswNPROTOSW; pr++)
 			if (pr->pr_slowtimo)
 				(*pr->pr_slowtimo)();
-	callout_reset(&pfslow_callout, hz/2, pfslowtimo, NULL);
+	callout_reset(&V_pfslow_callout, hz/2, pfslowtimo, NULL);
 }
 
 static void
@@ -512,5 +537,5 @@ pffasttimo(void *arg)
 		for (pr = dp->dom_protosw; pr < dp->dom_protoswNPROTOSW; pr++)
 			if (pr->pr_fasttimo)
 				(*pr->pr_fasttimo)();
-	callout_reset(&pffast_callout, hz/5, pffasttimo, NULL);
+	callout_reset(&V_pffast_callout, hz/5, pffasttimo, NULL);
 }

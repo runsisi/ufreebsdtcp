@@ -251,6 +251,14 @@ vnet_alloc(void)
 	 */
 	vnet->vnet_data_base = (uintptr_t)vnet->vnet_data_mem - VNET_START;
 
+    // runsisi AT hust.edu.cn @2013/11/20
+	/* some module only need to be initialized once */
+    if (aoisinjob(curao))
+    {
+        curvnet = vnet0 = vnet;
+    }
+    // ---------------------- @2013/11/20
+
 	/* Initialize / attach vnet module instances. */
 	CURVNET_SET_QUIET(vnet);
 	vnet_sysinit();
@@ -270,7 +278,9 @@ vnet_alloc(void)
 void
 vnet_destroy(struct vnet *vnet)
 {
+    #if 0	// runsisi AT hust.edu.cn @2013/11/20
 	struct ifnet *ifp, *nifp;
+    #endif 	// ---------------------- @2013/11/20
 
 	SDT_PROBE2(vnet, functions, vnet_destroy, entry, __LINE__, vnet);
 	KASSERT(vnet->vnet_sockcnt == 0,
@@ -282,11 +292,13 @@ vnet_destroy(struct vnet *vnet)
 
 	CURVNET_SET_QUIET(vnet);
 
+    #if 0	// runsisi AT hust.edu.cn @2013/11/20
 	/* Return all inherited interfaces to their parent vnets. */
 	BSD_TAILQ_FOREACH_SAFE(ifp, &V_ifnet, if_link, nifp) {
 		if (ifp->if_home_vnet != ifp->if_vnet)
 			if_vmove(ifp, ifp->if_home_vnet);
 	}
+    #endif 	// ---------------------- @2013/11/20
 
 	vnet_sysuninit();
 	CURVNET_RESTORE();
@@ -321,6 +333,7 @@ static void
 vnet0_init(void *arg)
 {
 
+    #if 0	// runsisi AT hust.edu.cn @2013/11/20
 	/* Warn people before take off - in case we crash early. */
 	printf("WARNING: VIMAGE (virtualized network stack) is a highly "
 	    "experimental feature.\n");
@@ -331,6 +344,7 @@ vnet0_init(void *arg)
 	 * curvnet recursions.
 	 */
 	curvnet = prison0.pr_vnet = vnet0 = vnet_alloc();
+    #endif 	// ---------------------- @2013/11/20
 }
 SYSINIT(vnet0_init, SI_SUB_VNET, SI_ORDER_FIRST, vnet0_init, NULL);
 
@@ -338,7 +352,9 @@ static void
 vnet_init_done(void *unused)
 {
 
+    #if 0	// runsisi AT hust.edu.cn @2013/11/20
 	curvnet = NULL;
+    #endif 	// ---------------------- @2013/11/20
 }
 
 SYSINIT(vnet_init_done, SI_SUB_VNET_DONE, SI_ORDER_FIRST, vnet_init_done,

@@ -112,7 +112,20 @@ void	vnet_destroy(struct vnet *vnet);
  * The current virtual network stack -- we may wish to move this to struct
  * pcpu in the future.
  */
+#if 0	// runsisi AT hust.edu.cn @2013/11/20
 #define	curvnet	curthread->td_vnet
+#endif 	// ---------------------- @2013/11/20
+// runsisi AT hust.edu.cn @2013/11/20
+/*
+ * These two macros should be the same as those in brs_inst.h,
+ * i redefined here to reduce header file inclusion mess
+ */
+#define curaoid         (DPS_GetSelfAoID())
+#define curao           (DPS_GetAoByID(curaoid))
+#define aoisinjob(ao)   ((ao)->dwAoId == ACTIVE_OBJECT_BRS1)
+
+#define curvnet (*(struct vnet **)(curao)->pVarP)
+// ---------------------- @2013/11/20
 
 /*
  * Various macros -- get and set the current network stack, but also
@@ -442,5 +455,17 @@ do {									\
 	eventhandler_register(NULL, #name, func, arg, priority)
 #endif /* VIMAGE */
 #endif /* _KERNEL */
+
+// runsisi AT hust.edu.cn @2013/11/20
+/*
+ * if i dont put it here, then i have to put it all over the c
+ * source files, i have no choice :(
+ */
+VNET_DECLARE(volatile int, ticks);
+#define V_ticks     VNET(ticks)
+
+VNET_DECLARE(volatile time_t, time_uptime);
+#define V_time_uptime     VNET(time_uptime)
+// ---------------------- @2013/11/20
 
 #endif /* !_NET_VNET_H_ */

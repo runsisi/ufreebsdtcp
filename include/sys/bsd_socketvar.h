@@ -125,6 +125,15 @@ struct socket {
 	 */
 	int so_fibnum;		/* routing domain for this socket */
 	uint32_t so_user_cookie;
+
+	// runsisi AT hust.edu.cn @2013/11/13
+	int so_fd;          /* this socket's corresponding fd */
+	int so_otype;       /* original type, dps use the msb to identify sock for rpc */
+	DPS_AO_ID so_aoid;      /* the ao we are live in */
+	DPS_AO_ID so_appaoid;   /* the ao who created the so live in */
+	T_QUE_HANDLE so_rcvq;    /* dps queue for receive */
+	T_QUE_HANDLE so_sndq;    /* dps queue for send */
+    // ---------------------- @2013/11/13
 };
 
 /*
@@ -155,6 +164,10 @@ extern struct mtx accept_mtx;
  */
 #define	SQ_INCOMP		0x0800	/* unaccepted, incomplete connection */
 #define	SQ_COMP			0x1000	/* unaccepted, complete connection */
+
+// runsisi AT hust.edu.cn @2013/11/14
+#define SO_FOR_RPC(so)  ((so)->so_otype & 0x80000000)  /* if it's a sock created by rpc */
+// ---------------------- @2013/11/14
 
 /*
  * Externalized form of struct socket used by the sysctl(3) interface.
@@ -363,10 +376,25 @@ int	sosend_generic(struct socket *so, struct sockaddr *addr,
 	    struct uio *uio, struct mbuf *top, struct mbuf *control,
 	    int flags, struct thread *td);
 int	soshutdown(struct socket *so, int how);
+// runsisi AT hust.edu.cn @2013/11/21
+int bsd_sogetsockname(struct socket *so, struct sockaddr **sa,
+        socklen_t *alen);
+int bsd_sogetpeername(struct socket *so, struct sockaddr **sa,
+        socklen_t *alen);
+// ---------------------- @2013/11/21
 void	sotoxsocket(struct socket *so, struct xsocket *xso);
 void	soupcall_clear(struct socket *so, int which);
 void	soupcall_set(struct socket *so, int which,
 	    int (*func)(struct socket *, void *, int), void *arg);
+// runsisi AT hust.edu.cn @2013/11/13
+/*
+ * these functions are implemented in socket_kernel.c
+ */
+int     sogetqsize(int qtype);
+int     socreateq(struct socket *so);
+int     sodelq(struct socket *so);
+int     soasyncnotify(struct socket *so, int ev);
+// ---------------------- @2013/11/13
 void	sowakeup(struct socket *so, struct sockbuf *sb);
 int	selsocket(struct socket *so, int events, struct timeval *tv,
 	    struct thread *td);
