@@ -282,8 +282,8 @@ SYSCTL_ALLOWED_TYPES(UINT64, uint64_t *a; unsigned long long *b; );
 	sysctl_add_oid(ctx, parent, nbr, name, kind, a1, a2, handler, fmt, __DESCR(descr))*/
 
 /* This constructs a node from which other oids can hang. */
-#define SYSCTL_NODE(parent, nbr, name, access, handler, descr)		    /*\
-	struct sysctl_oid_list SYSCTL_NODE_CHILDREN(parent, name);	    \
+#define SYSCTL_NODE(parent, nbr, name, access, handler, descr)		    \
+	struct sysctl_oid_list SYSCTL_NODE_CHILDREN(parent, name);	    /*\
 	SYSCTL_OID(parent, nbr, name, CTLTYPE_NODE|(access),		    \
 	    (void*)&SYSCTL_NODE_CHILDREN(parent, name), 0, handler, "N", descr)*/
 
