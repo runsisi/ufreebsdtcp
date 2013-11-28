@@ -404,41 +404,6 @@ hash_sfind(struct uma_hash *hash, u_int8_t *data)
         return (NULL);
 }
 
-static __inline uma_slab_t
-vtoslab(vm_offset_t va)
-{
-	vm_page_t p;
-	uma_slab_t slab;
-
-	p = PHYS_TO_VM_PAGE(pmap_kextract(va));
-	slab = (uma_slab_t )p->object;
-
-	if (p->flags & PG_SLAB)
-		return (slab);
-	else
-		return (NULL);
-}
-
-static __inline void
-vsetslab(vm_offset_t va, uma_slab_t slab)
-{
-	vm_page_t p;
-
-	p = PHYS_TO_VM_PAGE(pmap_kextract(va));
-	p->object = (vm_object_t)slab;
-	p->flags |= PG_SLAB;
-}
-
-static __inline void
-vsetobj(vm_offset_t va, vm_object_t obj)
-{
-	vm_page_t p;
-
-	p = PHYS_TO_VM_PAGE(pmap_kextract(va));
-	p->object = obj;
-	p->flags &= ~PG_SLAB;
-}
-
 /*
  * The following two functions may be defined by architecture specific code
  * if they can provide more effecient allocation functions.  This is useful

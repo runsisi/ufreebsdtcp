@@ -329,20 +329,20 @@ struct uio;
 int	sockargs(struct mbuf **mp, caddr_t buf, int buflen, int type);
 int	getsockaddr(struct sockaddr **namp, caddr_t uaddr, size_t len);
 void	soabort(struct socket *so);
-int	soaccept(struct socket *so, struct sockaddr **nam);
+int	bsd_soaccept(struct socket *so, struct sockaddr **nam);
 int	socheckuid(struct socket *so, uid_t uid);
-int	sobind(struct socket *so, struct sockaddr *nam, struct thread *td);
-int	soclose(struct socket *so);
-int	soconnect(struct socket *so, struct sockaddr *nam, struct thread *td);
+int	bsd_sobind(struct socket *so, struct sockaddr *nam, struct thread *td);
+int	bsd_soclose(struct socket *so);
+int	bsd_soconnect(struct socket *so, struct sockaddr *nam, struct thread *td);
 int	soconnect2(struct socket *so1, struct socket *so2);
 int	socow_setup(struct mbuf *m0, struct uio *uio);
-int	socreate(int dom, struct socket **aso, int type, int proto,
+int	bsd_socreate(int dom, struct socket **aso, int type, int proto,
 	    struct ucred *cred, struct thread *td);
 int	sodisconnect(struct socket *so);
 struct	sockaddr *sodupsockaddr(const struct sockaddr *sa, int mflags);
 void	sofree(struct socket *so);
 void	sohasoutofband(struct socket *so);
-int	solisten(struct socket *so, int backlog, struct thread *td);
+int	bsd_solisten(struct socket *so, int backlog, struct thread *td);
 void	solisten_proto(struct socket *so, int backlog);
 int	solisten_proto_check(struct socket *so);
 struct socket *
@@ -366,7 +366,7 @@ int	soreceive_generic(struct socket *so, struct sockaddr **paddr,
 	    int *flagsp);
 int	soreserve(struct socket *so, u_long sndcc, u_long rcvcc);
 void	sorflush(struct socket *so);
-int	sosend(struct socket *so, struct sockaddr *addr, struct uio *uio,
+int	bsd_sosend(struct socket *so, struct sockaddr *addr, struct uio *uio,
 	    struct mbuf *top, struct mbuf *control, int flags,
 	    struct thread *td);
 int	sosend_dgram(struct socket *so, struct sockaddr *addr,
@@ -375,7 +375,7 @@ int	sosend_dgram(struct socket *so, struct sockaddr *addr,
 int	sosend_generic(struct socket *so, struct sockaddr *addr,
 	    struct uio *uio, struct mbuf *top, struct mbuf *control,
 	    int flags, struct thread *td);
-int	soshutdown(struct socket *so, int how);
+int	bsd_soshutdown(struct socket *so, int how);
 // runsisi AT hust.edu.cn @2013/11/21
 int bsd_sogetsockname(struct socket *so, struct sockaddr **sa,
         socklen_t *alen);

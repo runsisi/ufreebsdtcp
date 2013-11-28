@@ -40,9 +40,19 @@ typedef	__size_t	size_t;
 #define	_SIZE_T_DECLARED
 #endif
 
-//struct iovec {
-//	void	*iov_base;	/* Base address. */
-//	size_t	 iov_len;	/* Length. */
-//};
+#if 0	// runsisi AT hust.edu.cn @2013/11/28
+struct iovec {
+    void	*iov_base;	/* Base address. */
+    size_t	 iov_len;	/* Length. */
+};
+#endif 	// ---------------------- @2013/11/28
+
+#ifndef _IOVEC_T_DECLARED
+#define _IOVEC_T_DECLARED
+struct iovec {
+    void    *iov_base;  /* Base address. */
+    size_t   iov_len;   /* Length. */
+};
+#endif
 
 #endif /* !_SYS__IOVEC_H_ */

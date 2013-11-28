@@ -240,7 +240,15 @@ typedef	__vm_pindex_t	vm_pindex_t;
 typedef	__vm_size_t	vm_size_t;
 
 #ifdef _KERNEL
+#if 0	// runsisi AT hust.edu.cn @2013/11/27
 typedef	int		boolean_t;
+#endif 	// ---------------------- @2013/11/27
+// runsisi AT hust.edu.cn @2013/11/27
+#ifndef _BOOLEAN_T_DECLARED
+typedef int     boolean_t;
+#define _BOOLEAN_T_DECLARED
+#endif
+// ---------------------- @2013/11/27
 typedef	struct device	*device_t;
 typedef	__intfptr_t	intfptr_t;
 

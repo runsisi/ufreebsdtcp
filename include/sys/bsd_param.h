@@ -155,17 +155,31 @@
  * Constants related to network buffer management.
  * MCLBYTES must be no larger than PAGE_SIZE.
  */
+#if 0	// runsisi AT hust.edu.cn @2013/11/04
 #ifndef	MSIZE
 #define MSIZE		256		/* size of an mbuf */
 #endif	/* MSIZE */
+#endif 	// ---------------------- @2013/11/04
+
+// runsisi AT hust.edu.cn @2013/11/04
+#ifndef MSIZE
+#define MSIZE       2048     /* size of an mbuf */
+#endif  /* MSIZE */
+// ---------------------- @2013/11/04
 
 #ifndef	MCLSHIFT
 #define MCLSHIFT	11		/* convert bytes to mbuf clusters */
 #endif	/* MCLSHIFT */
 
+#if 0	// runsisi AT hust.edu.cn @2013/11/04
 #define MCLBYTES	(1 << MCLSHIFT)	/* size of an mbuf cluster */
+#endif 	// ---------------------- @2013/11/04
 
-#if PAGE_SIZE < 2048
+// runsisi AT hust.edu.cn @2013/11/04
+#define MCLBYTES    ((1 << MCLSHIFT) + 4) /* do not conflict with MSIZE */
+// ---------------------- @2013/11/04
+
+#if BSD_PAGE_SIZE < 2048
 #define	MJUMPAGESIZE	MCLBYTES
 #elif PAGE_SIZE <= 8192
 #define	MJUMPAGESIZE	PAGE_SIZE

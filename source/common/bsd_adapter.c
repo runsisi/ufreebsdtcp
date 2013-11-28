@@ -86,3 +86,15 @@ read_random(void *buf, int len)
     }
     return 0;
 }
+
+void
+bsd_ao_init()
+{
+    struct vnet *vnet = NULL;
+    vnet = vnet_alloc();
+    if (vnet == NULL)
+    {
+        panic("%s: failed to alloc vnet for ao: %d\n", __func__, curaoid);
+    }
+    curvnet = vnet;
+}

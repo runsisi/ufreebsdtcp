@@ -413,7 +413,7 @@ sodealloc(struct socket *so)
  * closed with soclose().
  */
 int
-socreate(int dom, struct socket **aso, int type, int proto,
+bsd_socreate(int dom, struct socket **aso, int type, int proto,
     struct ucred *cred, struct thread *td)
 {
 	struct protosw *prp;
@@ -635,7 +635,7 @@ sonewconn(struct socket *head, int connstatus)
 }
 
 int
-sobind(struct socket *so, struct sockaddr *nam, struct thread *td)
+bsd_sobind(struct socket *so, struct sockaddr *nam, struct thread *td)
 {
 	int error;
 
@@ -658,7 +658,7 @@ sobind(struct socket *so, struct sockaddr *nam, struct thread *td)
  * socket-layer test and set to avoid races at the socket layer.
  */
 int
-solisten(struct socket *so, int backlog, struct thread *td)
+bsd_solisten(struct socket *so, int backlog, struct thread *td)
 {
 	int error;
 
@@ -798,7 +798,7 @@ sofree(struct socket *so)
  * not be freed until the ref count reaches zero.
  */
 int
-soclose(struct socket *so)
+bsd_soclose(struct socket *so)
 {
 	int error = 0;
 
@@ -913,7 +913,7 @@ soabort(struct socket *so)
 }
 
 int
-soaccept(struct socket *so, struct sockaddr **nam)
+bsd_soaccept(struct socket *so, struct sockaddr **nam)
 {
 	int error;
 
@@ -929,7 +929,7 @@ soaccept(struct socket *so, struct sockaddr **nam)
 }
 
 int
-soconnect(struct socket *so, struct sockaddr *nam, struct thread *td)
+bsd_soconnect(struct socket *so, struct sockaddr *nam, struct thread *td)
 {
 	int error;
 
@@ -1461,7 +1461,7 @@ out:
 }
 
 int
-sosend(struct socket *so, struct sockaddr *addr, struct uio *uio,
+bsd_sosend(struct socket *so, struct sockaddr *addr, struct uio *uio,
     struct mbuf *top, struct mbuf *control, int flags, struct thread *td)
 {
 	int error;
@@ -2431,7 +2431,7 @@ soreceive(struct socket *so, struct sockaddr **psa, struct uio *uio,
 }
 
 int
-soshutdown(struct socket *so, int how)
+bsd_soshutdown(struct socket *so, int how)
 {
 	struct protosw *pr = so->so_proto;
 	int error;
@@ -2626,7 +2626,7 @@ so_setsockopt(struct socket *so, int level, int optname, void *optval,
 }
 
 int
-sosetopt(struct socket *so, struct sockopt *sopt)
+bsd_sosetopt(struct socket *so, struct sockopt *sopt)
 {
 	int	error, optval;
 	struct	linger l;
@@ -2875,7 +2875,7 @@ sooptcopyout(struct sockopt *sopt, const void *buf, size_t len)
 }
 
 int
-sogetopt(struct socket *so, struct sockopt *sopt)
+bsd_sogetopt(struct socket *so, struct sockopt *sopt)
 {
 	int	error, optval;
 	struct	linger l;

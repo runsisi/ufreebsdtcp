@@ -56,8 +56,8 @@ struct	sockopt {
 	struct	thread *sopt_td; /* calling thread or null if kernel */
 };
 
-int	sosetopt(struct socket *so, struct sockopt *sopt);
-int	sogetopt(struct socket *so, struct sockopt *sopt);
+int	bsd_sosetopt(struct socket *so, struct sockopt *sopt);
+int	bsd_sogetopt(struct socket *so, struct sockopt *sopt);
 int	sooptcopyin(struct sockopt *sopt, void *buf, size_t len, size_t minlen);
 int	sooptcopyout(struct sockopt *sopt, const void *buf, size_t len);
 /* XXX; prepare mbuf for (__FreeBSD__ < 3) routines. */

@@ -116,6 +116,8 @@ SYSCTL_VNET_INT(_net_inet_tcp, OID_AUTO, syncookies_only, CTLFLAG_RW,
 #define ADDED_BY_TOE(sc) ((sc)->sc_tod != NULL)
 #endif
 
+extern int brs_get_vcid(struct mbuf *m);
+
 static void	 syncache_drop(struct syncache *, struct syncache_head *);
 static void	 syncache_free(struct syncache *);
 static void	 syncache_insert(struct syncache *, struct syncache_head *);

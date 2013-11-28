@@ -57,6 +57,10 @@ typedef	unsigned int		__uint32_t;
 typedef	long			__int64_t;
 typedef	unsigned long		__uint64_t;
 
+// runsisi AT hust.edu.cn @2013/11/28
+#undef __size_t
+// ---------------------- @2013/11/28
+
 /*
  * Standard type definitions.
  */
