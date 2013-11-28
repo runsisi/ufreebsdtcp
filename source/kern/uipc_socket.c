@@ -2622,7 +2622,7 @@ so_setsockopt(struct socket *so, int level, int optname, void *optval,
 	sopt.sopt_val = optval;
 	sopt.sopt_valsize = optlen;
 	sopt.sopt_td = NULL;
-	return (sosetopt(so, &sopt));
+	return (bsd_sosetopt(so, &sopt));
 }
 
 int

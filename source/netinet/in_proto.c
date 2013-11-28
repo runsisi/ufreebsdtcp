@@ -87,7 +87,9 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/netinet/in_proto.c 230868 2012-02-01 15:57
  * TCP/IP protocol family: IP, ICMP, UDP, TCP.
  */
 
+#if 0	// runsisi AT hust.edu.cn @2013/11/04
 static struct pr_usrreqs nousrreqs;
+#endif 	// ---------------------- @2013/11/04
 
 #ifdef IPSEC
 #include <netipsec/ipsec.h>
