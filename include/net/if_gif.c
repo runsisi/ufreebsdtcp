@@ -397,7 +397,7 @@ gif_output(ifp, m, dst, ro)
 	mtag = m_tag_locate(m, MTAG_GIF, MTAG_GIF_CALLED, NULL);
 	while (mtag != NULL) {
 		if (*(struct ifnet **)(mtag + 1) == ifp) {
-			log(LOG_NOTICE,
+			bsd_log(LOG_NOTICE,
 			    "gif_output: loop detected on %s\n",
 			    (*(struct ifnet **)(mtag + 1))->if_xname);
 			m_freem(m);
@@ -408,7 +408,7 @@ gif_output(ifp, m, dst, ro)
 		gif_called++;
 	}
 	if (gif_called > V_max_gif_nesting) {
-		log(LOG_NOTICE,
+		bsd_log(LOG_NOTICE,
 		    "gif_output: recursively called too many times(%d)\n",
 		    gif_called);
 		m_freem(m);

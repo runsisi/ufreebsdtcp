@@ -1208,7 +1208,7 @@ ktr_writerequest(struct thread *td, struct ktr_request *req)
 	 * vrele_count start at 1 and the reference will be freed
 	 * by the loop at the end after our last use of vp.
 	 */
-	log(LOG_NOTICE, "ktrace write failed, errno %d, tracing stopped\n",
+	bsd_log(LOG_NOTICE, "ktrace write failed, errno %d, tracing stopped\n",
 	    error);
 	vrele_count = 1;
 	/*

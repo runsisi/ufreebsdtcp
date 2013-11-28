@@ -816,7 +816,7 @@ bridge_ioctl(struct ifnet *ifp, u_long cmd, caddr_t data)
 		BRIDGE_LOCK(sc);
 		BSD_LIST_FOREACH(bif, &sc->sc_iflist, bif_next) {
 			if (bif->bif_ifp->if_mtu != ifr->ifr_mtu) {
-				log(LOG_NOTICE, "%s: invalid MTU: %lu(%s)"
+				bsd_log(LOG_NOTICE, "%s: invalid MTU: %lu(%s)"
 				    " != %d\n", sc->sc_ifp->if_xname,
 				    bif->bif_ifp->if_mtu,
 				    bif->bif_ifp->if_xname, ifr->ifr_mtu);
@@ -3017,7 +3017,7 @@ bridge_state_change(struct ifnet *ifp, int state)
 	};
 
 	if (log_stp)
-		log(LOG_NOTICE, "%s: state changed to %s on %s\n",
+		bsd_log(LOG_NOTICE, "%s: state changed to %s on %s\n",
 		    sc->sc_ifp->if_xname, stpstates[state], ifp->if_xname);
 }
 

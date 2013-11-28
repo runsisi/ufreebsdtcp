@@ -2877,7 +2877,7 @@ killproc(p, why)
 	PROC_LOCK_ASSERT(p, MA_OWNED);
 	CTR3(KTR_PROC, "killproc: proc %p (pid %d, %s)",
 		p, p->p_pid, p->p_comm);
-	log(LOG_ERR, "pid %d (%s), uid %d, was killed: %s\n", p->p_pid, p->p_comm,
+	bsd_log(LOG_ERR, "pid %d (%s), uid %d, was killed: %s\n", p->p_pid, p->p_comm,
 		p->p_ucred ? p->p_ucred->cr_uid : -1, why);
 	p->p_flag |= P_WKILLED;
 	kern_psignal(p, SIGKILL);
@@ -2921,7 +2921,7 @@ sigexit(td, sig)
 		if (coredump(td) == 0)
 			sig |= WCOREFLAG;
 		if (kern_logsigexit)
-			log(LOG_INFO,
+			bsd_log(LOG_INFO,
 			    "pid %d (%s), uid %d: exited on signal %d%s\n",
 			    p->p_pid, p->p_comm,
 			    td->td_ucred ? td->td_ucred->cr_uid : -1,
@@ -3097,7 +3097,7 @@ expand_name(const char *name, uid_t uid, pid_t pid, struct thread *td,
 					hostname = bsd_malloc(MAXHOSTNAMELEN,
 					    M_TEMP, M_NOWAIT);
 					if (hostname == NULL) {
-						log(LOG_ERR,
+						bsd_log(LOG_ERR,
 						    "pid %ld (%s), uid (%lu): "
 						    "unable to alloc memory "
 						    "for corefile hostname\n",
@@ -3124,7 +3124,7 @@ expand_name(const char *name, uid_t uid, pid_t pid, struct thread *td,
 				sbuf_printf(&sb, "%u", uid);
 				break;
 			default:
-			  	log(LOG_ERR,
+			  	bsd_log(LOG_ERR,
 				    "Unknown format character %c in "
 				    "corename `%s'\n", format[i], format);
 			}
@@ -3140,7 +3140,7 @@ expand_name(const char *name, uid_t uid, pid_t pid, struct thread *td,
 	}
 #endif
 	if (sbuf_error(&sb) != 0) {
-		log(LOG_ERR, "pid %ld (%s), uid (%lu): corename is too "
+		bsd_log(LOG_ERR, "pid %ld (%s), uid (%lu): corename is too "
 		    "long\n", (long)pid, name, (u_long)uid);
 nomem:
 		sbuf_delete(&sb);
@@ -3172,7 +3172,7 @@ nomem:
 				if (error == EEXIST) {
 					continue;
 				}
-				log(LOG_ERR,
+				bsd_log(LOG_ERR,
 				    "pid %d (%s), uid (%u):  Path `%s' failed "
                                     "on initial open test, error = %d\n",
 				    pid, name, uid, temp, error);
@@ -3185,7 +3185,7 @@ nomem:
 			error = vn_close(nd.ni_vp, FWRITE, td->td_ucred, td);
 			VFS_UNLOCK_GIANT(vfslocked);
 			if (error) {
-				log(LOG_ERR,
+				bsd_log(LOG_ERR,
 				    "pid %d (%s), uid (%u):  Path `%s' failed "
                                     "on close after initial open test, "
                                     "error = %d\n",

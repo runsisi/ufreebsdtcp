@@ -717,7 +717,7 @@ nd6_na_input(struct mbuf *m, int off, int icmp6len)
 	/* Just for safety, maybe unnecessary. */
 	if (ifa) {
 		ifa_free(ifa);
-		log(LOG_ERR,
+		bsd_log(LOG_ERR,
 		    "nd6_na_input: duplicate IP6 address %s\n",
 		    ip6_sprintf(ip6bufs, &taddr6));
 		goto freeit;
@@ -1237,7 +1237,7 @@ nd6_dad_start(struct ifaddr *ifa, int delay)
 	 * - the interface address is anycast
 	 */
 	if (!(ia->ia6_flags & IN6_IFF_TENTATIVE)) {
-		log(LOG_DEBUG,
+		bsd_log(LOG_DEBUG,
 			"nd6_dad_start: called with non-tentative address "
 			"%s(%s)\n",
 			ip6_sprintf(ip6buf, &ia->ia_addr.sin6_addr),
@@ -1266,7 +1266,7 @@ nd6_dad_start(struct ifaddr *ifa, int delay)
 
 	dp = bsd_malloc(sizeof(*dp), M_IP6NDP, M_NOWAIT);
 	if (dp == NULL) {
-		log(LOG_ERR, "nd6_dad_start: memory allocation failed for "
+		bsd_log(LOG_ERR, "nd6_dad_start: memory allocation failed for "
 			"%s(%s)\n",
 			ip6_sprintf(ip6buf, &ia->ia_addr.sin6_addr),
 			ifa->ifa_ifp ? if_name(ifa->ifa_ifp) : "???");
@@ -1339,18 +1339,18 @@ nd6_dad_timer(struct dadq *dp)
 
 	/* Sanity check */
 	if (ia == NULL) {
-		log(LOG_ERR, "nd6_dad_timer: called with null parameter\n");
+		bsd_log(LOG_ERR, "nd6_dad_timer: called with null parameter\n");
 		goto done;
 	}
 	if (ia->ia6_flags & IN6_IFF_DUPLICATED) {
-		log(LOG_ERR, "nd6_dad_timer: called with duplicated address "
+		bsd_log(LOG_ERR, "nd6_dad_timer: called with duplicated address "
 			"%s(%s)\n",
 			ip6_sprintf(ip6buf, &ia->ia_addr.sin6_addr),
 			ifa->ifa_ifp ? if_name(ifa->ifa_ifp) : "???");
 		goto done;
 	}
 	if ((ia->ia6_flags & IN6_IFF_TENTATIVE) == 0) {
-		log(LOG_ERR, "nd6_dad_timer: called with non-tentative address "
+		bsd_log(LOG_ERR, "nd6_dad_timer: called with non-tentative address "
 			"%s(%s)\n",
 			ip6_sprintf(ip6buf, &ia->ia_addr.sin6_addr),
 			ifa->ifa_ifp ? if_name(ifa->ifa_ifp) : "???");
@@ -1437,11 +1437,11 @@ nd6_dad_duplicated(struct ifaddr *ifa)
 
 	dp = nd6_dad_find(ifa);
 	if (dp == NULL) {
-		log(LOG_ERR, "nd6_dad_duplicated: DAD structure not found\n");
+		bsd_log(LOG_ERR, "nd6_dad_duplicated: DAD structure not found\n");
 		return;
 	}
 
-	log(LOG_ERR, "%s: DAD detected duplicate IPv6 address %s: "
+	bsd_log(LOG_ERR, "%s: DAD detected duplicate IPv6 address %s: "
 	    "NS in/out=%d/%d, NA in=%d\n",
 	    if_name(ifa->ifa_ifp), ip6_sprintf(ip6buf, &ia->ia_addr.sin6_addr),
 	    dp->dad_ns_icount, dp->dad_ns_ocount, dp->dad_na_icount);
@@ -1453,9 +1453,9 @@ nd6_dad_duplicated(struct ifaddr *ifa)
 	nd6_dad_stoptimer(dp);
 
 	ifp = ifa->ifa_ifp;
-	log(LOG_ERR, "%s: DAD complete for %s - duplicate found\n",
+	bsd_log(LOG_ERR, "%s: DAD complete for %s - duplicate found\n",
 	    if_name(ifp), ip6_sprintf(ip6buf, &ia->ia_addr.sin6_addr));
-	log(LOG_ERR, "%s: manual intervention required\n",
+	bsd_log(LOG_ERR, "%s: manual intervention required\n",
 	    if_name(ifp));
 
 	/*
@@ -1485,7 +1485,7 @@ nd6_dad_duplicated(struct ifaddr *ifa)
 			if (in6_get_hw_ifid(ifp, &in6) == 0 &&
 			    IN6_ARE_ADDR_EQUAL(&ia->ia_addr.sin6_addr, &in6)) {
 				ND_IFINFO(ifp)->flags |= ND6_IFF_IFDISABLED;
-				log(LOG_ERR, "%s: possible hardware address "
+				bsd_log(LOG_ERR, "%s: possible hardware address "
 				    "duplication detected, disable IPv6\n",
 				    if_name(ifp));
 			}

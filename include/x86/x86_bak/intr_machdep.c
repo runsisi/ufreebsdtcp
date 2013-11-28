@@ -270,9 +270,9 @@ intr_execute_handlers(struct intsrc *isrc, struct trapframe *frame)
 		isrc->is_pic->pic_disable_source(isrc, PIC_EOI);
 		(*isrc->is_straycount)++;
 		if (*isrc->is_straycount < MAX_STRAY_LOG)
-			log(LOG_ERR, "stray irq%d\n", vector);
+			bsd_log(LOG_ERR, "stray irq%d\n", vector);
 		else if (*isrc->is_straycount == MAX_STRAY_LOG)
-			log(LOG_CRIT,
+			bsd_log(LOG_CRIT,
 			    "too many stray irq %d's: not logging anymore\n",
 			    vector);
 	}

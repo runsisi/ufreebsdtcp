@@ -129,7 +129,7 @@ atm_rtrequest(int req, struct rtentry *rt, struct rt_addrinfo *info)
 
 		if (gate->sa_family != AF_LINK ||
 		    gate->sa_len < sizeof(null_sdl)) {
-			log(LOG_DEBUG, "atm_rtrequest: bad gateway value");
+			bsd_log(LOG_DEBUG, "atm_rtrequest: bad gateway value");
 			break;
 		}
 
@@ -323,7 +323,7 @@ atmresolve(struct rtentry *rt, struct mbuf *m, struct sockaddr *dst,
 	struct sockaddr_dl *sdl;
 
 	if (m->m_flags & (M_BCAST | M_MCAST)) {
-		log(LOG_INFO,
+		bsd_log(LOG_INFO,
 		    "atmresolve: BCAST/MCAST packet detected/dumped\n");
 		goto bad;
 	}

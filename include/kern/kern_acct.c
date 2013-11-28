@@ -305,14 +305,14 @@ sys_acct(struct thread *td, struct acct_args *uap)
 			(void) acct_disable(td, 0);
 			VFS_UNLOCK_GIANT(vfslocked);
 			sx_xunlock(&acct_sx);
-			log(LOG_NOTICE, "Unable to start accounting thread\n");
+			bsd_log(LOG_NOTICE, "Unable to start accounting thread\n");
 			return (error);
 		}
 	}
 	acct_configured = 1;
 	sx_xunlock(&acct_sx);
 	if (!replacing)
-		log(LOG_NOTICE, "Accounting enabled\n");
+		bsd_log(LOG_NOTICE, "Accounting enabled\n");
 	return (error);
 }
 
@@ -334,7 +334,7 @@ acct_disable(struct thread *td, int logging)
 	acct_cred = NULL;
 	acct_flags = 0;
 	if (logging)
-		log(LOG_NOTICE, "Accounting disabled\n");
+		bsd_log(LOG_NOTICE, "Accounting disabled\n");
 	return (error);
 }
 
@@ -534,7 +534,7 @@ encode_long(long val)
 	if (val == 0)
 		return (0);
 	if (val < 0) {
-		log(LOG_NOTICE,
+		bsd_log(LOG_NOTICE,
 		    "encode_long: negative value %ld in accounting record\n",
 		    val);
 		val = LONG_MAX;
@@ -603,13 +603,13 @@ acctwatch(void)
 		if (sb.f_bavail > (int64_t)(acctresume * sb.f_blocks /
 		    100)) {
 			acct_suspended = 0;
-			log(LOG_NOTICE, "Accounting resumed\n");
+			bsd_log(LOG_NOTICE, "Accounting resumed\n");
 		}
 	} else {
 		if (sb.f_bavail <= (int64_t)(acctsuspend * sb.f_blocks /
 		    100)) {
 			acct_suspended = 1;
-			log(LOG_NOTICE, "Accounting suspended\n");
+			bsd_log(LOG_NOTICE, "Accounting suspended\n");
 		}
 	}
 }

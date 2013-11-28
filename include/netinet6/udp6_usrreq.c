@@ -433,7 +433,7 @@ udp6_input(struct mbuf **mp, int *offp, int proto)
 			char ip6bufs[INET6_ADDRSTRLEN];
 			char ip6bufd[INET6_ADDRSTRLEN];
 
-			log(LOG_INFO,
+			bsd_log(LOG_INFO,
 			    "Connection attempt to UDP [%s]:%d from [%s]:%d\n",
 			    ip6_sprintf(ip6bufd, &ip6->ip6_dst),
 			    ntohs(uh->uh_dport),
@@ -730,7 +730,7 @@ udp6_output(struct inpcb *inp, struct mbuf *m, struct sockaddr *addr6,
 				 * Such applications should be fixed,
 				 * so we bark here.
 				 */
-				log(LOG_INFO, "udp6_output: IPV6_V6ONLY "
+				bsd_log(LOG_INFO, "udp6_output: IPV6_V6ONLY "
 				    "option was set for a connected socket\n");
 				error = EINVAL;
 				goto release;

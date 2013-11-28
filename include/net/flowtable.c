@@ -1418,7 +1418,7 @@ flowtable_free_stale(struct flowtable *ft, struct rtentry *rt)
 	bit_ffs(tmpmask, ft->ft_size, &curbit);
 	while (curbit != -1) {
 		if (curbit >= ft->ft_size || curbit < -1) {
-			log(LOG_ALERT,
+			bsd_log(LOG_ALERT,
 			    "warning: bad curbit value %d \n",
 			    curbit);
 			break;
@@ -1431,7 +1431,7 @@ flowtable_free_stale(struct flowtable *ft, struct rtentry *rt)
 		fs->ft_free_checks++;
 #ifdef DIAGNOSTIC
 		if (fle == NULL && curbit > 0) {
-			log(LOG_ALERT,
+			bsd_log(LOG_ALERT,
 			    "warning bit=%d set, but no fle found\n",
 			    curbit);
 		}
@@ -1489,7 +1489,7 @@ flowtable_free_stale(struct flowtable *ft, struct rtentry *rt)
 		fle_free(fle, ft);
 	}
 	if (V_flowtable_debug && count)
-		log(LOG_DEBUG, "freed %d flow entries\n", count);
+		bsd_log(LOG_DEBUG, "freed %d flow entries\n", count);
 }
 
 void
@@ -1556,7 +1556,7 @@ flowtable_cleaner(void)
 	struct thread *td;
 
 	if (bootverbose)
-		log(LOG_INFO, "flowtable cleaner started\n");
+		bsd_log(LOG_INFO, "flowtable cleaner started\n");
 	td = curthread;
 	while (1) {
 		VNET_LIST_RLOCK();

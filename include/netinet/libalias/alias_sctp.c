@@ -2681,7 +2681,7 @@ SctpAliasLog(const char *format, ...)
 	va_start(ap, format);
 	vsnprintf(buffer, LIBALIAS_BUF_SIZE, format, ap);
 	va_end(ap);
-	log(LOG_SECURITY | LOG_INFO,
+	bsd_log(LOG_SECURITY | LOG_INFO,
 	    "alias_sctp: %s", buffer);
 }
 #else

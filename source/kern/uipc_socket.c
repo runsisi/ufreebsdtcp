@@ -505,7 +505,7 @@ sonewconn(struct socket *head, int connstatus)
 #else
 	if (over) {
 #endif
-		log(LOG_DEBUG, "%s: pcb %p: Listen queue overflow: "
+		bsd_log(LOG_DEBUG, "%s: pcb %p: Listen queue overflow: "
 		    "%i already in queue awaiting acceptance\n",
 		    __func__, head->so_pcb, head->so_qlen);
 		return (NULL);
@@ -514,7 +514,7 @@ sonewconn(struct socket *head, int connstatus)
 	    __func__, __LINE__, head));
 	so = soalloc(head->so_vnet);
 	if (so == NULL) {
-		log(LOG_DEBUG, "%s: pcb %p: New socket allocation failure: "
+		bsd_log(LOG_DEBUG, "%s: pcb %p: New socket allocation failure: "
 		    "limit reached or out of memory\n",
 		    __func__, head->so_pcb);
 		return (NULL);
@@ -533,7 +533,7 @@ sonewconn(struct socket *head, int connstatus)
 	if (socreateq(so))
 	{
 	    sodealloc(so);
-        log(LOG_DEBUG, "%s: pcb %p: socreateq() failed\n",
+        bsd_log(LOG_DEBUG, "%s: pcb %p: socreateq() failed\n",
             __func__, head->so_pcb);
         return (NULL);
 	}
@@ -557,13 +557,13 @@ sonewconn(struct socket *head, int connstatus)
 	VNET_SO_ASSERT(head);
 	if (soreserve(so, head->so_snd.sb_hiwat, head->so_rcv.sb_hiwat)) {
 		sodealloc(so);
-		log(LOG_DEBUG, "%s: pcb %p: soreserve() failed\n",
+		bsd_log(LOG_DEBUG, "%s: pcb %p: soreserve() failed\n",
 		    __func__, head->so_pcb);
 		return (NULL);
 	}
 	if ((*so->so_proto->pr_usrreqs->pru_attach)(so, 0, NULL)) {
 		sodealloc(so);
-		log(LOG_DEBUG, "%s: pcb %p: pru_attach() failed\n",
+		bsd_log(LOG_DEBUG, "%s: pcb %p: pru_attach() failed\n",
 		    __func__, head->so_pcb);
 		return (NULL);
 	}

@@ -343,7 +343,7 @@ in6_control(struct socket *so, u_long cmd, caddr_t data,
 	case SIOCCIFPREFIX_IN6:
 	case SIOCSGIFPREFIX_IN6:
 	case SIOCGIFPREFIX_IN6:
-		log(LOG_NOTICE,
+		bsd_log(LOG_NOTICE,
 		    "prefix ioctls are now invalidated. "
 		    "please use ifconfig.\n");
 		return (EOPNOTSUPP);
@@ -714,7 +714,7 @@ in6_control(struct socket *so, u_long cmd, caddr_t data,
 			if ((error = nd6_prelist_add(&pr0, NULL, &pr)) != 0)
 				goto out;
 			if (pr == NULL) {
-				log(LOG_ERR, "nd6_prelist_add succeeded but "
+				bsd_log(LOG_ERR, "nd6_prelist_add succeeded but "
 				    "no prefix\n");
 				error = EINVAL;
 				goto out;
@@ -735,7 +735,7 @@ in6_control(struct socket *so, u_long cmd, caddr_t data,
 			    V_ip6_use_tempaddr && pr->ndpr_refcnt == 1) {
 				int e;
 				if ((e = in6_tmpifadd(ia, 1, 0)) != 0) {
-					log(LOG_NOTICE, "in6_control: failed "
+					bsd_log(LOG_NOTICE, "in6_control: failed "
 					    "to create a temporary address, "
 					    "errno=%d\n", e);
 				}
@@ -762,7 +762,7 @@ in6_control(struct socket *so, u_long cmd, caddr_t data,
 				nd.ndi.flags &= ~ND6_IFF_IFDISABLED;
 				if (nd6_ioctl(SIOCSIFINFO_FLAGS,
 				    (caddr_t)&nd, ifp) < 0)
-					log(LOG_NOTICE, "SIOCAIFADDR_IN6: "
+					bsd_log(LOG_NOTICE, "SIOCAIFADDR_IN6: "
 					    "SIOCSIFINFO_FLAGS for -ifdisabled "
 					    "failed.");
 				/*
@@ -841,7 +841,7 @@ in6_update_ifa_join_mc(struct ifnet *ifp, struct in6_aliasreq *ifra,
 	llsol.s6_addr8[12] = 0xff;
 	if ((error = in6_setscope(&llsol, ifp, NULL)) != 0) {
 		/* XXX: should not happen */
-		log(LOG_ERR, "%s: in6_setscope failed\n", __func__);
+		bsd_log(LOG_ERR, "%s: in6_setscope failed\n", __func__);
 		goto cleanup;
 	}
 	delay = 0;
@@ -1390,7 +1390,7 @@ in6_purgeaddr_mc(struct ifnet *ifp, struct in6_ifaddr *ia, struct ifaddr *ifa0)
 			    (struct sockaddr *)&mltmask, RTF_UP,
 			    (struct rtentry **)0, RT_DEFAULT_FIB);
 			if (error)
-				log(LOG_INFO, "%s: link-local all-nodes "
+				bsd_log(LOG_INFO, "%s: link-local all-nodes "
 				    "multicast address deletion error\n",
 				    __func__);
 		} else {
@@ -1433,7 +1433,7 @@ in6_purgeaddr_mc(struct ifnet *ifp, struct in6_ifaddr *ia, struct ifaddr *ifa0)
 			    (struct sockaddr *)&mltmask, RTF_UP,
 			    (struct rtentry **)0, RT_DEFAULT_FIB);
 			if (error)
-				log(LOG_INFO, "%s: node-local all-nodes"
+				bsd_log(LOG_INFO, "%s: node-local all-nodes"
 				    "multicast address deletion error\n",
 				    __func__);
 		} else {
@@ -1506,7 +1506,7 @@ in6_purgeaddr(struct ifaddr *ifa)
 		error = rtinit(&(ia->ia_ifa), RTM_DELETE, ia->ia_flags |
 		    (ia->ia_dstaddr.sin6_family == AF_INET6) ? RTF_HOST : 0);
 		if (error != 0)
-			log(LOG_INFO, "%s: err=%d, destination address delete "
+			bsd_log(LOG_INFO, "%s: err=%d, destination address delete "
 			    "failed\n", __func__, error);
 		ia->ia_flags &= ~IFA_ROUTE;
 	}
@@ -2174,7 +2174,7 @@ in6_are_prefix_equal(struct in6_addr *p1, struct in6_addr *p2, int len)
 
 	/* sanity check */
 	if (0 > len || len > 128) {
-		log(LOG_ERR, "in6_are_prefix_equal: invalid prefix length(%d)\n",
+		bsd_log(LOG_ERR, "in6_are_prefix_equal: invalid prefix length(%d)\n",
 		    len);
 		return (0);
 	}
@@ -2200,7 +2200,7 @@ in6_prefixlen2mask(struct in6_addr *maskp, int len)
 
 	/* sanity check */
 	if (0 > len || len > 128) {
-		log(LOG_ERR, "in6_prefixlen2mask: invalid prefix length(%d)\n",
+		bsd_log(LOG_ERR, "in6_prefixlen2mask: invalid prefix length(%d)\n",
 		    len);
 		return;
 	}
@@ -2565,7 +2565,7 @@ in6_lltable_rtcheck(struct ifnet *ifp,
 				RTFREE_LOCKED(rt);
 			return 0;
 		}
-		log(LOG_INFO, "IPv6 address: \"%s\" is not on the network\n",
+		bsd_log(LOG_INFO, "IPv6 address: \"%s\" is not on the network\n",
 		    ip6_sprintf(ip6buf, &((const struct sockaddr_in6 *)l3addr)->sin6_addr));
 		if (rt != NULL)
 			RTFREE_LOCKED(rt);
@@ -2614,7 +2614,7 @@ in6_lltable_lookup(struct lltable *llt, u_int flags,
 
 		lle = in6_lltable_new(l3addr, flags);
 		if (lle == NULL) {
-			log(LOG_INFO, "lla_lookup: new lle malloc failed\n");
+			bsd_log(LOG_INFO, "lla_lookup: new lle malloc failed\n");
 			return NULL;
 		}
 		lle->la_flags = flags & ~LLE_CREATE;
@@ -2632,7 +2632,7 @@ in6_lltable_lookup(struct lltable *llt, u_int flags,
 			LLE_WLOCK(lle);
 			lle->la_flags |= LLE_DELETED;
 #ifdef DIAGNOSTIC
-			log(LOG_INFO, "ifaddr cache = %p is deleted\n", lle);
+			bsd_log(LOG_INFO, "ifaddr cache = %p is deleted\n", lle);
 #endif
 			if ((lle->la_flags &
 			    (LLE_STATIC | LLE_IFADDR)) == LLE_STATIC)

@@ -659,7 +659,7 @@ defrouter_select(void)
 			installed_dr = dr;
 		else if (dr->installed && installed_dr) {
 			/* this should not happen.  warn for diagnosis. */
-			log(LOG_ERR, "defrouter_select: more than one router"
+			bsd_log(LOG_ERR, "defrouter_select: more than one router"
 			    " is installed\n");
 		}
 	}
@@ -724,7 +724,7 @@ rtpref(struct nd_defrouter *dr)
 		 * serious bug of kernel internal.  We thus always bark here.
 		 * Or, can we even panic?
 		 */
-		log(LOG_ERR, "rtpref: impossible RA flag %x\n", dr->flags);
+		bsd_log(LOG_ERR, "rtpref: impossible RA flag %x\n", dr->flags);
 		return (RTPREF_INVALID);
 	}
 	/* NOTREACHED */
@@ -1254,7 +1254,7 @@ prelist_update(struct nd_prefixctl *new, struct nd_defrouter *dr,
 		ifidlen = in6_if2idlen(ifp);
 		if (ifidlen < 0) {
 			/* this should not happen, so we always log it. */
-			log(LOG_ERR, "prelist_update: IFID undefined (%s)\n",
+			bsd_log(LOG_ERR, "prelist_update: IFID undefined (%s)\n",
 			    if_name(ifp));
 			goto end;
 		}
@@ -1901,7 +1901,7 @@ in6_ifadd(struct nd_prefixctl *pr, int mcast)
 	if (ifa != NULL) {
 		ifa_free(ifa);
 		/* this should be rare enough to make an explicit log */
-		log(LOG_INFO, "in6_ifadd: %s is already configured\n",
+		bsd_log(LOG_INFO, "in6_ifadd: %s is already configured\n",
 		    ip6_sprintf(ip6buf, &ifra.ifra_addr.sin6_addr));
 		return (NULL);
 	}

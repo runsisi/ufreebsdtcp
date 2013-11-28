@@ -139,7 +139,7 @@ ip6_forward(struct mbuf *m, int srcrt)
 		/* XXX in6_ifstat_inc(rt->rt_ifp, ifs6_in_discard) */
 		if (V_ip6_log_time + V_ip6_log_interval < time_second) {
 			V_ip6_log_time = time_second;
-			log(LOG_DEBUG,
+			bsd_log(LOG_DEBUG,
 			    "cannot forward "
 			    "from %s to %s nxt %d received on %s\n",
 			    ip6_sprintf(ip6bufs, &ip6->ip6_src),
@@ -407,7 +407,7 @@ skip_routing:
 
 		if (V_ip6_log_time + V_ip6_log_interval < time_second) {
 			V_ip6_log_time = time_second;
-			log(LOG_DEBUG,
+			bsd_log(LOG_DEBUG,
 			    "cannot forward "
 			    "src %s, dst %s, nxt %d, rcvif %s, outif %s\n",
 			    ip6_sprintf(ip6bufs, &ip6->ip6_src),

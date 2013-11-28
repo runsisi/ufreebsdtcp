@@ -149,7 +149,7 @@ SYSCTL_INT(_net_inet_carp, CARPCTL_ALLOW, allow, CTLFLAG_RW,
     &carp_opts[CARPCTL_ALLOW], 0, "Accept incoming CARP packets");
 SYSCTL_INT(_net_inet_carp, CARPCTL_PREEMPT, preempt, CTLFLAG_RW,
     &carp_opts[CARPCTL_PREEMPT], 0, "high-priority backup preemption mode");
-SYSCTL_INT(_net_inet_carp, CARPCTL_LOG, log, CTLFLAG_RW,
+SYSCTL_INT(_net_inet_carp, CARPCTL_LOG, bsd_log, CTLFLAG_RW,
     &carp_opts[CARPCTL_LOG], 0, "log bad carp packets");
 SYSCTL_INT(_net_inet_carp, CARPCTL_ARPBALANCE, arpbalance, CTLFLAG_RW,
     &carp_opts[CARPCTL_ARPBALANCE], 0, "balance arp responses");

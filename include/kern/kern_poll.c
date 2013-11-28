@@ -477,7 +477,7 @@ ether_poll_register(poll_handler_t *h, struct ifnet *ifp)
 		 */
 		static int verbose = 10 ;
 		if (verbose >0) {
-			log(LOG_ERR, "poll handlers list full, "
+			bsd_log(LOG_ERR, "poll handlers list full, "
 			    "maybe a broken driver ?\n");
 			verbose--;
 		}
@@ -488,7 +488,7 @@ ether_poll_register(poll_handler_t *h, struct ifnet *ifp)
 	for (i = 0 ; i < poll_handlers ; i++)
 		if (pr[i].ifp == ifp && pr[i].handler != NULL) {
 			mtx_unlock(&poll_mtx);
-			log(LOG_DEBUG, "ether_poll_register: %s: handler"
+			bsd_log(LOG_DEBUG, "ether_poll_register: %s: handler"
 			    " already registered\n", ifp->if_xname);
 			return (EEXIST);
 		}
@@ -518,7 +518,7 @@ ether_poll_deregister(struct ifnet *ifp)
 		if (pr[i].ifp == ifp) /* found it */
 			break;
 	if (i == poll_handlers) {
-		log(LOG_DEBUG, "ether_poll_deregister: %s: not found!\n",
+		bsd_log(LOG_DEBUG, "ether_poll_deregister: %s: not found!\n",
 		    ifp->if_xname);
 		mtx_unlock(&poll_mtx);
 		return (ENOENT);

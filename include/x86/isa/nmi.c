@@ -64,19 +64,19 @@ isa_nmi(int cd)
 	int isa_port = inb(0x61);
 	int eisa_port = inb(0x461);
 
-	log(LOG_CRIT, "NMI ISA %x, EISA %x\n", isa_port, eisa_port);
+	bsd_log(LOG_CRIT, "NMI ISA %x, EISA %x\n", isa_port, eisa_port);
 #ifdef DEV_MCA
 	if (MCA_system && mca_bus_nmi())
 		return(0);
 #endif
 	
 	if (isa_port & NMI_PARITY) {
-		log(LOG_CRIT, "RAM parity error, likely hardware failure.");
+		bsd_log(LOG_CRIT, "RAM parity error, likely hardware failure.");
 		retval = 1;
 	}
 
 	if (isa_port & NMI_IOCHAN) {
-		log(LOG_CRIT, "I/O channel check, likely hardware failure.");
+		bsd_log(LOG_CRIT, "I/O channel check, likely hardware failure.");
 		retval = 1;
 	}
 
@@ -89,17 +89,17 @@ isa_nmi(int cd)
 		return(retval);
 
 	if (eisa_port & ENMI_WATCHDOG) {
-		log(LOG_CRIT, "EISA watchdog timer expired, likely hardware failure.");
+		bsd_log(LOG_CRIT, "EISA watchdog timer expired, likely hardware failure.");
 		retval = 1;
 	}
 
 	if (eisa_port & ENMI_BUSTIMER) {
-		log(LOG_CRIT, "EISA bus timeout, likely hardware failure.");
+		bsd_log(LOG_CRIT, "EISA bus timeout, likely hardware failure.");
 		retval = 1;
 	}
 
 	if (eisa_port & ENMI_IOSTATUS) {
-		log(LOG_CRIT, "EISA I/O port status error.");
+		bsd_log(LOG_CRIT, "EISA I/O port status error.");
 		retval = 1;
 	}
 

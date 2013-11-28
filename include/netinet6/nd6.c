@@ -260,7 +260,7 @@ nd6_setmtu0(struct ifnet *ifp, struct nd_ifinfo *ndi)
 	 * log to the case of changing the MTU, not initializing it.
 	 */
 	if (omaxmtu >= IPV6_MMTU && ndi->maxmtu < IPV6_MMTU) {
-		log(LOG_NOTICE, "nd6_setmtu0: "
+		bsd_log(LOG_NOTICE, "nd6_setmtu0: "
 		    "new link MTU on %s (%lu) is too small for IPv6\n",
 		    if_name(ifp), (unsigned long)ndi->maxmtu);
 	}
@@ -758,7 +758,7 @@ regen_tmpaddr(struct in6_ifaddr *ia6)
 
 		if ((e = in6_tmpifadd(public_ifa6, 0, 0)) != 0) {
 			ifa_free(&public_ifa6->ia_ifa);
-			log(LOG_NOTICE, "regen_tmpaddr: failed to create a new"
+			bsd_log(LOG_NOTICE, "regen_tmpaddr: failed to create a new"
 			    " tmp addr,errno=%d\n", e);
 			return (-1);
 		}
@@ -1399,7 +1399,7 @@ nd6_ioctl(u_long cmd, caddr_t data, struct ifnet *ifp)
 
 			if (duplicated_linklocal) {
 				ND.flags |= ND6_IFF_IFDISABLED;
-				log(LOG_ERR, "Cannot enable an interface"
+				bsd_log(LOG_ERR, "Cannot enable an interface"
 				    " with a link-local address marked"
 				    " duplicate.\n");
 			} else {
@@ -1917,7 +1917,7 @@ nd6_output_lle(struct ifnet *ifp, struct ifnet *origifp, struct mbuf *m0,
 		if ((ifp->if_flags & IFF_POINTOPOINT) == 0 &&
 		    !(ND_IFINFO(ifp)->flags & ND6_IFF_PERFORMNUD)) {
 			char ip6buf[INET6_ADDRSTRLEN];
-			log(LOG_DEBUG,
+			bsd_log(LOG_DEBUG,
 			    "nd6_output: can't allocate llinfo for %s "
 			    "(ln=%p)\n",
 			    ip6_sprintf(ip6buf, &dst->sin6_addr), ln);
@@ -2340,7 +2340,7 @@ nd6_sysctl_prlist(SYSCTL_HANDLER_ARGS)
 	BSD_LIST_FOREACH(pr, &V_nd_prefix, ndpr_entry) {
 		p.prefix = pr->ndpr_prefix;
 		if (sa6_recoverscope(&p.prefix)) {
-			log(LOG_ERR, "scope error in prefix list (%s)\n",
+			bsd_log(LOG_ERR, "scope error in prefix list (%s)\n",
 			    ip6_sprintf(ip6buf, &p.prefix.sin6_addr));
 			/* XXX: press on... */
 		}
@@ -2372,7 +2372,7 @@ nd6_sysctl_prlist(SYSCTL_HANDLER_ARGS)
 		BSD_LIST_FOREACH(pfr, &pr->ndpr_advrtrs, pfr_entry) {
 			s6.sin6_addr = pfr->router->rtaddr;
 			if (sa6_recoverscope(&s6))
-				log(LOG_ERR,
+				bsd_log(LOG_ERR,
 				    "scope error in prefix list (%s)\n",
 				    ip6_sprintf(ip6buf, &pfr->router->rtaddr));
 			error = SYSCTL_OUT(req, &s6, sizeof(s6));

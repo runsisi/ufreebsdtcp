@@ -788,7 +788,7 @@ in6_ifattach(struct ifnet *ifp, struct ifnet *altifp)
 			error = in6_ifattach_linklocal(ifp, altifp);
 #if 0
 			if (error)
-				log(LOG_NOTICE, "in6_ifattach_linklocal: "
+				bsd_log(LOG_NOTICE, "in6_ifattach_linklocal: "
 				    "failed to add a link-local addr to %s\n",
 				    if_name(ifp));
 #endif

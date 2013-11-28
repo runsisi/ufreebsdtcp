@@ -856,7 +856,7 @@ add_vif(struct vifctl *vifcp)
     }
     /* rate limiting is no longer supported by this code */
     if (vifcp->vifc_rate_limit != 0) {
-	log(LOG_ERR, "rate limiting is no longer supported\n");
+	bsd_log(LOG_ERR, "rate limiting is no longer supported\n");
 	VIF_UNLOCK();
 	return EINVAL;
     }
@@ -2085,7 +2085,7 @@ bw_upcalls_send(void)
      */
     MGETHDR(m, M_DONTWAIT, MT_DATA);
     if (m == NULL) {
-	log(LOG_WARNING, "bw_upcalls_send: cannot allocate mbuf\n");
+	bsd_log(LOG_WARNING, "bw_upcalls_send: cannot allocate mbuf\n");
 	return;
     }
 
@@ -2099,7 +2099,7 @@ bw_upcalls_send(void)
      */
     MRTSTAT_INC(mrts_upcalls);
     if (socket_send(V_ip_mrouter, m, &k_igmpsrc) < 0) {
-	log(LOG_WARNING, "bw_upcalls_send: ip_mrouter socket queue full\n");
+	bsd_log(LOG_WARNING, "bw_upcalls_send: ip_mrouter socket queue full\n");
 	MRTSTAT_INC(mrts_upq_sockfull);
     }
 }

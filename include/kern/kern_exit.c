@@ -665,7 +665,7 @@ out:
 	}
 	sbuf_cat(sb, "\n");
 	sbuf_finish(sb);
-	log(LOG_INFO, "%s", sbuf_data(sb));
+	bsd_log(LOG_INFO, "%s", sbuf_data(sb));
 	sbuf_delete(sb);
 	exit1(td, W_EXITCODE(0, sig));
 	return (0);

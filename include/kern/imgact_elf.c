@@ -1273,7 +1273,7 @@ __elfN(coredump)(struct thread *td, struct vnode *vp, off_t limit, int flags)
 		}
 	}
 	if (error) {
-		log(LOG_WARNING,
+		bsd_log(LOG_WARNING,
 		    "Failed to write core file for process %s (error %d)\n",
 		    curproc->p_comm, error);
 	}
@@ -2084,7 +2084,7 @@ compress_core (gzFile file, char *inbuf, char *dest_buf, unsigned int len,
 		EVENTHANDLER_INVOKE(app_coredump_progress, td, len_compressed);
 
 		if ((unsigned int)len_compressed != chunk_len) {
-			log(LOG_WARNING,
+			bsd_log(LOG_WARNING,
 			    "compress_core: length mismatch (0x%x returned, "
 			    "0x%x expected)\n", len_compressed, chunk_len);
 			EVENTHANDLER_INVOKE(app_coredump_error, td,

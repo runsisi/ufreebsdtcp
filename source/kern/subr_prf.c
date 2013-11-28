@@ -127,7 +127,7 @@ void
 tablefull(const char *tab)
 {
 
-	log(LOG_ERR, "%s: table is full\n", tab);
+	bsd_log(LOG_ERR, "%s: table is full\n", tab);
 }
 
 /*
@@ -248,7 +248,7 @@ ttyprintf(struct tty *tp, const char *fmt, ...)
  * log yet, it writes to the console also.
  */
 void
-log(int level, const char *fmt, ...)
+bsd_log(int level, const char *fmt, ...)
 {
 	va_list ap;
 	struct putchar_arg pca;

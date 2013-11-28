@@ -143,7 +143,7 @@ gzFile gz_open (path, mode, vp)
     } while (*p++ && m != fmode + sizeof(fmode));
 
     if (s->mode != 'w') {
-        log(LOG_ERR, "gz_open: mode is not w (%c)\n", s->mode);
+        bsd_log(LOG_ERR, "gz_open: mode is not w (%c)\n", s->mode);
         return destroy(s), (gzFile)Z_NULL;
     }
     
@@ -238,7 +238,7 @@ int ZEXPORT gzwrite (file, buf, len)
                         curproc->p_ucred, NOCRED, &resid, curthread);
             VFS_UNLOCK_GIANT(vfslocked);
             if (error) {
-                log(LOG_ERR, "gzwrite: vn_rdwr return %d\n", error);
+                bsd_log(LOG_ERR, "gzwrite: vn_rdwr return %d\n", error);
                 curoff += Z_BUFSIZE - resid;
                 s->z_err = Z_ERRNO;
                 break;
@@ -248,7 +248,7 @@ int ZEXPORT gzwrite (file, buf, len)
         }
         s->z_err = deflate(&(s->stream), Z_NO_FLUSH);
         if (s->z_err != Z_OK) {
-            log(LOG_ERR,
+            bsd_log(LOG_ERR,
                 "gzwrite: deflate returned error %d\n", s->z_err);
             break;
         }
@@ -280,7 +280,7 @@ local int do_flush (file, flush)
     if (s == NULL || s->mode != 'w') return Z_STREAM_ERROR;
 
     if (s->stream.avail_in) {
-        log(LOG_WARNING, "do_flush: avail_in non-zero on entry\n");
+        bsd_log(LOG_WARNING, "do_flush: avail_in non-zero on entry\n");
     } 
 
     s->stream.avail_in = 0; /* should be zero already anyway */
@@ -371,7 +371,7 @@ int ZEXPORT gzclose (file)
     if (s->mode == 'w') {
         err = do_flush (file, Z_FINISH);
         if (err != Z_OK) {
-            log(LOG_ERR, "gzclose: do_flush failed (err %d)\n", err);
+            bsd_log(LOG_ERR, "gzclose: do_flush failed (err %d)\n", err);
             return destroy((gz_stream*)file);
         }
 #if 0
