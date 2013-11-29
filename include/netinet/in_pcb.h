@@ -390,8 +390,8 @@ struct inpcbgroup {
 	struct mtx		 ipg_lock;
 } __aligned(CACHE_LINE_SIZE);
 
-#define INP_LOCK_INIT(inp, d, t) \
-	rw_init_flags(&(inp)->inp_lock, (t), RW_RECURSE |  RW_DUPOK)
+#define INP_LOCK_INIT(inp, d, t) /*\
+	rw_init_flags(&(inp)->inp_lock, (t), RW_RECURSE |  RW_DUPOK)*/
 #define INP_LOCK_DESTROY(inp)	rw_destroy(&(inp)->inp_lock)
 #define INP_RLOCK(inp)		rw_rlock(&(inp)->inp_lock)
 #define INP_WLOCK(inp)		rw_wlock(&(inp)->inp_lock)

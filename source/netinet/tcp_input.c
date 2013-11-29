@@ -1520,7 +1520,7 @@ tcp_do_segment(struct mbuf *m, struct tcphdr *th, struct socket *so,
 	 * XXX: This should be done after segment
 	 * validation to ignore broken/spoofed segs.
 	 */
-	tp->t_rcvtime = ticks;
+	tp->t_rcvtime = V_ticks;
 	if (TCPS_HAVEESTABLISHED(tp->t_state))
 		tcp_timer_activate(tp, TT_KEEP, TP_KEEPIDLE(tp));
 
@@ -2654,7 +2654,7 @@ process_ACK:
 		 * we left off.
 		 */
 		if (tp->t_rxtshift == 1 && tp->t_flags & TF_PREVVALID &&
-		    (int)(ticks - tp->t_badrxtwin) < 0)
+		    (int)(V_ticks - tp->t_badrxtwin) < 0)
 			cc_cong_signal(tp, th, CC_RTO_ERR);
 
 		/*

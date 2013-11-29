@@ -2077,6 +2077,7 @@ in_pcbsosetlabel(struct socket *so)
 #endif
 }
 
+#if 0   // runsisi AT hust.edu.cn @2013/11/04
 /*
  * ipport_tick runs once per second, determining if random port allocation
  * should be continued.  If more than ipport_randomcps ports have been
@@ -2128,6 +2129,7 @@ ipport_tick_init(const void *unused __unused)
 }
 SYSINIT(ipport_tick_init, SI_SUB_PROTO_DOMAIN, SI_ORDER_MIDDLE, 
     ipport_tick_init, NULL);
+#endif 	// ---------------------- @2013/11/04
 
 void
 inp_wlock(struct inpcb *inp)

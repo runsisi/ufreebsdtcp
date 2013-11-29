@@ -154,6 +154,7 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/kern/uipc_socket.c 253035 2013-07-08 13:24
 static int	soreceive_rcvoob(struct socket *so, struct uio *uio,
 		    int flags);
 
+#if 0 // runsisi AT hust.edu.cn @2013/10/31
 static void	filt_sordetach(struct knote *kn);
 static int	filt_soread(struct knote *kn, long hint);
 static void	filt_sowdetach(struct knote *kn);
@@ -175,6 +176,7 @@ static struct filterops sowrite_filtops = {
 	.f_detach = filt_sowdetach,
 	.f_event = filt_sowrite,
 };
+#endif // ------- @2013/10/31
 
 so_gen_t	so_gencnt;	/* generation count for sockets */
 
@@ -3392,6 +3394,7 @@ pru_sopoll_notsupp(struct socket *so, int events, struct ucred *cred,
 	return EOPNOTSUPP;
 }
 
+#if 0 // runsisi AT hust.edu.cn @2013/10/31
 static void
 filt_sordetach(struct knote *kn)
 {
@@ -3471,6 +3474,7 @@ filt_solisten(struct knote *kn, long hint)
 	kn->kn_data = so->so_qlen;
 	return (! BSD_TAILQ_EMPTY(&so->so_comp));
 }
+#endif // ------- @2013/10/31
 
 int
 socheckuid(struct socket *so, uid_t uid)

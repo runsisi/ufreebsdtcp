@@ -1163,7 +1163,7 @@ send:
 			 * not currently timing anything.
 			 */
 			if (tp->t_rtttime == 0) {
-				tp->t_rtttime = ticks;
+				tp->t_rtttime = V_ticks;
 				tp->t_rtseq = startseq;
 				TCPSTAT_INC(tcps_segstimed);
 			}
