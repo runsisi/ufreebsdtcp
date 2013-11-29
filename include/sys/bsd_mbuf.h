@@ -665,10 +665,12 @@ m_clget(struct mbuf *m, int how)
 	 * On a cluster allocation failure, drain the packet zone and retry,
 	 * we might be able to loosen a few clusters up on the drain.
 	 */
-	if ((how & M_NOWAIT) && (m->m_ext.ext_buf == NULL)) {
-		zone_drain(zone_pack);
-		uma_zalloc_arg(zone_clust, m, how);
-	}
+    #if 0	// runsisi AT hust.edu.cn @2013/11/08
+    if ((how & M_NOWAIT) && (m->m_ext.ext_buf == NULL)) {
+        zone_drain(zone_pack);
+        uma_zalloc_arg(zone_clust, m, how);
+    }
+    #endif 	// ---------------------- @2013/11/08
 }
 
 /*
@@ -753,8 +755,10 @@ static __inline void
 m_addr_changed(struct mbuf *m)
 {
 
-	if (m_addr_chg_pf_p)
-		m_addr_chg_pf_p(m);
+    #if 0	// runsisi AT hust.edu.cn @2013/11/07
+    if (m_addr_chg_pf_p)
+        m_addr_chg_pf_p(m);
+    #endif 	// ---------------------- @2013/11/07
 }
 
 /*

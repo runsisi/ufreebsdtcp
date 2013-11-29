@@ -241,8 +241,10 @@ static void inline	cc_ack_received(struct tcpcb *tp, struct tcphdr *th,
 			    uint16_t type);
 static void inline	cc_conn_init(struct tcpcb *tp);
 static void inline	cc_post_recovery(struct tcpcb *tp, struct tcphdr *th);
+#if 0	// runsisi AT hust.edu.cn @2013/11/06
 static void inline	hhook_run_tcp_est_in(struct tcpcb *tp,
 			    struct tcphdr *th, struct tcpopt *to);
+#endif 	// ---------------------- @2013/11/06
 
 /*
  * Kernel module interface for updating tcpstat.  The argument is an index
@@ -258,6 +260,7 @@ kmod_tcpstat_inc(int statnum)
 	(*((u_long *)&V_tcpstat + statnum))++;
 }
 
+#if 0	// runsisi AT hust.edu.cn @2013/11/06
 /*
  * Wrapper for the TCP established input helper hook.
  */
@@ -275,6 +278,7 @@ hhook_run_tcp_est_in(struct tcpcb *tp, struct tcphdr *th, struct tcpopt *to)
 		    tp->osd);
 	}
 }
+#endif 	// ---------------------- @2013/11/06
 
 /*
  * CC wrapper hook functions
@@ -1341,8 +1345,8 @@ relocked:
 			}
 			if (IN_MULTICAST(ntohl(ip->ip_dst.s_addr)) ||
 			    IN_MULTICAST(ntohl(ip->ip_src.s_addr)) ||
-			    ip->ip_src.s_addr == htonl(INADDR_BROADCAST) ||
-			    in_broadcast(ip->ip_dst, m->m_pkthdr.rcvif)) {
+			    ip->ip_src.s_addr == htonl(INADDR_BROADCAST) /*||
+			    in_broadcast(ip->ip_dst, m->m_pkthdr.rcvif)*/) {
 				if ((s = tcp_log_addrs(&inc, th, NULL, NULL)))
 				    bsd_log(LOG_DEBUG, "%s; %s: Listen socket: "
 					"Connection attempt from/to broad- "
@@ -1658,7 +1662,7 @@ tcp_do_segment(struct mbuf *m, struct tcphdr *th, struct socket *so,
 				 */
 				if (tp->t_rxtshift == 1 &&
 				    tp->t_flags & TF_PREVVALID &&
-				    (int)(ticks - tp->t_badrxtwin) < 0) {
+				    (int)(V_ticks - tp->t_badrxtwin) < 0) {
 					cc_cong_signal(tp, th, CC_RTO_ERR);
 				}
 
@@ -1682,15 +1686,17 @@ tcp_do_segment(struct mbuf *m, struct tcphdr *th, struct socket *so,
 				} else if (tp->t_rtttime &&
 				    SEQ_GT(th->th_ack, tp->t_rtseq)) {
 					if (!tp->t_rttlow ||
-					    tp->t_rttlow > ticks - tp->t_rtttime)
-						tp->t_rttlow = ticks - tp->t_rtttime;
+					    tp->t_rttlow > V_ticks - tp->t_rtttime)
+						tp->t_rttlow = V_ticks - tp->t_rtttime;
 					tcp_xmit_timer(tp,
-							ticks - tp->t_rtttime);
+							V_ticks - tp->t_rtttime);
 				}
 				acked = BYTES_THIS_ACK(tp, th);
 
 				/* Run HHOOK_TCP_ESTABLISHED_IN helper hooks. */
-				hhook_run_tcp_est_in(tp, th, &to);
+                #if 0	// runsisi AT hust.edu.cn @2013/11/06
+                hhook_run_tcp_est_in(tp, th, &to);
+                #endif 	// ---------------------- @2013/11/06
 
 				TCPSTAT_INC(tcps_rcvackpack);
 				TCPSTAT_ADD(tcps_rcvackbyte, acked);
@@ -1846,7 +1852,12 @@ tcp_do_segment(struct mbuf *m, struct tcphdr *th, struct socket *so,
 					    newsize, so, NULL))
 						so->so_rcv.sb_flags &= ~SB_AUTOSIZE;
 				m_adj(m, drop_hdrlen);	/* delayed header drop */
-				sbappendstream_locked(&so->so_rcv, m);
+                #if 0	// runsisi AT hust.edu.cn @2013/11/16
+                sbappendstream_locked(&so->so_rcv, m);
+                #endif 	// ---------------------- @2013/11/16
+                // runsisi AT hust.edu.cn @2013/11/16
+                soappendstreamtorcvq_locked(so, m);
+                // ---------------------- @2013/11/16
 			}
 			/* NB: sorwakeup_locked() does an implicit unlock. */
 			sorwakeup_locked(so);
@@ -1955,7 +1966,7 @@ tcp_do_segment(struct mbuf *m, struct tcphdr *th, struct socket *so,
 			 *	SYN_SENT  --> ESTABLISHED
 			 *	SYN_SENT* --> FIN_WAIT_1
 			 */
-			tp->t_starttime = ticks;
+			tp->t_starttime = V_ticks;
 			if (tp->t_flags & TF_NEEDFIN) {
 				tp->t_state = TCPS_FIN_WAIT_1;
 				tp->t_flags &= ~TF_NEEDFIN;
@@ -2361,7 +2372,7 @@ tcp_do_segment(struct mbuf *m, struct tcphdr *th, struct socket *so,
 		 *      SYN-RECEIVED  -> ESTABLISHED
 		 *      SYN-RECEIVED* -> FIN-WAIT-1
 		 */
-		tp->t_starttime = ticks;
+		tp->t_starttime = V_ticks;
 		if (tp->t_flags & TF_NEEDFIN) {
 			tp->t_state = TCPS_FIN_WAIT_1;
 			tp->t_flags &= ~TF_NEEDFIN;
@@ -2404,7 +2415,9 @@ tcp_do_segment(struct mbuf *m, struct tcphdr *th, struct socket *so,
 			tcp_sack_doack(tp, &to, th->th_ack);
 
 		/* Run HHOOK_TCP_ESTABLISHED_IN helper hooks. */
-		hhook_run_tcp_est_in(tp, th, &to);
+        #if 0	// runsisi AT hust.edu.cn @2013/11/06
+        hhook_run_tcp_est_in(tp, th, &to);
+        #endif 	// ---------------------- @2013/11/06
 
 		if (SEQ_LEQ(th->th_ack, tp->snd_una)) {
 			if (tlen == 0 && tiwin == tp->snd_wnd) {
@@ -2666,9 +2679,9 @@ process_ACK:
 				tp->t_rttlow = t;
 			tcp_xmit_timer(tp, TCP_TS_TO_TICKS(t) + 1);
 		} else if (tp->t_rtttime && SEQ_GT(th->th_ack, tp->t_rtseq)) {
-			if (!tp->t_rttlow || tp->t_rttlow > ticks - tp->t_rtttime)
-				tp->t_rttlow = ticks - tp->t_rtttime;
-			tcp_xmit_timer(tp, ticks - tp->t_rtttime);
+			if (!tp->t_rttlow || tp->t_rttlow > V_ticks - tp->t_rtttime)
+				tp->t_rttlow = V_ticks - tp->t_rtttime;
+			tcp_xmit_timer(tp, V_ticks - tp->t_rtttime);
 		}
 
 		/*
@@ -2918,7 +2931,18 @@ dodata:							/* XXX */
 			if (so->so_rcv.sb_state & SBS_CANTRCVMORE)
 				m_freem(m);
 			else
-				sbappendstream_locked(&so->so_rcv, m);
+                #if 0	// runsisi AT hust.edu.cn @2013/11/16
+                sbappendstream_locked(&so->so_rcv, m);
+                #endif 	// ---------------------- @2013/11/16
+            // runsisi AT hust.edu.cn @2013/11/16
+			{
+                if (thflags & BSD_TH_FIN)
+                {
+                    m->m_flags |= M_EOR;
+                }
+                soappendstreamtorcvq_locked(so, m);
+			}
+            // ---------------------- @2013/11/16
 			/* NB: sorwakeup_locked() does an implicit unlock. */
 			sorwakeup_locked(so);
 		} else {
@@ -2977,7 +3001,7 @@ dodata:							/* XXX */
 		 * enter the CLOSE_WAIT state.
 		 */
 		case TCPS_SYN_RECEIVED:
-			tp->t_starttime = ticks;
+			tp->t_starttime = V_ticks;
 			/* FALLTHROUGH */
 		case TCPS_ESTABLISHED:
 			tp->t_state = TCPS_CLOSE_WAIT;
@@ -3154,9 +3178,11 @@ tcp_dropwithreset(struct mbuf *m, struct tcphdr *th, struct tcpcb *tp,
 	}
 #endif
 
-	/* Perform bandwidth limiting. */
-	if (badport_bandlim(rstreason) < 0)
-		goto drop;
+    #if 0	// runsisi AT hust.edu.cn @2013/11/06
+    /* Perform bandwidth limiting. */
+    if (badport_bandlim(rstreason) < 0)
+        goto drop;
+    #endif 	// ---------------------- @2013/11/06
 
 	/* tcp_respond consumes the mbuf chain. */
 	if (th->th_flags & TH_ACK) {

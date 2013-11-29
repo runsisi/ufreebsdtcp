@@ -228,6 +228,10 @@ static struct inpcb *tcp_mtudisc_notify(struct inpcb *, int);
 static char *	tcp_log_addr(struct in_conninfo *inc, struct tcphdr *th,
 		    void *ip4hdr, const void *ip6hdr);
 
+// runsisi AT hust.edu.cn @2013/11/07
+extern int brs_tcp_maxmtu(void);
+// ---------------------- @2013/11/07
+
 /*
  * Target size of TCP PCB hash tables. Must be a power of two.
  *
@@ -287,12 +291,14 @@ tcp_init(void)
 {
 	int hashsize;
 
-	if (hhook_head_register(HHOOK_TYPE_TCP, HHOOK_TCP_EST_IN,
-	    &V_tcp_hhh[HHOOK_TCP_EST_IN], HHOOK_NOWAIT|HHOOK_HEADISINVNET) != 0)
-		printf("%s: WARNING: unable to register helper hook\n", __func__);
-	if (hhook_head_register(HHOOK_TYPE_TCP, HHOOK_TCP_EST_OUT,
-	    &V_tcp_hhh[HHOOK_TCP_EST_OUT], HHOOK_NOWAIT|HHOOK_HEADISINVNET) != 0)
-		printf("%s: WARNING: unable to register helper hook\n", __func__);
+    #if 0	// runsisi AT hust.edu.cn @2013/11/06
+    if (hhook_head_register(HHOOK_TYPE_TCP, HHOOK_TCP_EST_IN,
+        &V_tcp_hhh[HHOOK_TCP_EST_IN], HHOOK_NOWAIT|HHOOK_HEADISINVNET) != 0)
+        printf("%s: WARNING: unable to register helper hook\n", __func__);
+    if (hhook_head_register(HHOOK_TYPE_TCP, HHOOK_TCP_EST_OUT,
+        &V_tcp_hhh[HHOOK_TCP_EST_OUT], HHOOK_NOWAIT|HHOOK_HEADISINVNET) != 0)
+        printf("%s: WARNING: unable to register helper hook\n", __func__);
+    #endif 	// ---------------------- @2013/11/06
 
 	hashsize = TCBHASHSIZE;
 	TUNABLE_INT_FETCH("net.inet.tcp.tcbhashsize", &hashsize);
@@ -360,10 +366,12 @@ tcp_init(void)
 #undef TCP_MINPROTOHDR
 
 	ISN_LOCK_INIT();
-	EVENTHANDLER_REGISTER(shutdown_pre_sync, tcp_fini, NULL,
-		SHUTDOWN_PRI_DEFAULT);
-	EVENTHANDLER_REGISTER(maxsockets_change, tcp_zone_change, NULL,
-		EVENTHANDLER_PRI_ANY);
+    #if 0	// runsisi AT hust.edu.cn @2013/11/06
+    EVENTHANDLER_REGISTER(shutdown_pre_sync, tcp_fini, NULL,
+        SHUTDOWN_PRI_DEFAULT);
+    EVENTHANDLER_REGISTER(maxsockets_change, tcp_zone_change, NULL,
+        EVENTHANDLER_PRI_ANY);
+    #endif 	// ---------------------- @2013/11/06
 }
 
 #ifdef VIMAGE
@@ -697,10 +705,12 @@ tcp_newtcpcb(struct inpcb *inp)
 		}
 
 	tp->osd = &tm->osd;
-	if (khelp_init_osd(HELPER_CLASS_TCP, tp->osd)) {
-		uma_zfree(V_tcpcb_zone, tm);
-		return (NULL);
-	}
+    #if 0	// runsisi AT hust.edu.cn @2013/11/07
+    if (khelp_init_osd(HELPER_CLASS_TCP, tp->osd)) {
+        uma_zfree(V_tcpcb_zone, tm);
+        return (NULL);
+    }
+    #endif 	// ---------------------- @2013/11/07
 
 #ifdef VIMAGE
 	tp->t_vnet = inp->inp_vnet;
@@ -737,7 +747,7 @@ tcp_newtcpcb(struct inpcb *inp)
 	tp->t_rxtcur = TCPTV_RTOBASE;
 	tp->snd_cwnd = TCP_MAXWIN << TCP_MAX_WINSHIFT;
 	tp->snd_ssthresh = TCP_MAXWIN << TCP_MAX_WINSHIFT;
-	tp->t_rcvtime = ticks;
+	tp->t_rcvtime = V_ticks;
 	/*
 	 * IPv4 TTL initialization is necessary for an IPv6 socket as well,
 	 * because the socket may be bound to an IPv6 wildcard address,
@@ -939,7 +949,9 @@ tcp_discardcb(struct tcpcb *tp)
 	if (CC_ALGO(tp)->cb_destroy != NULL)
 		CC_ALGO(tp)->cb_destroy(tp->ccv);
 
-	khelp_destroy_osd(tp->osd);
+    #if 0	// runsisi AT hust.edu.cn @2013/11/07
+    khelp_destroy_osd(tp->osd);
+    #endif 	// ---------------------- @2013/11/07
 
 	CC_ALGO(tp) = NULL;
 	inp->inp_ppcb = NULL;
@@ -1590,9 +1602,9 @@ tcp_new_isn(struct tcpcb *tp)
 	/* Seed if this is the first use, reseed if requested. */
 	if ((V_isn_last_reseed == 0) || ((V_tcp_isn_reseed_interval > 0) &&
 	     (((u_int)V_isn_last_reseed + (u_int)V_tcp_isn_reseed_interval*hz)
-		< (u_int)ticks))) {
+		< (u_int)V_ticks))) {
 		read_random(&V_isn_secret, sizeof(V_isn_secret));
-		V_isn_last_reseed = ticks;
+		V_isn_last_reseed = V_ticks;
 	}
 
 	/* Compute the md5 hash and return the ISN. */
@@ -1618,13 +1630,13 @@ tcp_new_isn(struct tcpcb *tp)
 	new_isn = (tcp_seq) md5_buffer[0];
 	V_isn_offset += ISN_STATIC_INCREMENT +
 		(arc4random() & ISN_RANDOM_INCREMENT);
-	if (ticks != V_isn_last) {
+	if (V_ticks != V_isn_last) {
 		projected_offset = V_isn_offset_old +
-		    ISN_BYTES_PER_SECOND / hz * (ticks - V_isn_last);
+		    ISN_BYTES_PER_SECOND / hz * (V_ticks - V_isn_last);
 		if (SEQ_GT(projected_offset, V_isn_offset))
 			V_isn_offset = projected_offset;
 		V_isn_offset_old = V_isn_offset;
-		V_isn_last = ticks;
+		V_isn_last = V_ticks;
 	}
 	new_isn += V_isn_offset;
 	ISN_UNLOCK();
@@ -1716,6 +1728,7 @@ tcp_mtudisc(struct inpcb *inp, int mtuoffer)
 u_long
 tcp_maxmtu(struct in_conninfo *inc, struct tcp_ifcap *cap)
 {
+    #if 0	// runsisi AT hust.edu.cn @2013/11/06
 	struct route sro;
 	struct sockaddr_in *dst;
 	struct ifnet *ifp;
@@ -1748,6 +1761,9 @@ tcp_maxmtu(struct in_conninfo *inc, struct tcp_ifcap *cap)
 		RTFREE(sro.ro_rt);
 	}
 	return (maxmtu);
+    #endif 	// ---------------------- @2013/11/06
+
+    return (u_long)brs_tcp_maxmtu();
 }
 #endif /* INET */
 

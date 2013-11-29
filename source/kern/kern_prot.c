@@ -84,6 +84,33 @@ FEATURE(regression,
 //#include <security/audit/audit.h>
 //#include <security/mac/mac_framework.h>
 
+/*-
+ * Determine if u1 "can see" the subject specified by u2.
+ * Returns: 0 for permitted, an errno value otherwise
+ * Locks: none
+ * References: *u1 and *u2 must not change during the call
+ *             u1 may equal u2, in which case only one reference is required
+ */
+int
+cr_cansee(struct ucred *u1, struct ucred *u2)
+{
+
+    return (0);
+}
+
+#if defined(INET) || defined(INET6)
+/*-
+ * Determine whether the subject represented by cred can "see" a socket.
+ * Returns: 0 for permitted, ENOENT otherwise.
+ */
+int
+cr_canseeinpcb(struct ucred *cred, struct inpcb *inp)
+{
+
+    return (0);
+}
+#endif
+
 /*
  * Claim another reference to a ucred structure.
  */

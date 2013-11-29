@@ -460,7 +460,7 @@ tcp_timer_persist(void *xtp)
 	 * connection after a much reduced timeout.
 	 */
 	if (tp->t_state > TCPS_CLOSE_WAIT &&
-	    (ticks - tp->t_rcvtime) >= TCPTV_PERSMAX) {
+	    (V_ticks - tp->t_rcvtime) >= TCPTV_PERSMAX) {
 		TCPSTAT_INC(tcps_persistdrop);
 		tp = tcp_drop(tp, ETIMEDOUT);
 		goto out;

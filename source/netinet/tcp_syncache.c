@@ -1643,13 +1643,13 @@ syncookie_generate(struct syncache_head *sch, struct syncache *sc,
 			sch->sch_secbits_odd : sch->sch_secbits_even;
 
 	/* Reseed secret if too old. */
-	if (sch->sch_reseed < time_uptime) {
+	if (sch->sch_reseed < V_time_uptime) {
 		sch->sch_oddeven = sch->sch_oddeven ? 0 : 1;	/* toggle */
 		secbits = sch->sch_oddeven ?
 				sch->sch_secbits_odd : sch->sch_secbits_even;
 		for (i = 0; i < SYNCOOKIE_SECRET_SIZE; i++)
 			secbits[i] = arc4random();
-		sch->sch_reseed = time_uptime + SYNCOOKIE_LIFETIME;
+		sch->sch_reseed = V_time_uptime + SYNCOOKIE_LIFETIME;
 	}
 
 	/* Secret rotation offset. */
@@ -1729,7 +1729,7 @@ syncookie_lookup(struct in_conninfo *inc, struct syncache_head *sch,
 	 * The secret wasn't updated for the lifetime of a syncookie,
 	 * so this SYN-ACK/ACK is either too old (replay) or totally bogus.
 	 */
-	if (sch->sch_reseed + SYNCOOKIE_LIFETIME < time_uptime) {
+	if (sch->sch_reseed + SYNCOOKIE_LIFETIME < V_time_uptime) {
 		return (NULL);
 	}
 

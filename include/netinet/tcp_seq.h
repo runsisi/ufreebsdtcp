@@ -78,6 +78,7 @@
 static __inline u_int
 tcp_ts_getticks(void)
 {
+    #if 0	// runsisi AT hust.edu.cn @2013/11/06
 	struct timeval tv;
 	u_long ms;
 
@@ -89,6 +90,9 @@ tcp_ts_getticks(void)
 	ms = tv.tv_sec * 1000 + tv.tv_usec / 1000;
 
 	return (ms);
+    #endif 	// ---------------------- @2013/11/06
+
+    return V_ticks;
 }
 #endif /* _KERNEL */
 
