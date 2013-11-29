@@ -309,7 +309,9 @@ sysctl_maxsockets(SYSCTL_HANDLER_ARGS)
 				maxfiles = (maxsockets * 5) / 4;
 				maxfilesperproc = (maxfiles * 9) / 10;
 			}
-			EVENTHANDLER_INVOKE(maxsockets_change);
+            #if 0	// runsisi AT hust.edu.cn @2013/11/29
+            EVENTHANDLER_INVOKE(maxsockets_change);
+            #endif 	// ---------------------- @2013/11/29
 		} else
 			error = EINVAL;
 	}

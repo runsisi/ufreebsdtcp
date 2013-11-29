@@ -446,8 +446,8 @@ short	inp_so_options(const struct inpcb *inp);
 
 #endif /* _KERNEL */
 
-#define INP_INFO_LOCK_INIT(ipi, d) \
-	rw_init_flags(&(ipi)->ipi_lock, (d), RW_RECURSE)
+#define INP_INFO_LOCK_INIT(ipi, d) /*\
+	rw_init_flags(&(ipi)->ipi_lock, (d), RW_RECURSE)*/
 #define INP_INFO_LOCK_DESTROY(ipi)  rw_destroy(&(ipi)->ipi_lock)
 #define INP_INFO_RLOCK(ipi)	rw_rlock(&(ipi)->ipi_lock)
 #define INP_INFO_WLOCK(ipi)	rw_wlock(&(ipi)->ipi_lock)
@@ -461,8 +461,8 @@ short	inp_so_options(const struct inpcb *inp);
 #define INP_INFO_WLOCK_ASSERT(ipi)	rw_assert(&(ipi)->ipi_lock, RA_WLOCKED)
 #define INP_INFO_UNLOCK_ASSERT(ipi)	rw_assert(&(ipi)->ipi_lock, RA_UNLOCKED)
 
-#define	INP_HASH_LOCK_INIT(ipi, d) \
-	rw_init_flags(&(ipi)->ipi_hash_lock, (d), 0)
+#define	INP_HASH_LOCK_INIT(ipi, d) /*\
+	rw_init_flags(&(ipi)->ipi_hash_lock, (d), 0)*/
 #define	INP_HASH_LOCK_DESTROY(ipi)	rw_destroy(&(ipi)->ipi_hash_lock)
 #define	INP_HASH_RLOCK(ipi)		rw_rlock(&(ipi)->ipi_hash_lock)
 #define	INP_HASH_WLOCK(ipi)		rw_wlock(&(ipi)->ipi_hash_lock)

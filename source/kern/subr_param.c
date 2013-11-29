@@ -60,12 +60,22 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/kern/subr_param.c 253250 2013-07-12 05:45:
 #ifndef HZ
 #define	HZ 100 //1000
 #endif
+#define NPROC (20 + 16 * maxusers)
+#ifndef NBUF
+#define NBUF 0
+#endif
+#ifndef MAXFILES
+#define MAXFILES (maxproc * 2)
+#endif
 
-int	hz;
-int	tick;
+int hz;
+int tick;
 int maxusers;           /* base tunable */
+int maxproc;            /* maximum # of processes */
+int maxprocperuid;          /* max # of procs per user */
 int maxfiles;           /* sys. wide open files limit */
-int	ncallout;			/* maximum # of timer events */
+int maxfilesperproc;        /* per-proc open files limit */
+int ncallout;           /* maximum # of timer events */
 
 SYSCTL_INT(_kern, OID_AUTO, hz, CTLFLAG_RDTUN, &hz, 0,
     "Number of clock ticks per second");
@@ -105,7 +115,24 @@ init_param2(long physpages)
 			maxusers = 384;
 	}
 
-    maxfiles = 1024;    /* TODO: use some other means */
+    /*
+     * The following can be overridden after boot via sysctl.  Note:
+     * unless overriden, these macros are ultimately based on maxusers.
+     */
+    maxproc = NPROC;
+    TUNABLE_INT_FETCH("kern.maxproc", &maxproc);
+    /*
+     * Limit maxproc so that kmap entries cannot be exhausted by
+     * processes.
+     */
+    #if 0	// runsisi AT hust.edu.cn @2013/11/29
+    if (maxproc > (physpages / 12))
+        maxproc = physpages / 12;
+    #endif 	// ---------------------- @2013/11/29
+    maxfiles = MAXFILES;
+    TUNABLE_INT_FETCH("kern.maxfiles", &maxfiles);
+    maxprocperuid = (maxproc * 9) / 10;
+    maxfilesperproc = (maxfiles * 9) / 10;
 }
 
 // runsisi AT hust.edu.cn @2013/11/08

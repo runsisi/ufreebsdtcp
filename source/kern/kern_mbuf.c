@@ -141,7 +141,9 @@ sysctl_nmbclusters(SYSCTL_HANDLER_ARGS)
 		if (newnmbclusters > nmbclusters) {
 			nmbclusters = newnmbclusters;
 			uma_zone_set_max(zone_clust, nmbclusters);
-			EVENTHANDLER_INVOKE(nmbclusters_change);
+            #if 0	// runsisi AT hust.edu.cn @2013/11/29
+            EVENTHANDLER_INVOKE(nmbclusters_change);
+            #endif 	// ---------------------- @2013/11/29
 		} else
 			error = EINVAL;
 	}
@@ -232,15 +234,19 @@ uma_zone_t	zone_ext_refcnt;
  * Local prototypes.
  */
 static int	mb_ctor_mbuf(void *, int, void *, int);
+#if 0   // runsisi AT hust.edu.cn @2013/11/05
 static int	mb_ctor_clust(void *, int, void *, int);
 static int	mb_ctor_pack(void *, int, void *, int);
+#endif  // ---------------------- @2013/11/05
 static void	mb_dtor_mbuf(void *, int, void *);
+#if 0   // runsisi AT hust.edu.cn @2013/11/05
 static void	mb_dtor_clust(void *, int, void *);
 static void	mb_dtor_pack(void *, int, void *);
 static int	mb_zinit_pack(void *, int, int);
 static void	mb_zfini_pack(void *, int);
 
 static void	mb_reclaim(void *);
+#endif 	// ---------------------- @2013/11/05
 static void	mbuf_init(void *);
 static void    *mbuf_jumbo_alloc(uma_zone_t, int, uint8_t *, int);
 
@@ -267,60 +273,62 @@ mbuf_init(void *dummy)
 #endif
 	    MSIZE - 1, UMA_ZONE_MAXBUCKET);
 
-	zone_clust = uma_zcreate(MBUF_CLUSTER_MEM_NAME, MCLBYTES,
-	    mb_ctor_clust, mb_dtor_clust,
-#ifdef INVARIANTS
-	    trash_init, trash_fini,
-#else
-	    NULL, NULL,
-#endif
-	    UMA_ALIGN_PTR, UMA_ZONE_REFCNT);
-	if (nmbclusters > 0)
-		uma_zone_set_max(zone_clust, nmbclusters);
+    #if 0	// runsisi AT hust.edu.cn @2013/11/05
+    zone_clust = uma_zcreate(MBUF_CLUSTER_MEM_NAME, MCLBYTES,
+        mb_ctor_clust, mb_dtor_clust,
+    #ifdef INVARIANTS
+        trash_init, trash_fini,
+    #else
+        NULL, NULL,
+    #endif
+        UMA_ALIGN_PTR, UMA_ZONE_REFCNT);
+    if (nmbclusters > 0)
+        uma_zone_set_max(zone_clust, nmbclusters);
 
-	zone_pack = uma_zsecond_create(MBUF_PACKET_MEM_NAME, mb_ctor_pack,
-	    mb_dtor_pack, mb_zinit_pack, mb_zfini_pack, zone_mbuf);
+    zone_pack = uma_zsecond_create(MBUF_PACKET_MEM_NAME, mb_ctor_pack,
+        mb_dtor_pack, mb_zinit_pack, mb_zfini_pack, zone_mbuf);
 
-	/* Make jumbo frame zone too. Page size, 9k and 16k. */
-	zone_jumbop = uma_zcreate(MBUF_JUMBOP_MEM_NAME, MJUMPAGESIZE,
-	    mb_ctor_clust, mb_dtor_clust,
-#ifdef INVARIANTS
-	    trash_init, trash_fini,
-#else
-	    NULL, NULL,
-#endif
-	    UMA_ALIGN_PTR, UMA_ZONE_REFCNT);
-	if (nmbjumbop > 0)
-		uma_zone_set_max(zone_jumbop, nmbjumbop);
+    /* Make jumbo frame zone too. Page size, 9k and 16k. */
+    zone_jumbop = uma_zcreate(MBUF_JUMBOP_MEM_NAME, MJUMPAGESIZE,
+        mb_ctor_clust, mb_dtor_clust,
+    #ifdef INVARIANTS
+        trash_init, trash_fini,
+    #else
+        NULL, NULL,
+    #endif
+        UMA_ALIGN_PTR, UMA_ZONE_REFCNT);
+    if (nmbjumbop > 0)
+        uma_zone_set_max(zone_jumbop, nmbjumbop);
 
-	zone_jumbo9 = uma_zcreate(MBUF_JUMBO9_MEM_NAME, MJUM9BYTES,
-	    mb_ctor_clust, mb_dtor_clust,
-#ifdef INVARIANTS
-	    trash_init, trash_fini,
-#else
-	    NULL, NULL,
-#endif
-	    UMA_ALIGN_PTR, UMA_ZONE_REFCNT);
-	if (nmbjumbo9 > 0)
-		uma_zone_set_max(zone_jumbo9, nmbjumbo9);
-	uma_zone_set_allocf(zone_jumbo9, mbuf_jumbo_alloc);
+    zone_jumbo9 = uma_zcreate(MBUF_JUMBO9_MEM_NAME, MJUM9BYTES,
+        mb_ctor_clust, mb_dtor_clust,
+    #ifdef INVARIANTS
+        trash_init, trash_fini,
+    #else
+        NULL, NULL,
+    #endif
+        UMA_ALIGN_PTR, UMA_ZONE_REFCNT);
+    if (nmbjumbo9 > 0)
+        uma_zone_set_max(zone_jumbo9, nmbjumbo9);
+    uma_zone_set_allocf(zone_jumbo9, mbuf_jumbo_alloc);
 
-	zone_jumbo16 = uma_zcreate(MBUF_JUMBO16_MEM_NAME, MJUM16BYTES,
-	    mb_ctor_clust, mb_dtor_clust,
-#ifdef INVARIANTS
-	    trash_init, trash_fini,
-#else
-	    NULL, NULL,
-#endif
-	    UMA_ALIGN_PTR, UMA_ZONE_REFCNT);
-	if (nmbjumbo16 > 0)
-		uma_zone_set_max(zone_jumbo16, nmbjumbo16);
-	uma_zone_set_allocf(zone_jumbo16, mbuf_jumbo_alloc);
+    zone_jumbo16 = uma_zcreate(MBUF_JUMBO16_MEM_NAME, MJUM16BYTES,
+        mb_ctor_clust, mb_dtor_clust,
+    #ifdef INVARIANTS
+        trash_init, trash_fini,
+    #else
+        NULL, NULL,
+    #endif
+        UMA_ALIGN_PTR, UMA_ZONE_REFCNT);
+    if (nmbjumbo16 > 0)
+        uma_zone_set_max(zone_jumbo16, nmbjumbo16);
+    uma_zone_set_allocf(zone_jumbo16, mbuf_jumbo_alloc);
 
-	zone_ext_refcnt = uma_zcreate(MBUF_EXTREFCNT_MEM_NAME, sizeof(u_int),
-	    NULL, NULL,
-	    NULL, NULL,
-	    UMA_ALIGN_PTR, UMA_ZONE_ZINIT);
+    zone_ext_refcnt = uma_zcreate(MBUF_EXTREFCNT_MEM_NAME, sizeof(u_int),
+        NULL, NULL,
+        NULL, NULL,
+        UMA_ALIGN_PTR, UMA_ZONE_ZINIT);
+    #endif 	// ---------------------- @2013/11/05
 
 	/* uma_prealloc() goes here... */
 
@@ -329,8 +337,10 @@ mbuf_init(void *dummy)
 	 * drain protocols and push data back to the caches (UMA
 	 * later pushes it back to VM).
 	 */
-	EVENTHANDLER_REGISTER(vm_lowmem, mb_reclaim, NULL,
-	    EVENTHANDLER_PRI_FIRST);
+    #if 0	// runsisi AT hust.edu.cn @2013/11/05
+    EVENTHANDLER_REGISTER(vm_lowmem, mb_reclaim, NULL,
+        EVENTHANDLER_PRI_FIRST);
+    #endif 	// ---------------------- @2013/11/05
 
 	/*
 	 * [Re]set counters and local statistics knobs.
@@ -352,6 +362,7 @@ mbuf_init(void *dummy)
 	mbstat.sf_allocwait = mbstat.sf_allocfail = 0;
 }
 
+#if 0	// runsisi AT hust.edu.cn @2013/11/05
 /*
  * UMA backend page allocator for the jumbo frame zones.
  *
@@ -367,6 +378,7 @@ mbuf_jumbo_alloc(uma_zone_t zone, int bytes, uint8_t *flags, int wait)
 	return ((void *)kmem_alloc_contig(kernel_map, bytes, wait,
 	    (vm_paddr_t)0, ~(vm_paddr_t)0, 1, 0, VM_MEMATTR_DEFAULT));
 }
+#endif 	// ---------------------- @2013/11/05
 
 /*
  * Constructor for Mbuf master zone.
@@ -449,6 +461,7 @@ mb_dtor_mbuf(void *mem, int size, void *arg)
 #endif
 }
 
+#if 0	// runsisi AT hust.edu.cn @2013/11/05
 /*
  * The Mbuf Packet zone destructor.
  */
@@ -653,6 +666,7 @@ mb_ctor_pack(void *mem, int size, void *arg, int how)
 
 	return (0);
 }
+#endif  // ---------------------- @2013/11/05
 
 int
 m_pkthdr_init(struct mbuf *m, int how)
@@ -680,6 +694,7 @@ m_pkthdr_init(struct mbuf *m, int how)
 	return (0);
 }
 
+#if 0   // runsisi AT hust.edu.cn @2013/11/05
 /*
  * This is the protocol drain routine.
  *
@@ -701,3 +716,4 @@ mb_reclaim(void *junk)
 			if (pr->pr_drain != NULL)
 				(*pr->pr_drain)();
 }
+#endif  // ---------------------- @2013/11/05

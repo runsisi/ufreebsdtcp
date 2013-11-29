@@ -1234,36 +1234,37 @@ SYSCTL_PROC(_net_inet_tcp, TCPCTL_PCBLIST, pcblist,
     CTLTYPE_OPAQUE | CTLFLAG_RD, NULL, 0,
     tcp_pcblist, "S,xtcpcb", "List of active TCP connections");
 
+#if 0	// runsisi AT hust.edu.cn @2013/11/29
 #ifdef INET
 static int
 tcp_getcred(SYSCTL_HANDLER_ARGS)
 {
-	struct xucred xuc;
-	struct sockaddr_in addrs[2];
-	struct inpcb *inp;
-	int error;
+    struct xucred xuc;
+    struct sockaddr_in addrs[2];
+    struct inpcb *inp;
+    int error;
 
-	error = priv_check(req->td, PRIV_NETINET_GETCRED);
-	if (error)
-		return (error);
-	error = SYSCTL_IN(req, addrs, sizeof(addrs));
-	if (error)
-		return (error);
-	inp = in_pcblookup(&V_tcbinfo, addrs[1].sin_addr, addrs[1].sin_port,
-	    addrs[0].sin_addr, addrs[0].sin_port, INPLOOKUP_RLOCKPCB, NULL);
-	if (inp != NULL) {
-		if (inp->inp_socket == NULL)
-			error = ENOENT;
-		if (error == 0)
-			error = cr_canseeinpcb(req->td->td_ucred, inp);
-		if (error == 0)
-			cru2x(inp->inp_cred, &xuc);
-		INP_RUNLOCK(inp);
-	} else
-		error = ENOENT;
-	if (error == 0)
-		error = SYSCTL_OUT(req, &xuc, sizeof(struct xucred));
-	return (error);
+    error = priv_check(req->td, PRIV_NETINET_GETCRED);
+    if (error)
+        return (error);
+    error = SYSCTL_IN(req, addrs, sizeof(addrs));
+    if (error)
+        return (error);
+    inp = in_pcblookup(&V_tcbinfo, addrs[1].sin_addr, addrs[1].sin_port,
+        addrs[0].sin_addr, addrs[0].sin_port, INPLOOKUP_RLOCKPCB, NULL);
+    if (inp != NULL) {
+        if (inp->inp_socket == NULL)
+            error = ENOENT;
+        if (error == 0)
+            error = cr_canseeinpcb(req->td->td_ucred, inp);
+        if (error == 0)
+            cru2x(inp->inp_cred, &xuc);
+        INP_RUNLOCK(inp);
+    } else
+        error = ENOENT;
+    if (error == 0)
+        error = SYSCTL_OUT(req, &xuc, sizeof(struct xucred));
+    return (error);
 }
 
 SYSCTL_PROC(_net_inet_tcp, OID_AUTO, getcred,
@@ -1275,65 +1276,66 @@ SYSCTL_PROC(_net_inet_tcp, OID_AUTO, getcred,
 static int
 tcp6_getcred(SYSCTL_HANDLER_ARGS)
 {
-	struct xucred xuc;
-	struct sockaddr_in6 addrs[2];
-	struct inpcb *inp;
-	int error;
+    struct xucred xuc;
+    struct sockaddr_in6 addrs[2];
+    struct inpcb *inp;
+    int error;
 #ifdef INET
-	int mapped = 0;
+    int mapped = 0;
 #endif
 
-	error = priv_check(req->td, PRIV_NETINET_GETCRED);
-	if (error)
-		return (error);
-	error = SYSCTL_IN(req, addrs, sizeof(addrs));
-	if (error)
-		return (error);
-	if ((error = sa6_embedscope(&addrs[0], V_ip6_use_defzone)) != 0 ||
-	    (error = sa6_embedscope(&addrs[1], V_ip6_use_defzone)) != 0) {
-		return (error);
-	}
-	if (IN6_IS_ADDR_V4MAPPED(&addrs[0].sin6_addr)) {
+    error = priv_check(req->td, PRIV_NETINET_GETCRED);
+    if (error)
+        return (error);
+    error = SYSCTL_IN(req, addrs, sizeof(addrs));
+    if (error)
+        return (error);
+    if ((error = sa6_embedscope(&addrs[0], V_ip6_use_defzone)) != 0 ||
+        (error = sa6_embedscope(&addrs[1], V_ip6_use_defzone)) != 0) {
+        return (error);
+    }
+    if (IN6_IS_ADDR_V4MAPPED(&addrs[0].sin6_addr)) {
 #ifdef INET
-		if (IN6_IS_ADDR_V4MAPPED(&addrs[1].sin6_addr))
-			mapped = 1;
-		else
+        if (IN6_IS_ADDR_V4MAPPED(&addrs[1].sin6_addr))
+            mapped = 1;
+        else
 #endif
-			return (EINVAL);
-	}
+            return (EINVAL);
+    }
 
 #ifdef INET
-	if (mapped == 1)
-		inp = in_pcblookup(&V_tcbinfo,
-			*(struct in_addr *)&addrs[1].sin6_addr.s6_addr[12],
-			addrs[1].sin6_port,
-			*(struct in_addr *)&addrs[0].sin6_addr.s6_addr[12],
-			addrs[0].sin6_port, INPLOOKUP_RLOCKPCB, NULL);
-	else
+    if (mapped == 1)
+        inp = in_pcblookup(&V_tcbinfo,
+            *(struct in_addr *)&addrs[1].sin6_addr.s6_addr[12],
+            addrs[1].sin6_port,
+            *(struct in_addr *)&addrs[0].sin6_addr.s6_addr[12],
+            addrs[0].sin6_port, INPLOOKUP_RLOCKPCB, NULL);
+    else
 #endif
-		inp = in6_pcblookup(&V_tcbinfo,
-			&addrs[1].sin6_addr, addrs[1].sin6_port,
-			&addrs[0].sin6_addr, addrs[0].sin6_port,
-			INPLOOKUP_RLOCKPCB, NULL);
-	if (inp != NULL) {
-		if (inp->inp_socket == NULL)
-			error = ENOENT;
-		if (error == 0)
-			error = cr_canseeinpcb(req->td->td_ucred, inp);
-		if (error == 0)
-			cru2x(inp->inp_cred, &xuc);
-		INP_RUNLOCK(inp);
-	} else
-		error = ENOENT;
-	if (error == 0)
-		error = SYSCTL_OUT(req, &xuc, sizeof(struct xucred));
-	return (error);
+        inp = in6_pcblookup(&V_tcbinfo,
+            &addrs[1].sin6_addr, addrs[1].sin6_port,
+            &addrs[0].sin6_addr, addrs[0].sin6_port,
+            INPLOOKUP_RLOCKPCB, NULL);
+    if (inp != NULL) {
+        if (inp->inp_socket == NULL)
+            error = ENOENT;
+        if (error == 0)
+            error = cr_canseeinpcb(req->td->td_ucred, inp);
+        if (error == 0)
+            cru2x(inp->inp_cred, &xuc);
+        INP_RUNLOCK(inp);
+    } else
+        error = ENOENT;
+    if (error == 0)
+        error = SYSCTL_OUT(req, &xuc, sizeof(struct xucred));
+    return (error);
 }
 
 SYSCTL_PROC(_net_inet6_tcp6, OID_AUTO, getcred,
     CTLTYPE_OPAQUE|CTLFLAG_RW|CTLFLAG_PRISON, 0, 0,
     tcp6_getcred, "S,xucred", "Get the xucred of a TCP6 connection");
 #endif /* INET6 */
+#endif 	// ---------------------- @2013/11/29
 
 
 #ifdef INET
