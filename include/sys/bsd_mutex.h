@@ -277,14 +277,14 @@ struct mtx_pool *mtx_pool_create(const char *mtx_name, int pool_size, int opts);
 void mtx_pool_destroy(struct mtx_pool **poolp);
 struct mtx *mtx_pool_find(struct mtx_pool *pool, void *ptr);
 struct mtx *mtx_pool_alloc(struct mtx_pool *pool);
-#define mtx_pool_lock(pool, ptr)					\
-	mtx_lock(mtx_pool_find((pool), (ptr)))
-#define mtx_pool_lock_spin(pool, ptr)					\
-	mtx_lock_spin(mtx_pool_find((pool), (ptr)))
-#define mtx_pool_unlock(pool, ptr)					\
-	mtx_unlock(mtx_pool_find((pool), (ptr)))
-#define mtx_pool_unlock_spin(pool, ptr)					\
-	mtx_unlock_spin(mtx_pool_find((pool), (ptr)))
+#define mtx_pool_lock(pool, ptr)					/*\
+	mtx_lock(mtx_pool_find((pool), (ptr)))*/
+#define mtx_pool_lock_spin(pool, ptr)					/*\
+	mtx_lock_spin(mtx_pool_find((pool), (ptr)))*/
+#define mtx_pool_unlock(pool, ptr)					/*\
+	mtx_unlock(mtx_pool_find((pool), (ptr)))*/
+#define mtx_pool_unlock_spin(pool, ptr)					/*\
+	mtx_unlock_spin(mtx_pool_find((pool), (ptr)))*/
 
 /*
  * mtxpool_lockbuilder is a pool of sleep locks that is not witness

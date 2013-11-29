@@ -162,9 +162,9 @@ void	_rw_assert(struct rwlock *rw, int what, const char *file, int line);
 #endif
 #define	rw_rlock(rw)		//_rw_rlock((rw), LOCK_FILE, LOCK_LINE)
 #define	rw_runlock(rw)		//_rw_runlock((rw), LOCK_FILE, LOCK_LINE)
-#define	rw_try_rlock(rw)	//_rw_try_rlock((rw), LOCK_FILE, LOCK_LINE)
-#define	rw_try_upgrade(rw)	//_rw_try_upgrade((rw), LOCK_FILE, LOCK_LINE)
-#define	rw_try_wlock(rw)	//_rw_try_wlock((rw), LOCK_FILE, LOCK_LINE)
+#define	rw_try_rlock(rw)	1   //_rw_try_rlock((rw), LOCK_FILE, LOCK_LINE)
+#define	rw_try_upgrade(rw)	1   //_rw_try_upgrade((rw), LOCK_FILE, LOCK_LINE)
+#define	rw_try_wlock(rw)	1   //_rw_try_wlock((rw), LOCK_FILE, LOCK_LINE)
 #define	rw_downgrade(rw)	//_rw_downgrade((rw), LOCK_FILE, LOCK_LINE)
 #define	rw_unlock(rw)	/*do {						\
 	if (rw_wowned(rw))						\
