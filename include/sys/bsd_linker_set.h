@@ -47,7 +47,7 @@
 #define __MAKE_SET(set, sym)						\
 	__GLOBL(__BSD_CONCAT(__start_set_,set));				\
 	__GLOBL(__BSD_CONCAT(__stop_set_,set));				\
-	static void const * const __set_##set##_sym_##sym 		\
+	static void const * /*const*/ __set_##set##_sym_##sym 		\
 	__section("set_" #set) __used = &sym
 #else /* !__GNUCLIKE___SECTION */
 #ifndef lint
