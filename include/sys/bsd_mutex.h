@@ -89,8 +89,14 @@
  * [See below for descriptions]
  *
  */
+#if 0	// runsisi AT hust.edu.cn @2013/11/29
 void	mtx_init(struct mtx *m, const char *name, const char *type, int opts);
 void	mtx_destroy(struct mtx *m);
+#endif 	// ---------------------- @2013/11/29
+// runsisi AT hust.edu.cn @2013/11/29
+#define mtx_init(m, name, type, opts)
+#define mtx_destroy(m)
+// ---------------------- @2013/11/29
 void	mtx_sysinit(void *arg);
 void	mutex_init(void);
 void	_mtx_lock_sleep(struct mtx *m, uintptr_t tid, int opts,

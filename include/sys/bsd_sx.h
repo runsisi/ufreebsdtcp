@@ -93,7 +93,12 @@
 void	sx_sysinit(void *arg);
 #define	sx_init(sx, desc)	//sx_init_flags((sx), (desc), 0)
 void	sx_init_flags(struct sx *sx, const char *description, int opts);
+#if 0	// runsisi AT hust.edu.cn @2013/11/29
 void	sx_destroy(struct sx *sx);
+#endif 	// ---------------------- @2013/11/29
+// runsisi AT hust.edu.cn @2013/11/29
+#define sx_destroy(sx)
+// ---------------------- @2013/11/29
 int	_sx_slock(struct sx *sx, int opts, const char *file, int line);
 int	_sx_xlock(struct sx *sx, int opts, const char *file, int line);
 int	_sx_try_slock(struct sx *sx, const char *file, int line);

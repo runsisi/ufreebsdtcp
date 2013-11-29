@@ -123,8 +123,14 @@
  */
 
 #define	rw_init(rw, name)	//rw_init_flags((rw), (name), 0)
+#if 0	// runsisi AT hust.edu.cn @2013/11/29
 void	rw_init_flags(struct rwlock *rw, const char *name, int opts);
-void	rw_destroy(struct rwlock *rw);
+void    rw_destroy(struct rwlock *rw);
+#endif 	// ---------------------- @2013/11/29
+// runsisi AT hust.edu.cn @2013/11/29
+#define rw_init_flags(rw, name, opts)
+#define rw_destroy(rw)
+// ---------------------- @2013/11/29
 void	rw_sysinit(void *arg);
 void	rw_sysinit_flags(void *arg);
 int	rw_wowned(struct rwlock *rw);
