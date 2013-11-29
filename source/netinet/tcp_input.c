@@ -2936,7 +2936,7 @@ dodata:							/* XXX */
                 #endif 	// ---------------------- @2013/11/16
             // runsisi AT hust.edu.cn @2013/11/16
 			{
-                if (thflags & BSD_TH_FIN)
+                if (thflags & TH_FIN)
                 {
                     m->m_flags |= M_EOR;
                 }

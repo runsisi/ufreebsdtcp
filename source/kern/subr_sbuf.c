@@ -52,8 +52,8 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/kern/subr_sbuf.c 250308 2013-05-06 20:32:1
 
 #ifdef _KERNEL
 static MALLOC_DEFINE(M_SBUF, "sbuf", "string buffers");
-#define	SBMALLOC(size)		malloc(size, M_SBUF, M_WAITOK)
-#define	SBFREE(buf)		free(buf, M_SBUF)
+#define	SBMALLOC(size)		bsd_malloc(size, M_SBUF, M_WAITOK)
+#define	SBFREE(buf)		bsd_free(buf, M_SBUF)
 #else /* _KERNEL */
 #define	KASSERT(e, m)
 #define	SBMALLOC(size)		malloc(size)
