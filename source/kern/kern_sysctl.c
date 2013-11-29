@@ -224,338 +224,6 @@ sysctl_unregister_oid(struct sysctl_oid *oidp)
 		printf("%s: failed to unregister sysctl\n", __func__);
 }
 
-/* Initialize a new context to keep track of dynamically added sysctls. */
-int
-sysctl_ctx_init(struct sysctl_ctx_list *c)
-{
-
-	if (c == NULL) {
-		return (EINVAL);
-	}
-
-	/*
-	 * No locking here, the caller is responsible for not adding
-	 * new nodes to a context until after this function has
-	 * returned.
-	 */
-	BSD_TAILQ_INIT(c);
-	return (0);
-}
-
-/* Free the context, and destroy all dynamic oids registered in this context */
-int
-sysctl_ctx_free(struct sysctl_ctx_list *clist)
-{
-	struct sysctl_ctx_entry *e, *e1;
-	int error;
-
-	error = 0;
-	/*
-	 * First perform a "dry run" to check if it's ok to remove oids.
-	 * XXX FIXME
-	 * XXX This algorithm is a hack. But I don't know any
-	 * XXX better solution for now...
-	 */
-	SYSCTL_XLOCK();
-	BSD_TAILQ_FOREACH(e, clist, link) {
-		error = sysctl_remove_oid_locked(e->entry, 0, 0);
-		if (error)
-			break;
-	}
-	/*
-	 * Restore deregistered entries, either from the end,
-	 * or from the place where error occured.
-	 * e contains the entry that was not unregistered
-	 */
-	if (error)
-		e1 = BSD_TAILQ_PREV(e, sysctl_ctx_list, link);
-	else
-		e1 = BSD_TAILQ_LAST(clist, sysctl_ctx_list);
-	while (e1 != NULL) {
-		sysctl_register_oid(e1->entry);
-		e1 = BSD_TAILQ_PREV(e1, sysctl_ctx_list, link);
-	}
-	if (error) {
-		SYSCTL_XUNLOCK();
-		return(EBUSY);
-	}
-	/* Now really delete the entries */
-	e = BSD_TAILQ_FIRST(clist);
-	while (e != NULL) {
-		e1 = BSD_TAILQ_NEXT(e, link);
-		error = sysctl_remove_oid_locked(e->entry, 1, 0);
-		if (error)
-			panic("sysctl_remove_oid: corrupt tree, entry: %s",
-			    e->entry->oid_name);
-		bsd_free(e, M_SYSCTLOID);
-		e = e1;
-	}
-	SYSCTL_XUNLOCK();
-	return (error);
-}
-
-/* Add an entry to the context */
-struct sysctl_ctx_entry *
-sysctl_ctx_entry_add(struct sysctl_ctx_list *clist, struct sysctl_oid *oidp)
-{
-	struct sysctl_ctx_entry *e;
-
-	SYSCTL_ASSERT_XLOCKED();
-	if (clist == NULL || oidp == NULL)
-		return(NULL);
-	e = bsd_malloc(sizeof(struct sysctl_ctx_entry), M_SYSCTLOID, M_WAITOK);
-	e->entry = oidp;
-	BSD_TAILQ_INSERT_HEAD(clist, e, link);
-	return (e);
-}
-
-/* Find an entry in the context */
-struct sysctl_ctx_entry *
-sysctl_ctx_entry_find(struct sysctl_ctx_list *clist, struct sysctl_oid *oidp)
-{
-	struct sysctl_ctx_entry *e;
-
-	SYSCTL_ASSERT_XLOCKED();
-	if (clist == NULL || oidp == NULL)
-		return(NULL);
-	BSD_TAILQ_FOREACH(e, clist, link) {
-		if(e->entry == oidp)
-			return(e);
-	}
-	return (e);
-}
-
-/*
- * Delete an entry from the context.
- * NOTE: this function doesn't free oidp! You have to remove it
- * with sysctl_remove_oid().
- */
-int
-sysctl_ctx_entry_del(struct sysctl_ctx_list *clist, struct sysctl_oid *oidp)
-{
-	struct sysctl_ctx_entry *e;
-
-	if (clist == NULL || oidp == NULL)
-		return (EINVAL);
-	SYSCTL_XLOCK();
-	e = sysctl_ctx_entry_find(clist, oidp);
-	if (e != NULL) {
-		BSD_TAILQ_REMOVE(clist, e, link);
-		SYSCTL_XUNLOCK();
-		bsd_free(e, M_SYSCTLOID);
-		return (0);
-	} else {
-		SYSCTL_XUNLOCK();
-		return (ENOENT);
-	}
-}
-
-/*
- * Remove dynamically created sysctl trees.
- * oidp - top of the tree to be removed
- * del - if 0 - just deregister, otherwise free up entries as well
- * recurse - if != 0 traverse the subtree to be deleted
- */
-int
-sysctl_remove_oid(struct sysctl_oid *oidp, int del, int recurse)
-{
-	int error;
-
-	SYSCTL_XLOCK();
-	error = sysctl_remove_oid_locked(oidp, del, recurse);
-	SYSCTL_XUNLOCK();
-	return (error);
-}
-
-int
-sysctl_remove_name(struct sysctl_oid *parent, const char *name,
-    int del, int recurse)
-{
-	struct sysctl_oid *p, *tmp;
-	int error;
-
-	error = ENOENT;
-	SYSCTL_XLOCK();
-	BSD_SLIST_FOREACH_SAFE(p, SYSCTL_CHILDREN(parent), oid_link, tmp) {
-		if (strcmp(p->oid_name, name) == 0) {
-			error = sysctl_remove_oid_locked(p, del, recurse);
-			break;
-		}
-	}
-	SYSCTL_XUNLOCK();
-
-	return (error);
-}
-
-
-static int
-sysctl_remove_oid_locked(struct sysctl_oid *oidp, int del, int recurse)
-{
-	struct sysctl_oid *p, *tmp;
-	int error;
-
-	SYSCTL_ASSERT_XLOCKED();
-	if (oidp == NULL)
-		return(EINVAL);
-	if ((oidp->oid_kind & CTLFLAG_DYN) == 0) {
-		printf("can't remove non-dynamic nodes!\n");
-		return (EINVAL);
-	}
-	/*
-	 * WARNING: normal method to do this should be through
-	 * sysctl_ctx_free(). Use recursing as the last resort
-	 * method to purge your sysctl tree of leftovers...
-	 * However, if some other code still references these nodes,
-	 * it will panic.
-	 */
-	if ((oidp->oid_kind & CTLTYPE) == CTLTYPE_NODE) {
-		if (oidp->oid_refcnt == 1) {
-			BSD_SLIST_FOREACH_SAFE(p,
-			    SYSCTL_CHILDREN(oidp), oid_link, tmp) {
-				if (!recurse)
-					return (ENOTEMPTY);
-				error = sysctl_remove_oid_locked(p, del,
-				    recurse);
-				if (error)
-					return (error);
-			}
-			if (del)
-				bsd_free(SYSCTL_CHILDREN(oidp), M_SYSCTLOID);
-		}
-	}
-	if (oidp->oid_refcnt > 1 ) {
-		oidp->oid_refcnt--;
-	} else {
-		if (oidp->oid_refcnt == 0) {
-			printf("Warning: bad oid_refcnt=%u (%s)!\n",
-				oidp->oid_refcnt, oidp->oid_name);
-			return (EINVAL);
-		}
-		sysctl_unregister_oid(oidp);
-		if (del) {
-			/*
-			 * Wait for all threads running the handler to drain.
-			 * This preserves the previous behavior when the
-			 * sysctl lock was held across a handler invocation,
-			 * and is necessary for module unload correctness.
-			 */
-			while (oidp->oid_running > 0) {
-				oidp->oid_kind |= CTLFLAG_DYING;
-				SYSCTL_SLEEP(&oidp->oid_running, "oidrm", 0);
-			}
-			if (oidp->oid_descr)
-				bsd_free(__DECONST(char *, oidp->oid_descr),
-				    M_SYSCTLOID);
-			bsd_free(__DECONST(char *, oidp->oid_name), M_SYSCTLOID);
-			bsd_free(oidp, M_SYSCTLOID);
-		}
-	}
-	return (0);
-}
-/*
- * Create new sysctls at run time.
- * clist may point to a valid context initialized with sysctl_ctx_init().
- */
-struct sysctl_oid *
-sysctl_add_oid(struct sysctl_ctx_list *clist, struct sysctl_oid_list *parent,
-	int number, const char *name, int kind, void *arg1, intptr_t arg2,
-	int (*handler)(SYSCTL_HANDLER_ARGS), const char *fmt, const char *descr)
-{
-	struct sysctl_oid *oidp;
-
-	/* You have to hook up somewhere.. */
-	if (parent == NULL)
-		return(NULL);
-	/* Check if the node already exists, otherwise create it */
-	SYSCTL_XLOCK();
-	oidp = sysctl_find_oidname(name, parent);
-	if (oidp != NULL) {
-		if ((oidp->oid_kind & CTLTYPE) == CTLTYPE_NODE) {
-			oidp->oid_refcnt++;
-			/* Update the context */
-			if (clist != NULL)
-				sysctl_ctx_entry_add(clist, oidp);
-			SYSCTL_XUNLOCK();
-			return (oidp);
-		} else {
-			SYSCTL_XUNLOCK();
-			printf("can't re-use a leaf (%s)!\n", name);
-			return (NULL);
-		}
-	}
-	oidp = bsd_malloc(sizeof(struct sysctl_oid), M_SYSCTLOID, M_WAITOK|M_ZERO);
-	oidp->oid_parent = parent;
-	BSD_SLIST_NEXT(oidp, oid_link) = NULL;
-	oidp->oid_number = number;
-	oidp->oid_refcnt = 1;
-	oidp->oid_name = bsd_strdup(name, M_SYSCTLOID);
-	oidp->oid_handler = handler;
-	oidp->oid_kind = CTLFLAG_DYN | kind;
-	if ((kind & CTLTYPE) == CTLTYPE_NODE) {
-		/* Allocate space for children */
-		SYSCTL_CHILDREN_SET(oidp, bsd_malloc(sizeof(struct sysctl_oid_list),
-		    M_SYSCTLOID, M_WAITOK));
-		BSD_SLIST_INIT(SYSCTL_CHILDREN(oidp));
-		oidp->oid_arg2 = arg2;
-	} else {
-		oidp->oid_arg1 = arg1;
-		oidp->oid_arg2 = arg2;
-	}
-	oidp->oid_fmt = fmt;
-	if (descr)
-		oidp->oid_descr = bsd_strdup(descr, M_SYSCTLOID);
-	/* Update the context, if used */
-	if (clist != NULL)
-		sysctl_ctx_entry_add(clist, oidp);
-	/* Register this oid */
-	sysctl_register_oid(oidp);
-	SYSCTL_XUNLOCK();
-	return (oidp);
-}
-
-/*
- * Rename an existing oid.
- */
-void
-sysctl_rename_oid(struct sysctl_oid *oidp, const char *name)
-{
-	char *newname;
-	char *oldname;
-
-	newname = bsd_strdup(name, M_SYSCTLOID);
-	SYSCTL_XLOCK();
-	oldname = __DECONST(char *, oidp->oid_name);
-	oidp->oid_name = newname;
-	SYSCTL_XUNLOCK();
-	bsd_free(oldname, M_SYSCTLOID);
-}
-
-/*
- * Reparent an existing oid.
- */
-int
-sysctl_move_oid(struct sysctl_oid *oid, struct sysctl_oid_list *parent)
-{
-	struct sysctl_oid *oidp;
-
-	SYSCTL_XLOCK();
-	if (oid->oid_parent == parent) {
-		SYSCTL_XUNLOCK();
-		return (0);
-	}
-	oidp = sysctl_find_oidname(oid->oid_name, parent);
-	if (oidp != NULL) {
-		SYSCTL_XUNLOCK();
-		return (EEXIST);
-	}
-	sysctl_unregister_oid(oid);
-	oid->oid_parent = parent;
-	oid->oid_number = OID_AUTO;
-	sysctl_register_oid(oid);
-	SYSCTL_XUNLOCK();
-	return (0);
-}
-
 /*
  * Register the kernel's oids on startup.
  */
@@ -1232,7 +900,9 @@ kernel_sysctl(struct thread *td, int *name, u_int namelen, void *old,
 	SYSCTL_XUNLOCK();
 
 	if (req.lock == REQ_WIRED && req.validlen > 0)
-		vsunlock(req.oldptr, req.validlen);
+        #if 0	// runsisi AT hust.edu.cn @2013/11/29
+        vsunlock(req.oldptr, req.validlen);
+        #endif 	// ---------------------- @2013/11/29
 
 	if (error && error != ENOMEM)
 		return (error);
@@ -1332,24 +1002,26 @@ sysctl_new_user(struct sysctl_req *req, void *p, size_t l)
 int
 sysctl_wire_old_buffer(struct sysctl_req *req, size_t len)
 {
-	int ret;
-	size_t wiredlen;
+    #if 0	// runsisi AT hust.edu.cn @2013/11/29
+    int ret;
+    size_t wiredlen;
 
-	wiredlen = (len > 0 && len < req->oldlen) ? len : req->oldlen;
-	ret = 0;
-	if (req->lock != REQ_WIRED && req->oldptr &&
-	    req->oldfunc == sysctl_old_user) {
-		if (wiredlen != 0) {
-			ret = vslock(req->oldptr, wiredlen);
-			if (ret != 0) {
-				if (ret != ENOMEM)
-					return (ret);
-				wiredlen = 0;
-			}
-		}
-		req->lock = REQ_WIRED;
-		req->validlen = wiredlen;
-	}
+    wiredlen = (len > 0 && len < req->oldlen) ? len : req->oldlen;
+    ret = 0;
+    if (req->lock != REQ_WIRED && req->oldptr &&
+        req->oldfunc == sysctl_old_user) {
+        if (wiredlen != 0) {
+            ret = vslock(req->oldptr, wiredlen);
+            if (ret != 0) {
+                if (ret != ENOMEM)
+                    return (ret);
+                wiredlen = 0;
+            }
+        }
+        req->lock = REQ_WIRED;
+        req->validlen = wiredlen;
+    }
+    #endif 	// ---------------------- @2013/11/29
 	return (0);
 }
 
@@ -1428,46 +1100,48 @@ sysctl_root(SYSCTL_HANDLER_ARGS)
 	if (req->newptr && !(oid->oid_kind & CTLFLAG_WR))
 		return (EPERM);
 
-	KASSERT(req->td != NULL, ("sysctl_root(): req->td == NULL"));
+    #if 0	// runsisi AT hust.edu.cn @2013/11/29
+    KASSERT(req->td != NULL, ("sysctl_root(): req->td == NULL"));
 
-#ifdef CAPABILITY_MODE
-	/*
-	 * If the process is in capability mode, then don't permit reading or
-	 * writing unless specifically granted for the node.
-	 */
-	if (IN_CAPABILITY_MODE(req->td)) {
-		if (req->oldptr && !(oid->oid_kind & CTLFLAG_CAPRD))
-			return (EPERM);
-		if (req->newptr && !(oid->oid_kind & CTLFLAG_CAPWR))
-			return (EPERM);
-	}
-#endif
+    #ifdef CAPABILITY_MODE
+    /*
+     * If the process is in capability mode, then don't permit reading or
+     * writing unless specifically granted for the node.
+     */
+    if (IN_CAPABILITY_MODE(req->td)) {
+        if (req->oldptr && !(oid->oid_kind & CTLFLAG_CAPRD))
+            return (EPERM);
+        if (req->newptr && !(oid->oid_kind & CTLFLAG_CAPWR))
+            return (EPERM);
+    }
+    #endif
 
-	/* Is this sysctl sensitive to securelevels? */
-	if (req->newptr && (oid->oid_kind & CTLFLAG_SECURE)) {
-		lvl = (oid->oid_kind & CTLMASK_SECURE) >> CTLSHIFT_SECURE;
-		error = securelevel_gt(req->td->td_ucred, lvl);
-		if (error)
-			return (error);
-	}
+    /* Is this sysctl sensitive to securelevels? */
+    if (req->newptr && (oid->oid_kind & CTLFLAG_SECURE)) {
+        lvl = (oid->oid_kind & CTLMASK_SECURE) >> CTLSHIFT_SECURE;
+        error = securelevel_gt(req->td->td_ucred, lvl);
+        if (error)
+            return (error);
+    }
 
-	/* Is this sysctl writable by only privileged users? */
-	if (req->newptr && !(oid->oid_kind & CTLFLAG_ANYBODY)) {
-		int priv;
+    /* Is this sysctl writable by only privileged users? */
+    if (req->newptr && !(oid->oid_kind & CTLFLAG_ANYBODY)) {
+        int priv;
 
-		if (oid->oid_kind & CTLFLAG_PRISON)
-			priv = PRIV_SYSCTL_WRITEJAIL;
-#ifdef VIMAGE
-		else if ((oid->oid_kind & CTLFLAG_VNET) &&
-		     prison_owns_vnet(req->td->td_ucred))
-			priv = PRIV_SYSCTL_WRITEJAIL;
-#endif
-		else
-			priv = PRIV_SYSCTL_WRITE;
-		error = priv_check(req->td, priv);
-		if (error)
-			return (error);
-	}
+        if (oid->oid_kind & CTLFLAG_PRISON)
+            priv = PRIV_SYSCTL_WRITEJAIL;
+    #ifdef VIMAGE
+        else if ((oid->oid_kind & CTLFLAG_VNET) &&
+             prison_owns_vnet(req->td->td_ucred))
+            priv = PRIV_SYSCTL_WRITEJAIL;
+    #endif
+        else
+            priv = PRIV_SYSCTL_WRITE;
+        error = priv_check(req->td, priv);
+        if (error)
+            return (error);
+    }
+    #endif 	// ---------------------- @2013/11/29
 
 	if (!oid->oid_handler)
 		return (EINVAL);
@@ -1494,12 +1168,16 @@ sysctl_root(SYSCTL_HANDLER_ARGS)
 	if (!(oid->oid_kind & CTLFLAG_MPSAFE))
 		mtx_unlock(&Giant);
 
-	KFAIL_POINT_ERROR(_debug_fail_point, sysctl_running, error);
+    #if 0	// runsisi AT hust.edu.cn @2013/11/29
+    KFAIL_POINT_ERROR(_debug_fail_point, sysctl_running, error);
+    #endif 	// ---------------------- @2013/11/29
 
 	SYSCTL_XLOCK();
 	oid->oid_running--;
-	if (oid->oid_running == 0 && (oid->oid_kind & CTLFLAG_DYING) != 0)
-		wakeup(&oid->oid_running);
+    #if 0	// runsisi AT hust.edu.cn @2013/11/29
+    if (oid->oid_running == 0 && (oid->oid_kind & CTLFLAG_DYING) != 0)
+        wakeup(&oid->oid_running);
+    #endif 	// ---------------------- @2013/11/29
 	return (error);
 }
 
@@ -1567,18 +1245,20 @@ userland_sysctl(struct thread *td, int *name, u_int namelen, void *old,
 	}
 	req.validlen = req.oldlen;
 
-	if (old) {
-		if (!useracc(old, req.oldlen, VM_PROT_WRITE))
-			return (EFAULT);
-		req.oldptr= old;
-	}
+    #if 0	// runsisi AT hust.edu.cn @2013/11/29
+    if (old) {
+        if (!useracc(old, req.oldlen, VM_PROT_WRITE))
+            return (EFAULT);
+        req.oldptr= old;
+    }
 
-	if (new != NULL) {
-		if (!useracc(new, newlen, VM_PROT_READ))
-			return (EFAULT);
-		req.newlen = newlen;
-		req.newptr = new;
-	}
+    if (new != NULL) {
+        if (!useracc(new, newlen, VM_PROT_READ))
+            return (EFAULT);
+        req.newlen = newlen;
+        req.newptr = new;
+    }
+    #endif 	// ---------------------- @2013/11/29
 
 	req.oldfunc = sysctl_old_user;
 	req.newfunc = sysctl_new_user;
@@ -1604,13 +1284,17 @@ userland_sysctl(struct thread *td, int *name, u_int namelen, void *old,
 		SYSCTL_XUNLOCK();
 		if (error != EAGAIN)
 			break;
-		kern_yield(PRI_USER);
+        #if 0	// runsisi AT hust.edu.cn @2013/11/29
+        kern_yield(PRI_USER);
+        #endif 	// ---------------------- @2013/11/29
 	}
 
 	CURVNET_RESTORE();
 
 	if (req.lock == REQ_WIRED && req.validlen > 0)
-		vsunlock(req.oldptr, req.validlen);
+        #if 0	// runsisi AT hust.edu.cn @2013/11/29
+        vsunlock(req.oldptr, req.validlen);
+        #endif 	// ---------------------- @2013/11/29
 	if (memlocked)
 		sx_xunlock(&sysctlmemlock);
 

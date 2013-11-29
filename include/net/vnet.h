@@ -192,9 +192,17 @@ void vnet_log_recursion(struct vnet *, const char *, int);
 extern struct vnet *vnet0;
 #define	IS_DEFAULT_VNET(arg)	((arg) == vnet0)
 
+#if 0	// runsisi AT hust.edu.cn @2013/11/29
 #define	CRED_TO_VNET(cr)	(cr)->cr_prison->pr_vnet
 #define	TD_TO_VNET(td)		CRED_TO_VNET((td)->td_ucred)
 #define	P_TO_VNET(p)		CRED_TO_VNET((p)->p_ucred)
+#endif 	// ---------------------- @2013/11/29
+
+// runsisi AT hust.edu.cn @2013/11/29
+#define CRED_TO_VNET(cr)    curvnet
+#define TD_TO_VNET(td)      CRED_TO_VNET(td)
+#define P_TO_VNET(p)        CRED_TO_VNET(p)
+// ---------------------- @2013/11/29
 
 /*
  * Global linked list of all virtual network stacks, along with read locks to
