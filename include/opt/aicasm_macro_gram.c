@@ -229,7 +229,7 @@ add_macro_arg(const char *argtext, int argnum)
 		stop("Too many arguments for macro invocation", EX_DATAERR);
 		/* NOTREACHED */
 	}
-	marg->replacement_text = bsd_strdup(argtext);
+	marg->replacement_text = strdup(argtext);
 	if (marg->replacement_text == NULL) {
 		stop("Unable to replicate replacement text", EX_SOFTWARE);
 		/* NOTREACHED */

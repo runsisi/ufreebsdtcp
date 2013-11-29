@@ -488,7 +488,7 @@ sysctl_add_oid(struct sysctl_ctx_list *clist, struct sysctl_oid_list *parent,
 	BSD_SLIST_NEXT(oidp, oid_link) = NULL;
 	oidp->oid_number = number;
 	oidp->oid_refcnt = 1;
-	oidp->oid_name = bsd_strdup(name, M_SYSCTLOID);
+	oidp->oid_name = strdup(name, M_SYSCTLOID);
 	oidp->oid_handler = handler;
 	oidp->oid_kind = CTLFLAG_DYN | kind;
 	if ((kind & CTLTYPE) == CTLTYPE_NODE) {
@@ -503,7 +503,7 @@ sysctl_add_oid(struct sysctl_ctx_list *clist, struct sysctl_oid_list *parent,
 	}
 	oidp->oid_fmt = fmt;
 	if (descr)
-		oidp->oid_descr = bsd_strdup(descr, M_SYSCTLOID);
+		oidp->oid_descr = strdup(descr, M_SYSCTLOID);
 	/* Update the context, if used */
 	if (clist != NULL)
 		sysctl_ctx_entry_add(clist, oidp);
@@ -522,7 +522,7 @@ sysctl_rename_oid(struct sysctl_oid *oidp, const char *name)
 	char *newname;
 	char *oldname;
 
-	newname = bsd_strdup(name, M_SYSCTLOID);
+	newname = strdup(name, M_SYSCTLOID);
 	SYSCTL_XLOCK();
 	oldname = __DECONST(char *, oidp->oid_name);
 	oidp->oid_name = newname;

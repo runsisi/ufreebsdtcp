@@ -38,7 +38,7 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/libkern/strdup.c 116189 2003-06-11 05:37:4
 #include <sys/bsd_malloc.h>
 
 char *
-bsd_strdup(const char *string, struct malloc_type *type)
+strdup(const char *string, struct malloc_type *type)
 {
 	size_t len;
 	char *copy;

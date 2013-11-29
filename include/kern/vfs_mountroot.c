@@ -1007,7 +1007,7 @@ parse_mountroot_options(struct mntarg *ma, const char *options)
 	if (options == NULL || options[0] == '\0')
 		return (ma);
 
-	p = opts = bsd_strdup(options, M_MOUNT);
+	p = opts = strdup(options, M_MOUNT);
 	if (opts == NULL) {
 		return (ma);
 	}
@@ -1030,10 +1030,10 @@ parse_mountroot_options(struct mntarg *ma, const char *options)
 			 */
 			continue;
 		}
-		name_arg = bsd_strdup(name, M_MOUNT);
+		name_arg = strdup(name, M_MOUNT);
 		val_arg = NULL;
 		if (val != NULL)
-			val_arg = bsd_strdup(val, M_MOUNT);
+			val_arg = strdup(val, M_MOUNT);
 
 		ma = mount_arg(ma, name_arg, val_arg,
 		    (val_arg != NULL ? -1 : 0));

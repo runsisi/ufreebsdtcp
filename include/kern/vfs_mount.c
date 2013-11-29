@@ -347,7 +347,7 @@ vfs_mergeopts(struct vfsoptlist *toopts, struct vfsoptlist *oldopts)
 
 	BSD_TAILQ_FOREACH(opt, oldopts, link) {
 		new = bsd_malloc(sizeof(struct vfsopt), M_MOUNT, M_WAITOK);
-		new->name = bsd_strdup(opt->name, M_MOUNT);
+		new->name = strdup(opt->name, M_MOUNT);
 		if (opt->len != 0) {
 			new->value = bsd_malloc(opt->len, M_MOUNT, M_WAITOK);
 			bcopy(opt->value, new->value, opt->len);
@@ -600,37 +600,37 @@ vfs_donmount(struct thread *td, uint64_t fsflags, struct uio *fsoptions)
 			fsflags |= MNT_NOATIME;
 		else if (strcmp(opt->name, "atime") == 0) {
 			bsd_free(opt->name, M_MOUNT);
-			opt->name = bsd_strdup("nonoatime", M_MOUNT);
+			opt->name = strdup("nonoatime", M_MOUNT);
 		}
 		else if (strcmp(opt->name, "noclusterr") == 0)
 			fsflags |= MNT_NOCLUSTERR;
 		else if (strcmp(opt->name, "clusterr") == 0) {
 			bsd_free(opt->name, M_MOUNT);
-			opt->name = bsd_strdup("nonoclusterr", M_MOUNT);
+			opt->name = strdup("nonoclusterr", M_MOUNT);
 		}
 		else if (strcmp(opt->name, "noclusterw") == 0)
 			fsflags |= MNT_NOCLUSTERW;
 		else if (strcmp(opt->name, "clusterw") == 0) {
 			bsd_free(opt->name, M_MOUNT);
-			opt->name = bsd_strdup("nonoclusterw", M_MOUNT);
+			opt->name = strdup("nonoclusterw", M_MOUNT);
 		}
 		else if (strcmp(opt->name, "noexec") == 0)
 			fsflags |= MNT_NOEXEC;
 		else if (strcmp(opt->name, "exec") == 0) {
 			bsd_free(opt->name, M_MOUNT);
-			opt->name = bsd_strdup("nonoexec", M_MOUNT);
+			opt->name = strdup("nonoexec", M_MOUNT);
 		}
 		else if (strcmp(opt->name, "nosuid") == 0)
 			fsflags |= MNT_NOSUID;
 		else if (strcmp(opt->name, "suid") == 0) {
 			bsd_free(opt->name, M_MOUNT);
-			opt->name = bsd_strdup("nonosuid", M_MOUNT);
+			opt->name = strdup("nonosuid", M_MOUNT);
 		}
 		else if (strcmp(opt->name, "nosymfollow") == 0)
 			fsflags |= MNT_NOSYMFOLLOW;
 		else if (strcmp(opt->name, "symfollow") == 0) {
 			bsd_free(opt->name, M_MOUNT);
-			opt->name = bsd_strdup("nonosymfollow", M_MOUNT);
+			opt->name = strdup("nonosymfollow", M_MOUNT);
 		}
 		else if (strcmp(opt->name, "noro") == 0)
 			fsflags &= ~MNT_RDONLY;
@@ -640,7 +640,7 @@ vfs_donmount(struct thread *td, uint64_t fsflags, struct uio *fsoptions)
 			fsflags |= MNT_RDONLY;
 		else if (strcmp(opt->name, "rdonly") == 0) {
 			bsd_free(opt->name, M_MOUNT);
-			opt->name = bsd_strdup("ro", M_MOUNT);
+			opt->name = strdup("ro", M_MOUNT);
 			fsflags |= MNT_RDONLY;
 		}
 		else if (strcmp(opt->name, "suiddir") == 0)
