@@ -294,7 +294,7 @@ SYSCTL_ALLOWED_TYPES(UINT64, uint64_t *a; unsigned long long *b; );
 /* Oid for a string.  len can be 0 to indicate '\0' termination. */
 #define SYSCTL_STRING(parent, nbr, name, access, arg, len, descr) \
 	SYSCTL_OID(parent, nbr, name, CTLTYPE_STRING|(access), \
-		arg, len, sysctl_handle_string, "A", descr)*/
+		arg, len, sysctl_handle_string, "A", descr)
 
 #define SYSCTL_ADD_STRING(ctx, parent, nbr, name, access, arg, len, descr)  \
 	sysctl_add_oid(ctx, parent, nbr, name, CTLTYPE_STRING|(access),	    \
@@ -363,7 +363,7 @@ SYSCTL_ALLOWED_TYPES(UINT64, uint64_t *a; unsigned long long *b; );
 	sysctl_add_oid(ctx, parent, nbr, name,				\
 	    CTLTYPE_S64 | CTLFLAG_MPSAFE | (access),			\
 	    SYSCTL_ADD_ASSERT_TYPE(INT64, ptr), 0,			\
-	    sysctl_handle_64, "Q", __DESCR(descr))*/
+	    sysctl_handle_64, "Q", __DESCR(descr))
 
 #define	SYSCTL_UQUAD(parent, nbr, name, access, ptr, val, descr)	\
 	SYSCTL_ASSERT_TYPE(UINT64, ptr, parent, name);			\
