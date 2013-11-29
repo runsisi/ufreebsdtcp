@@ -85,8 +85,10 @@ module_init(void *arg)
 
 	sx_init(&modules_sx, "module subsystem sx lock");
 	BSD_TAILQ_INIT(&modules);
-	EVENTHANDLER_REGISTER(shutdown_final, module_shutdown, NULL,
-	    SHUTDOWN_PRI_DEFAULT);
+    #if 0	// runsisi AT hust.edu.cn @2013/11/29
+    EVENTHANDLER_REGISTER(shutdown_final, module_shutdown, NULL,
+        SHUTDOWN_PRI_DEFAULT);
+    #endif 	// ---------------------- @2013/11/29
 }
 
 SYSINIT(module, SI_SUB_KLD, SI_ORDER_FIRST, module_init, 0);
