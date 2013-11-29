@@ -1098,7 +1098,7 @@ add_macro_body(const char *bodytext)
 		     EX_SOFTWARE);
 		/* NOTREACHED */
 	}
-	cur_symbol->info.macroinfo->body = strdup(bodytext);
+	cur_symbol->info.macroinfo->body = bsd_strdup(bodytext);
 	if (cur_symbol->info.macroinfo->body == NULL) {
 		stop("Can't duplicate macro body text", EX_SOFTWARE);
 		/* NOTREACHED */
@@ -1692,7 +1692,7 @@ case 35:
 		if (prefix != stock_prefix)
 			stop("Prefix multiply defined",
 			     EX_DATAERR);
-		prefix = strdup(yyvsp[0].str);
+		prefix = bsd_strdup(yyvsp[0].str);
 		if (prefix == NULL)
 			stop("Unable to record prefix", EX_SOFTWARE);
 	}
@@ -1703,7 +1703,7 @@ case 36:
 		if (patch_arg_list != NULL)
 			stop("Patch argument list multiply defined",
 			     EX_DATAERR);
-		patch_arg_list = strdup(yyvsp[0].str);
+		patch_arg_list = bsd_strdup(yyvsp[0].str);
 		if (patch_arg_list == NULL)
 			stop("Unable to record patch arg list", EX_SOFTWARE);
 	}
