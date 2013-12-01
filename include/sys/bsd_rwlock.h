@@ -194,7 +194,7 @@ struct rw_args_flags {
 	int		ra_flags;
 };
 
-#define	RW_SYSINIT(name, rw, desc)					\
+#define	RW_SYSINIT(name, rw, desc)					/*\
 	static struct rw_args name##_args = {				\
 		(rw),							\
 		(desc),							\
@@ -202,10 +202,10 @@ struct rw_args_flags {
 	SYSINIT(name##_rw_sysinit, SI_SUB_LOCK, SI_ORDER_MIDDLE,	\
 	    rw_sysinit, &name##_args);					\
 	SYSUNINIT(name##_rw_sysuninit, SI_SUB_LOCK, SI_ORDER_MIDDLE,	\
-	    rw_destroy, (rw))
+	    rw_destroy, (rw))*/
 
 
-#define	RW_SYSINIT_FLAGS(name, rw, desc, flags)				\
+#define	RW_SYSINIT_FLAGS(name, rw, desc, flags)				/*\
 	static struct rw_args_flags name##_args = {			\
 		(rw),							\
 		(desc),							\
@@ -214,7 +214,7 @@ struct rw_args_flags {
 	SYSINIT(name##_rw_sysinit, SI_SUB_LOCK, SI_ORDER_MIDDLE,	\
 	    rw_sysinit_flags, &name##_args);				\
 	SYSUNINIT(name##_rw_sysuninit, SI_SUB_LOCK, SI_ORDER_MIDDLE,	\
-	    rw_destroy, (rw))
+	    rw_destroy, (rw))*/
 
 /*
  * Options passed to rw_init_flags().

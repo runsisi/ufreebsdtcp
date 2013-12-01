@@ -46,9 +46,16 @@
 #define	RM_RECURSE	0x00000002
 #define	RM_SLEEPABLE	0x00000004
 
-void	rm_init(struct rmlock *rm, const char *name);
+#if 0	// runsisi AT hust.edu.cn @2013/12/01
+void    rm_init(struct rmlock *rm, const char *name);
 void	rm_init_flags(struct rmlock *rm, const char *name, int opts);
-void	rm_destroy(struct rmlock *rm);
+void    rm_destroy(struct rmlock *rm);
+#endif 	// ---------------------- @2013/12/01
+// runsisi AT hust.edu.cn @2013/12/01
+#define rm_init(rm, name)
+#define rm_init_flags(rm, name, opts)
+#define rm_destroy(rm)
+// ---------------------- @2013/12/01
 int	rm_wowned(struct rmlock *rm);
 void	rm_sysinit(void *arg);
 void	rm_sysinit_flags(void *arg);
@@ -74,20 +81,20 @@ void	_rm_runlock(struct rmlock *rm,  struct rm_priotracker *tracker);
 #endif
 
 #if LOCK_DEBUG > 0
-#define	rm_wlock(rm)	_rm_wlock_debug((rm), LOCK_FILE, LOCK_LINE)
-#define	rm_wunlock(rm)	_rm_wunlock_debug((rm), LOCK_FILE, LOCK_LINE)
-#define	rm_rlock(rm,tracker)  \
-    ((void)_rm_rlock_debug((rm),(tracker), 0, LOCK_FILE, LOCK_LINE ))
-#define	rm_try_rlock(rm,tracker)  \
-    _rm_rlock_debug((rm),(tracker), 1, LOCK_FILE, LOCK_LINE )
-#define	rm_runlock(rm,tracker)	\
-    _rm_runlock_debug((rm), (tracker), LOCK_FILE, LOCK_LINE )
+#define	rm_wlock(rm)	//_rm_wlock_debug((rm), LOCK_FILE, LOCK_LINE)
+#define	rm_wunlock(rm)	//_rm_wunlock_debug((rm), LOCK_FILE, LOCK_LINE)
+#define	rm_rlock(rm,tracker)  /*\
+    ((void)_rm_rlock_debug((rm),(tracker), 0, LOCK_FILE, LOCK_LINE ))*/
+#define	rm_try_rlock(rm,tracker)  1 /*\
+    _rm_rlock_debug((rm),(tracker), 1, LOCK_FILE, LOCK_LINE )*/
+#define	rm_runlock(rm,tracker)	/*\
+    _rm_runlock_debug((rm), (tracker), LOCK_FILE, LOCK_LINE )*/
 #else
-#define	rm_wlock(rm)			_rm_wlock((rm))
-#define	rm_wunlock(rm)			_rm_wunlock((rm))
-#define	rm_rlock(rm,tracker)		((void)_rm_rlock((rm),(tracker), 0))
-#define	rm_try_rlock(rm,tracker)	_rm_rlock((rm),(tracker), 1)
-#define	rm_runlock(rm,tracker)		_rm_runlock((rm), (tracker))
+#define	rm_wlock(rm)			//_rm_wlock((rm))
+#define	rm_wunlock(rm)			//_rm_wunlock((rm))
+#define	rm_rlock(rm,tracker)		//((void)_rm_rlock((rm),(tracker), 0))
+#define	rm_try_rlock(rm,tracker)	1   //_rm_rlock((rm),(tracker), 1)
+#define	rm_runlock(rm,tracker)		//_rm_runlock((rm), (tracker))
 #endif
 
 struct rm_args {
@@ -101,7 +108,7 @@ struct rm_args_flags {
 	int		ra_opts;
 };
 
-#define	RM_SYSINIT(name, rm, desc)       				\
+#define	RM_SYSINIT(name, rm, desc)       				/*\
 	static struct rm_args name##_args = {				\
 		(rm),							\
 		(desc),							\
@@ -109,10 +116,10 @@ struct rm_args_flags {
 	SYSINIT(name##_rm_sysinit, SI_SUB_LOCK, SI_ORDER_MIDDLE,	\
 	    rm_sysinit, &name##_args);					\
 	SYSUNINIT(name##_rm_sysuninit, SI_SUB_LOCK, SI_ORDER_MIDDLE,	\
-	    rm_destroy, (rm))
+	    rm_destroy, (rm))*/
 
 
-#define	RM_SYSINIT_FLAGS(name, rm, desc, opts)       			\
+#define	RM_SYSINIT_FLAGS(name, rm, desc, opts)       			/*\
 	static struct rm_args name##_args = {				\
 		(rm),							\
 		(desc),							\
@@ -121,7 +128,7 @@ struct rm_args_flags {
 	SYSINIT(name##_rm_sysinit, SI_SUB_LOCK, SI_ORDER_MIDDLE,	\
 	    rm_sysinit_flags, &name##_args);				\
 	SYSUNINIT(name##_rm_sysuninit, SI_SUB_LOCK, SI_ORDER_MIDDLE,	\
-	    rm_destroy, (rm))
+	    rm_destroy, (rm))*/
 
 #endif /* _KERNEL */
 #endif /* !_SYS_RMLOCK_H_ */
