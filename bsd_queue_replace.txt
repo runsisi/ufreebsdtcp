@@ -1,0 +1,8 @@
+\b(SLIST_[A-Z]+[A-Z_]*?[A-Z]*?)\b
+\b(LIST_[A-Z]+[A-Z_]*?[A-Z]*?)\b
+\b(STAILQ_[A-Z]+[A-Z_]*?[A-Z]*?)\b
+\b(TAILQ_[A-Z]+[A-Z_]*?[A-Z]*?)\b
+
+BSD_\1
+
+*.h;*.c
