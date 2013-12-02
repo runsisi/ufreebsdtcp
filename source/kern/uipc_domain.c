@@ -66,22 +66,20 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/kern/uipc_domain.c 253035 2013-07-08 13:24
  */
 
 static void domaininit(void *);
-#if 0	// runsisi AT hust.edu.cn @2013/11/20
 SYSINIT(domain, SI_SUB_PROTO_DOMAININIT, SI_ORDER_ANY, domaininit, NULL);
-#endif 	// ---------------------- @2013/11/20
-// runsisi AT hust.edu.cn @2013/11/20
-VNET_SYSINIT(domain, SI_SUB_PROTO_DOMAININIT,
-        SI_ORDER_ANY, domaininit, NULL);
-// ---------------------- @2013/11/20
 
 static void domainfinalize(void *);
-#if 0	// runsisi AT hust.edu.cn @2013/11/20
 SYSINIT(domainfin, SI_SUB_PROTO_IFATTACHDOMAIN, SI_ORDER_FIRST, domainfinalize,
     NULL);
-#endif 	// ---------------------- @2013/11/20
+
 // runsisi AT hust.edu.cn @2013/11/20
-VNET_SYSINIT(domainfin, SI_SUB_PROTO_IFATTACHDOMAIN,
-        SI_ORDER_FIRST, domainfinalize, NULL);
+static void domaininit2(void *);
+VNET_SYSINIT(domain2, SI_SUB_PROTO_DOMAININIT, SI_ORDER_ANY, domaininit2,
+        NULL);
+
+static void domainfinalize2(void *);
+VNET_SYSINIT(domainfin2, SI_SUB_PROTO_IFATTACHDOMAIN, SI_ORDER_FIRST,
+        domainfinalize2, NULL);
 // ---------------------- @2013/11/20
 
 #if 0	// runsisi AT hust.edu.cn @2013/11/20
@@ -272,8 +270,10 @@ domaininit(void *dummy)
 	if (max_linkhdr < 16)		/* XXX */
 		max_linkhdr = 16;
 
-	callout_init(&V_pffast_callout, CALLOUT_MPSAFE);
-	callout_init(&V_pfslow_callout, CALLOUT_MPSAFE);
+    #if 0	// runsisi AT hust.edu.cn @2013/12/02
+    callout_init(&V_pffast_callout, CALLOUT_MPSAFE);
+    callout_init(&V_pfslow_callout, CALLOUT_MPSAFE);
+    #endif 	// ---------------------- @2013/12/02
 
 	mtx_lock(&dom_mtx);
 	KASSERT(domain_init_status == 0, ("domaininit called too late!"));
@@ -291,9 +291,27 @@ domainfinalize(void *dummy)
 	domain_init_status = 2;
 	mtx_unlock(&dom_mtx);	
 
+    #if 0	// runsisi AT hust.edu.cn @2013/12/02
+    callout_reset(&V_pffast_callout, 1, pffasttimo, NULL);
+    callout_reset(&V_pfslow_callout, 1, pfslowtimo, NULL);
+    #endif 	// ---------------------- @2013/12/02
+}
+
+// runsisi AT hust.edu.cn @2013/12/02
+static void
+domaininit2(void *dummy)
+{
+    callout_init(&V_pffast_callout, CALLOUT_MPSAFE);
+    callout_init(&V_pfslow_callout, CALLOUT_MPSAFE);
+}
+
+static void
+domainfinalize2(void *dummy)
+{
     callout_reset(&V_pffast_callout, 1, pffasttimo, NULL);
     callout_reset(&V_pfslow_callout, 1, pfslowtimo, NULL);
 }
+// ---------------------- @2013/12/02
 
 struct protosw *
 pffindtype(int family, int type)

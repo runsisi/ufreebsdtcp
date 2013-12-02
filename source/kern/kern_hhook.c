@@ -197,6 +197,18 @@ tryagain:
 	 * nonetheless have to cope with - hence the complex goto logic.
 	 */
 	n_heads_to_hook = n_hhookheads;
+    // runsisi AT hust.edu.cn @2013/12/02
+    if (n_heads_to_hook == 0)
+    {
+        /*
+         * unfortunately, dps does not support zero size malloc, so we have
+         * to handle this situation specially. there maybe a race here as
+         * noted below, but in nas, we only have a h_ertt khelp module, so
+         * forget about it:)
+         */
+        return 0;
+    }
+    // ---------------------- @2013/12/02
 	heads_to_hook = bsd_malloc(n_heads_to_hook * sizeof(struct hhook_head *),
 	    M_HHOOK, flags & HHOOK_WAITOK ? M_WAITOK : M_NOWAIT);
 	if (heads_to_hook == NULL)
