@@ -160,7 +160,11 @@ bsd_realloc(void *addr, unsigned long size, struct malloc_type *mtp, int flags)
 	if (addr == NULL)
 		return (bsd_malloc(size, mtp, flags));
 
-	// TODO: dps have to provide reaclloc interface, or alloc can not be known
+	/*
+	 * TODO: dps has to provide reaclloc interface, or 'alloc' can not be
+	 * known, currently we always set the old size to 'size'
+	 */
+	alloc = size;
 
 	/* Allocate a new, bigger (or smaller) block */
 	if ((newaddr = bsd_malloc(size, mtp, flags)) == NULL)

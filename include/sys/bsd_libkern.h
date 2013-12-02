@@ -79,9 +79,9 @@ extern int arc4rand_iniseed_state;
 struct malloc_type;
 uint32_t arc4random(void);
 void	 arc4rand(void *ptr, u_int len, int reseed);
-int	 bcmp(const void *, const void *, size_t);
-void	*bsearch(const void *, const void *, size_t,
-	    size_t, int (*)(const void *, const void *));
+//int	 bcmp(const void *, const void *, size_t);
+//void	*bsearch(const void *, const void *, size_t,
+//	    size_t, int (*)(const void *, const void *));
 #ifndef	HAVE_INLINE_FFS
 int	 ffs(int);
 #endif
@@ -94,36 +94,36 @@ int	 fls(int);
 #ifndef	HAVE_INLINE_FLSL
 int	 flsl(long);
 #endif
-int	 fnmatch(const char *, const char *, int);
+//int	 fnmatch(const char *, const char *, int);
 int	 locc(int, char *, u_int);
-void	*memchr(const void *s, int c, size_t n);
-int	 memcmp(const void *b1, const void *b2, size_t len);
-void	 qsort(void *base, size_t nmemb, size_t size,
-	    int (*compar)(const void *, const void *));
+//void	*memchr(const void *s, int c, size_t n);
+//int	 memcmp(const void *b1, const void *b2, size_t len);
+//void	 qsort(void *base, size_t nmemb, size_t size,
+//	    int (*compar)(const void *, const void *));
 void	 qsort_r(void *base, size_t nmemb, size_t size, void *thunk,
 	    int (*compar)(void *, const void *, const void *));
 //u_long	 random(void);
-char	*index(const char *, int);
-char	*rindex(const char *, int);
+//char	*index(const char *, int);
+//char	*rindex(const char *, int);
 int	 scanc(u_int, const u_char *, const u_char *, int);
 int	 skpc(int, int, char *);
 //void	 srandom(u_long);
-int	 strcasecmp(const char *, const char *);
-char	*strcat(char * __restrict, const char * __restrict);
-int	 strcmp(const char *, const char *);
-char	*strcpy(char * __restrict, const char * __restrict);
-size_t	 strcspn(const char * __restrict, const char * __restrict) __pure;
-char	*strdup(const char *__restrict, struct malloc_type *);
+//int	 strcasecmp(const char *, const char *);
+//char	*strcat(char * __restrict, const char * __restrict);
+//int	 strcmp(const char *, const char *);
+//char	*strcpy(char * __restrict, const char * __restrict);
+//size_t	 strcspn(const char * __restrict, const char * __restrict) __pure;
+//char	*strdup(const char *__restrict, struct malloc_type *);
 size_t	 strlcat(char *, const char *, size_t);
 size_t	 strlcpy(char *, const char *, size_t);
-size_t	 strlen(const char *);
-int	 strncasecmp(const char *, const char *, size_t);
-int	 strncmp(const char *, const char *, size_t);
-char	*strncpy(char * __restrict, const char * __restrict, size_t);
-size_t	 strnlen(const char *, size_t);
-char	*strsep(char **, const char *delim);
-size_t	 strspn(const char *, const char *);
-char	*strstr(const char *, const char *);
+//size_t	 strlen(const char *);
+//int	 strncasecmp(const char *, const char *, size_t);
+//int	 strncmp(const char *, const char *, size_t);
+//char	*strncpy(char * __restrict, const char * __restrict, size_t);
+//size_t	 strnlen(const char *, size_t);
+//char	*strsep(char **, const char *delim);
+//size_t	 strspn(const char *, const char *);
+//char	*strstr(const char *, const char *);
 int	 strvalid(const char *, size_t);
 
 extern uint32_t crc32_tab[];
