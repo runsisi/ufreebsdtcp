@@ -82,7 +82,7 @@ struct cc_head cc_list = BSD_STAILQ_HEAD_INITIALIZER(cc_list);
 /* Protects the cc_list TAILQ. */
 struct rwlock cc_list_lock;
 
-VNET_DEFINE(struct cc_algo *, default_cc_ptr) = &newreno_cc_algo;
+VNET_DEFINE(struct cc_algo *, default_cc_ptr) = &htcp_cc_algo;  //&newreno_cc_algo;
 
 /*
  * Sysctl handler to show and change the default CC algorithm.
