@@ -241,10 +241,8 @@ static void inline	cc_ack_received(struct tcpcb *tp, struct tcphdr *th,
 			    uint16_t type);
 static void inline	cc_conn_init(struct tcpcb *tp);
 static void inline	cc_post_recovery(struct tcpcb *tp, struct tcphdr *th);
-#if 0	// runsisi AT hust.edu.cn @2013/11/06
 static void inline	hhook_run_tcp_est_in(struct tcpcb *tp,
 			    struct tcphdr *th, struct tcpopt *to);
-#endif 	// ---------------------- @2013/11/06
 
 /*
  * Kernel module interface for updating tcpstat.  The argument is an index
@@ -260,7 +258,6 @@ kmod_tcpstat_inc(int statnum)
 	(*((u_long *)&V_tcpstat + statnum))++;
 }
 
-#if 0	// runsisi AT hust.edu.cn @2013/11/06
 /*
  * Wrapper for the TCP established input helper hook.
  */
@@ -278,7 +275,6 @@ hhook_run_tcp_est_in(struct tcpcb *tp, struct tcphdr *th, struct tcpopt *to)
 		    tp->osd);
 	}
 }
-#endif 	// ---------------------- @2013/11/06
 
 /*
  * CC wrapper hook functions
@@ -1694,9 +1690,7 @@ tcp_do_segment(struct mbuf *m, struct tcphdr *th, struct socket *so,
 				acked = BYTES_THIS_ACK(tp, th);
 
 				/* Run HHOOK_TCP_ESTABLISHED_IN helper hooks. */
-                #if 0	// runsisi AT hust.edu.cn @2013/11/06
-                hhook_run_tcp_est_in(tp, th, &to);
-                #endif 	// ---------------------- @2013/11/06
+				hhook_run_tcp_est_in(tp, th, &to);
 
 				TCPSTAT_INC(tcps_rcvackpack);
 				TCPSTAT_ADD(tcps_rcvackbyte, acked);
@@ -2415,9 +2409,7 @@ tcp_do_segment(struct mbuf *m, struct tcphdr *th, struct socket *so,
 			tcp_sack_doack(tp, &to, th->th_ack);
 
 		/* Run HHOOK_TCP_ESTABLISHED_IN helper hooks. */
-        #if 0	// runsisi AT hust.edu.cn @2013/11/06
-        hhook_run_tcp_est_in(tp, th, &to);
-        #endif 	// ---------------------- @2013/11/06
+		hhook_run_tcp_est_in(tp, th, &to);
 
 		if (SEQ_LEQ(th->th_ack, tp->snd_una)) {
 			if (tlen == 0 && tiwin == tp->snd_wnd) {

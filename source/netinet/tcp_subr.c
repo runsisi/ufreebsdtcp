@@ -291,14 +291,12 @@ tcp_init(void)
 {
 	int hashsize;
 
-    #if 0	// runsisi AT hust.edu.cn @2013/11/06
-    if (hhook_head_register(HHOOK_TYPE_TCP, HHOOK_TCP_EST_IN,
-        &V_tcp_hhh[HHOOK_TCP_EST_IN], HHOOK_NOWAIT|HHOOK_HEADISINVNET) != 0)
-        printf("%s: WARNING: unable to register helper hook\n", __func__);
-    if (hhook_head_register(HHOOK_TYPE_TCP, HHOOK_TCP_EST_OUT,
-        &V_tcp_hhh[HHOOK_TCP_EST_OUT], HHOOK_NOWAIT|HHOOK_HEADISINVNET) != 0)
-        printf("%s: WARNING: unable to register helper hook\n", __func__);
-    #endif 	// ---------------------- @2013/11/06
+	if (hhook_head_register(HHOOK_TYPE_TCP, HHOOK_TCP_EST_IN,
+	    &V_tcp_hhh[HHOOK_TCP_EST_IN], HHOOK_NOWAIT|HHOOK_HEADISINVNET) != 0)
+		printf("%s: WARNING: unable to register helper hook\n", __func__);
+	if (hhook_head_register(HHOOK_TYPE_TCP, HHOOK_TCP_EST_OUT,
+	    &V_tcp_hhh[HHOOK_TCP_EST_OUT], HHOOK_NOWAIT|HHOOK_HEADISINVNET) != 0)
+		printf("%s: WARNING: unable to register helper hook\n", __func__);
 
 	hashsize = TCBHASHSIZE;
 	TUNABLE_INT_FETCH("net.inet.tcp.tcbhashsize", &hashsize);
@@ -705,12 +703,10 @@ tcp_newtcpcb(struct inpcb *inp)
 		}
 
 	tp->osd = &tm->osd;
-    #if 0	// runsisi AT hust.edu.cn @2013/11/07
-    if (khelp_init_osd(HELPER_CLASS_TCP, tp->osd)) {
-        uma_zfree(V_tcpcb_zone, tm);
-        return (NULL);
-    }
-    #endif 	// ---------------------- @2013/11/07
+	if (khelp_init_osd(HELPER_CLASS_TCP, tp->osd)) {
+		uma_zfree(V_tcpcb_zone, tm);
+		return (NULL);
+	}
 
 #ifdef VIMAGE
 	tp->t_vnet = inp->inp_vnet;
@@ -949,9 +945,7 @@ tcp_discardcb(struct tcpcb *tp)
 	if (CC_ALGO(tp)->cb_destroy != NULL)
 		CC_ALGO(tp)->cb_destroy(tp->ccv);
 
-    #if 0	// runsisi AT hust.edu.cn @2013/11/07
-    khelp_destroy_osd(tp->osd);
-    #endif 	// ---------------------- @2013/11/07
+	khelp_destroy_osd(tp->osd);
 
 	CC_ALGO(tp) = NULL;
 	inp->inp_ppcb = NULL;

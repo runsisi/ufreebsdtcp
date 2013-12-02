@@ -123,14 +123,11 @@ SYSCTL_VNET_INT(_net_inet_tcp, OID_AUTO, sendbuf_max, CTLFLAG_RW,
 
 extern int brs_ip_output(struct mbuf *m, int vcid);
 
-#if 0	// runsisi AT hust.edu.cn @2013/11/06
 static void inline	hhook_run_tcp_est_out(struct tcpcb *tp,
 			    struct tcphdr *th, struct tcpopt *to,
 			    long len, int tso);
-#endif 	// ---------------------- @2013/11/06
 static void inline	cc_after_idle(struct tcpcb *tp);
 
-#if 0	// runsisi AT hust.edu.cn @2013/11/06
 /*
  * Wrapper for the TCP established ouput helper hook.
  */
@@ -151,7 +148,6 @@ hhook_run_tcp_est_out(struct tcpcb *tp, struct tcphdr *th,
 		    tp->osd);
 	}
 }
-#endif 	// ---------------------- @2013/11/06
 
 /*
  * CC wrapper hook functions
@@ -1203,10 +1199,8 @@ timer:
 			tp->snd_max = tp->snd_nxt + len;
 	}
 
-    #if 0	// runsisi AT hust.edu.cn @2013/11/06
-    /* Run HHOOK_TCP_ESTABLISHED_OUT helper hooks. */
-    hhook_run_tcp_est_out(tp, th, &to, len, tso);
-    #endif 	// ---------------------- @2013/11/06
+	/* Run HHOOK_TCP_ESTABLISHED_OUT helper hooks. */
+	hhook_run_tcp_est_out(tp, th, &to, len, tso);
 
 #ifdef TCPDEBUG
 	/*
