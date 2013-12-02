@@ -103,5 +103,11 @@ linker_init_kernel_modules(void)
 	linker_file_register_modules(NULL);
 }
 
+#if 0	// runsisi AT hust.edu.cn @2013/12/01
 SYSINIT(linker_kernel, SI_SUB_KLD, SI_ORDER_ANY, linker_init_kernel_modules,
     0);
+#endif 	// ---------------------- @2013/12/01
+// runsisi AT hust.edu.cn @2013/12/01
+SYSINIT(linker_kernel, SI_SUB_KLD, SI_ORDER_SECOND, linker_init_kernel_modules,
+    0);
+// ---------------------- @2013/12/01
