@@ -42,7 +42,7 @@
 #endif 	// ---------------------- @2013/11/25
 
 // runsisi AT hust.edu.cn @2013/11/25
-#define SB_MAX      (8*1024*1024)   /* default for max chars in sockbuf */
+#define SB_MAX      (16*1024*1024)   /* default for max chars in sockbuf */
 // ---------------------- @2013/11/25
 
 /*

@@ -83,7 +83,11 @@ struct cc_head cc_list = BSD_STAILQ_HEAD_INITIALIZER(cc_list);
 struct rwlock cc_list_lock;
 
 // runsisi AT hust.edu.cn @2013/12/02
+extern struct cc_algo cdg_cc_algo;
+extern struct cc_algo chd_cc_algo;
+extern struct cc_algo hd_cc_algo;
 extern struct cc_algo htcp_cc_algo;
+extern struct cc_algo cubic_cc_algo;
 // ---------------------- @2013/12/02
 VNET_DEFINE(struct cc_algo *, default_cc_ptr) = &htcp_cc_algo;  //&newreno_cc_algo;
 
