@@ -624,8 +624,8 @@ again:
 
     kern_timeout_callwheel_init();
 
-    /* hz = 50, reference to subr_param.c */
-    ret = DPS_ResetAoTimer(&V_callout_drive_timer, PERIODICAL, 20,
+    /* hz = 100, reference to subr_param.c */
+    ret = DPS_ResetAoTimer(&V_callout_drive_timer, PERIODICAL, 10,
             (DPS_TIMER_CBK)clock_drive, (void*)0,
             (DPS_GetAoByID(DPS_GetSelfAoID()))->dwLcoreId);
     if (ret != 0)

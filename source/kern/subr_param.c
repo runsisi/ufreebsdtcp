@@ -58,7 +58,7 @@ __FBSDID("$FreeBSD: release/9.2.0/sys/kern/subr_param.c 253250 2013-07-12 05:45:
  */
 
 #ifndef HZ
-#define	HZ 50 //1000
+#define	HZ 100 //1000
 #endif
 #define NPROC (20 + 16 * maxusers)
 #ifndef NBUF
