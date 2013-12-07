@@ -89,7 +89,7 @@ extern struct cc_algo hd_cc_algo;
 extern struct cc_algo htcp_cc_algo;
 extern struct cc_algo cubic_cc_algo;
 // ---------------------- @2013/12/02
-VNET_DEFINE(struct cc_algo *, default_cc_ptr) = &cubic_cc_algo;  //&newreno_cc_algo;
+VNET_DEFINE(struct cc_algo *, default_cc_ptr) = &htcp_cc_algo;  //&newreno_cc_algo;
 
 /*
  * Sysctl handler to show and change the default CC algorithm.
